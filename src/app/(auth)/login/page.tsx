@@ -3,9 +3,7 @@
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Sun, Moon } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useTheme } from '@/context/ThemeContext'
 import { useLanguage } from '@/context/LanguageContext'
 
 const fadeIn = {
@@ -17,10 +15,7 @@ export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const { theme, toggleTheme } = useTheme()
   const { t } = useLanguage()
-
-  const gradient = theme === 'dark' ? 'linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%)' : 'linear-gradient(180deg, #e8e8e0 0%, #f5f5f0 100%)'
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
@@ -30,7 +25,7 @@ export default function LoginPage() {
         transition={{ duration: 0.5 }}
         style={{
           height: '40vh',
-          background: gradient,
+          background: "linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%)",
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -175,19 +170,6 @@ export default function LoginPage() {
         </motion.div>
       </motion.div>
 
-      <button
-        onClick={toggleTheme}
-        style={{
-          position: 'fixed', top: 16, right: 16, zIndex: 9999,
-          background: 'var(--surface-2)',
-          border: '1px solid var(--border)',
-          borderRadius: '50%', width: 36, height: 36,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', color: 'var(--text)',
-        }}
-      >
-        {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-      </button>
     </div>
   )
 }

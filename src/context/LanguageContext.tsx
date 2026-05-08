@@ -424,10 +424,12 @@ const LanguageContext = createContext<{
   language: Lang
   t: typeof translations.EN
   cycleLanguage: () => void
+  changeLanguage: (lang: Lang) => void
 }>({
   language: 'EN',
   t: translations.EN,
-  cycleLanguage: () => {}
+  cycleLanguage: () => {},
+  changeLanguage: () => {}
 })
 
 export function LanguageProvider({
@@ -447,13 +449,21 @@ export function LanguageProvider({
     const next = langs[(langs.indexOf(language) + 1) % langs.length]
     setLanguage(next)
     localStorage.setItem('language', next)
+    document.documentElement.setAttribute('lang', next.toLowerCase())
+  }
+
+  const changeLanguage = (lang: Lang) => {
+    setLanguage(lang)
+    localStorage.setItem('language', lang)
+    document.documentElement.setAttribute('lang', lang.toLowerCase())
   }
 
   return (
     <LanguageContext.Provider value={{
       language,
       t: translations[language],
-      cycleLanguage
+      cycleLanguage,
+      changeLanguage
     }}>
       {children}
     </LanguageContext.Provider>
