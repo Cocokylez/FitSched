@@ -11,7 +11,7 @@ export const translations = {
     alternative: "Alternative",
     setReminder: "Set reminder",
     workoutIn: "Workout in 15 minutes",
-    settings: "Settings",
+    settings: "Profile",
     syncNow: "Sync Now",
     disconnect: "Disconnect",
     signOut: "Sign Out",

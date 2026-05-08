@@ -360,9 +360,9 @@ export default function WorkoutPage() {
             }} style={{
               width: "100%",
               marginTop: "12px",
-              background: "var(--text)",
-              color: "var(--bg)",
-              border: "none",
+              background: "var(--surface-2)",
+              color: "var(--text)",
+              border: "1px solid var(--border)",
               borderRadius: "14px",
               padding: "13px",
               fontSize: "14px",
