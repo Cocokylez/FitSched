@@ -359,53 +359,13 @@ export default function WorkoutPage() {
           </motion.div>
 
           <motion.div variants={fadeUp}>
-            {!completed ? (
-              <button
-                onClick={() => {
-                  setLoggedExercises(currentExercises.map(e => ({ ...e })))
-                  setLogging(true)
-                }}
-                style={{
-                  width: "100%",
-                  marginTop: "12px",
-                  background: "var(--text)",
-                  color: "var(--bg)",
-                  border: "none",
-                  borderRadius: "12px",
-                  padding: "14px",
-                  fontSize: "14px",
-                  fontWeight: "700",
-                  cursor: "pointer"
-                }}
-              >
-                ✓ Mark as Done
-              </button>
-            ) : (
-              <div style={{
-                width: "100%",
-                marginTop: "12px",
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                borderRadius: "12px",
-                padding: "14px",
-                fontSize: "14px",
-                color: "#65c97a",
-                fontWeight: "700",
-                textAlign: "center"
-              }}>
-                ✓ Workout completed!
-              </div>
-            )}
-          </motion.div>
-
-          <motion.div variants={fadeUp}>
-            <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
+            <div style={{ display: "flex", gap: "10px", marginTop: "12px", marginBottom: "20px" }}>
               <button onClick={() => router.push("/ai")} style={{
                 flex: 1,
                 background: "var(--surface-2)",
                 border: "1px solid var(--border)",
-                borderRadius: "12px",
-                padding: "12px",
+                borderRadius: "14px",
+                padding: "13px",
                 color: "var(--text)",
                 fontSize: "13px",
                 fontWeight: 600,
@@ -419,8 +379,8 @@ export default function WorkoutPage() {
                 flex: 1,
                 background: "var(--surface-2)",
                 border: "1px solid var(--border)",
-                borderRadius: "12px",
-                padding: "12px",
+                borderRadius: "14px",
+                padding: "13px",
                 color: "var(--text)",
                 fontSize: "13px",
                 fontWeight: 600,
@@ -431,6 +391,47 @@ export default function WorkoutPage() {
                 </motion.span>
               </button>
             </div>
+          </motion.div>
+
+          <motion.div variants={fadeUp}>
+            {!completed ? (
+              <button
+                onClick={() => {
+                  setLoggedExercises(currentExercises.map(e => ({ ...e })))
+                  setLogging(true)
+                }}
+                style={{
+                  width: "100%",
+                  marginTop: "10px",
+                  background: "#6bbfb8",
+                  color: "#ffffff",
+                  border: "none",
+                  borderRadius: "12px",
+                  padding: "14px",
+                  fontSize: "14px",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                  boxShadow: "0 4px 16px rgba(107, 191, 184, 0.3)",
+                }}
+              >
+                ✓ Mark as Done
+              </button>
+            ) : (
+              <div style={{
+                width: "100%",
+                marginTop: "10px",
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                borderRadius: "12px",
+                padding: "14px",
+                fontSize: "14px",
+                color: "#65c97a",
+                fontWeight: "700",
+                textAlign: "center"
+              }}>
+                ✓ Workout completed!
+              </div>
+            )}
           </motion.div>
 
           <motion.div variants={fadeUp}>
@@ -508,7 +509,10 @@ export default function WorkoutPage() {
                   transition={{ duration: 0.3, ease: "easeOut" }}
                   onClick={e => e.stopPropagation()}
                   style={{
-                    background: "var(--surface)",
+                    background: theme === "dark" ? "rgba(30,30,30,0.85)" : "rgba(255,255,255,0.85)",
+                    backdropFilter: "blur(24px)",
+                    WebkitBackdropFilter: "blur(24px)",
+                    border: theme === "dark" ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.08)",
                     borderRadius: "24px 24px 0 0",
                     padding: "24px",
                     width: "100%",
@@ -537,6 +541,7 @@ export default function WorkoutPage() {
                     <div key={index} style={{
                       background: "var(--surface-2)",
                       border: "1px solid var(--border)",
+                      borderLeft: "3px solid rgba(107,191,184,0.4)",
                       borderRadius: "12px",
                       padding: "14px 16px",
                       marginBottom: "10px",
@@ -630,14 +635,15 @@ export default function WorkoutPage() {
                     style={{
                       width: "100%",
                       marginTop: "8px",
-                      background: "var(--text)",
-                      color: "var(--bg)",
+                      background: "#6bbfb8",
+                      color: "#ffffff",
                       border: "none",
                       borderRadius: "12px",
                       padding: "14px",
                       fontSize: "14px",
                       fontWeight: 700,
                       cursor: "pointer",
+                      boxShadow: "0 4px 16px rgba(107,191,184,0.3)",
                     }}
                   >
                     Save Workout Log
