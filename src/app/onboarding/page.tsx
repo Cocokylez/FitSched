@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useLanguage } from "@/context/LanguageContext"
 import { useTheme } from "@/context/ThemeContext"
@@ -30,8 +31,13 @@ const frequencies = [
 
 export default function OnboardingPage() {
   const router = useRouter()
+  const { status } = useSession()
   const { theme } = useTheme()
   const [step, setStep] = useState(0)
+
+  useEffect(() => {
+    if (status === "unauthenticated") router.push("/login")
+  }, [status, router])
   const [selections, setSelections] = useState({
     fitnessGoal: "",
     experienceLevel: "",
