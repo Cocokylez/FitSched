@@ -161,6 +161,26 @@ export default function SettingsPage() {
         {!loading && (
           <>
         <motion.div variants={fadeUp}>
+          <div style={sectionLabelStyle}>{t.stats}</div>
+        </motion.div>
+
+        <motion.div variants={fadeUp}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            {[
+              ["100%", t.autoScheduled],
+              ["25m", t.avgWorkout],
+              ["0", t.decisions],
+              ["7", t.days],
+            ].map(([value, label], i) => (
+              <div key={i} style={{ ...cardStyle, textAlign: "center", marginBottom: 0 }}>
+                <div style={{ fontSize: "28px", fontWeight: "bold", color: "var(--text)" }}>{value}</div>
+                <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>{label}</div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        <motion.div variants={fadeUp}>
           <div style={sectionLabelStyle}>{t.calendar}</div>
         </motion.div>
 
@@ -272,26 +292,6 @@ export default function SettingsPage() {
           <div style={{ ...cardStyle, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ fontSize: "14px", color: "var(--text)" }}>{t.version}</div>
             <div style={{ fontSize: "13px", color: "var(--text-muted)" }}>1.0.0</div>
-          </div>
-        </motion.div>
-
-        <motion.div variants={fadeUp}>
-          <div style={sectionLabelStyle}>{t.stats}</div>
-        </motion.div>
-
-        <motion.div variants={fadeUp}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-            {[
-              ["100%", t.autoScheduled],
-              ["25m", t.avgWorkout],
-              ["0", t.decisions],
-              ["7", t.days],
-            ].map(([value, label], i) => (
-              <div key={i} style={{ ...cardStyle, textAlign: "center", marginBottom: 0 }}>
-                <div style={{ fontSize: "28px", fontWeight: "bold", color: "var(--text)" }}>{value}</div>
-                <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>{label}</div>
-              </div>
-            ))}
           </div>
         </motion.div>
           </>
