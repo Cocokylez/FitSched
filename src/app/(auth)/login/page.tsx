@@ -106,7 +106,7 @@ export default function LoginPage() {
 
           <motion.div variants={fadeIn}>
             <button
-              onClick={async () => { await signIn('credentials', { email, password, callbackUrl: '/schedule' }) }}
+              onClick={async () => { await signIn('credentials', { email, password, callbackUrl: '/onboarding' }) }}
               style={{
                 width: '100%',
                 background: 'var(--text)',
@@ -134,7 +134,7 @@ export default function LoginPage() {
 
           <motion.div variants={fadeIn}>
             <button
-              onClick={() => { signIn('google', { callbackUrl: '/schedule' }) }}
+              onClick={() => { signIn('google', { callbackUrl: '/onboarding' }) }}
               style={{
                 width: '100%',
                 background: 'var(--surface-2)',

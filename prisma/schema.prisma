@@ -22,6 +22,10 @@ model User {
   workoutPlans        WorkoutPlan[]
   workoutLogs         WorkoutLog[]
   exercises           Exercise[]
+  onboardingCompleted Boolean                @default(false)
+  fitnessGoal         String?
+  experienceLevel     String?
+  workoutsPerWeek     Int?
   calendarConnections CalendarConnection[]
   pushSubscriptions   PushSubscription[]
   chatMessages        ChatMessage[]

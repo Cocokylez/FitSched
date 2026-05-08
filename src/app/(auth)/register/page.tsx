@@ -38,12 +38,12 @@ export default function RegisterPage() {
     if (result?.error) {
       setError("Email already registered or password too weak")
     } else {
-      router.push("/schedule")
+      router.push("/onboarding")
     }
   }
 
   const handleGoogle = () => {
-    signIn("google", { callbackUrl: "/schedule" })
+    signIn("google", { callbackUrl: "/onboarding" })
   }
 
   return (

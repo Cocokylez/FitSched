@@ -105,10 +105,18 @@ export async function POST(req: Request) {
       }
     } catch {}
 
+    const userProfile = user ? `
+User profile:
+- Goal: ${user.fitnessGoal || "general fitness"}
+- Experience: ${user.experienceLevel || "intermediate"}
+- Workouts per week: ${user.workoutsPerWeek || 3}` : ""
+
     const fullSystemPrompt = `${systemPrompt}
 Today: ${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][dayOfWeek]}.
 Muscle group: ${muscleGroups[dayOfWeek]}.
-${calendarEvents.length ? `User's schedule today:\n${scheduleContext}` : "No calendar connected."}${recentContext}`;
+${calendarEvents.length ? `User's schedule today:\n${scheduleContext}` : "No calendar connected."}${recentContext}${userProfile}
+
+Generate workouts matching this profile exactly.`;
 
     const openAiMessages = [
       { role: "system" as const, content: fullSystemPrompt },
