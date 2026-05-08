@@ -3,11 +3,14 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import webpush from "web-push";
 
-webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT!,
-  process.env.VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+function getWebpush() {
+  const subject = process.env.VAPID_SUBJECT;
+  const publicKey = process.env.VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  if (!subject || !publicKey || !privateKey) return null;
+  webpush.setVapidDetails(subject, publicKey, privateKey);
+  return webpush;
+}
 
 export async function POST(req: Request) {
   try {
@@ -28,9 +31,14 @@ export async function POST(req: Request) {
       icon: icon || "/icon-512.png",
     });
 
+    const wp = getWebpush();
+    if (!wp) {
+      return NextResponse.json({ error: "Push not configured" }, { status: 500 });
+    }
+
     const results = await Promise.allSettled(
       subscriptions.map((sub) =>
-        webpush.sendNotification(
+        wp.sendNotification(
           {
             endpoint: sub.endpoint,
             keys: { p256dh: sub.p256dh, auth: sub.auth },

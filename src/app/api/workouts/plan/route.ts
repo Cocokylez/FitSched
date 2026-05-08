@@ -3,11 +3,15 @@ import { db } from "@/lib/db";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
-const model = genAI.getGenerativeModel({
-  model: "gemini-2.0-flash",
-  generationConfig: { maxOutputTokens: 2000 },
-});
+function getModel() {
+  const key = process.env.GOOGLE_API_KEY || process.env.OPENAI_API_KEY;
+  if (!key) return null;
+  const genAI = new GoogleGenerativeAI(key);
+  return genAI.getGenerativeModel({
+    model: "gemini-2.0-flash",
+    generationConfig: { maxOutputTokens: 2000 },
+  });
+}
 
 export async function POST(req: Request) {
   try {
@@ -50,6 +54,11 @@ Return ONLY valid JSON with this structure:
     }
   ]
 }`;
+
+    const model = getModel();
+    if (!model) {
+      return NextResponse.json({ error: "AI not configured" }, { status: 500 });
+    }
 
     const result = await model.generateContent({
       systemInstruction: systemPrompt,
