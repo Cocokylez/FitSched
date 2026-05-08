@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { useLanguage } from "@/contexts/LanguageContext"
+import { useLanguage } from "@/context/LanguageContext"
 
 const cardStyle = {
   background: "rgba(255,255,255,0.07)",
@@ -123,7 +123,7 @@ export default function AIPage() {
         }
       }
     } catch {
-      setMessages(p => [...p, { role: "assistant", content: "Could not connect. Check your internet and try again." }])
+      setMessages(p => [...p, { role: "assistant", content: t.connectionError }])
     }
     setLoading(false)
   }
@@ -149,8 +149,8 @@ export default function AIPage() {
                 </svg>
               </div>
               <div>
-                <div style={{ fontSize: "15px", fontWeight: "bold", color: "white" }}>FitSched AI</div>
-                <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)" }}>Workout planner</div>
+                <div style={{ fontSize: "15px", fontWeight: "bold", color: "var(--text)" }}>{t.fitSchedAI}</div>
+                <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>{t.workoutPlanner}</div>
               </div>
             </div>
           </div>
@@ -170,7 +170,7 @@ export default function AIPage() {
                       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                     </svg>
                   </div>
-                  <div style={{ fontSize: "20px", fontWeight: "bold", color: "white", marginBottom: "4px" }}>
+                  <div style={{ fontSize: "20px", fontWeight: "bold", color: "var(--text)", marginBottom: "4px" }}>
                     <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
                       {t.howCanIHelp}
                     </motion.span>
@@ -191,7 +191,7 @@ export default function AIPage() {
                         border: "1px solid rgba(255,255,255,0.12)",
                         borderRadius: "20px",
                         padding: "10px 18px",
-                        color: "white",
+                        color: "var(--text)",
                         fontSize: "13px",
                         cursor: "pointer",
                       }}
@@ -224,18 +224,18 @@ export default function AIPage() {
                   <div style={{
                     maxWidth: "80%", padding: "12px 16px", fontSize: 14, lineHeight: 1.5,
                     background: msg.role === "user" ? "rgba(99,102,241,1)" : "rgba(255,255,255,0.07)",
-                    color: msg.role === "user" ? "#fff" : "white",
+                    color: msg.role === "user" ? "var(--text)" : "var(--text)",
                     borderRadius: msg.role === "user" ? "18px 18px 6px 18px" : "18px 18px 18px 6px",
                     border: msg.role === "user" ? "none" : "1px solid rgba(255,255,255,0.12)",
                     boxShadow: msg.role === "user" ? "0 4px 14px rgba(99,102,241,0.3)" : "0 8px 32px rgba(0,0,0,0.4)",
                   }}>
-                    {msg.role === "assistant" && <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "rgba(99,102,241,1)", marginBottom: 4 }}>FitSched AI</div>}
+                    {msg.role === "assistant" && <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "rgba(99,102,241,1)", marginBottom: 4 }}>{t.fitSchedAI}</div>}
                     {msg.content}
                     {parsedWorkouts[i] && showDayPicker !== i && (
                       <button onClick={() => { setShowDayPicker(i); setSaveError(null) }} style={{
                         marginTop: "8px",
-                        background: "white",
-                        color: "#1a1a1a",
+                        background: "var(--text)",
+                        color: "var(--bg)",
                         borderRadius: "12px",
                         padding: "10px 20px",
                         fontSize: "13px",
@@ -244,7 +244,7 @@ export default function AIPage() {
                         border: "none",
                         width: "100%",
                       }}>
-                        Add to Schedule
+                        {t.addToSchedule}
                       </button>
                     )}
                     {parsedWorkouts[i] && showDayPicker === i && (
@@ -280,7 +280,7 @@ export default function AIPage() {
                               border: "1px solid rgba(255,255,255,0.15)",
                               borderRadius: "8px",
                               padding: "6px 8px",
-                              color: savingIndex === i ? "rgba(255,255,255,0.3)" : "white",
+                              color: savingIndex === i ? "rgba(255,255,255,0.3)" : "var(--text)",
                               fontSize: "11px",
                               cursor: savingIndex === i ? "default" : "pointer",
                               textAlign: "center",
@@ -301,21 +301,21 @@ export default function AIPage() {
                         </div>
                         {saveError === i && (
                           <div style={{ fontSize: "11px", color: "#ff6b6b", marginBottom: "6px" }}>
-                            Failed to save. Try again.
+                            {t.saveFailed}
                           </div>
                         )}
                         <button onClick={() => { setShowDayPicker(null); setSaveError(null) }} style={{
                           background: "transparent",
                           border: "none",
-                          color: "rgba(255,255,255,0.4)",
+                          color: "var(--text-muted)",
                           fontSize: "11px",
                           cursor: "pointer",
-                        }}>Cancel</button>
+                        }}>{t.cancel}</button>
                       </div>
                     )}
                     {addSuccess === i && (
-                      <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.6)", marginTop: "4px" }}>
-                        Added to your schedule! &#10003;
+                      <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>
+                        {t.addedToSchedule} &#10003;
                       </div>
                     )}
                   </div>
@@ -345,7 +345,7 @@ export default function AIPage() {
                     borderRadius: "18px 18px 18px 6px",
                     boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
                   }}>
-                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "rgba(99,102,241,1)", marginBottom: 6 }}>FitSched AI</div>
+                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "rgba(99,102,241,1)", marginBottom: 6 }}>{t.fitSchedAI}</div>
                     <div style={{ display: "flex", gap: 5 }}>
                       {[0, 1, 2].map(i => (
                         <motion.div

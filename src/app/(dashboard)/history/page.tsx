@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { SkeletonCard } from "@/components/LoadingScreen";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface WorkoutLog {
   id: string;
@@ -43,6 +44,7 @@ export default function HistoryPage() {
   const [logs, setLogs] = useState<WorkoutLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"overview" | "chart">("overview");
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -91,10 +93,10 @@ export default function HistoryPage() {
       >
         <div>
           <h1 className="text-[28px] font-bold text-[var(--t1)] tracking-tight">
-            Progress
+            {t.progress}
           </h1>
           <p className="text-[14px] text-[var(--t3)] mt-0.5">
-            Track your workout journey
+            {t.trackJourney}
           </p>
         </div>
         <div className="flex gap-1 bg-[var(--bg2)] rounded-[10px] p-0.5">
@@ -106,7 +108,7 @@ export default function HistoryPage() {
                 : "text-[var(--t3)]"
             }`}
           >
-            Overview
+            {t.overview}
           </button>
           <button
             onClick={() => setView("chart")}
@@ -116,7 +118,7 @@ export default function HistoryPage() {
                 : "text-[var(--t3)]"
             }`}
           >
-            Charts
+            {t.charts}
           </button>
         </div>
       </motion.div>
@@ -141,10 +143,10 @@ export default function HistoryPage() {
                 className="grid grid-cols-2 gap-3 mb-6"
               >
                 {[
-                  { icon: Calendar, color: "brand", label: "Total Workouts", value: totalWorkouts },
-                  { icon: Dumbbell, color: "green", label: "Total Sets", value: totalSets },
-                  { icon: Flame, color: "orange", label: "Avg Rating", value: avgRating.toFixed(1) },
-                  { icon: TrendingUp, color: "purple", label: "This Week", value: "3" },
+                  { icon: Calendar, color: "brand", label: t.totalWorkouts, value: totalWorkouts },
+                  { icon: Dumbbell, color: "green", label: t.totalSets, value: totalSets },
+                  { icon: Flame, color: "orange", label: t.avgRating, value: avgRating.toFixed(1) },
+                  { icon: TrendingUp, color: "purple", label: t.thisWeek, value: "3" },
                 ].map((stat, i) => (
                   <motion.div
                     key={i}
@@ -167,7 +169,7 @@ export default function HistoryPage() {
               </motion.div>
 
               <div className="text-[12px] font-semibold text-[var(--t3)] mb-3 px-1 tracking-tight">
-                Recent Activity
+                {t.recentActivity}
               </div>
               <div className="ios-inset-grouped p-0 overflow-hidden">
                 <div className="divide-y divide-[var(--border)]">
@@ -205,7 +207,7 @@ export default function HistoryPage() {
                   {logs.length === 0 && (
                     <div className="px-4 py-8 text-center">
                       <Dumbbell className="w-8 h-8 text-[var(--t3)] mx-auto mb-2" />
-                      <p className="text-[14px] text-[var(--t3)]">No workouts logged yet</p>
+                      <p className="text-[14px] text-[var(--t3)]">{t.noWorkouts}</p>
                     </div>
                   )}
                 </div>
@@ -223,7 +225,7 @@ export default function HistoryPage() {
           <div className="ios-inset-grouped p-4">
             <div className="flex items-center gap-2 mb-4">
               <BarChart className="w-4 h-4 text-[var(--brand)]" />
-              <span className="text-[13px] font-semibold text-[var(--t1)]">Sets per Session</span>
+              <span className="text-[13px] font-semibold text-[var(--t1)]">{t.setsPerSession}</span>
             </div>
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={180}>
@@ -243,7 +245,7 @@ export default function HistoryPage() {
           <div className="ios-inset-grouped p-4">
             <div className="flex items-center gap-2 mb-4">
               <Flame className="w-4 h-4 text-[var(--orange)]" />
-              <span className="text-[13px] font-semibold text-[var(--t1)]">Rating Trend</span>
+              <span className="text-[13px] font-semibold text-[var(--t1)]">{t.ratingTrend}</span>
             </div>
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={180}>
@@ -256,7 +258,7 @@ export default function HistoryPage() {
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-[13px] text-[var(--t3)] text-center py-8">No data yet</p>
+              <p className="text-[13px] text-[var(--t3)] text-center py-8">{t.noData}</p>
             )}
           </div>
         </motion.div>

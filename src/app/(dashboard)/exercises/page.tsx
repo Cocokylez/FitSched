@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SkeletonCard } from "@/components/LoadingScreen";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface Exercise {
   id: string;
@@ -41,6 +42,7 @@ export default function ExercisesPage() {
   const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [filterMuscle, setFilterMuscle] = useState("");
+  const { t } = useLanguage();
   const [newExercise, setNewExercise] = useState({
     name: "",
     description: "",
@@ -119,7 +121,7 @@ export default function ExercisesPage() {
       >
         <div>
           <h1 className="text-[28px] font-bold text-[var(--t1)] tracking-tight">
-            Exercises
+            {t.exercises}
           </h1>
           <p className="text-[14px] text-[var(--t3)] mt-0.5">
             {exercises.length} exercises
@@ -131,7 +133,7 @@ export default function ExercisesPage() {
           className="flex items-center gap-2 px-4 py-2.5 rounded-[10px] bg-[var(--brand)] text-white text-[14px] font-semibold active:opacity-80 transition-all"
         >
           <Plus className="w-4 h-4" />
-          Add
+          {t.add}
         </motion.button>
       </motion.div>
 
@@ -147,7 +149,7 @@ export default function ExercisesPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search exercises..."
+            placeholder={t.searchExercises}
             className="w-full bg-[var(--bg1)] border border-[var(--border)] rounded-[10px] pl-10 pr-4 py-2.5 text-[14px] text-[var(--t1)] outline-none focus:border-[var(--brand)] transition-all placeholder:text-[var(--t3)]"
           />
         </div>
@@ -156,7 +158,7 @@ export default function ExercisesPage() {
           onChange={(e) => setFilterMuscle(e.target.value)}
           className="appearance-none bg-[var(--bg1)] border border-[var(--border)] rounded-[10px] pl-3 pr-8 py-2.5 text-[12px] text-[var(--t2)] outline-none focus:border-[var(--brand)] transition-all"
         >
-          <option value="">All</option>
+          <option value="">{t.all}</option>
           {MUSCLE_OPTIONS.map((m) => (
             <option key={m} value={m}>{formatLabel(m)}</option>
           ))}
@@ -211,7 +213,7 @@ export default function ExercisesPage() {
                         </span>
                         {ex.isSystem && (
                           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--bg2)] text-[var(--t3)]">
-                            Default
+                            {t.defaultLabel}
                           </span>
                         )}
                       </div>
@@ -233,7 +235,7 @@ export default function ExercisesPage() {
           {filtered.length === 0 && !loading && (
             <div className="px-4 py-8 text-center">
               <Dumbbell className="w-8 h-8 text-[var(--t3)] mx-auto mb-2" />
-              <p className="text-[14px] text-[var(--t3)]">No exercises found</p>
+              <p className="text-[14px] text-[var(--t3)]">{t.noExercises}</p>
             </div>
           )}
         </div>
@@ -255,7 +257,7 @@ export default function ExercisesPage() {
               className="ios-inset-grouped w-full max-w-md p-0 overflow-hidden"
             >
               <div className="flex items-center justify-between px-4 pt-4 pb-2">
-                <h2 className="text-[17px] font-bold text-[var(--t1)]">Add Exercise</h2>
+                <h2 className="text-[17px] font-bold text-[var(--t1)]">{t.addExercise}</h2>
                 <motion.button
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setShowAdd(false)}
@@ -267,30 +269,30 @@ export default function ExercisesPage() {
 
               <div className="px-4 pb-4 space-y-4">
                 <div>
-                  <label className="block text-[12px] font-semibold text-[var(--t3)] mb-1.5">Name</label>
+                  <label className="block text-[12px] font-semibold text-[var(--t3)] mb-1.5">{t.name}</label>
                   <input
                     type="text"
                     value={newExercise.name}
                     onChange={(e) => setNewExercise((p) => ({ ...p, name: e.target.value }))}
                     className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-[10px] px-4 py-2.5 text-[14px] text-[var(--t1)] outline-none focus:border-[var(--brand)] transition-all"
-                    placeholder="Exercise name"
+                    placeholder={t.exerciseName}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[12px] font-semibold text-[var(--t3)] mb-1.5">Description</label>
+                  <label className="block text-[12px] font-semibold text-[var(--t3)] mb-1.5">{t.description}</label>
                   <input
                     type="text"
                     value={newExercise.description}
                     onChange={(e) => setNewExercise((p) => ({ ...p, description: e.target.value }))}
                     className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-[10px] px-4 py-2.5 text-[14px] text-[var(--t1)] outline-none focus:border-[var(--brand)] transition-all"
-                    placeholder="Optional description"
+                    placeholder={t.optionalDescription}
                   />
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[12px] font-semibold text-[var(--t3)] mb-1.5">Muscle</label>
+                    <label className="block text-[12px] font-semibold text-[var(--t3)] mb-1.5">{t.muscle}</label>
                     <select
                       value={newExercise.muscleGroup}
                       onChange={(e) => setNewExercise((p) => ({ ...p, muscleGroup: e.target.value }))}
@@ -302,7 +304,7 @@ export default function ExercisesPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[12px] font-semibold text-[var(--t3)] mb-1.5">Equipment</label>
+                    <label className="block text-[12px] font-semibold text-[var(--t3)] mb-1.5">{t.equipment}</label>
                     <select
                       value={newExercise.equipment}
                       onChange={(e) => setNewExercise((p) => ({ ...p, equipment: e.target.value }))}
@@ -314,7 +316,7 @@ export default function ExercisesPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[12px] font-semibold text-[var(--t3)] mb-1.5">Difficulty</label>
+                    <label className="block text-[12px] font-semibold text-[var(--t3)] mb-1.5">{t.difficulty}</label>
                     <select
                       value={newExercise.difficulty}
                       onChange={(e) => setNewExercise((p) => ({ ...p, difficulty: e.target.value }))}
@@ -333,7 +335,7 @@ export default function ExercisesPage() {
                   disabled={!newExercise.name}
                   className="w-full py-3 rounded-[10px] bg-[var(--brand)] text-white font-semibold text-[14px] active:opacity-80 transition-all disabled:opacity-50"
                 >
-                  Add Exercise
+                  {t.addExercise}
                 </motion.button>
               </div>
             </motion.div>

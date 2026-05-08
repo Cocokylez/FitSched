@@ -2,7 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/SessionProvider";
-import { ThemeProvider } from "@/components/ThemeProvider";
+import { ThemeProvider } from "@/context/ThemeContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 import { ProvidersWrapper } from "@/components/ProvidersWrapper";
 import { auth } from "@/lib/auth";
 
@@ -47,7 +48,9 @@ export default async function RootLayout({
       <body className="min-h-dvh flex flex-col antialiased">
         <ThemeProvider>
           <SessionProvider session={session}>
-            <ProvidersWrapper>{children}</ProvidersWrapper>
+            <LanguageProvider>
+              <ProvidersWrapper>{children}</ProvidersWrapper>
+            </LanguageProvider>
           </SessionProvider>
         </ThemeProvider>
       </body>

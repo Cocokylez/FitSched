@@ -5,7 +5,8 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { useStore } from "@/store/useStore"
-import { useLanguage } from "@/contexts/LanguageContext"
+import { useLanguage } from "@/context/LanguageContext"
+import { useTheme } from "@/context/ThemeContext"
 
 const stagger = {
   hidden: {},
@@ -42,15 +43,10 @@ export default function WorkoutPage() {
   const [reminderSet, setReminderSet] = useState(false)
   const [weekDates, setWeekDates] = useState<Date[]>([])
   const [todayIdx, setTodayIdx] = useState(-1)
-  const [isDark, setIsDark] = useState(true)
   const [savedWorkout, setSavedWorkout] = useState<any>(null)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const { t, language } = useLanguage()
-
-  useEffect(() => {
-    const saved = localStorage.getItem("theme") || "dark"
-    setIsDark(saved === "dark")
-  }, [])
+  const { theme, toggleTheme } = useTheme()
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login")
@@ -84,38 +80,30 @@ export default function WorkoutPage() {
       .catch(() => setSavedWorkout(null))
   }, [status, selectedDay, weekDates])
 
-  const toggleTheme = () => {
-    const next = !isDark
-    setIsDark(next)
-    const val = next ? "dark" : "light"
-    document.documentElement.setAttribute("data-theme", val)
-    localStorage.setItem("theme", val)
-  }
-
   if (selectedDay === 0) {
     return (
-      <div style={{ minHeight: "100vh", background: "#1a1a1a", display: "flex", flexDirection: "column" }}>
+      <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
         <div style={{
-          background: "#242424",
+          background: "var(--surface)",
           padding: "16px 20px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          borderBottom: "1px solid #333333",
+          borderBottom: "1px solid var(--border)",
         }}>
-          <div style={{ fontSize: "13px", fontWeight: 800, color: "white" }}>
+          <div style={{ fontSize: "13px", fontWeight: 800, color: "var(--text)" }}>
             <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
               {t.workout}
             </motion.span>
           </div>
           <button onClick={toggleTheme} style={{
-            background: "#2f2f2f", border: "1px solid #333333",
+            background: "var(--surface-2)", border: "1px solid var(--border)",
             borderRadius: "50%", width: "32px", height: "32px",
             display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer", color: "white",
+            cursor: "pointer", color: "var(--text)",
           }}>
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-              {isDark ? (
+              {theme === "dark" ? (
                 <><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></>
               ) : (
                 <><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></>
@@ -127,25 +115,25 @@ export default function WorkoutPage() {
           <motion.div variants={stagger} initial="hidden" animate="visible">
             <motion.div variants={fadeUp}>
               <div style={{
-                background: "#242424",
-                border: "1px solid #333333",
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
                 borderRadius: "16px",
                 padding: "32px 24px",
                 textAlign: "center",
               }}>
-                <div style={{ fontSize: "24px", fontWeight: 800, color: "white", marginBottom: "8px" }}>Rest Day</div>
-                <p style={{ fontSize: "13px", color: "#888888", lineHeight: 1.5, marginBottom: "20px" }}>
-                  Rest is when your body rebuilds. Light walk recommended.
+                <div style={{ fontSize: "24px", fontWeight: 800, color: "var(--text)", marginBottom: "8px" }}>{t.restDay}</div>
+                <p style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.5, marginBottom: "20px" }}>
+                  {t.restBody}
                 </p>
                 <button
                   onClick={() => router.push("/ai")}
                   style={{
                     width: "100%",
-                    background: "#2f2f2f",
-                    border: "1px solid #333333",
+                    background: "var(--surface-2)",
+                    border: "1px solid var(--border)",
                     borderRadius: "12px",
                     padding: "12px",
-                    color: "white",
+                    color: "var(--text)",
                     fontSize: "13px",
                     fontWeight: 600,
                     cursor: "pointer",
@@ -165,24 +153,24 @@ export default function WorkoutPage() {
   const todayExercises = DEFAULT_EXERCISES[selectedDay] || []
 
   return (
-    <div style={{ minHeight: "100vh", background: "#1a1a1a", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
       <div style={{
-        background: "#242424",
+        background: "var(--surface)",
         padding: "16px 20px",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        borderBottom: "1px solid #333333",
+        borderBottom: "1px solid var(--border)",
       }}>
-        <div style={{ fontSize: "13px", fontWeight: 800, color: "white" }}>Workout</div>
+        <div style={{ fontSize: "13px", fontWeight: 800, color: "var(--text)" }}>{t.workout}</div>
         <button onClick={toggleTheme} style={{
-          background: "#2f2f2f", border: "1px solid #333333",
+          background: "var(--surface-2)", border: "1px solid var(--border)",
           borderRadius: "50%", width: "32px", height: "32px",
           display: "flex", alignItems: "center", justifyContent: "center",
-          cursor: "pointer", color: "white",
+          cursor: "pointer", color: "var(--text)",
         }}>
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-            {isDark ? (
+            {theme === "dark" ? (
               <><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></>
             ) : (
               <><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></>
@@ -198,15 +186,15 @@ export default function WorkoutPage() {
               {weekDates.map((date, i) => {
                 const isToday = i === todayIdx
                 return (
-                  <motion.button
+                    <motion.button
                     key={i}
                     onClick={() => setSelectedDay(i)}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     transition={{ type: "spring", stiffness: 400, damping: 17 }}
                     style={{
-                      background: i === selectedDay ? "white" : "#242424",
-                      border: i === selectedDay ? "1px solid white" : "1px solid #333333",
+                      background: i === selectedDay ? "var(--text)" : "var(--surface)",
+                      border: i === selectedDay ? "1px solid var(--text)" : "1px solid var(--border)",
                       borderRadius: "14px",
                       padding: "10px 14px",
                       textAlign: "center",
@@ -217,7 +205,7 @@ export default function WorkoutPage() {
                   >
                     <div style={{
                       fontSize: "10px",
-                      color: "#888888",
+                      color: "var(--text-muted)",
                       fontWeight: 600,
                       letterSpacing: "0.08em",
                       marginBottom: "4px",
@@ -227,7 +215,7 @@ export default function WorkoutPage() {
                     <div style={{
                       fontSize: "18px",
                       fontWeight: 800,
-                      color: i === selectedDay ? "#1a1a1a" : "white",
+                      color: i === selectedDay ? "var(--bg)" : "var(--text)",
                     }}>
                       {date.getDate()}
                     </div>
@@ -238,7 +226,7 @@ export default function WorkoutPage() {
           </motion.div>
 
           <motion.div variants={fadeUp}>
-            <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "#888888", marginBottom: "12px" }}>
+            <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-muted)", marginBottom: "12px" }}>
               <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
                 {t.todaysPlan}
               </motion.span>
@@ -246,7 +234,7 @@ export default function WorkoutPage() {
           </motion.div>
 
           <motion.div variants={fadeUp}>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "#2f2f2f", border: "1px solid #333333", borderRadius: "20px", padding: "6px 12px", fontSize: "11px", color: "#888888", marginBottom: "12px" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "20px", padding: "6px 12px", fontSize: "11px", color: "var(--text-muted)", marginBottom: "12px" }}>
               <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M6.5 6.5h11"/><path d="M6.5 17.5h11"/><path d="M3 9.5h2v5H3z"/><path d="M19 9.5h2v5h-2z"/><path d="M5 12h14"/>
               </svg>
@@ -255,7 +243,7 @@ export default function WorkoutPage() {
           </motion.div>
 
           <motion.div variants={fadeUp}>
-            <div style={{ background: "#242424", border: "1px solid #333333", borderRadius: "20px", overflow: "hidden", marginBottom: "16px" }}>
+            <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "20px", overflow: "hidden", marginBottom: "16px" }}>
               {todayExercises.map((ex, i) => (
                 <div
                   key={i}
@@ -268,7 +256,7 @@ export default function WorkoutPage() {
                   }}
                 >
                   <motion.div variants={scaleIn} style={{
-                    background: "#2f2f2f",
+                    background: "var(--surface-2)",
                     borderRadius: "8px",
                     width: "28px",
                     height: "28px",
@@ -277,18 +265,18 @@ export default function WorkoutPage() {
                     justifyContent: "center",
                     fontSize: "11px",
                     fontWeight: 700,
-                    color: "#888888",
+                    color: "var(--text-muted)",
                     flexShrink: 0,
                   }}>
                     {String(i + 1).padStart(2, "0")}
                   </motion.div>
-                  <div style={{ flex: 1, fontSize: "14px", fontWeight: 600, color: "white" }}>{ex[0]}</div>
+                  <div style={{ flex: 1, fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>{ex[0]}</div>
                   <div style={{
-                    background: "#2f2f2f",
+                    background: "var(--surface-2)",
                     borderRadius: "20px",
                     padding: "4px 10px",
                     fontSize: "11px",
-                    color: "#888888",
+                    color: "var(--text-muted)",
                     flexShrink: 0,
                   }}>
                     {ex[1]}
@@ -319,8 +307,8 @@ export default function WorkoutPage() {
             }} style={{
               width: "100%",
               marginTop: "12px",
-              background: "white",
-              color: "#1a1a1a",
+              background: "var(--text)",
+              color: "var(--bg)",
               border: "none",
               borderRadius: "12px",
               padding: "13px",
@@ -329,7 +317,7 @@ export default function WorkoutPage() {
               cursor: "pointer",
               marginBottom: "12px",
             }}>
-              {saveSuccess ? "Saved to schedule! \u2713" : "Save to Schedule"}
+              {saveSuccess ? t.savedToSchedule : t.saveToSchedule}
             </button>
           </motion.div>
 
@@ -337,11 +325,11 @@ export default function WorkoutPage() {
             <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
               <button onClick={() => router.push("/ai")} style={{
                 flex: 1,
-                background: "#2f2f2f",
-                border: "1px solid #333333",
+                background: "var(--surface-2)",
+                border: "1px solid var(--border)",
                 borderRadius: "12px",
                 padding: "12px",
-                color: "white",
+                color: "var(--text)",
                 fontSize: "13px",
                 fontWeight: 600,
                 cursor: "pointer",
@@ -352,11 +340,11 @@ export default function WorkoutPage() {
               </button>
               <button onClick={() => router.push("/ai")} style={{
                 flex: 1,
-                background: "#2f2f2f",
-                border: "1px solid #333333",
+                background: "var(--surface-2)",
+                border: "1px solid var(--border)",
                 borderRadius: "12px",
                 padding: "12px",
-                color: "white",
+                color: "var(--text)",
                 fontSize: "13px",
                 fontWeight: 600,
                 cursor: "pointer",
@@ -369,41 +357,43 @@ export default function WorkoutPage() {
           </motion.div>
 
           <motion.div variants={fadeUp}>
-            <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "#888888", marginBottom: "12px" }}>
-              REMINDER
+            <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-muted)", marginBottom: "12px" }}>
+              <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                {t.reminder}
+              </motion.span>
             </div>
           </motion.div>
 
           <motion.div variants={fadeUp}>
             <div style={{
-              background: "#242424",
-              border: "1px solid #333333",
-              borderLeft: "3px solid white",
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderLeft: "3px solid var(--text)",
               borderRadius: "16px",
               padding: "16px 20px",
             }}>
-              <div style={{ fontSize: "11px", color: "#888888", marginBottom: "4px" }}>FitSched</div>
-              <div style={{ fontSize: "16px", fontWeight: 700, color: "white" }}>Workout in 15 minutes</div>
-              <div style={{ fontSize: "12px", color: "#888888", marginTop: "2px" }}>{muscle} — your slot opens soon.</div>
+              <div style={{ fontSize: "11px", color: "var(--text-muted)", marginBottom: "4px" }}>{t.fitSched}</div>
+              <div style={{ fontSize: "16px", fontWeight: 700, color: "var(--text)" }}>{t.workoutIn}</div>
+              <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px" }}>{muscle} — your slot opens soon.</div>
               {reminderSet ? (
                 <div style={{
                   marginTop: "12px",
                   textAlign: "center",
                   fontSize: "12px",
                   fontWeight: 600,
-                  color: "#888888",
+                  color: "var(--text-muted)",
                   padding: "12px",
-                  background: "#2f2f2f",
+                  background: "var(--surface-2)",
                   borderRadius: "12px",
                 }}>
-                  Reminder set
+                  {t.reminderSet}
                 </div>
               ) : (
                 <button onClick={() => setReminderSet(true)} style={{
                   width: "100%",
                   marginTop: "12px",
-                  background: "white",
-                  color: "#1a1a1a",
+                  background: "var(--text)",
+                  color: "var(--bg)",
                   border: "none",
                   borderRadius: "12px",
                   padding: "12px",
@@ -411,7 +401,7 @@ export default function WorkoutPage() {
                   fontWeight: 700,
                   cursor: "pointer",
                 }}>
-                  Set reminder
+                  {t.setReminder}
                 </button>
               )}
             </div>

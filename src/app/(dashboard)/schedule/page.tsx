@@ -6,7 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { motion } from "framer-motion"
 import { useStore } from "@/store/useStore"
 import { SkeletonBlock } from "@/components/LoadingScreen"
-import { useLanguage } from "@/contexts/LanguageContext"
+import { useLanguage } from "@/context/LanguageContext"
+import { useTheme } from "@/context/ThemeContext"
 
 const stagger = {
   hidden: {},
@@ -47,13 +48,8 @@ export default function SchedulePage() {
   const [schedule, setSchedule] = useState<ScheduleBlock[]>([])
   const [loading, setLoading] = useState(true)
   const [weekDates, setWeekDates] = useState<Date[]>([])
-  const [isDark, setIsDark] = useState(true)
   const { t, language } = useLanguage()
-
-  useEffect(() => {
-    const saved = localStorage.getItem("theme") || "dark"
-    setIsDark(saved === "dark")
-  }, [])
+  const { theme, toggleTheme } = useTheme()
 
   useEffect(() => {
     const t = new Date()
@@ -93,7 +89,7 @@ export default function SchedulePage() {
           if (wsRes.ok) {
             const wsData = await wsRes.json()
             workoutEvents = wsData.map((w: any) => ({
-              time: "Workout",
+              time: t.workout,
               label: w.workoutName,
               kind: "wrk" as const,
               duration: `${w.exercises.length} exercises`,
@@ -158,16 +154,8 @@ export default function SchedulePage() {
     return { ...b, kind: w ? "wrk" : b.kind, label: w ? MUSCLE_GROUPS[selectedDay] : b.label, duration: w ? "AI-scheduled — 25 min" : b.duration, hint: w ? "Optimal energy window" : b.hint }
   })
 
-  const toggleTheme = () => {
-    const next = !isDark
-    setIsDark(next)
-    const val = next ? "dark" : "light"
-    document.documentElement.setAttribute("data-theme", val)
-    localStorage.setItem("theme", val)
-  }
-
   return (
-    <div style={{ minHeight: "100vh", background: isDark ? "#1a1a1a" : "#f5f5f0", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
       <motion.div
         variants={stagger}
         initial="hidden"
@@ -176,30 +164,30 @@ export default function SchedulePage() {
       >
         <motion.div variants={fadeUp}>
           <div style={{
-            background: isDark ? "#242424" : "#ffffff",
+            background: "var(--surface)",
             padding: "16px 20px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            borderBottom: isDark ? "1px solid #333333" : "1px solid #e0e0d8",
+            borderBottom: "1px solid var(--border)",
           }}>
-            <div style={{ fontSize: "13px", fontWeight: 800, color: isDark ? "white" : "#1a1a1a" }}>FitSched</div>
+            <div style={{ fontSize: "13px", fontWeight: 800, color: "var(--text)" }}>{t.fitSched}</div>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <div style={{
-                background: isDark ? "#2f2f2f" : "#e8e8e0",
-                border: isDark ? "1px solid #333333" : "1px solid #e0e0d8",
+                background: "var(--surface-2)",
+                border: "1px solid var(--border)",
                 borderRadius: "20px",
                 padding: "4px 10px",
                 fontSize: "11px",
-                color: "#888888",
+                color: "var(--text-muted)",
               }}>
-                {isCalendarConnected ? "Synced" : "Connect"}
+                {isCalendarConnected ? t.synced : t.connect}
               </div>
               <button
                 onClick={toggleTheme}
                 style={{
-                  background: isDark ? "#2f2f2f" : "#e8e8e0",
-                  border: isDark ? "1px solid #333333" : "1px solid #e0e0d8",
+                  background: "var(--surface-2)",
+                  border: "1px solid var(--border)",
                   borderRadius: "50%",
                   width: "32px",
                   height: "32px",
@@ -207,11 +195,11 @@ export default function SchedulePage() {
                   alignItems: "center",
                   justifyContent: "center",
                   cursor: "pointer",
-                  color: isDark ? "white" : "#1a1a1a",
+                  color: "var(--text)",
                 }}
               >
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  {isDark ? (
+                  {theme === "dark" ? (
                     <>
                       <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
                     </>
@@ -227,22 +215,22 @@ export default function SchedulePage() {
         <div style={{ padding: "20px", flex: 1, overflowY: "auto", paddingBottom: "100px" }}>
           <motion.div variants={stagger} initial="hidden" animate="visible">
             <motion.div variants={fadeUp}>
-              <div style={{ fontSize: "13px", color: "#888888", marginBottom: "2px" }}>Good morning,</div>
-              <div style={{ fontSize: "28px", fontWeight: 900, color: "white", letterSpacing: "-0.5px", marginBottom: "20px" }}>Your Day</div>
+              <div style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "2px" }}>{t.goodMorning}</div>
+              <div style={{ fontSize: "28px", fontWeight: 900, color: "var(--text)", letterSpacing: "-0.5px", marginBottom: "20px" }}>{t.yourDay}</div>
             </motion.div>
 
             <motion.div variants={fadeUp}>
               <div style={{ display: "flex", gap: "8px", overflowX: "auto", marginBottom: "24px", scrollbarWidth: "none" }}>
                 {weekDates.map((date, i) => (
-                  <motion.button
+                    <motion.button
                     key={i}
                     onClick={() => setSelectedDay(i)}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     transition={{ type: "spring", stiffness: 400, damping: 17 }}
                     style={{
-                      background: i === selectedDay ? "white" : isDark ? "#242424" : "#ffffff",
-                      border: i === selectedDay ? "1px solid white" : isDark ? "1px solid #333333" : "1px solid #e0e0d8",
+                      background: i === selectedDay ? "var(--text)" : "var(--surface)",
+                      border: i === selectedDay ? "1px solid var(--text)" : "1px solid var(--border)",
                       borderRadius: "14px",
                       padding: "10px 14px",
                       textAlign: "center",
@@ -263,7 +251,7 @@ export default function SchedulePage() {
                     <div style={{
                       fontSize: "18px",
                       fontWeight: 800,
-                      color: i === selectedDay ? "#1a1a1a" : isDark ? "white" : "#1a1a1a",
+                      color: i === selectedDay ? "var(--bg)" : "var(--text)",
                     }}>
                       {date.getDate()}
                     </div>
@@ -272,8 +260,8 @@ export default function SchedulePage() {
               </div>
             </motion.div>
 
-            <motion.div variants={fadeUp}>
-              <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "#888888", marginBottom: "12px" }}>
+              <motion.div variants={fadeUp}>
+              <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-muted)", marginBottom: "12px" }}>
                 <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
                   {t.timeline}
                 </motion.span>
@@ -282,23 +270,23 @@ export default function SchedulePage() {
 
             {loading ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {[1, 2, 3, 4].map(i => <SkeletonBlock key={i} style={{ height: 56, width: "100%", background: isDark ? "#242424" : "#ffffff", borderRadius: 14 }} />)}
+                {[1, 2, 3, 4].map(i => <SkeletonBlock key={i} style={{ height: 56, width: "100%", background: "var(--surface)", borderRadius: 14 }} />)}
               </div>
             ) : ds.length === 1 && ds[0].label === "No events today" ? (
               <motion.div variants={fadeUp}>
                 <div style={{
-                  background: isDark ? "#242424" : "#ffffff",
-                  border: isDark ? "1px dashed #383838" : "1px dashed #d0d0c8",
+                  background: "var(--surface)",
+                  border: "1px dashed var(--border)",
                   borderRadius: "14px",
                   padding: "24px",
                   textAlign: "center",
                 }}>
-                  <div style={{ fontSize: "15px", fontWeight: 600, color: isDark ? "white" : "#1a1a1a" }}>
+                  <div style={{ fontSize: "15px", fontWeight: 600, color: "var(--text)" }}>
                     <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
                       {t.noEvents}
                     </motion.span>
                   </div>
-                  <div style={{ fontSize: "12px", color: "#888888", marginTop: "4px" }}>
+                  <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px" }}>
                     <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
                       {t.clearDay}
                     </motion.span>
@@ -312,9 +300,9 @@ export default function SchedulePage() {
                   return (
                     <motion.div key={i} variants={fadeUp}>
                       <div style={{
-                        background: isDark ? "#242424" : "#ffffff",
-                        border: isDark ? "1px solid #333333" : "1px solid #e0e0d8",
-                        borderLeft: isWorkout ? "3px solid white" : "3px solid #555555",
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
+                        borderLeft: isWorkout ? "3px solid var(--text)" : "3px solid #555555",
                         borderRadius: "14px",
                         padding: "14px 16px",
                         marginBottom: "10px",
@@ -324,22 +312,22 @@ export default function SchedulePage() {
                       }}>
                         <div style={{ flex: 1 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" }}>
-                            <div style={{ fontSize: "14px", fontWeight: 600, color: isDark ? "white" : "#1a1a1a" }}>{block.label}</div>
+                            <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>{block.label}</div>
                             {isWorkout && (
                               <span style={{
-                                background: isDark ? "#2f2f2f" : "#e8e8e0",
-                                color: "#888888",
+                                background: "var(--surface-2)",
+                                color: "var(--text-muted)",
                                 fontSize: "10px",
                                 borderRadius: "20px",
                                 padding: "2px 8px",
                               }}>
-                                WORKOUT
+                                {t.workoutLabel}
                               </span>
                             )}
                           </div>
-                          <div style={{ fontSize: "12px", color: "#888888", marginTop: "2px" }}>{block.time}</div>
+                          <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px" }}>{block.time}</div>
                           {block.hint && (
-                            <div style={{ fontSize: "11px", color: "white", marginTop: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+                            <div style={{ fontSize: "11px", color: "var(--text)", marginTop: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
                               <svg viewBox="0 0 24 24" width={12} height={12} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                               {block.hint}
                             </div>
@@ -347,11 +335,11 @@ export default function SchedulePage() {
                         </div>
                           {block.duration && (
                           <div style={{
-                            background: isDark ? "#2f2f2f" : "#e8e8e0",
+                            background: "var(--surface-2)",
                             borderRadius: "20px",
                             padding: "4px 10px",
                             fontSize: "11px",
-                            color: "#888888",
+                            color: "var(--text-muted)",
                             flexShrink: 0,
                             marginLeft: "8px",
                           }}>

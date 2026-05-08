@@ -4,6 +4,7 @@ import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
+import { useLanguage } from "@/context/LanguageContext"
 
 const fadeIn = {
   hidden: { opacity: 0, y: 10 },
@@ -17,6 +18,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const { t } = useLanguage()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,7 +47,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#1a1a1a", display: "flex", flexDirection: "column", position: "relative" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", position: "relative" }}>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -59,8 +61,8 @@ export default function RegisterPage() {
           flexDirection: "column",
         }}
       >
-        <div style={{ fontSize: "32px", fontWeight: 900, color: "white", letterSpacing: "-1px" }}>FitSched</div>
-        <div style={{ fontSize: "13px", color: "#888888", marginTop: "6px" }}>Start your journey.</div>
+        <div style={{ fontSize: "32px", fontWeight: 900, color: "var(--text)", letterSpacing: "-1px" }}>{t.fitSched}</div>
+        <div style={{ fontSize: "13px", color: "var(--text-muted)", marginTop: "6px" }}>{t.startJourney}</div>
       </motion.div>
 
       <motion.div
@@ -68,7 +70,7 @@ export default function RegisterPage() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: "easeOut", delay: 0.15 }}
         style={{
-          background: "#242424",
+          background: "var(--surface)",
           borderRadius: "28px 28px 0 0",
           padding: "32px 24px 40px",
           position: "relative",
@@ -83,15 +85,15 @@ export default function RegisterPage() {
           variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
         >
           <motion.div variants={fadeIn}>
-            <div style={{ fontSize: "22px", fontWeight: 800, color: "white", marginBottom: "4px" }}>Create account</div>
-            <div style={{ fontSize: "13px", color: "#888888", marginBottom: "24px" }}>It&apos;s free, always.</div>
+            <div style={{ fontSize: "22px", fontWeight: 800, color: "var(--text)", marginBottom: "4px" }}>{t.createAccount}</div>
+            <div style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "24px" }}>{t.itsFree}</div>
           </motion.div>
 
           <form onSubmit={handleSubmit}>
             {error && (
               <motion.div variants={fadeIn}>
                 <div style={{
-                  background: "#2f2f2f",
+                  background: "var(--surface-2)",
                   border: "1px solid #ff4444",
                   borderRadius: "10px",
                   padding: "12px 16px",
@@ -105,18 +107,18 @@ export default function RegisterPage() {
             )}
 
             <motion.div variants={fadeIn}>
-              <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "#888888", marginBottom: "6px" }}>NAME</div>
+              <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-muted)", marginBottom: "6px" }}>{t.nameLabel}</div>
               <input
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
                 placeholder="Your name"
                 style={{
-                  background: "#2f2f2f",
-                  border: "1px solid #383838",
+                  background: "var(--surface-2)",
+                  border: "1px solid var(--border)",
                   borderRadius: "12px",
                   padding: "14px 16px",
-                  color: "white",
+                  color: "var(--text)",
                   fontSize: "14px",
                   outline: "none",
                   width: "100%",
@@ -127,7 +129,7 @@ export default function RegisterPage() {
             </motion.div>
 
             <motion.div variants={fadeIn}>
-              <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "#888888", marginBottom: "6px" }}>EMAIL</div>
+              <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-muted)", marginBottom: "6px" }}>{t.email}</div>
               <input
                 type="email"
                 value={email}
@@ -137,11 +139,11 @@ export default function RegisterPage() {
                 autoCorrect="off"
                 required
                 style={{
-                  background: "#2f2f2f",
-                  border: "1px solid #383838",
+                  background: "var(--surface-2)",
+                  border: "1px solid var(--border)",
                   borderRadius: "12px",
                   padding: "14px 16px",
-                  color: "white",
+                  color: "var(--text)",
                   fontSize: "14px",
                   outline: "none",
                   width: "100%",
@@ -152,7 +154,7 @@ export default function RegisterPage() {
             </motion.div>
 
             <motion.div variants={fadeIn}>
-              <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "#888888", marginBottom: "6px" }}>PASSWORD</div>
+              <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-muted)", marginBottom: "6px" }}>{t.password}</div>
               <input
                 type="password"
                 value={password}
@@ -161,11 +163,11 @@ export default function RegisterPage() {
                 required
                 minLength={8}
                 style={{
-                  background: "#2f2f2f",
-                  border: "1px solid #383838",
+                  background: "var(--surface-2)",
+                  border: "1px solid var(--border)",
                   borderRadius: "12px",
                   padding: "14px 16px",
-                  color: "white",
+                  color: "var(--text)",
                   fontSize: "14px",
                   outline: "none",
                   width: "100%",
@@ -181,8 +183,8 @@ export default function RegisterPage() {
                 disabled={loading}
                 style={{
                   width: "100%",
-                  background: "white",
-                  color: "#1a1a1a",
+                  background: "var(--text)",
+                  color: "var(--bg)",
                   border: "none",
                   borderRadius: "12px",
                   padding: "15px",
@@ -202,22 +204,22 @@ export default function RegisterPage() {
                     <span style={{
                       width: 16, height: 16, borderRadius: "50%",
                       border: "2px solid rgba(0,0,0,0.15)",
-                      borderTopColor: "#1a1a1a",
+                      borderTopColor: "var(--bg)",
                       animation: "spin 0.6s linear infinite",
                       display: "inline-block",
                     }} />
-                    Creating account...
+                    {t.creatingAccount}
                   </>
-                ) : "Sign Up"}
+                ) : t.signUp}
               </button>
             </motion.div>
           </form>
 
           <motion.div variants={fadeIn}>
             <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
-              <hr style={{ flex: 1, border: "none", borderTop: "1px solid #333333" }} />
-              <span style={{ fontSize: "11px", color: "#888888" }}>or continue with</span>
-              <hr style={{ flex: 1, border: "none", borderTop: "1px solid #333333" }} />
+              <hr style={{ flex: 1, border: "none", borderTop: "1px solid var(--border)" }} />
+              <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>{t.orContinueWith}</span>
+              <hr style={{ flex: 1, border: "none", borderTop: "1px solid var(--border)" }} />
             </div>
           </motion.div>
 
@@ -226,11 +228,11 @@ export default function RegisterPage() {
               onClick={handleGoogle}
               style={{
                 width: "100%",
-                background: "#2f2f2f",
-                border: "1px solid #383838",
+                background: "var(--surface-2)",
+                border: "1px solid var(--border)",
                 borderRadius: "12px",
                 padding: "14px",
-                color: "white",
+                color: "var(--text)",
                 fontSize: "14px",
                 cursor: "pointer",
                 display: "flex",
@@ -241,18 +243,18 @@ export default function RegisterPage() {
               }}
             >
               <img src="/google.svg" width={16} height={16} alt="Google" />
-              Continue with Google
+              {t.continueGoogle}
             </button>
           </motion.div>
 
           <motion.div variants={fadeIn}>
-            <p style={{ textAlign: "center", fontSize: "12px", color: "#888888", margin: 0 }}>
-              Already have an account?{" "}
+            <p style={{ textAlign: "center", fontSize: "12px", color: "var(--text-muted)", margin: 0 }}>
+              {t.hasAccount}{" "}
               <span
-                style={{ color: "white", fontWeight: 700, cursor: "pointer" }}
+                style={{ color: "var(--text)", fontWeight: 700, cursor: "pointer" }}
                 onClick={() => router.push("/login")}
               >
-                Sign In
+                {t.signIn}
               </span>
             </p>
           </motion.div>

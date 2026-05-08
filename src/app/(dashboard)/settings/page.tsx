@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { useLanguage } from "@/contexts/LanguageContext"
+import { useLanguage } from "@/context/LanguageContext"
 
 const cardStyle = {
   background: "rgba(255,255,255,0.07)",
@@ -23,7 +23,7 @@ const sectionLabelStyle = {
   fontSize: "10px",
   fontWeight: "600",
   letterSpacing: "0.12em",
-  color: "rgba(255,255,255,0.35)",
+  color: "var(--text-muted)",
   marginBottom: "8px",
   marginTop: "20px",
 }
@@ -41,7 +41,7 @@ const fadeUp = {
 export default function SettingsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const { t, language } = useLanguage()
+  const { t, language, cycleLanguage } = useLanguage()
   const [isCalendarConnected, setIsCalendarConnected] = useState(false)
   const [connecting, setConnecting] = useState(false)
   const [syncing, setSyncing] = useState(false)
@@ -121,7 +121,7 @@ export default function SettingsPage() {
         animate="visible"
       >
         <motion.div variants={fadeUp}>
-          <div style={{ fontSize: "22px", fontWeight: "bold", color: "white", marginBottom: "20px" }}>
+          <div style={{ fontSize: "22px", fontWeight: "bold", color: "var(--text)", marginBottom: "20px" }}>
             <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
               {t.settings}
             </motion.span>
@@ -130,33 +130,33 @@ export default function SettingsPage() {
 
         <motion.div variants={fadeUp}>
           <div style={cardStyle}>
-            <div style={{ fontSize: "15px", fontWeight: 600, color: "white" }}>{session?.user?.name || "User"}</div>
-            <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginTop: "2px" }}>{session?.user?.email}</div>
+            <div style={{ fontSize: "15px", fontWeight: 600, color: "var(--text)" }}>{session?.user?.name || "User"}</div>
+            <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px" }}>{session?.user?.email}</div>
           </div>
         </motion.div>
 
         <motion.div variants={fadeUp}>
-          <div style={sectionLabelStyle}>CALENDAR</div>
+          <div style={sectionLabelStyle}>{t.calendar}</div>
         </motion.div>
 
         <motion.div variants={fadeUp}>
           <div style={cardStyle}>
             {isCalendarConnected ? (
               <>
-                <div style={{ fontSize: "14px", color: "white" }}>Google Calendar connected</div>
-                <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", marginTop: "2px" }}>Read only</div>
+                <div style={{ fontSize: "14px", color: "var(--text)" }}>{t.googleConnected}</div>
+                <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>{t.readOnly}</div>
                 <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
                   <button onClick={syncCalendar} disabled={syncing} style={{
                     background: "rgba(255,255,255,0.1)",
                     border: "1px solid rgba(255,255,255,0.15)",
                     borderRadius: "10px",
                     padding: "8px 16px",
-                    color: "white",
+                    color: "var(--text)",
                     fontSize: "13px",
                     cursor: "pointer",
                     opacity: syncing ? 0.5 : 1,
                   }}>
-                    {syncing ? "Syncing..." : <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>{t.syncNow}</motion.span>}
+                    {syncing ? t.syncing : <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>{t.syncNow}</motion.span>}
                   </button>
                   <button onClick={disconnectCalendar} style={{
                     background: "rgba(255,50,50,0.15)",
@@ -167,28 +167,28 @@ export default function SettingsPage() {
                     fontSize: "13px",
                     cursor: "pointer",
                   }}>
-                    Disconnect
+                    {t.disconnect}
                   </button>
                 </div>
               </>
             ) : (
               <div style={{ textAlign: "center", padding: "8px 0" }}>
-                <div style={{ fontSize: "15px", fontWeight: 700, color: "white", marginBottom: "4px" }}>Connect Calendar</div>
-                <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "14px", lineHeight: 1.4 }}>
-                  Read-only sync to find workout windows.
+                <div style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", marginBottom: "4px" }}>{t.connectCalendar}</div>
+                <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "14px", lineHeight: 1.4 }}>
+                  {t.syncDescription}
                 </p>
-                <button onClick={connectCalendar} disabled={connecting} style={{
-                  background: "rgba(255,255,255,0.1)",
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  borderRadius: "10px",
-                  padding: "10px 20px",
-                  color: "white",
+                  <button onClick={connectCalendar} disabled={connecting} style={{
+                    background: "rgba(255,255,255,0.1)",
+                    border: "1px solid rgba(255,255,255,0.15)",
+                    borderRadius: "10px",
+                    padding: "10px 20px",
+                    color: "var(--text)",
                   fontSize: "13px",
                   fontWeight: 600,
                   cursor: "pointer",
                   opacity: connecting ? 0.5 : 1,
                 }}>
-                  {connecting ? "Connecting..." : "Sign in with Google"}
+                  {connecting ? t.connecting : t.signInWithGoogle}
                 </button>
               </div>
             )}
@@ -196,14 +196,14 @@ export default function SettingsPage() {
         </motion.div>
 
         <motion.div variants={fadeUp}>
-          <div style={sectionLabelStyle}>PREFERENCES</div>
+          <div style={sectionLabelStyle}>{t.preferences}</div>
         </motion.div>
 
         <motion.div variants={fadeUp}>
           <div style={{ ...cardStyle, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div style={{ fontSize: "14px", color: "white" }}>Push Notifications</div>
-              <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", marginTop: "2px" }}>{pushEnabled ? "Enabled" : "Workout reminders"}</div>
+              <div style={{ fontSize: "14px", color: "var(--text)" }}>{t.pushNotifications}</div>
+              <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>{pushEnabled ? t.enabled : t.workoutReminders}</div>
             </div>
             <div onClick={togglePush} style={{ width: 48, height: 28, borderRadius: 14, position: "relative", background: pushEnabled ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.08)", transition: "background 0.2s", cursor: "pointer", flexShrink: 0 }}>
               <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, boxShadow: "0 1px 4px rgba(0,0,0,0.3)", transition: "transform 0.2s", transform: pushEnabled ? "translateX(24px)" : "translateX(3px)" }} />
@@ -213,26 +213,58 @@ export default function SettingsPage() {
 
         <motion.div variants={fadeUp}>
           <div style={{ ...cardStyle, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ fontSize: "14px", color: "white" }}>Version</div>
-            <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)" }}>1.0.0</div>
+            <div style={{ fontSize: "14px", color: "var(--text)" }}>{t.language}</div>
+            <motion.button
+              onClick={cycleLanguage}
+              whileTap={{ scale: 0.9 }}
+              style={{
+                background: "rgba(255,255,255,0.1)",
+                border: "1px solid rgba(255,255,255,0.15)",
+                borderRadius: "10px",
+                padding: "6px 14px",
+                color: "var(--text)",
+                fontSize: "13px",
+                fontWeight: 600,
+                cursor: "pointer",
+                minWidth: "48px",
+                textAlign: "center",
+              }}
+            >
+              <motion.span
+                key={language}
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 6 }}
+                transition={{ duration: 0.2 }}
+              >
+                {language}
+              </motion.span>
+            </motion.button>
           </div>
         </motion.div>
 
         <motion.div variants={fadeUp}>
-          <div style={sectionLabelStyle}>STATS</div>
+          <div style={{ ...cardStyle, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ fontSize: "14px", color: "var(--text)" }}>{t.version}</div>
+            <div style={{ fontSize: "13px", color: "var(--text-muted)" }}>1.0.0</div>
+          </div>
+        </motion.div>
+
+        <motion.div variants={fadeUp}>
+          <div style={sectionLabelStyle}>{t.stats}</div>
         </motion.div>
 
         <motion.div variants={fadeUp}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
             {[
-              ["100%", "Auto-scheduled"],
-              ["25m", "Avg workout"],
-              ["0", "Decisions"],
-              ["7", "Days"],
+              ["100%", t.autoScheduled],
+              ["25m", t.avgWorkout],
+              ["0", t.decisions],
+              ["7", t.days],
             ].map(([value, label], i) => (
               <div key={i} style={{ ...cardStyle, textAlign: "center", marginBottom: 0 }}>
-                <div style={{ fontSize: "28px", fontWeight: "bold", color: "white" }}>{value}</div>
-                <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", marginTop: "4px" }}>{label}</div>
+                <div style={{ fontSize: "28px", fontWeight: "bold", color: "var(--text)" }}>{value}</div>
+                <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>{label}</div>
               </div>
             ))}
           </div>
@@ -274,8 +306,8 @@ export default function SettingsPage() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3, delay: 0.85 }}
       >
-        <div style={{ textAlign: "center", fontSize: "11px", color: "rgba(255,255,255,0.2)", marginTop: "16px" }}>
-          FitSched v1.0.0
+        <div style={{ textAlign: "center", fontSize: "11px", color: "var(--text-muted)", marginTop: "16px" }}>
+          {t.fitSched} v1.0.0
         </div>
       </motion.div>
     </div>

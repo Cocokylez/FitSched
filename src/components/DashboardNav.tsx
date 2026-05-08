@@ -3,6 +3,8 @@
 import { useEffect, useState, useRef } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
+import { useTheme } from "@/context/ThemeContext"
+import { useLanguage } from "@/context/LanguageContext"
 
 const navItems = [
   {
@@ -36,6 +38,22 @@ export function DashboardNav() {
   const router = useRouter()
   const [visible, setVisible] = useState(true)
   const lastScrollY = useRef(0)
+  const { theme } = useTheme()
+  const { t } = useLanguage()
+
+  const navStyle = theme === "dark" ? {
+    background: "rgba(30, 30, 30, 0.6)",
+    backdropFilter: "blur(20px)",
+    WebkitBackdropFilter: "blur(20px)",
+    borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+    boxShadow: "0 -4px 24px rgba(0, 0, 0, 0.3)",
+  } : {
+    background: "rgba(255, 255, 255, 0.6)",
+    backdropFilter: "blur(20px)",
+    WebkitBackdropFilter: "blur(20px)",
+    borderTop: "1px solid rgba(0, 0, 0, 0.08)",
+    boxShadow: "0 -4px 24px rgba(0, 0, 0, 0.1)",
+  }
 
   useEffect(() => {
     const el = document.querySelector("main")
@@ -75,8 +93,7 @@ export function DashboardNav() {
           }}
         >
           <div style={{
-            background: "#242424",
-            borderTop: "1px solid #333333",
+            ...navStyle,
             padding: "12px 0 20px",
             display: "flex",
             justifyContent: "space-around",
@@ -107,16 +124,16 @@ export function DashboardNav() {
                       padding: "4px 16px",
                     }}
                   >
-                    <span style={{ color: isActive ? "white" : "#888888", display: "flex" }}>
+                    <span style={{ color: isActive ? "var(--text)" : "var(--text-muted)", display: "flex" }}>
                       {item.icon}
                     </span>
                     <span style={{
                       fontSize: "10px",
                       fontWeight: 600,
                       letterSpacing: "0.05em",
-                      color: isActive ? "white" : "#888888",
+                      color: isActive ? "var(--text)" : "var(--text-muted)",
                     }}>
-                      {item.label}
+                      {t[item.id as keyof typeof t]}
                     </span>
                   </button>
                 )
