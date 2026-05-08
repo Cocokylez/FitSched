@@ -25,7 +25,7 @@ export default function LoginPage() {
         transition={{ duration: 0.5 }}
         style={{
           height: '40vh',
-          background: "linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%)",
+          background: "linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%)",
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

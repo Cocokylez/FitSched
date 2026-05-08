@@ -241,7 +241,7 @@ export default function SchedulePage() {
                   >
                     <div style={{
                       fontSize: "10px",
-                      color: "#888888",
+                      color: "var(--text-muted)",
                       fontWeight: 600,
                       letterSpacing: "0.08em",
                       marginBottom: "4px",

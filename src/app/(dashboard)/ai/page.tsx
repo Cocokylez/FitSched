@@ -7,12 +7,11 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useLanguage } from "@/context/LanguageContext"
 
 const cardStyle = {
-  background: "rgba(255,255,255,0.07)",
+  background: "var(--surface)",
   backdropFilter: "blur(20px)",
   WebkitBackdropFilter: "blur(20px)",
-  border: "1px solid rgba(255,255,255,0.12)",
+  border: "1px solid var(--border)",
   borderRadius: "16px",
-  boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
   padding: "16px 20px",
   marginBottom: "10px",
   width: "100%",
@@ -129,7 +128,7 @@ export default function AIPage() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "calc(100dvh - 4rem)", background: "#0d0d14" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100dvh - 4rem)", background: "var(--bg)" }}>
       <motion.div
         variants={stagger}
         initial="hidden"
@@ -137,11 +136,11 @@ export default function AIPage() {
         style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}
       >
         <motion.div variants={fadeUp}>
-          <div style={{ ...cardStyle, borderRadius: 0, borderBottom: "1px solid rgba(255,255,255,0.08)", marginBottom: 0, padding: "12px 16px" }}>
+            <div style={{ ...cardStyle, borderRadius: 0, borderBottom: "1px solid var(--border)", marginBottom: 0, padding: "12px 16px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <div style={{
                 width: 36, height: 36, borderRadius: 10,
-                background: "rgba(255,255,255,0.1)",
+                background: "var(--surface-2)",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
                 <svg viewBox="0 0 24 24" width={18} height={18} fill="none" stroke="rgba(99,102,241,1)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -163,7 +162,7 @@ export default function AIPage() {
                 <div style={{ textAlign: "center", marginBottom: "24px" }}>
                   <div style={{
                     width: 56, height: 56, borderRadius: 16,
-                    background: "rgba(255,255,255,0.07)",
+                    background: "var(--surface)",
                     display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px",
                   }}>
                     <svg viewBox="0 0 24 24" width={28} height={28} fill="none" stroke="rgba(99,102,241,1)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -187,8 +186,8 @@ export default function AIPage() {
                       whileTap={{ scale: 0.95 }}
                       onClick={() => send(p)}
                       style={{
-                        background: "rgba(255,255,255,0.07)",
-                        border: "1px solid rgba(255,255,255,0.12)",
+                        background: "var(--surface-2)",
+                        border: "1px solid var(--border)",
                         borderRadius: "20px",
                         padding: "10px 18px",
                         color: "var(--text)",
@@ -215,7 +214,7 @@ export default function AIPage() {
                   {msg.role === "assistant" && (
                     <div style={{
                       width: 28, height: 28, borderRadius: 8,
-                      background: "rgba(255,255,255,0.07)",
+                      background: "var(--surface)",
                       display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginRight: 8, marginTop: 4,
                     }}>
                       <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="rgba(99,102,241,1)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -223,11 +222,10 @@ export default function AIPage() {
                   )}
                   <div style={{
                     maxWidth: "80%", padding: "12px 16px", fontSize: 14, lineHeight: 1.5,
-                    background: msg.role === "user" ? "rgba(99,102,241,1)" : "rgba(255,255,255,0.07)",
+                    background: msg.role === "user" ? "rgba(99,102,241,1)" : "var(--surface)",
                     color: msg.role === "user" ? "var(--text)" : "var(--text)",
                     borderRadius: msg.role === "user" ? "18px 18px 6px 18px" : "18px 18px 18px 6px",
-                    border: msg.role === "user" ? "none" : "1px solid rgba(255,255,255,0.12)",
-                    boxShadow: msg.role === "user" ? "0 4px 14px rgba(99,102,241,0.3)" : "0 8px 32px rgba(0,0,0,0.4)",
+                    border: msg.role === "user" ? "none" : "1px solid var(--border)",
                   }}>
                     {msg.role === "assistant" && <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "rgba(99,102,241,1)", marginBottom: 4 }}>{t.fitSchedAI}</div>}
                     {msg.content}
@@ -276,11 +274,11 @@ export default function AIPage() {
                               setSavingIndex(null)
                             }} style={{
                               flex: 1,
-                              background: savingIndex === i ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.1)",
-                              border: "1px solid rgba(255,255,255,0.15)",
+                              background: savingIndex === i ? "var(--surface)" : "var(--surface-2)",
+                              border: "1px solid var(--border)",
                               borderRadius: "8px",
                               padding: "6px 8px",
-                              color: savingIndex === i ? "rgba(255,255,255,0.3)" : "var(--text)",
+                              color: savingIndex === i ? "var(--text-muted)" : "var(--text)",
                               fontSize: "11px",
                               cursor: savingIndex === i ? "default" : "pointer",
                               textAlign: "center",
@@ -288,11 +286,11 @@ export default function AIPage() {
                             }}>
                               {savingIndex === i ? (
                                 <div style={{ display: "flex", justifyContent: "center", padding: "4px 0" }}>
-                                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.2)", borderTopColor: "white", borderRadius: "50%" }} />
+                                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} style={{ width: 14, height: 14, border: "2px solid var(--border)", borderTopColor: "var(--text)", borderRadius: "50%" }} />
                                 </div>
                               ) : (
                                 <>
-                                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.5)" }}>{DAY_NAMES[di]}</div>
+                                  <div style={{ fontSize: 9, color: "var(--text-muted)" }}>{DAY_NAMES[di]}</div>
                                   <div style={{ fontSize: 14, fontWeight: 700 }}>{date.getDate()}</div>
                                 </>
                               )}
@@ -333,17 +331,16 @@ export default function AIPage() {
                 >
                   <div style={{
                     width: 28, height: 28, borderRadius: 8,
-                    background: "rgba(255,255,255,0.07)",
+                    background: "var(--surface)",
                     display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginRight: 8, marginTop: 4,
                   }}>
                     <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="rgba(99,102,241,1)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                   </div>
                   <div style={{
                     padding: "12px 16px",
-                    background: "rgba(255,255,255,0.07)",
-                    border: "1px solid rgba(255,255,255,0.12)",
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
                     borderRadius: "18px 18px 18px 6px",
-                    boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
                   }}>
                     <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "rgba(99,102,241,1)", marginBottom: 6 }}>{t.fitSchedAI}</div>
                     <div style={{ display: "flex", gap: 5 }}>
@@ -352,7 +349,7 @@ export default function AIPage() {
                           key={i}
                           animate={{ opacity: [0.3, 1, 0.3] }}
                           transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
-                          style={{ width: 8, height: 8, borderRadius: "50%", background: "rgba(255,255,255,0.3)" }}
+                          style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--text-muted)" }}
                         />
                       ))}
                     </div>
@@ -377,7 +374,7 @@ export default function AIPage() {
                 flex: 1,
                 background: "transparent",
                 border: "none",
-                color: "white",
+                color: "var(--text)",
                 fontSize: "14px",
                 outline: "none",
               }}
@@ -388,8 +385,8 @@ export default function AIPage() {
               onClick={() => send()}
               disabled={loading || !input.trim()}
               style={{
-                background: "rgba(255,255,255,0.1)",
-                border: "1px solid rgba(255,255,255,0.15)",
+                background: "var(--surface-2)",
+                border: "1px solid var(--border)",
                 borderRadius: "50%",
                 width: "36px",
                 height: "36px",
@@ -397,11 +394,12 @@ export default function AIPage() {
                 alignItems: "center",
                 justifyContent: "center",
                 cursor: "pointer",
+                color: "var(--text)",
                 opacity: loading || !input.trim() ? 0.5 : 1,
                 flexShrink: 0,
               }}
             >
-              <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
               </svg>
             </motion.button>

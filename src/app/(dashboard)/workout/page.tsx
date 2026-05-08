@@ -249,7 +249,7 @@ export default function WorkoutPage() {
                   key={i}
                   style={{
                     padding: "14px 16px",
-                    borderBottom: i < todayExercises.length - 1 ? "1px solid #2a2a2a" : "none",
+                    borderBottom: i < todayExercises.length - 1 ? "1px solid var(--border)" : "none",
                     display: "flex",
                     alignItems: "center",
                     gap: "12px",

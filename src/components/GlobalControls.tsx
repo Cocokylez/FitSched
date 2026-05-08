@@ -92,7 +92,7 @@ export function GlobalControls() {
                   style={{
                     background:
                       language === lang.code
-                        ? "rgba(255,255,255,0.15)"
+                        ? "var(--surface-2)"
                         : "transparent",
                     border: "none",
                     borderRadius: "10px",

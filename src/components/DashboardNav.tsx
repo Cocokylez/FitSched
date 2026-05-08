@@ -48,7 +48,7 @@ export function DashboardNav() {
     borderTop: "1px solid rgba(255, 255, 255, 0.08)",
     boxShadow: "0 -4px 24px rgba(0, 0, 0, 0.3)",
   } : {
-    background: "rgba(255, 255, 255, 0.6)",
+    background: "rgba(255, 255, 255, 0.7)",
     backdropFilter: "blur(20px)",
     WebkitBackdropFilter: "blur(20px)",
     borderTop: "1px solid rgba(0, 0, 0, 0.08)",

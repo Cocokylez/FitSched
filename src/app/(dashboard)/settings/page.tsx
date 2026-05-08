@@ -7,12 +7,11 @@ import { motion } from "framer-motion"
 import { useLanguage } from "@/context/LanguageContext"
 
 const cardStyle = {
-  background: "rgba(255,255,255,0.07)",
+  background: "var(--surface)",
   backdropFilter: "blur(20px)",
   WebkitBackdropFilter: "blur(20px)",
-  border: "1px solid rgba(255,255,255,0.12)",
+  border: "1px solid var(--border)",
   borderRadius: "16px",
-  boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
   padding: "16px 20px",
   marginBottom: "10px",
   width: "100%",
@@ -114,7 +113,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div style={{ padding: "20px 16px 24px", minHeight: "100vh", background: "#0d0d14" }}>
+    <div style={{ padding: "20px 16px 24px", minHeight: "100vh", background: "var(--bg)" }}>
       <motion.div
         variants={stagger}
         initial="hidden"
@@ -147,8 +146,8 @@ export default function SettingsPage() {
                 <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>{t.readOnly}</div>
                 <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
                   <button onClick={syncCalendar} disabled={syncing} style={{
-                    background: "rgba(255,255,255,0.1)",
-                    border: "1px solid rgba(255,255,255,0.15)",
+                    background: "var(--surface-2)",
+                    border: "1px solid var(--border)",
                     borderRadius: "10px",
                     padding: "8px 16px",
                     color: "var(--text)",
@@ -178,8 +177,8 @@ export default function SettingsPage() {
                   {t.syncDescription}
                 </p>
                   <button onClick={connectCalendar} disabled={connecting} style={{
-                    background: "rgba(255,255,255,0.1)",
-                    border: "1px solid rgba(255,255,255,0.15)",
+                    background: "var(--surface-2)",
+                    border: "1px solid var(--border)",
                     borderRadius: "10px",
                     padding: "10px 20px",
                     color: "var(--text)",
@@ -205,7 +204,7 @@ export default function SettingsPage() {
               <div style={{ fontSize: "14px", color: "var(--text)" }}>{t.pushNotifications}</div>
               <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>{pushEnabled ? t.enabled : t.workoutReminders}</div>
             </div>
-            <div onClick={togglePush} style={{ width: 48, height: 28, borderRadius: 14, position: "relative", background: pushEnabled ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.08)", transition: "background 0.2s", cursor: "pointer", flexShrink: 0 }}>
+            <div onClick={togglePush} style={{ width: 48, height: 28, borderRadius: 14, position: "relative", background: pushEnabled ? "var(--text)" : "var(--border)", transition: "background 0.2s", cursor: "pointer", flexShrink: 0 }}>
               <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, boxShadow: "0 1px 4px rgba(0,0,0,0.3)", transition: "transform 0.2s", transform: pushEnabled ? "translateX(24px)" : "translateX(3px)" }} />
             </div>
           </div>
@@ -218,8 +217,8 @@ export default function SettingsPage() {
               onClick={cycleLanguage}
               whileTap={{ scale: 0.9 }}
               style={{
-                background: "rgba(255,255,255,0.1)",
-                border: "1px solid rgba(255,255,255,0.15)",
+                background: "var(--surface-2)",
+                border: "1px solid var(--border)",
                 borderRadius: "10px",
                 padding: "6px 14px",
                 color: "var(--text)",
