@@ -59,7 +59,7 @@ export default function RegisterPage() {
           flexDirection: "column",
         }}
       >
-        <img src="/logo.png" alt="FitSched" style={{ width: '140px', height: 'auto', marginBottom: '8px' }} />
+        <div style={{ fontSize: "32px", fontWeight: 900, color: "white", letterSpacing: "-1px" }}>FitSched</div>
         <div style={{ fontSize: "13px", color: "#888888", marginTop: "6px" }}>Start your journey.</div>
       </motion.div>
 
