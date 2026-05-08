@@ -57,10 +57,13 @@ export function DashboardNav() {
   }
 
   useEffect(() => {
+    const el = document.querySelector("main")
+    if (!el) return
+
     const handleScroll = () => {
       if (!ticking.current) {
         window.requestAnimationFrame(() => {
-          const currentScrollY = window.scrollY
+          const currentScrollY = el.scrollTop
 
           if (currentScrollY <= 10) {
             setVisible(true)
@@ -77,8 +80,8 @@ export function DashboardNav() {
       }
     }
 
-    window.addEventListener("scroll", handleScroll, { passive: true })
-    return () => window.removeEventListener("scroll", handleScroll)
+    el.addEventListener("scroll", handleScroll, { passive: true })
+    return () => el.removeEventListener("scroll", handleScroll)
   }, [])
 
   return (
