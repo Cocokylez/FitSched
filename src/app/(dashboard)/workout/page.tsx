@@ -25,7 +25,6 @@ const scaleIn = {
 }
 
 const MUSCLE_GROUPS = ["Rest", "Chest & Triceps", "Back & Biceps", "Legs", "Shoulders & Core", "Full Body", "Arms & Core"]
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
 const DEFAULT_EXERCISES: Record<number, Array<[string, string]>> = {
   0: [],
@@ -51,6 +50,7 @@ export default function WorkoutPage() {
   const [loading, setLoading] = useState(true)
   const { t, language } = useLanguage()
   const { theme, toggleTheme } = useTheme()
+  const dayNames = [t.days.sun, t.days.mon, t.days.tue, t.days.wed, t.days.thu, t.days.fri, t.days.sat]
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login")
@@ -149,7 +149,7 @@ export default function WorkoutPage() {
                     cursor: "pointer",
                   }}
                 >
-                  Show stretch routine
+                  {t.showStretch}
                 </button>
               </div>
             </motion.div>
@@ -250,7 +250,7 @@ export default function WorkoutPage() {
                       letterSpacing: "0.08em",
                       marginBottom: "4px",
                     }}>
-                      {DAY_NAMES[i]}
+                      {dayNames[i]}
                     </div>
                     <div style={{
                       fontSize: "18px",
@@ -429,7 +429,7 @@ export default function WorkoutPage() {
                   boxShadow: "0 4px 16px rgba(107, 191, 184, 0.3)",
                 }}
               >
-                ✓ Mark as Done
+                {t.markAsDone}
               </button>
             ) : (
               <div style={{
@@ -444,7 +444,7 @@ export default function WorkoutPage() {
                 fontWeight: 600,
                 textAlign: "center"
               }}>
-                ✓ Workout completed!
+                {t.workoutCompleted}
               </div>
             )}
           </motion.div>
@@ -482,14 +482,14 @@ export default function WorkoutPage() {
                     color: "var(--text)",
                     marginBottom: "4px",
                   }}>
-                    Log Workout
+                    {t.logWorkout}
                   </h3>
                   <p style={{
                     fontSize: "12px",
                     color: "var(--text-muted)",
                     marginBottom: "20px",
                   }}>
-                    Adjust actual reps and sets completed
+                    {t.adjustReps}
                   </p>
 
                   {loggedExercises.map((exercise, index) => (
@@ -521,7 +521,7 @@ export default function WorkoutPage() {
                             letterSpacing: "0.1em",
                             fontWeight: 600,
                           }}>
-                            SETS
+                            {t.sets}
                           </label>
                           <input
                             type="number"
@@ -547,7 +547,7 @@ export default function WorkoutPage() {
                             letterSpacing: "0.1em",
                             fontWeight: 600,
                           }}>
-                            REPS
+                            {t.reps}
                           </label>
                           <input
                             type="number"
@@ -601,7 +601,7 @@ export default function WorkoutPage() {
                       boxShadow: "0 4px 16px rgba(107,191,184,0.3)",
                     }}
                   >
-                    Save Workout Log
+                    {t.saveWorkoutLog}
                   </button>
                 </motion.div>
               </motion.div>

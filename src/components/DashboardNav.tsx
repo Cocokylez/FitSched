@@ -144,7 +144,7 @@ export function DashboardNav() {
                     letterSpacing: "0.05em",
                     color: isActive ? "var(--text)" : "var(--text-muted)",
                   }}>
-                    {t[item.id as keyof typeof t]}
+                    {t[item.id as keyof typeof t] as string}
                   </span>
                 </button>
               )

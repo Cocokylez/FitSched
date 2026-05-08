@@ -39,8 +39,6 @@ const QUICK_PROMPTS = [
   "I only have 15 minutes. What can I do?",
 ]
 
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-
 function getWeekDates() {
   const today = new Date()
   const start = new Date(today)
@@ -68,6 +66,7 @@ export default function AIPage() {
   const { status } = useSession()
   const router = useRouter()
   const { t, language } = useLanguage()
+  const dayNames = [t.days.sun, t.days.mon, t.days.tue, t.days.wed, t.days.thu, t.days.fri, t.days.sat]
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
@@ -290,7 +289,7 @@ export default function AIPage() {
                                 </div>
                               ) : (
                                 <>
-                                  <div style={{ fontSize: 9, color: "var(--text-muted)" }}>{DAY_NAMES[di]}</div>
+                                  <div style={{ fontSize: 9, color: "var(--text-muted)" }}>{dayNames[di]}</div>
                                   <div style={{ fontSize: 14, fontWeight: 700 }}>{date.getDate()}</div>
                                 </>
                               )}

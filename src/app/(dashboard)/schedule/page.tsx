@@ -19,7 +19,6 @@ const fadeUp = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" as const } },
 }
 
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 const MUSCLE_GROUPS = ["Rest", "Chest & Triceps", "Back & Biceps", "Legs", "Shoulders & Core", "Full Body", "Arms & Core"]
 
 interface ScheduleBlock {
@@ -50,6 +49,7 @@ export default function SchedulePage() {
   const [weekDates, setWeekDates] = useState<Date[]>([])
   const { t, language } = useLanguage()
   const { theme, toggleTheme } = useTheme()
+  const dayNames = [t.days.sun, t.days.mon, t.days.tue, t.days.wed, t.days.thu, t.days.fri, t.days.sat]
 
   useEffect(() => {
     const t = new Date()
@@ -244,7 +244,7 @@ export default function SchedulePage() {
                       letterSpacing: "0.08em",
                       marginBottom: "4px",
                     }}>
-                      {DAY_NAMES[i]}
+                      {dayNames[i]}
                     </div>
                     <div style={{
                       fontSize: "18px",

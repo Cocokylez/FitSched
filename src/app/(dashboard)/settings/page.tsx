@@ -170,7 +170,7 @@ export default function SettingsPage() {
               ["100%", t.autoScheduled],
               ["25m", t.avgWorkout],
               ["0", t.decisions],
-              ["7", t.days],
+              ["7", t.daysLabel],
             ].map(([value, label], i) => (
               <div key={i} style={{ ...cardStyle, textAlign: "center", marginBottom: 0 }}>
                 <div style={{ fontSize: "28px", fontWeight: "bold", color: "var(--text)" }}>{value}</div>
@@ -299,7 +299,7 @@ export default function SettingsPage() {
 
         {logs.length > 0 && (
           <motion.div variants={fadeUp}>
-            <div style={sectionLabelStyle}>WORKOUT HISTORY</div>
+            <div style={sectionLabelStyle}>{t.workoutHistory}</div>
             {logs.slice(0, 5).map((log, i) => (
               <div key={i} style={{
                 background: "var(--surface)",
@@ -334,7 +334,7 @@ export default function SettingsPage() {
                   fontSize: "11px",
                   color: "var(--text-muted)",
                 }}>
-                  {log.exercises.length} exercises
+                  {log.exercises.length} {t.exercises}
                 </div>
               </div>
             ))}
