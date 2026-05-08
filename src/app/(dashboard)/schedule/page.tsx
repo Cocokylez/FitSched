@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { motion } from "framer-motion"
 import { useStore } from "@/store/useStore"
 import { SkeletonBlock } from "@/components/LoadingScreen"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 const stagger = {
   hidden: {},
@@ -47,6 +48,7 @@ export default function SchedulePage() {
   const [loading, setLoading] = useState(true)
   const [weekDates, setWeekDates] = useState<Date[]>([])
   const [isDark, setIsDark] = useState(true)
+  const { t, language } = useLanguage()
 
   useEffect(() => {
     const saved = localStorage.getItem("theme") || "dark"
@@ -271,7 +273,11 @@ export default function SchedulePage() {
             </motion.div>
 
             <motion.div variants={fadeUp}>
-              <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "#888888", marginBottom: "12px" }}>TIMELINE</div>
+              <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "#888888", marginBottom: "12px" }}>
+                <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                  {t.timeline}
+                </motion.span>
+              </div>
             </motion.div>
 
             {loading ? (
@@ -287,8 +293,16 @@ export default function SchedulePage() {
                   padding: "24px",
                   textAlign: "center",
                 }}>
-                  <div style={{ fontSize: "15px", fontWeight: 600, color: isDark ? "white" : "#1a1a1a" }}>No events today</div>
-                  <div style={{ fontSize: "12px", color: "#888888", marginTop: "4px" }}>Clear day — enjoy it.</div>
+                  <div style={{ fontSize: "15px", fontWeight: 600, color: isDark ? "white" : "#1a1a1a" }}>
+                    <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                      {t.noEvents}
+                    </motion.span>
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#888888", marginTop: "4px" }}>
+                    <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                      {t.clearDay}
+                    </motion.span>
+                  </div>
                 </div>
               </motion.div>
             ) : (

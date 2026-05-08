@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 const cardStyle = {
   background: "rgba(255,255,255,0.07)",
@@ -40,6 +41,7 @@ const fadeUp = {
 export default function SettingsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { t, language } = useLanguage()
   const [isCalendarConnected, setIsCalendarConnected] = useState(false)
   const [connecting, setConnecting] = useState(false)
   const [syncing, setSyncing] = useState(false)
@@ -119,7 +121,11 @@ export default function SettingsPage() {
         animate="visible"
       >
         <motion.div variants={fadeUp}>
-          <div style={{ fontSize: "22px", fontWeight: "bold", color: "white", marginBottom: "20px" }}>Settings</div>
+          <div style={{ fontSize: "22px", fontWeight: "bold", color: "white", marginBottom: "20px" }}>
+            <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+              {t.settings}
+            </motion.span>
+          </div>
         </motion.div>
 
         <motion.div variants={fadeUp}>
@@ -150,7 +156,7 @@ export default function SettingsPage() {
                     cursor: "pointer",
                     opacity: syncing ? 0.5 : 1,
                   }}>
-                    {syncing ? "Syncing..." : "Sync Now"}
+                    {syncing ? "Syncing..." : <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>{t.syncNow}</motion.span>}
                   </button>
                   <button onClick={disconnectCalendar} style={{
                     background: "rgba(255,50,50,0.15)",
@@ -257,7 +263,9 @@ export default function SettingsPage() {
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
           </svg>
-          Sign Out
+          <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+            {t.signOut}
+          </motion.span>
         </button>
       </motion.div>
 

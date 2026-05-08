@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { useStore } from "@/store/useStore"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 const stagger = {
   hidden: {},
@@ -44,6 +45,7 @@ export default function WorkoutPage() {
   const [isDark, setIsDark] = useState(true)
   const [savedWorkout, setSavedWorkout] = useState<any>(null)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const { t, language } = useLanguage()
 
   useEffect(() => {
     const saved = localStorage.getItem("theme") || "dark"
@@ -101,7 +103,11 @@ export default function WorkoutPage() {
           alignItems: "center",
           borderBottom: "1px solid #333333",
         }}>
-          <div style={{ fontSize: "13px", fontWeight: 800, color: "white" }}>Workout</div>
+          <div style={{ fontSize: "13px", fontWeight: 800, color: "white" }}>
+            <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+              {t.workout}
+            </motion.span>
+          </div>
           <button onClick={toggleTheme} style={{
             background: "#2f2f2f", border: "1px solid #333333",
             borderRadius: "50%", width: "32px", height: "32px",
@@ -233,7 +239,9 @@ export default function WorkoutPage() {
 
           <motion.div variants={fadeUp}>
             <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "#888888", marginBottom: "12px" }}>
-              TODAY&apos;S PLAN
+              <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                {t.todaysPlan}
+              </motion.span>
             </div>
           </motion.div>
 
@@ -338,7 +346,9 @@ export default function WorkoutPage() {
                 fontWeight: 600,
                 cursor: "pointer",
               }}>
-                Ask for tips
+                <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                  {t.askForTips}
+                </motion.span>
               </button>
               <button onClick={() => router.push("/ai")} style={{
                 flex: 1,
@@ -351,7 +361,9 @@ export default function WorkoutPage() {
                 fontWeight: 600,
                 cursor: "pointer",
               }}>
-                Alternative
+                <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                  {t.alternative}
+                </motion.span>
               </button>
             </div>
           </motion.div>

@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/SessionProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { ProvidersWrapper } from "@/components/ProvidersWrapper";
 import { auth } from "@/lib/auth";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -45,7 +46,9 @@ export default async function RootLayout({
     <html lang="en" className={plusJakartaSans.variable} suppressHydrationWarning>
       <body className="min-h-dvh flex flex-col antialiased">
         <ThemeProvider>
-          <SessionProvider session={session}>{children}</SessionProvider>
+          <SessionProvider session={session}>
+            <ProvidersWrapper>{children}</ProvidersWrapper>
+          </SessionProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 const cardStyle = {
   background: "rgba(255,255,255,0.07)",
@@ -67,6 +68,7 @@ function tryParseWorkout(text: string): { hasWorkout: boolean; workout?: { name:
 export default function AIPage() {
   const { status } = useSession()
   const router = useRouter()
+  const { t, language } = useLanguage()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
@@ -168,8 +170,11 @@ export default function AIPage() {
                       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                     </svg>
                   </div>
-                  <div style={{ fontSize: "20px", fontWeight: "bold", color: "white", marginBottom: "4px" }}>How can I help?</div>
-                  <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>Ask about your schedule or workouts</div>
+                  <div style={{ fontSize: "20px", fontWeight: "bold", color: "white", marginBottom: "4px" }}>
+                    <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                      {t.howCanIHelp}
+                    </motion.span>
+                  </div>
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", justifyContent: "center" }}>
                   {QUICK_PROMPTS.map((p, i) => (
@@ -367,7 +372,7 @@ export default function AIPage() {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send() } }}
-              placeholder="Ask anything..."
+              placeholder={t.askAnything}
               style={{
                 flex: 1,
                 background: "transparent",
