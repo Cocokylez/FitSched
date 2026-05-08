@@ -1,15 +1,15 @@
-self.addEventListener("push", (event: any) => {
+self.addEventListener("push", (event) => {
   if (!event.data) return;
 
   const data = event.data.json();
   const options = {
     body: data.body || "You have a new notification",
-    icon: data.icon || "/icon-512.png",
-    badge: "/icon-192.png",
+    icon: data.icon || "/logo.png",
+    badge: "/logo.png",
     tag: "fitsched-notification",
     renotify: true,
     actions: [
-      { action: "view", title: "View", icon: "/icon-192.png" },
+      { action: "view", title: "View", icon: "/logo.png" },
       { action: "dismiss", title: "Dismiss" },
     ],
   };
@@ -19,7 +19,7 @@ self.addEventListener("push", (event: any) => {
   );
 });
 
-self.addEventListener("notificationclick", (event: any) => {
+self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
   if (event.action === "view") {
@@ -38,12 +38,10 @@ self.addEventListener("notificationclick", (event: any) => {
   }
 });
 
-self.addEventListener("install", (event: any) => {
+self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());
 });
 
-self.addEventListener("activate", (event: any) => {
+self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
-
-export {};
