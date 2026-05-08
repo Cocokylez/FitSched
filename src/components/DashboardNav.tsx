@@ -38,6 +38,7 @@ export function DashboardNav() {
   const router = useRouter()
   const [visible, setVisible] = useState(true)
   const lastScrollY = useRef(0)
+  const ticking = useRef(false)
   const { theme } = useTheme()
   const { t } = useLanguage()
 
@@ -56,91 +57,91 @@ export function DashboardNav() {
   }
 
   useEffect(() => {
-    const el = document.querySelector("main")
-    if (!el) return
-
     const handleScroll = () => {
-      const currentScrollY = el.scrollTop
+      if (!ticking.current) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY
 
-      if (currentScrollY < 10) {
-        setVisible(true)
-      } else if (currentScrollY > lastScrollY.current + 5) {
-        setVisible(false)
-      } else if (currentScrollY < lastScrollY.current - 5) {
-        setVisible(true)
+          if (currentScrollY <= 10) {
+            setVisible(true)
+          } else if (currentScrollY > lastScrollY.current + 8) {
+            setVisible(false)
+          } else if (currentScrollY < lastScrollY.current - 8) {
+            setVisible(true)
+          }
+
+          lastScrollY.current = currentScrollY
+          ticking.current = false
+        })
+        ticking.current = true
       }
-
-      lastScrollY.current = currentScrollY
     }
 
-    el.addEventListener("scroll", handleScroll, { passive: true })
-    return () => el.removeEventListener("scroll", handleScroll)
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
   return (
     <AnimatePresence>
       {visible && (
-        <motion.div
+        <motion.nav
           key="bottom-nav"
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
+          initial={{ y: 80 }}
+          animate={{ y: 0 }}
+          exit={{ y: 80 }}
           transition={{ duration: 0.25, ease: "easeInOut" }}
           style={{
             position: "fixed",
             bottom: 0, left: 0, right: 0,
             zIndex: 9998,
-          }}
-        >
-          <div style={{
             ...navStyle,
             padding: "12px 0 20px",
             display: "flex",
             justifyContent: "space-around",
             alignItems: "center",
+          }}
+        >
+          <div style={{
+            display: "flex",
+            justifyContent: "space-around",
+            alignItems: "center",
+            width: "100%",
+            maxWidth: "500px",
+            margin: "0 auto",
           }}>
-            <div style={{
-              display: "flex",
-              justifyContent: "space-around",
-              alignItems: "center",
-              width: "100%",
-              maxWidth: "500px",
-              margin: "0 auto",
-            }}>
-              {navItems.map((item) => {
-                const isActive = pathname.startsWith(item.href)
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => router.push(item.href)}
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: "4px",
-                      background: "transparent",
-                      border: "none",
-                      cursor: "pointer",
-                      padding: "4px 16px",
-                    }}
-                  >
-                    <span style={{ color: isActive ? "var(--text)" : "var(--text-muted)", display: "flex" }}>
-                      {item.icon}
-                    </span>
-                    <span style={{
-                      fontSize: "10px",
-                      fontWeight: 600,
-                      letterSpacing: "0.05em",
-                      color: isActive ? "var(--text)" : "var(--text-muted)",
-                    }}>
-                      {t[item.id as keyof typeof t]}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
+            {navItems.map((item) => {
+              const isActive = pathname.startsWith(item.href)
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => router.push(item.href)}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "4px",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "4px 16px",
+                  }}
+                >
+                  <span style={{ color: isActive ? "var(--text)" : "var(--text-muted)", display: "flex" }}>
+                    {item.icon}
+                  </span>
+                  <span style={{
+                    fontSize: "10px",
+                    fontWeight: 600,
+                    letterSpacing: "0.05em",
+                    color: isActive ? "var(--text)" : "var(--text-muted)",
+                  }}>
+                    {t[item.id as keyof typeof t]}
+                  </span>
+                </button>
+              )
+            })}
           </div>
-        </motion.div>
+        </motion.nav>
       )}
     </AnimatePresence>
   )

@@ -13,7 +13,7 @@ export default async function DashboardLayout({
 
   return (
     <DashboardShell>
-      <main className="flex-1 overflow-y-auto pb-[calc(4rem+env(safe-area-inset-bottom))]">
+      <main className="flex-1 overflow-y-auto pb-[80px]">
         {children}
       </main>
       <DashboardNav />
