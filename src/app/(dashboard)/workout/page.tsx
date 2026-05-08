@@ -7,6 +7,7 @@ import { motion } from "framer-motion"
 import { useStore } from "@/store/useStore"
 import { useLanguage } from "@/context/LanguageContext"
 import { useTheme } from "@/context/ThemeContext"
+import { SkeletonExerciseRow } from "@/components/Skeleton"
 
 const stagger = {
   hidden: {},
@@ -45,6 +46,7 @@ export default function WorkoutPage() {
   const [todayIdx, setTodayIdx] = useState(-1)
   const [savedWorkout, setSavedWorkout] = useState<any>(null)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [loading, setLoading] = useState(true)
   const { t, language } = useLanguage()
   const { theme, toggleTheme } = useTheme()
 
@@ -68,6 +70,7 @@ export default function WorkoutPage() {
 
   useEffect(() => {
     if (status !== "authenticated") return
+    setLoading(true)
     const selectedDate = weekDates[selectedDay]
     if (!selectedDate) return
     const dateStr = selectedDate.toISOString().split("T")[0]
@@ -76,8 +79,9 @@ export default function WorkoutPage() {
       .then(data => {
         if (data.length > 0) setSavedWorkout(data[0])
         else setSavedWorkout(null)
+        setLoading(false)
       })
-      .catch(() => setSavedWorkout(null))
+      .catch(() => { setSavedWorkout(null); setLoading(false) })
   }, [status, selectedDay, weekDates])
 
   if (selectedDay === 0) {
@@ -242,49 +246,62 @@ export default function WorkoutPage() {
             </div>
           </motion.div>
 
-          <motion.div variants={fadeUp}>
-            <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "20px", overflow: "hidden", marginBottom: "16px" }}>
-              {todayExercises.map((ex, i) => (
-                <div
-                  key={i}
-                  style={{
-                    padding: "14px 16px",
-                    borderBottom: i < todayExercises.length - 1 ? "1px solid var(--border)" : "none",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                  }}
-                >
-                  <motion.div variants={scaleIn} style={{
-                    background: "var(--surface-2)",
-                    borderRadius: "8px",
-                    width: "28px",
-                    height: "28px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "11px",
-                    fontWeight: 700,
-                    color: "var(--text-muted)",
-                    flexShrink: 0,
-                  }}>
-                    {String(i + 1).padStart(2, "0")}
-                  </motion.div>
-                  <div style={{ flex: 1, fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>{ex[0]}</div>
-                  <div style={{
-                    background: "var(--surface-2)",
-                    borderRadius: "20px",
-                    padding: "4px 10px",
-                    fontSize: "11px",
-                    color: "var(--text-muted)",
-                    flexShrink: 0,
-                  }}>
-                    {ex[1]}
+          {loading ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "20px", overflow: "hidden", marginBottom: "16px" }}>
+                {[1,2,3,4,5].map(i => (
+                  <SkeletonExerciseRow key={i} />
+                ))}
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div variants={fadeUp}>
+              <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "20px", overflow: "hidden", marginBottom: "16px" }}>
+                {todayExercises.map((ex, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      padding: "14px 16px",
+                      borderBottom: i < todayExercises.length - 1 ? "1px solid var(--border)" : "none",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                    }}
+                  >
+                    <motion.div variants={scaleIn} style={{
+                      background: "var(--surface-2)",
+                      borderRadius: "8px",
+                      width: "28px",
+                      height: "28px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      color: "var(--text-muted)",
+                      flexShrink: 0,
+                    }}>
+                      {String(i + 1).padStart(2, "0")}
+                    </motion.div>
+                    <div style={{ flex: 1, fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>{ex[0]}</div>
+                    <div style={{
+                      background: "var(--surface-2)",
+                      borderRadius: "20px",
+                      padding: "4px 10px",
+                      fontSize: "11px",
+                      color: "var(--text-muted)",
+                      flexShrink: 0,
+                    }}>
+                      {ex[1]}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
 
           <motion.div variants={fadeUp}>
             <button onClick={async () => {

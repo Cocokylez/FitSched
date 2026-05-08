@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { motion } from "framer-motion"
 import { useStore } from "@/store/useStore"
-import { SkeletonBlock } from "@/components/LoadingScreen"
+import { SkeletonCard } from "@/components/Skeleton"
 import { useLanguage } from "@/context/LanguageContext"
 import { useTheme } from "@/context/ThemeContext"
 
@@ -175,7 +175,7 @@ export default function SchedulePage() {
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               {isCalendarConnected ? (
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 6px rgba(34, 197, 94, 0.6)" }} />
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#65c97a", boxShadow: "0 0 6px rgba(101, 201, 122, 0.6)" }} />
                   <span style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: 500 }}>{t.synced}</span>
                 </div>
               ) : (
@@ -267,9 +267,15 @@ export default function SchedulePage() {
             </motion.div>
 
             {loading ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {[1, 2, 3, 4].map(i => <SkeletonBlock key={i} style={{ height: 56, width: "100%", background: "var(--surface)", borderRadius: 14 }} />)}
-              </div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+              >
+                <SkeletonCard height="80px" />
+                <SkeletonCard height="80px" />
+                <SkeletonCard height="80px" />
+              </motion.div>
             ) : ds.length === 1 && ds[0].label === "No events today" ? (
               <motion.div variants={fadeUp}>
                 <div style={{

@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { useLanguage } from "@/context/LanguageContext"
+import { SkeletonCard } from "@/components/Skeleton"
 
 const cardStyle = {
   background: "var(--surface)",
@@ -44,6 +45,7 @@ export default function SettingsPage() {
   const [isCalendarConnected, setIsCalendarConnected] = useState(false)
   const [connecting, setConnecting] = useState(false)
   const [syncing, setSyncing] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [pushEnabled, setPushEnabled] = useState(false)
 
   useEffect(() => {
@@ -58,6 +60,7 @@ export default function SettingsPage() {
         setIsCalendarConnected(data.connected)
       }
     } catch {}
+    setLoading(false)
   }, [])
 
   useEffect(() => {
@@ -127,13 +130,27 @@ export default function SettingsPage() {
           </div>
         </motion.div>
 
-        <motion.div variants={fadeUp}>
-          <div style={cardStyle}>
-            <div style={{ fontSize: "15px", fontWeight: 600, color: "var(--text)" }}>{session?.user?.name || "User"}</div>
-            <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px" }}>{session?.user?.email}</div>
-          </div>
-        </motion.div>
+        {loading ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <SkeletonCard height="72px" />
+            <SkeletonCard height="100px" />
+            <SkeletonCard height="60px" />
+            <SkeletonCard height="60px" />
+          </motion.div>
+        ) : (
+          <motion.div variants={fadeUp}>
+            <div style={cardStyle}>
+              <div style={{ fontSize: "15px", fontWeight: 600, color: "var(--text)" }}>{session?.user?.name || "User"}</div>
+              <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px" }}>{session?.user?.email}</div>
+            </div>
+          </motion.div>
+        )}
 
+        {!loading && (
+          <>
         <motion.div variants={fadeUp}>
           <div style={sectionLabelStyle}>{t.calendar}</div>
         </motion.div>
@@ -162,7 +179,7 @@ export default function SettingsPage() {
                     border: "1px solid rgba(255,50,50,0.3)",
                     borderRadius: "10px",
                     padding: "8px 16px",
-                    color: "rgba(255,100,100,1)",
+                    color: "#d96060",
                     fontSize: "13px",
                     cursor: "pointer",
                   }}>
@@ -205,7 +222,7 @@ export default function SettingsPage() {
               <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>{pushEnabled ? t.enabled : t.workoutReminders}</div>
             </div>
             <div onClick={togglePush} style={{ width: 48, height: 28, borderRadius: 14, position: "relative", background: pushEnabled ? "var(--text)" : "var(--border)", transition: "background 0.2s", cursor: "pointer", flexShrink: 0 }}>
-              <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, boxShadow: "0 1px 4px rgba(0,0,0,0.3)", transition: "transform 0.2s", transform: pushEnabled ? "translateX(24px)" : "translateX(3px)" }} />
+              <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#e8e8e8", position: "absolute", top: 3, boxShadow: "0 1px 4px rgba(0,0,0,0.3)", transition: "transform 0.2s", transform: pushEnabled ? "translateX(24px)" : "translateX(3px)" }} />
             </div>
           </div>
         </motion.div>
@@ -268,6 +285,8 @@ export default function SettingsPage() {
             ))}
           </div>
         </motion.div>
+          </>
+        )}
       </motion.div>
 
       <motion.div
@@ -282,7 +301,7 @@ export default function SettingsPage() {
           border: "1px solid rgba(255,50,50,0.25)",
           borderRadius: "14px",
           padding: "13px",
-          color: "rgba(255,100,100,1)",
+          color: "#d96060",
           fontSize: "14px",
           fontWeight: "600",
           cursor: "pointer",

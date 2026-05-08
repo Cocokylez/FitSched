@@ -30,21 +30,21 @@ html {
 }
 
 :root {
-  --bg: #1a1a1a;
-  --surface: #242424;
-  --surface-2: #2f2f2f;
-  --border: #333333;
-  --text: #ffffff;
-  --text-muted: #888888;
+  --bg: #181818;
+  --surface: #222222;
+  --surface-2: #2c2c2c;
+  --border: #303030;
+  --text: #e8e8e8;
+  --text-muted: #7a7a7a;
 }
 
 [data-theme='light'] {
-  --bg: #f5f5f7;
-  --surface: #ffffff;
-  --surface-2: #f0f0f2;
-  --border: #e5e5e7;
-  --text: #1a1a1a;
-  --text-muted: #666666;
+  --bg: #f2f2f4;
+  --surface: #fafafa;
+  --surface-2: #efefef;
+  --border: #dcdcde;
+  --text: #1c1c1e;
+  --text-muted: #6c6c6e;
 }
 
 body {
