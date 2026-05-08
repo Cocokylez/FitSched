@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # FitSched — Fullstack AI Workout Scheduler
 
 A fullstack workout scheduling app that reads your Google Calendar and automatically fits workouts into your free time. Built with Next.js 15, PostgreSQL, and Gemini AI.
@@ -160,3 +161,7 @@ npm run db:generate  # Generate Prisma client
 npm run db:push      # Push schema to database
 npm run db:studio    # Open Prisma Studio
 ```
+=======
+# FitSched
+FitSched is an AI-powered workout scheduler that syncs with Google Calendar to automatically fit workouts into your free time.
+>>>>>>> 54223cb7187299b590ee93e460715d9509fde7ad
