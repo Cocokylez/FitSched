@@ -26,6 +26,7 @@ model User {
   pushSubscriptions   PushSubscription[]
   chatMessages        ChatMessage[]
   workoutSchedules    WorkoutSchedule[]
+  workoutSessionLogs  WorkoutSessionLog[]
 }
 
 model Account {
@@ -261,6 +262,19 @@ model WorkoutSchedule {
   createdAt   DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([date])
+}
+
+model WorkoutSessionLog {
+  id          String   @id @default(cuid())
+  userId      String
+  date        String
+  workoutName String
+  exercises   Json
+  completedAt DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([date])

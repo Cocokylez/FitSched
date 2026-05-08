@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { useStore } from "@/store/useStore"
 import { useLanguage } from "@/context/LanguageContext"
 import { useTheme } from "@/context/ThemeContext"
@@ -46,6 +46,9 @@ export default function WorkoutPage() {
   const [todayIdx, setTodayIdx] = useState(-1)
   const [savedWorkout, setSavedWorkout] = useState<any>(null)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [completed, setCompleted] = useState(false)
+  const [logging, setLogging] = useState(false)
+  const [loggedExercises, setLoggedExercises] = useState<Array<{name: string; sets: number; reps: number}>>([])
   const [loading, setLoading] = useState(true)
   const { t, language } = useLanguage()
   const { theme, toggleTheme } = useTheme()
@@ -83,6 +86,10 @@ export default function WorkoutPage() {
       })
       .catch(() => { setSavedWorkout(null); setLoading(false) })
   }, [status, selectedDay, weekDates])
+
+  useEffect(() => {
+    setCompleted(false)
+  }, [selectedDay])
 
   if (selectedDay === 0) {
     return (
@@ -155,6 +162,19 @@ export default function WorkoutPage() {
 
   const muscle = MUSCLE_GROUPS[selectedDay]
   const todayExercises = DEFAULT_EXERCISES[selectedDay] || []
+
+  const currentExercises = todayExercises.map(([name, reps]) => {
+    const parts = reps.split("×")
+    return { name, sets: parseInt(parts[0]) || 3, reps: parseInt(parts[1]) || 12 }
+  })
+
+  const updateLog = (index: number, field: string, value: string) => {
+    setLoggedExercises(prev => {
+      const updated = [...prev]
+      updated[index] = { ...updated[index], [field]: parseInt(value) }
+      return updated
+    })
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
@@ -339,6 +359,46 @@ export default function WorkoutPage() {
           </motion.div>
 
           <motion.div variants={fadeUp}>
+            {!completed ? (
+              <button
+                onClick={() => {
+                  setLoggedExercises(currentExercises.map(e => ({ ...e })))
+                  setLogging(true)
+                }}
+                style={{
+                  width: "100%",
+                  marginTop: "12px",
+                  background: "var(--text)",
+                  color: "var(--bg)",
+                  border: "none",
+                  borderRadius: "12px",
+                  padding: "14px",
+                  fontSize: "14px",
+                  fontWeight: "700",
+                  cursor: "pointer"
+                }}
+              >
+                ✓ Mark as Done
+              </button>
+            ) : (
+              <div style={{
+                width: "100%",
+                marginTop: "12px",
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                borderRadius: "12px",
+                padding: "14px",
+                fontSize: "14px",
+                color: "#65c97a",
+                fontWeight: "700",
+                textAlign: "center"
+              }}>
+                ✓ Workout completed!
+              </div>
+            )}
+          </motion.div>
+
+          <motion.div variants={fadeUp}>
             <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
               <button onClick={() => router.push("/ai")} style={{
                 flex: 1,
@@ -423,6 +483,169 @@ export default function WorkoutPage() {
               )}
             </div>
           </motion.div>
+
+          <AnimatePresence>
+            {logging && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                style={{
+                  position: "fixed",
+                  inset: 0,
+                  background: "rgba(0,0,0,0.5)",
+                  zIndex: 9999,
+                  display: "flex",
+                  alignItems: "flex-end",
+                  justifyContent: "center",
+                }}
+                onClick={() => setLogging(false)}
+              >
+                <motion.div
+                  initial={{ y: 100 }}
+                  animate={{ y: 0 }}
+                  exit={{ y: 100 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  onClick={e => e.stopPropagation()}
+                  style={{
+                    background: "var(--surface)",
+                    borderRadius: "24px 24px 0 0",
+                    padding: "24px",
+                    width: "100%",
+                    maxWidth: "600px",
+                    maxHeight: "80vh",
+                    overflowY: "auto",
+                  }}
+                >
+                  <h3 style={{
+                    fontSize: "18px",
+                    fontWeight: 800,
+                    color: "var(--text)",
+                    marginBottom: "4px",
+                  }}>
+                    Log Workout
+                  </h3>
+                  <p style={{
+                    fontSize: "12px",
+                    color: "var(--text-muted)",
+                    marginBottom: "20px",
+                  }}>
+                    Adjust actual reps and sets completed
+                  </p>
+
+                  {loggedExercises.map((exercise, index) => (
+                    <div key={index} style={{
+                      background: "var(--surface-2)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "12px",
+                      padding: "14px 16px",
+                      marginBottom: "10px",
+                    }}>
+                      <div style={{
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        color: "var(--text)",
+                        marginBottom: "10px",
+                      }}>
+                        {exercise.name}
+                      </div>
+                      <div style={{
+                        display: "flex",
+                        gap: "12px",
+                        alignItems: "center",
+                      }}>
+                        <div style={{ flex: 1 }}>
+                          <label style={{
+                            fontSize: "10px",
+                            color: "var(--text-muted)",
+                            letterSpacing: "0.1em",
+                            fontWeight: 600,
+                          }}>
+                            SETS
+                          </label>
+                          <input
+                            type="number"
+                            defaultValue={exercise.sets}
+                            onChange={e => updateLog(index, "sets", e.target.value)}
+                            style={{
+                              width: "100%",
+                              background: "var(--surface)",
+                              border: "1px solid var(--border)",
+                              borderRadius: "8px",
+                              padding: "8px 10px",
+                              color: "var(--text)",
+                              fontSize: "14px",
+                              marginTop: "4px",
+                              outline: "none",
+                            }}
+                          />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <label style={{
+                            fontSize: "10px",
+                            color: "var(--text-muted)",
+                            letterSpacing: "0.1em",
+                            fontWeight: 600,
+                          }}>
+                            REPS
+                          </label>
+                          <input
+                            type="number"
+                            defaultValue={exercise.reps}
+                            onChange={e => updateLog(index, "reps", e.target.value)}
+                            style={{
+                              width: "100%",
+                              background: "var(--surface)",
+                              border: "1px solid var(--border)",
+                              borderRadius: "8px",
+                              padding: "8px 10px",
+                              color: "var(--text)",
+                              fontSize: "14px",
+                              marginTop: "4px",
+                              outline: "none",
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  <button
+                    onClick={async () => {
+                      const selectedDate = weekDates[selectedDay]
+                      if (!selectedDate) return
+                      const dateStr = selectedDate.toISOString().split("T")[0]
+                      await fetch("/api/workout-log", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          date: dateStr,
+                          workoutName: muscle,
+                          exercises: loggedExercises,
+                        }),
+                      })
+                      setLogging(false)
+                      setCompleted(true)
+                    }}
+                    style={{
+                      width: "100%",
+                      marginTop: "8px",
+                      background: "var(--text)",
+                      color: "var(--bg)",
+                      border: "none",
+                      borderRadius: "12px",
+                      padding: "14px",
+                      fontSize: "14px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Save Workout Log
+                  </button>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       </div>
     </div>

@@ -47,6 +47,7 @@ export default function SettingsPage() {
   const [syncing, setSyncing] = useState(false)
   const [loading, setLoading] = useState(true)
   const [pushEnabled, setPushEnabled] = useState(false)
+  const [logs, setLogs] = useState<any[]>([])
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login")
@@ -66,6 +67,14 @@ export default function SettingsPage() {
   useEffect(() => {
     if (status === "authenticated") checkCalendar()
   }, [status, checkCalendar])
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      fetch("/api/workout-log")
+        .then(r => r.json())
+        .then(data => setLogs(data))
+    }
+  }, [status])
 
   const connectCalendar = async () => {
     setConnecting(true)
@@ -286,6 +295,50 @@ export default function SettingsPage() {
           </div>
         </motion.div>
           </>
+        )}
+
+        {logs.length > 0 && (
+          <motion.div variants={fadeUp}>
+            <div style={sectionLabelStyle}>WORKOUT HISTORY</div>
+            {logs.slice(0, 5).map((log, i) => (
+              <div key={i} style={{
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                borderRadius: "14px",
+                padding: "14px 16px",
+                marginBottom: "8px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}>
+                <div>
+                  <div style={{
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    color: "var(--text)",
+                  }}>
+                    {log.workoutName}
+                  </div>
+                  <div style={{
+                    fontSize: "11px",
+                    color: "var(--text-muted)",
+                    marginTop: "2px",
+                  }}>
+                    {new Date(log.completedAt).toLocaleDateString()}
+                  </div>
+                </div>
+                <div style={{
+                  background: "var(--surface-2)",
+                  borderRadius: "20px",
+                  padding: "4px 10px",
+                  fontSize: "11px",
+                  color: "var(--text-muted)",
+                }}>
+                  {log.exercises.length} exercises
+                </div>
+              </div>
+            ))}
+          </motion.div>
         )}
       </motion.div>
 
