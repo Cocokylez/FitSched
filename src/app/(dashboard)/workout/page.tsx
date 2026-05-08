@@ -41,7 +41,6 @@ export default function WorkoutPage() {
   const { status } = useSession()
   const router = useRouter()
   const { selectedDay, setSelectedDay } = useStore()
-  const [reminderSet, setReminderSet] = useState(false)
   const [weekDates, setWeekDates] = useState<Date[]>([])
   const [todayIdx, setTodayIdx] = useState(-1)
   const [savedWorkout, setSavedWorkout] = useState<any>(null)
@@ -450,56 +449,7 @@ export default function WorkoutPage() {
             )}
           </motion.div>
 
-          <motion.div variants={fadeUp}>
-            <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-muted)", marginBottom: "12px" }}>
-              <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                {t.reminder}
-              </motion.span>
-            </div>
-          </motion.div>
 
-          <motion.div variants={fadeUp}>
-            <div style={{
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-              borderLeft: "3px solid var(--text)",
-              borderRadius: "16px",
-              padding: "16px 20px",
-            }}>
-              <div style={{ fontSize: "11px", color: "var(--text-muted)", marginBottom: "4px" }}>{t.fitSched}</div>
-              <div style={{ fontSize: "16px", fontWeight: 700, color: "var(--text)" }}>{t.workoutIn}</div>
-              <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px" }}>{muscle} — your slot opens soon.</div>
-              {reminderSet ? (
-                <div style={{
-                  marginTop: "12px",
-                  textAlign: "center",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  color: "var(--text-muted)",
-                  padding: "12px",
-                  background: "var(--surface-2)",
-                  borderRadius: "12px",
-                }}>
-                  {t.reminderSet}
-                </div>
-              ) : (
-                <button onClick={() => setReminderSet(true)} style={{
-                  width: "100%",
-                  marginTop: "12px",
-                  background: "var(--text)",
-                  color: "var(--bg)",
-                  border: "none",
-                  borderRadius: "12px",
-                  padding: "12px",
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}>
-                  {t.setReminder}
-                </button>
-              )}
-            </div>
-          </motion.div>
 
           <AnimatePresence>
             {logging && (
