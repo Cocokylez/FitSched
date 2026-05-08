@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏋️ FitSched
+#  FitSched
 
 ### Your schedule. Your pace.
 
