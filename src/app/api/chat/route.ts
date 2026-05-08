@@ -3,10 +3,14 @@ import { db } from "@/lib/db";
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 
-const deepseek = new OpenAI({
-  baseURL: "https://api.deepseek.com",
-  apiKey: process.env.GOOGLE_API_KEY!,
-});
+function getDeepSeek() {
+  const key = process.env.GOOGLE_API_KEY || process.env.OPENAI_API_KEY;
+  if (!key) return null;
+  return new OpenAI({
+    baseURL: "https://api.deepseek.com",
+    apiKey: key,
+  });
+}
 
 const lastCall = new Map<string, number>();
 
@@ -113,6 +117,13 @@ ${calendarEvents.length ? `User's schedule today:\n${scheduleContext}` : "No cal
         content: m.content,
       })),
     ];
+
+    const deepseek = getDeepSeek();
+    if (!deepseek) {
+      return NextResponse.json({
+        message: "AI is not configured — ask about your saved workouts instead!"
+      });
+    }
 
     const result = await deepseek.chat.completions.create({
       model: "deepseek-chat",
