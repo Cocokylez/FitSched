@@ -31,23 +31,32 @@ export default function LoginPage() {
     localStorage.setItem('theme', val)
   }
 
+  const bg = isDark ? '#1a1a1a' : '#f5f5f0'
+  const cardBg = isDark ? '#242424' : '#ffffff'
+  const inputBg = isDark ? '#2f2f2f' : '#f0f0eb'
+  const border = isDark ? '#383838' : '#e0e0d8'
+  const textPrimary = isDark ? 'white' : '#1a1a1a'
+  const textSecondary = isDark ? '#888888' : '#888888'
+  const gradient = isDark ? 'linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%)' : 'linear-gradient(180deg, #e8e8e0 0%, #f5f5f0 100%)'
+  const btnBg = isDark ? '#2f2f2f' : '#e8e8e0'
+
   return (
-    <div style={{ minHeight: '100vh', background: '#1a1a1a', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+    <div style={{ minHeight: '100vh', background: bg, display: 'flex', flexDirection: 'column', position: 'relative' }}>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
         style={{
           height: '40vh',
-          background: 'linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%)',
+          background: gradient,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexDirection: 'column',
         }}
       >
-        <div style={{ fontSize: '32px', fontWeight: 900, color: 'white', letterSpacing: '-1px' }}>FitSched</div>
-        <div style={{ fontSize: '13px', color: '#888888', marginTop: '6px' }}>Your schedule. Your pace.</div>
+        <div style={{ fontSize: '32px', fontWeight: 900, color: textPrimary, letterSpacing: '-1px' }}>FitSched</div>
+        <div style={{ fontSize: '13px', color: textSecondary, marginTop: '6px' }}>Your schedule. Your pace.</div>
       </motion.div>
 
       <motion.div
@@ -55,7 +64,7 @@ export default function LoginPage() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: 'easeOut', delay: 0.15 }}
         style={{
-          background: '#242424',
+          background: cardBg,
           borderRadius: '28px 28px 0 0',
           padding: '32px 24px 40px',
           position: 'relative',
@@ -70,23 +79,23 @@ export default function LoginPage() {
           variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
         >
           <motion.div variants={fadeIn}>
-            <div style={{ fontSize: '22px', fontWeight: 800, color: 'white', marginBottom: '4px' }}>Welcome back</div>
-            <div style={{ fontSize: '13px', color: '#888888', marginBottom: '24px' }}>Sign in to continue</div>
+            <div style={{ fontSize: '22px', fontWeight: 800, color: textPrimary, marginBottom: '4px' }}>Welcome back</div>
+            <div style={{ fontSize: '13px', color: textSecondary, marginBottom: '24px' }}>Sign in to continue</div>
           </motion.div>
 
           <motion.div variants={fadeIn}>
-            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.15em', color: '#888888', marginBottom: '6px' }}>EMAIL</div>
+            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.15em', color: textSecondary, marginBottom: '6px' }}>EMAIL</div>
             <input
               type="email"
               placeholder="you@example.com"
               value={email}
               onChange={e => setEmail(e.target.value)}
               style={{
-                background: '#2f2f2f',
-                border: '1px solid #383838',
+                background: inputBg,
+                border: `1px solid ${border}`,
                 borderRadius: '12px',
                 padding: '14px 16px',
-                color: 'white',
+                color: textPrimary,
                 fontSize: '14px',
                 outline: 'none',
                 width: '100%',
@@ -97,18 +106,18 @@ export default function LoginPage() {
           </motion.div>
 
           <motion.div variants={fadeIn}>
-            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.15em', color: '#888888', marginBottom: '6px' }}>PASSWORD</div>
+            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.15em', color: textSecondary, marginBottom: '6px' }}>PASSWORD</div>
             <input
               type="password"
               placeholder="••••••••"
               value={password}
               onChange={e => setPassword(e.target.value)}
               style={{
-                background: '#2f2f2f',
-                border: '1px solid #383838',
+                background: inputBg,
+                border: `1px solid ${border}`,
                 borderRadius: '12px',
                 padding: '14px 16px',
-                color: 'white',
+                color: textPrimary,
                 fontSize: '14px',
                 outline: 'none',
                 width: '100%',
@@ -123,8 +132,8 @@ export default function LoginPage() {
               onClick={async () => { await signIn('credentials', { email, password, callbackUrl: '/schedule' }) }}
               style={{
                 width: '100%',
-                background: 'white',
-                color: '#1a1a1a',
+                background: textPrimary,
+                color: bg,
                 border: 'none',
                 borderRadius: '12px',
                 padding: '15px',
@@ -140,9 +149,9 @@ export default function LoginPage() {
 
           <motion.div variants={fadeIn}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-              <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #333333' }} />
-              <span style={{ fontSize: '11px', color: '#888888' }}>or continue with</span>
-              <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #333333' }} />
+              <hr style={{ flex: 1, border: 'none', borderTop: `1px solid ${border}` }} />
+              <span style={{ fontSize: '11px', color: textSecondary }}>or continue with</span>
+              <hr style={{ flex: 1, border: 'none', borderTop: `1px solid ${border}` }} />
             </div>
           </motion.div>
 
@@ -151,11 +160,11 @@ export default function LoginPage() {
               onClick={() => { signIn('google', { callbackUrl: '/schedule' }) }}
               style={{
                 width: '100%',
-                background: '#2f2f2f',
-                border: '1px solid #383838',
+                background: btnBg,
+                border: `1px solid ${border}`,
                 borderRadius: '12px',
                 padding: '14px',
-                color: 'white',
+                color: textPrimary,
                 fontSize: '14px',
                 cursor: 'pointer',
                 display: 'flex',
@@ -171,10 +180,10 @@ export default function LoginPage() {
           </motion.div>
 
           <motion.div variants={fadeIn}>
-            <p style={{ textAlign: 'center', fontSize: '12px', color: '#888888', margin: 0 }}>
+            <p style={{ textAlign: 'center', fontSize: '12px', color: textSecondary, margin: 0 }}>
               Don&apos;t have an account?{' '}
               <span
-                style={{ color: 'white', fontWeight: 700, cursor: 'pointer' }}
+                style={{ color: textPrimary, fontWeight: 700, cursor: 'pointer' }}
                 onClick={() => router.push('/register')}
               >
                 Sign Up
@@ -188,11 +197,11 @@ export default function LoginPage() {
         onClick={toggleTheme}
         style={{
           position: 'fixed', top: 16, right: 16, zIndex: 9999,
-          background: '#2f2f2f',
-          border: '1px solid #383838',
+          background: btnBg,
+          border: `1px solid ${border}`,
           borderRadius: '50%', width: 36, height: 36,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', color: 'white',
+          cursor: 'pointer', color: textPrimary,
         }}
       >
         {isDark ? <Sun size={16} /> : <Moon size={16} />}

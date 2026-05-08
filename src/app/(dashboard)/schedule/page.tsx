@@ -165,7 +165,7 @@ export default function SchedulePage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#1a1a1a", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", background: isDark ? "#1a1a1a" : "#f5f5f0", display: "flex", flexDirection: "column" }}>
       <motion.div
         variants={stagger}
         initial="hidden"
@@ -174,18 +174,18 @@ export default function SchedulePage() {
       >
         <motion.div variants={fadeUp}>
           <div style={{
-            background: "#242424",
+            background: isDark ? "#242424" : "#ffffff",
             padding: "16px 20px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            borderBottom: "1px solid #333333",
+            borderBottom: isDark ? "1px solid #333333" : "1px solid #e0e0d8",
           }}>
-            <div style={{ fontSize: "13px", fontWeight: 800, color: "white" }}>FitSched</div>
+            <div style={{ fontSize: "13px", fontWeight: 800, color: isDark ? "white" : "#1a1a1a" }}>FitSched</div>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <div style={{
-                background: "#2f2f2f",
-                border: "1px solid #333333",
+                background: isDark ? "#2f2f2f" : "#e8e8e0",
+                border: isDark ? "1px solid #333333" : "1px solid #e0e0d8",
                 borderRadius: "20px",
                 padding: "4px 10px",
                 fontSize: "11px",
@@ -196,8 +196,8 @@ export default function SchedulePage() {
               <button
                 onClick={toggleTheme}
                 style={{
-                  background: "#2f2f2f",
-                  border: "1px solid #333333",
+                  background: isDark ? "#2f2f2f" : "#e8e8e0",
+                  border: isDark ? "1px solid #333333" : "1px solid #e0e0d8",
                   borderRadius: "50%",
                   width: "32px",
                   height: "32px",
@@ -205,7 +205,7 @@ export default function SchedulePage() {
                   alignItems: "center",
                   justifyContent: "center",
                   cursor: "pointer",
-                  color: "white",
+                  color: isDark ? "white" : "#1a1a1a",
                 }}
               >
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -239,8 +239,8 @@ export default function SchedulePage() {
                     whileTap={{ scale: 0.95 }}
                     transition={{ type: "spring", stiffness: 400, damping: 17 }}
                     style={{
-                      background: i === selectedDay ? "white" : "#242424",
-                      border: i === selectedDay ? "1px solid white" : "1px solid #333333",
+                      background: i === selectedDay ? "white" : isDark ? "#242424" : "#ffffff",
+                      border: i === selectedDay ? "1px solid white" : isDark ? "1px solid #333333" : "1px solid #e0e0d8",
                       borderRadius: "14px",
                       padding: "10px 14px",
                       textAlign: "center",
@@ -251,7 +251,7 @@ export default function SchedulePage() {
                   >
                     <div style={{
                       fontSize: "10px",
-                      color: i === selectedDay ? "#888888" : "#888888",
+                      color: "#888888",
                       fontWeight: 600,
                       letterSpacing: "0.08em",
                       marginBottom: "4px",
@@ -261,7 +261,7 @@ export default function SchedulePage() {
                     <div style={{
                       fontSize: "18px",
                       fontWeight: 800,
-                      color: i === selectedDay ? "#1a1a1a" : "white",
+                      color: i === selectedDay ? "#1a1a1a" : isDark ? "white" : "#1a1a1a",
                     }}>
                       {date.getDate()}
                     </div>
@@ -276,18 +276,18 @@ export default function SchedulePage() {
 
             {loading ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {[1, 2, 3, 4].map(i => <SkeletonBlock key={i} style={{ height: 56, width: "100%", background: "#242424", borderRadius: 14 }} />)}
+                {[1, 2, 3, 4].map(i => <SkeletonBlock key={i} style={{ height: 56, width: "100%", background: isDark ? "#242424" : "#ffffff", borderRadius: 14 }} />)}
               </div>
             ) : ds.length === 1 && ds[0].label === "No events today" ? (
               <motion.div variants={fadeUp}>
                 <div style={{
-                  background: "#242424",
-                  border: "1px dashed #383838",
+                  background: isDark ? "#242424" : "#ffffff",
+                  border: isDark ? "1px dashed #383838" : "1px dashed #d0d0c8",
                   borderRadius: "14px",
                   padding: "24px",
                   textAlign: "center",
                 }}>
-                  <div style={{ fontSize: "15px", fontWeight: 600, color: "white" }}>No events today</div>
+                  <div style={{ fontSize: "15px", fontWeight: 600, color: isDark ? "white" : "#1a1a1a" }}>No events today</div>
                   <div style={{ fontSize: "12px", color: "#888888", marginTop: "4px" }}>Clear day — enjoy it.</div>
                 </div>
               </motion.div>
@@ -298,8 +298,8 @@ export default function SchedulePage() {
                   return (
                     <motion.div key={i} variants={fadeUp}>
                       <div style={{
-                        background: "#242424",
-                        border: "1px solid #333333",
+                        background: isDark ? "#242424" : "#ffffff",
+                        border: isDark ? "1px solid #333333" : "1px solid #e0e0d8",
                         borderLeft: isWorkout ? "3px solid white" : "3px solid #555555",
                         borderRadius: "14px",
                         padding: "14px 16px",
@@ -310,10 +310,10 @@ export default function SchedulePage() {
                       }}>
                         <div style={{ flex: 1 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" }}>
-                            <div style={{ fontSize: "14px", fontWeight: 600, color: "white" }}>{block.label}</div>
+                            <div style={{ fontSize: "14px", fontWeight: 600, color: isDark ? "white" : "#1a1a1a" }}>{block.label}</div>
                             {isWorkout && (
                               <span style={{
-                                background: "#2f2f2f",
+                                background: isDark ? "#2f2f2f" : "#e8e8e0",
                                 color: "#888888",
                                 fontSize: "10px",
                                 borderRadius: "20px",
@@ -331,9 +331,9 @@ export default function SchedulePage() {
                             </div>
                           )}
                         </div>
-                        {block.duration && (
+                          {block.duration && (
                           <div style={{
-                            background: "#2f2f2f",
+                            background: isDark ? "#2f2f2f" : "#e8e8e0",
                             borderRadius: "20px",
                             padding: "4px 10px",
                             fontSize: "11px",
