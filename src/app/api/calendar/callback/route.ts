@@ -8,23 +8,25 @@ export async function GET(req: Request) {
     const code = searchParams.get("code");
     const state = searchParams.get("state");
 
+    const origin = new URL(req.url).origin;
+
     if (!code || !state) {
       return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL}/settings?error=missing_params`
+        `${origin}/settings?error=missing_params`
       );
     }
 
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CALENDAR_CLIENT_ID,
       process.env.GOOGLE_CALENDAR_CLIENT_SECRET,
-      `${process.env.NEXTAUTH_URL}/api/calendar/callback`
+      `${origin}/api/calendar/callback`
     );
 
     const { tokens } = await oauth2Client.getToken(code);
 
     if (!tokens.access_token || !tokens.refresh_token) {
       return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL}/settings?error=missing_tokens`
+        `${origin}/settings?error=missing_tokens`
       );
     }
 
@@ -54,12 +56,13 @@ export async function GET(req: Request) {
     });
 
     return NextResponse.redirect(
-      `${process.env.NEXTAUTH_URL}/schedule?connected=true`
+      `${origin}/schedule?connected=true`
     );
   } catch (error) {
     console.error("Calendar callback error:", error);
+    const origin = new URL(req.url).origin;
     return NextResponse.redirect(
-      `${process.env.NEXTAUTH_URL}/settings?error=auth_failed`
+      `${origin}/settings?error=auth_failed`
     );
   }
 }
