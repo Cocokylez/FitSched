@@ -176,6 +176,23 @@ export default function WorkoutPage() {
     })
   }
 
+  const modalStyle = {
+    background: theme === 'dark'
+      ? 'rgba(28, 28, 28, 0.75)'
+      : 'rgba(255, 255, 255, 0.75)',
+    backdropFilter: 'blur(32px)',
+    WebkitBackdropFilter: 'blur(32px)',
+    border: theme === 'dark'
+      ? '1px solid rgba(255,255,255,0.08)'
+      : '1px solid rgba(0,0,0,0.08)',
+    borderRadius: '24px 24px 0 0',
+    padding: '24px',
+    width: '100%',
+    maxWidth: '600px',
+    maxHeight: '80vh',
+    overflowY: 'auto' as const,
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
       <div style={{
@@ -347,19 +364,18 @@ export default function WorkoutPage() {
               background: "var(--text)",
               color: "var(--bg)",
               border: "none",
-              borderRadius: "12px",
+              borderRadius: "14px",
               padding: "13px",
               fontSize: "14px",
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: "pointer",
-              marginBottom: "12px",
             }}>
               {saveSuccess ? t.savedToSchedule : t.saveToSchedule}
             </button>
           </motion.div>
 
           <motion.div variants={fadeUp}>
-            <div style={{ display: "flex", gap: "10px", marginTop: "12px", marginBottom: "20px" }}>
+            <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
               <button onClick={() => router.push("/ai")} style={{
                 flex: 1,
                 background: "var(--surface-2)",
@@ -367,7 +383,7 @@ export default function WorkoutPage() {
                 borderRadius: "14px",
                 padding: "13px",
                 color: "var(--text)",
-                fontSize: "13px",
+                fontSize: "14px",
                 fontWeight: 600,
                 cursor: "pointer",
               }}>
@@ -382,7 +398,7 @@ export default function WorkoutPage() {
                 borderRadius: "14px",
                 padding: "13px",
                 color: "var(--text)",
-                fontSize: "13px",
+                fontSize: "14px",
                 fontWeight: 600,
                 cursor: "pointer",
               }}>
@@ -402,14 +418,14 @@ export default function WorkoutPage() {
                 }}
                 style={{
                   width: "100%",
-                  marginTop: "10px",
+                  marginTop: "8px",
                   background: "#6bbfb8",
                   color: "#ffffff",
                   border: "none",
-                  borderRadius: "12px",
-                  padding: "14px",
+                  borderRadius: "14px",
+                  padding: "13px",
                   fontSize: "14px",
-                  fontWeight: "700",
+                  fontWeight: 600,
                   cursor: "pointer",
                   boxShadow: "0 4px 16px rgba(107, 191, 184, 0.3)",
                 }}
@@ -419,14 +435,14 @@ export default function WorkoutPage() {
             ) : (
               <div style={{
                 width: "100%",
-                marginTop: "10px",
+                marginTop: "8px",
                 background: "var(--surface)",
                 border: "1px solid var(--border)",
-                borderRadius: "12px",
-                padding: "14px",
+                borderRadius: "14px",
+                padding: "13px",
                 fontSize: "14px",
                 color: "#65c97a",
-                fontWeight: "700",
+                fontWeight: 600,
                 textAlign: "center"
               }}>
                 ✓ Workout completed!
@@ -508,18 +524,7 @@ export default function WorkoutPage() {
                   exit={{ y: 100 }}
                   transition={{ duration: 0.3, ease: "easeOut" }}
                   onClick={e => e.stopPropagation()}
-                  style={{
-                    background: theme === "dark" ? "rgba(30,30,30,0.85)" : "rgba(255,255,255,0.85)",
-                    backdropFilter: "blur(24px)",
-                    WebkitBackdropFilter: "blur(24px)",
-                    border: theme === "dark" ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.08)",
-                    borderRadius: "24px 24px 0 0",
-                    padding: "24px",
-                    width: "100%",
-                    maxWidth: "600px",
-                    maxHeight: "80vh",
-                    overflowY: "auto",
-                  }}
+                  style={modalStyle}
                 >
                   <h3 style={{
                     fontSize: "18px",
@@ -539,9 +544,9 @@ export default function WorkoutPage() {
 
                   {loggedExercises.map((exercise, index) => (
                     <div key={index} style={{
-                      background: "var(--surface-2)",
-                      border: "1px solid var(--border)",
-                      borderLeft: "3px solid rgba(107,191,184,0.4)",
+                      background: theme === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+                      border: theme === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+                      borderLeft: "3px solid rgba(107,191,184,0.5)",
                       borderRadius: "12px",
                       padding: "14px 16px",
                       marginBottom: "10px",
@@ -574,8 +579,8 @@ export default function WorkoutPage() {
                             onChange={e => updateLog(index, "sets", e.target.value)}
                             style={{
                               width: "100%",
-                              background: "var(--surface)",
-                              border: "1px solid var(--border)",
+                              background: theme === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+                              border: theme === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
                               borderRadius: "8px",
                               padding: "8px 10px",
                               color: "var(--text)",
@@ -600,8 +605,8 @@ export default function WorkoutPage() {
                             onChange={e => updateLog(index, "reps", e.target.value)}
                             style={{
                               width: "100%",
-                              background: "var(--surface)",
-                              border: "1px solid var(--border)",
+                              background: theme === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+                              border: theme === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
                               borderRadius: "8px",
                               padding: "8px 10px",
                               color: "var(--text)",
