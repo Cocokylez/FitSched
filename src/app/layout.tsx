@@ -5,7 +5,6 @@ import { SessionProvider } from "@/components/SessionProvider";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { ProvidersWrapper } from "@/components/ProvidersWrapper";
-import { GlobalControls } from "@/components/GlobalControls";
 import { auth } from "@/lib/auth";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -50,7 +49,6 @@ export default async function RootLayout({
         <ThemeProvider>
           <SessionProvider session={session}>
             <LanguageProvider>
-              <GlobalControls />
               <ProvidersWrapper>{children}</ProvidersWrapper>
             </LanguageProvider>
           </SessionProvider>

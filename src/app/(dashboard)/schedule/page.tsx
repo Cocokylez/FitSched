@@ -173,16 +173,14 @@ export default function SchedulePage() {
           }}>
             <div style={{ fontSize: "13px", fontWeight: 800, color: "var(--text)" }}>{t.fitSched}</div>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <div style={{
-                background: "var(--surface-2)",
-                border: "1px solid var(--border)",
-                borderRadius: "20px",
-                padding: "4px 10px",
-                fontSize: "11px",
-                color: "var(--text-muted)",
-              }}>
-                {isCalendarConnected ? t.synced : t.connect}
-              </div>
+              {isCalendarConnected ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 6px rgba(34, 197, 94, 0.6)" }} />
+                  <span style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: 500 }}>{t.synced}</span>
+                </div>
+              ) : (
+                <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>{t.connect}</div>
+              )}
               <button
                 onClick={toggleTheme}
                 style={{
