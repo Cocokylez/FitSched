@@ -4,20 +4,60 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Background circle -->
-    <path
-        android:fillColor="#6bbfb8"
-        android:pathData="M54,54m-30,0a30,30 0,1 1,60 0a30,30 0,1 1,-60 0" />
-    <!-- Dumbbell handle -->
+    <!-- Central vertical bar -->
     <path
         android:fillColor="#ffffff"
-        android:pathData="M44,54h20v-3h-20z" />
-    <!-- Left weight -->
+        android:pathData="M47,26L61,26L61,82L47,82Z" />
+    <!-- Top left plate -->
     <path
         android:fillColor="#ffffff"
-        android:pathData="M38,48h6v12h-6z" />
-    <!-- Right weight -->
+        android:pathData="M18,12L42,12Q46,12 46,16L46,36Q46,40 42,40L18,40Q14,40 14,36L14,16Q14,12 18,12Z" />
+    <!-- Top right plate -->
     <path
         android:fillColor="#ffffff"
-        android:pathData="M64,48h6v12h-6z" />
+        android:pathData="M66,12L90,12Q94,12 94,16L94,36Q94,40 90,40L66,40Q62,40 62,36L62,16Q62,12 66,12Z" />
+    <!-- Bottom left plate -->
+    <path
+        android:fillColor="#ffffff"
+        android:pathData="M18,68L42,68Q46,68 46,72L46,92Q46,96 42,96L18,96Q14,96 14,92L14,72Q14,68 18,68Z" />
+    <!-- Bottom right plate -->
+    <path
+        android:fillColor="#ffffff"
+        android:pathData="M66,68L90,68Q94,68 94,72L94,92Q94,96 90,96L66,96Q62,96 62,92L62,72Q62,68 66,68Z" />
+    <!-- Top plate highlight left -->
+    <path
+        android:fillColor="#e0e0e0"
+        android:pathData="M18,14L42,14Q44,14 44,16L44,24L16,24L16,16Q16,14 18,14Z" />
+    <!-- Top plate highlight right -->
+    <path
+        android:fillColor="#e0e0e0"
+        android:pathData="M66,14L90,14Q92,14 92,16L92,24L64,24L64,16Q64,14 66,14Z" />
+    <!-- Bottom plate highlight left -->
+    <path
+        android:fillColor="#e0e0e0"
+        android:pathData="M18,70L42,70Q44,70 44,72L44,80L16,80L16,72Q16,70 18,70Z" />
+    <!-- Bottom plate highlight right -->
+    <path
+        android:fillColor="#e0e0e0"
+        android:pathData="M66,70L90,70Q92,70 92,72L92,80L64,80L64,72Q64,70 66,70Z" />
+    <!-- Left grip bar -->
+    <path
+        android:fillColor="#14B8A6"
+        android:pathData="M40,42L47,42L47,66L40,66Z" />
+    <!-- Right grip bar -->
+    <path
+        android:fillColor="#14B8A6"
+        android:pathData="M61,42L68,42L68,66L61,66Z" />
+    <!-- Grip knurling lines left -->
+    <path
+        android:fillColor="#0D9488"
+        android:pathData="M40,44L47,44M40,48L47,48M40,52L47,52M40,56L47,56M40,60L47,60M40,64L47,64" />
+    <!-- Grip knurling lines right -->
+    <path
+        android:fillColor="#0D9488"
+        android:pathData="M61,44L68,44M61,48L68,48M61,52L68,52M61,56L68,56M61,60L68,60M61,64L68,64" />
+    <!-- Bottom connector curve -->
+    <path
+        android:fillColor="#ffffff"
+        android:pathData="M36,96Q54,108 72,96Q54,102 36,96Z" />
 </vector>
