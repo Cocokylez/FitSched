@@ -1,3 +1,10 @@
+# build artifacts
+/0
+/1
+/dir
+/release
+/baselineProfiles
+
 # Using Android gitignore template: https://github.com/github/gitignore/blob/HEAD/Android.gitignore
 
 # Built application files
