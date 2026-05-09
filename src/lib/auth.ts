@@ -9,6 +9,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(db),
   secret: process.env.AUTH_SECRET!,
   debug: true,
+  cookies: {
+    pkceCodeVerifier: {
+      name: "__Secure-authjs.pkce.code_verifier",
+      options: {
+        httpOnly: true,
+        sameSite: "none" as const,
+        path: "/",
+        secure: true,
+      },
+    },
+  },
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -64,14 +75,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     signIn: "/login",
   },
   session: {
-    strategy: "database", // ← changed from jwt to database
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60,
   },
   callbacks: {
-    async session({ session, user }) { // ← changed token to user
-      if (user && session.user) {
-        session.user.id = user.id;
+    async session({ session, token }) {
+      if (token && session.user) {
+        session.user.id = token.sub as string;
       }
       return session;
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        token.sub = user.id;
+      }
+      return token;
     },
   },
 });
