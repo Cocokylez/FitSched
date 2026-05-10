@@ -6,6 +6,7 @@ import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { useLanguage } from "@/context/LanguageContext"
+import { AuthTopControls } from "@/components/AuthTopControls"
 
 const fadeIn = {
   hidden: { opacity: 0, y: 10 },
@@ -49,6 +50,8 @@ export default function RegisterPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", position: "relative" }}>
+      <AuthTopControls />
+
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
