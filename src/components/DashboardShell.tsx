@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
-import { FitTokenBalancePill } from "@/components/FitTokenBalancePill";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { ScheduleUploadNotice } from "@/components/ScheduleUploadNotice";
 
@@ -16,8 +15,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <AnimatePresence>
         {showLoader && <LoadingScreen onDone={handleDone} />}
       </AnimatePresence>
-      <div className="relative flex flex-col h-dvh overflow-hidden bg-[var(--bg)]">
-        <FitTokenBalancePill />
+      <div className="flex flex-col h-dvh overflow-hidden bg-[var(--bg)]">
         <ScheduleUploadNotice />
         {children}
       </div>

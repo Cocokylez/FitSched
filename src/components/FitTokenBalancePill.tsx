@@ -51,8 +51,7 @@ export function FitTokenBalancePill() {
   }, [loadBalance]);
 
   return (
-    <div className="pointer-events-none absolute right-16 top-4 z-30">
-      <div className="pointer-events-auto inline-flex h-9 items-center gap-2 rounded-full border border-cyan-300/25 bg-[var(--surface)] px-3 text-cyan-300">
+    <div className="inline-flex h-9 items-center gap-2 rounded-full border border-cyan-300/25 bg-[var(--surface)] px-3 text-cyan-300">
         <Coins size={15} aria-hidden="true" />
         <span className="text-xs font-bold tabular-nums">
           {loading ? "--" : formatTokenBalance(balance)}
@@ -60,7 +59,6 @@ export function FitTokenBalancePill() {
         <span className="text-[10px] font-bold uppercase tracking-[0.08em] opacity-75">
           FT
         </span>
-      </div>
     </div>
   );
 }
