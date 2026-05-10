@@ -469,6 +469,8 @@ export default function SettingsPage() {
                 fontWeight: 700,
                 marginBottom: "14px",
               }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/fittoken.svg" alt="" style={{ width: 20, height: 20, flexShrink: 0 }} />
                 <span>FitTokens</span>
                 <span>{formatFitTokenAmount(fitTokens.balance)}</span>
               </div>

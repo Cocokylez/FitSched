@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Coins } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 type TokenResponse = {
@@ -52,7 +51,8 @@ export function FitTokenBalancePill() {
 
   return (
     <div className="inline-flex h-9 items-center gap-2 rounded-full border border-cyan-300/25 bg-[var(--surface)] px-3 text-cyan-300">
-        <Coins size={15} aria-hidden="true" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/fittoken.svg" alt="" className="h-5 w-5 shrink-0" />
         <span className="text-xs font-bold tabular-nums">
           {loading ? "--" : formatTokenBalance(balance)}
         </span>

@@ -1,0 +1,40 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>FitToken</title>
+  <defs>
+    <linearGradient id="coin" x1="42" y1="30" x2="214" y2="228" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FFFF"/>
+      <stop offset="0.45" stop-color="#CFF8F4"/>
+      <stop offset="1" stop-color="#6BBFB8"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="70" y1="50" x2="190" y2="200" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#6BBFB8" stop-opacity="0.22"/>
+    </linearGradient>
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.42 0 0 0 0 0.75 0 0 0 0 0.72 0 0 0 0.42 0"/>
+      <feBlend in="SourceGraphic" mode="normal"/>
+    </filter>
+  </defs>
+
+  <circle cx="128" cy="128" r="104" fill="#101414"/>
+  <circle cx="128" cy="128" r="97" fill="url(#shine)" opacity="0.18"/>
+  <circle cx="128" cy="128" r="96" stroke="url(#coin)" stroke-width="7" filter="url(#softGlow)"/>
+  <circle cx="128" cy="128" r="82" stroke="#DFFFFB" stroke-opacity="0.62" stroke-width="3"/>
+  <path d="M42 171C32 142 35 108 50 82C66 54 96 36 129 36C160 36 188 51 205 76" stroke="#EFFFFC" stroke-width="4" stroke-linecap="round"/>
+  <path d="M214 94C228 126 223 164 202 193C183 219 154 232 122 229C91 226 65 209 50 184" stroke="#EFFFFC" stroke-width="4" stroke-linecap="round"/>
+
+  <path d="M74 73H158L148 92H105L100 113H143L134 131H96L85 179H60L74 73Z" fill="#EFFFFC"/>
+  <path d="M142 108H198L188 128H164L153 179H130L142 108Z" fill="#EFFFFC"/>
+
+  <circle cx="176" cy="91" r="9" fill="#EFFFFC"/>
+  <path d="M169 104L158 113L154 132" stroke="#EFFFFC" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M170 108L184 120L194 139" stroke="#EFFFFC" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M158 132L143 151L133 174" stroke="#EFFFFC" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M180 132L172 154L179 174" stroke="#EFFFFC" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M160 115L178 110" stroke="#101414" stroke-opacity="0.22" stroke-width="3" stroke-linecap="round"/>
+
+  <path d="M72 195H184" stroke="#EFFFFC" stroke-width="6" stroke-linecap="round"/>
+  <path d="M92 183V207M101 177V213M110 186V204" stroke="#EFFFFC" stroke-width="4" stroke-linecap="round"/>
+  <path d="M146 186V204M155 177V213M164 183V207" stroke="#EFFFFC" stroke-width="4" stroke-linecap="round"/>
+</svg>
