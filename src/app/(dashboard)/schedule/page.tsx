@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { motion } from "framer-motion"
 import { useStore } from "@/store/useStore"
 import { SkeletonCard } from "@/components/Skeleton"
+import { FitTokenBalancePill } from "@/components/FitTokenBalancePill"
 import { useLanguage } from "@/context/LanguageContext"
 import { useTheme } from "@/context/ThemeContext"
 
@@ -43,7 +44,7 @@ export default function SchedulePage() {
   const { status } = useSession()
   const router = useRouter()
   const sp = useSearchParams()
-  const { selectedDay, setSelectedDay, isCalendarConnected, setCalendarConnected } = useStore()
+  const { selectedDay, setSelectedDay, setCalendarConnected } = useStore()
   const [schedule, setSchedule] = useState<ScheduleBlock[]>([])
   const [loading, setLoading] = useState(true)
   const [weekDates, setWeekDates] = useState<Date[]>([])
@@ -173,14 +174,7 @@ export default function SchedulePage() {
           }}>
             <div style={{ fontSize: "13px", fontWeight: 800, color: "var(--text)" }}>{t.fitSched}</div>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              {isCalendarConnected ? (
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#65c97a", boxShadow: "0 0 6px rgba(101, 201, 122, 0.6)" }} />
-                  <span style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: 500 }}>{t.synced}</span>
-                </div>
-              ) : (
-                <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>{t.connect}</div>
-              )}
+              <FitTokenBalancePill />
               <button
                 onClick={toggleTheme}
                 style={{

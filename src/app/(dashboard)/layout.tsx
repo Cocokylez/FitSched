@@ -3,7 +3,6 @@ import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { DashboardNav } from "@/components/DashboardNav";
 import { DashboardShell } from "@/components/DashboardShell";
-import { FitTokenBalancePill } from "@/components/FitTokenBalancePill";
 
 export default async function DashboardLayout({
   children,
@@ -25,9 +24,6 @@ export default async function DashboardLayout({
   return (
     <DashboardShell>
       <main className="flex-1 overflow-y-auto pb-[80px]">
-        <div className="flex justify-end px-4 pt-4">
-          <FitTokenBalancePill />
-        </div>
         {children}
       </main>
       <DashboardNav />
