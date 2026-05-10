@@ -10,6 +10,7 @@ export async function GET(req: Request) {
     }
 
     const origin = new URL(req.url).origin;
+    const state = crypto.randomUUID();
 
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CALENDAR_CLIENT_ID,
@@ -22,10 +23,19 @@ export async function GET(req: Request) {
       access_type: "offline",
       scope: scopes,
       prompt: "consent",
-      state: session.user.id,
+      state,
     });
 
-    return NextResponse.json({ url });
+    const response = NextResponse.json({ url });
+    response.cookies.set("fitsched_calendar_oauth_state", state, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 10 * 60,
+      path: "/",
+    });
+
+    return response;
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to generate auth URL" },
