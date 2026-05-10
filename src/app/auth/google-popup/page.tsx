@@ -12,7 +12,7 @@ export default function GooglePopupPage() {
     if (started.current) return
     started.current = true
 
-    const next = searchParams.get("next") || "/onboarding"
+    const next = searchParams.get("next") || "/schedule"
     const completeUrl = new URL("/auth/popup-complete", window.location.origin)
     completeUrl.searchParams.set("next", next)
 

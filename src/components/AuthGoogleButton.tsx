@@ -10,7 +10,7 @@ interface AuthGoogleButtonProps {
 
 export function AuthGoogleButton({
   label,
-  callbackPath = "/onboarding",
+  callbackPath = "/schedule",
 }: AuthGoogleButtonProps) {
   const popupRef = useRef<Window | null>(null)
   const closeCheckRef = useRef<number | null>(null)

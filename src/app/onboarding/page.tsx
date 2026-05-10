@@ -49,6 +49,22 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login")
   }, [status, router])
+
+  useEffect(() => {
+    if (status !== "authenticated") return
+
+    const checkOnboarding = async () => {
+      try {
+        const res = await fetch("/api/onboarding")
+        if (!res.ok) return
+
+        const data = await res.json()
+        if (data?.onboardingCompleted) router.replace("/schedule")
+      } catch {}
+    }
+
+    checkOnboarding()
+  }, [status, router])
   const [selections, setSelections] = useState({
     fitnessGoal: "",
     experienceLevel: "",

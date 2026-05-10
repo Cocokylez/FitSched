@@ -110,7 +110,7 @@ export default function LoginPage() {
 
           <motion.div variants={fadeIn}>
             <button
-              onClick={async () => { await signIn('credentials', { email, password, callbackUrl: '/onboarding' }) }}
+              onClick={async () => { await signIn('credentials', { email, password, callbackUrl: '/schedule' }) }}
               style={{
                 width: '100%',
                 background: 'var(--text)',

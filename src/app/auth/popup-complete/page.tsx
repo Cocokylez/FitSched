@@ -7,7 +7,7 @@ export default function AuthPopupCompletePage() {
   const searchParams = useSearchParams()
 
   useEffect(() => {
-    const next = searchParams.get("next") || "/onboarding"
+    const next = searchParams.get("next") || "/schedule"
 
     if (window.opener) {
       const timer = window.setTimeout(() => {
