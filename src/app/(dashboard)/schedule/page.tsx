@@ -141,7 +141,7 @@ export default function SchedulePage() {
       setLoading(false)
     }
     load()
-  }, [status, selectedDay, fetchEvents, syncNow, router, weekDates])
+  }, [status, selectedDay, fetchEvents, syncNow, router, weekDates, t.workout])
 
   useEffect(() => {
     if (sp.get("connected") === "true") setCalendarConnected(true)

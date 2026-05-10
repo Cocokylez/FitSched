@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
@@ -242,7 +243,7 @@ export default function RegisterPage() {
                 marginBottom: "24px",
               }}
             >
-              <img src="/google.svg" width={16} height={16} alt="Google" />
+              <Image src="/google.svg" width={16} height={16} alt="Google" />
               {t.continueGoogle}
             </button>
           </motion.div>

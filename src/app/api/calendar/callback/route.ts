@@ -30,9 +30,9 @@ export async function GET(req: Request) {
       );
     }
 
-    const expiry = new Date(
-      Date.now() + (tokens.expiry_date || 3600000)
-    );
+    const expiry = tokens.expiry_date
+      ? new Date(tokens.expiry_date)
+      : new Date(Date.now() + 3600000);
 
     await db.calendarConnection.upsert({
       where: {

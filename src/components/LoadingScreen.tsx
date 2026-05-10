@@ -9,11 +9,15 @@ export function LoadingScreen({ onDone }: { onDone: () => void }) {
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
-    timers.current.push(setTimeout(() => setStage("circle"), 700));
-    timers.current.push(setTimeout(() => setStage("square"), 1550));
-    timers.current.push(setTimeout(() => setExiting(true), 2100));
-    timers.current.push(setTimeout(() => onDone(), 2800));
-    return () => timers.current.forEach(clearTimeout);
+    const activeTimers = [
+      setTimeout(() => setStage("circle"), 700),
+      setTimeout(() => setStage("square"), 1550),
+      setTimeout(() => setExiting(true), 2100),
+      setTimeout(() => onDone(), 2800),
+    ];
+
+    timers.current = activeTimers;
+    return () => activeTimers.forEach(clearTimeout);
   }, [onDone]);
 
   return (

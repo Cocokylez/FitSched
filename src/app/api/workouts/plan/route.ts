@@ -13,6 +13,20 @@ function getModel() {
   });
 }
 
+function parseDateOrDefault(value: unknown, fallback = new Date()) {
+  if (typeof value !== "string" && typeof value !== "number") return fallback;
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? fallback : date;
+}
+
+function parseOptionalDate(value: unknown) {
+  if (typeof value !== "string" && typeof value !== "number") return null;
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 export async function POST(req: Request) {
   try {
     const session = await auth();
@@ -87,8 +101,8 @@ Return ONLY valid JSON with this structure:
         userId: session.user.id,
         name: name || "AI Generated Plan",
         description: prompt || null,
-        startDate: new Date(startDate) || new Date(),
-        endDate: endDate ? new Date(endDate) : null,
+        startDate: parseDateOrDefault(startDate),
+        endDate: parseOptionalDate(endDate),
         isAIGenerated: true,
         aiPrompt: prompt || null,
         days: {

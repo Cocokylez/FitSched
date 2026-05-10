@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/SessionProvider";
 import { ThemeProvider } from "@/context/ThemeContext";
@@ -7,11 +6,6 @@ import { LanguageProvider } from "@/context/LanguageContext";
 import { ProvidersWrapper } from "@/components/ProvidersWrapper";
 import { NativeShell } from "@/components/NativeShell";
 import { auth } from "@/lib/auth";
-
-const plusJakartaSans = Plus_Jakarta_Sans({
-  variable: "--font-sans",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "FitSched",
@@ -45,7 +39,7 @@ export default async function RootLayout({
   const session = await auth();
 
   return (
-    <html lang="en" className={plusJakartaSans.variable} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body className="min-h-dvh flex flex-col antialiased">
         <ThemeProvider>
           <NativeShell />
