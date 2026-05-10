@@ -340,7 +340,7 @@ export default function WorkoutPage() {
             </svg>
           </button>
         </div>
-        <div style={{ padding: "20px", flex: 1 }}>
+        <div data-dashboard-scroll style={{ padding: "20px", flex: 1, overflowY: "auto" }}>
           <motion.div variants={stagger} initial="hidden" animate="visible">
             <motion.div variants={fadeUp}>
               <div style={{
@@ -423,7 +423,7 @@ export default function WorkoutPage() {
         </button>
       </div>
 
-      <div style={{ padding: "20px", flex: 1, overflowY: "auto", paddingBottom: "32px" }}>
+      <div data-dashboard-scroll style={{ padding: "20px", flex: 1, overflowY: "auto", paddingBottom: "32px" }}>
         <motion.div variants={stagger} initial="hidden" animate="visible">
           <motion.div variants={fadeUp}>
             <div style={{ display: "flex", gap: "8px", overflowX: "auto", marginBottom: "20px", scrollbarWidth: "none" }}>

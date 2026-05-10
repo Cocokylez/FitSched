@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { Dumbbell, User } from 'lucide-react'
+import { Dumbbell, User, BarChart3 } from 'lucide-react'
 import { useTheme } from "@/context/ThemeContext"
 import { useLanguage } from "@/context/LanguageContext"
 
@@ -19,6 +19,12 @@ const navItems = [
     label: "Workout",
     href: "/workout",
     icon: <Dumbbell size={20} />,
+  },
+  {
+    id: "progress",
+    label: "Progress",
+    href: "/progress",
+    icon: <BarChart3 size={20} />,
   },
   {
     id: "settings",
@@ -52,13 +58,20 @@ export function DashboardNav() {
   }
 
   useEffect(() => {
-    const el = document.querySelector("main")
+    const el =
+      document.querySelector<HTMLElement>("[data-dashboard-scroll]") ||
+      document.querySelector<HTMLElement>("main") ||
+      document.documentElement
     if (!el) return
+
+    setVisible(true)
+    lastScrollY.current = el.scrollTop || window.scrollY
+    ticking.current = false
 
     const handleScroll = () => {
       if (!ticking.current) {
         window.requestAnimationFrame(() => {
-          const currentScrollY = el.scrollTop
+          const currentScrollY = el.scrollTop || window.scrollY
 
           if (currentScrollY <= 10) {
             setVisible(true)
@@ -83,7 +96,7 @@ export function DashboardNav() {
       window.removeEventListener("scroll", handleScroll)
       window.removeEventListener("touchmove", handleScroll)
     }
-  }, [])
+  }, [pathname])
 
   return (
     <AnimatePresence>
