@@ -2,7 +2,6 @@
 
 import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
 
 interface AuthGoogleButtonProps {
   label: string
@@ -13,7 +12,6 @@ export function AuthGoogleButton({
   label,
   callbackPath = "/onboarding",
 }: AuthGoogleButtonProps) {
-  const router = useRouter()
   const popupRef = useRef<Window | null>(null)
   const closeCheckRef = useRef<number | null>(null)
   const [waiting, setWaiting] = useState(false)
@@ -26,8 +24,7 @@ export function AuthGoogleButton({
       setWaiting(false)
       if (closeCheckRef.current) window.clearInterval(closeCheckRef.current)
       popupRef.current?.close()
-      router.push(event.data.next || callbackPath)
-      router.refresh()
+      window.location.assign(event.data.next || callbackPath)
     }
 
     window.addEventListener("message", handleMessage)
@@ -35,7 +32,7 @@ export function AuthGoogleButton({
       window.removeEventListener("message", handleMessage)
       if (closeCheckRef.current) window.clearInterval(closeCheckRef.current)
     }
-  }, [callbackPath, router])
+  }, [callbackPath])
 
   const startGooglePopup = () => {
     const popupUrl = new URL("/auth/google-popup", window.location.origin)

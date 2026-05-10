@@ -10,11 +10,15 @@ export default function AuthPopupCompletePage() {
     const next = searchParams.get("next") || "/onboarding"
 
     if (window.opener) {
-      window.opener.postMessage(
-        { type: "fitsched:google-auth-complete", next },
-        window.location.origin
-      )
-      window.close()
+      const timer = window.setTimeout(() => {
+        window.opener.postMessage(
+          { type: "fitsched:google-auth-complete", next },
+          window.location.origin
+        )
+        window.close()
+      }, 250)
+
+      return () => window.clearTimeout(timer)
     } else {
       window.location.replace(next)
     }
