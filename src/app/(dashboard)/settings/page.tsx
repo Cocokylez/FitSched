@@ -443,7 +443,7 @@ export default function SettingsPage() {
             </motion.div>
 
             <motion.div variants={fadeUp}>
-              <div style={sectionLabelStyle}>{t.last8Weeks}</div>
+              <div style={sectionLabelStyle}>Last 8 Weeks</div>
               <div style={{ ...cardStyle, padding: "14px 12px 8px" }}>
                 <ResponsiveContainer width="100%" height={126}>
                   <BarChart data={weeklyData} margin={{ top: 8, right: 6, bottom: 0, left: 6 }}>
@@ -474,7 +474,7 @@ export default function SettingsPage() {
             </motion.div>
 
             <motion.div variants={fadeUp}>
-              <div style={sectionLabelStyle}>{t.mostTrained}</div>
+              <div style={sectionLabelStyle}>Most Trained</div>
               {topMuscles.length > 0 ? (
                 topMuscles.map((muscle, index) => (
                   <div key={muscle.group} style={{ ...cardStyle, padding: "14px 16px", marginBottom: "8px" }}>
