@@ -81,6 +81,17 @@ interface ProfileData {
   workoutsPerWeek?: number | null
 }
 
+interface FitTokenData {
+  balance: number
+  transactions: Array<{
+    id: string
+    amount: number
+    reason: string
+    createdAt: string
+    workoutName: string
+  }>
+}
+
 function getInitials(name?: string | null, email?: string | null) {
   const source = name?.trim() || email?.split("@")[0] || "User"
   const parts = source.split(/\s+/).filter(Boolean)
@@ -196,6 +207,19 @@ function AnimatedNumber({ value, suffix = "" }: { value: number; suffix?: string
   return <>{display}{suffix}</>
 }
 
+function formatFitTokenAmount(value: number) {
+  return value.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
+
+function formatTokenReason(reason: string, workoutName: string) {
+  if (reason === "streak_bonus") return "Streak bonus"
+  if (reason === "workout_complete") return `${workoutName} workout`
+  return reason.replace(/_/g, " ")
+}
+
 export default function SettingsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -208,6 +232,10 @@ export default function SettingsPage() {
   const [logs, setLogs] = useState<WorkoutLog[]>([])
   const [workoutsPerWeek, setWorkoutsPerWeek] = useState(3)
   const [expandedLog, setExpandedLog] = useState<string | null>(null)
+  const [fitTokens, setFitTokens] = useState<FitTokenData>({
+    balance: 0,
+    transactions: [],
+  })
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login")
@@ -229,10 +257,11 @@ export default function SettingsPage() {
     const load = async () => {
       setLoading(true)
       try {
-        const [calendarRes, logRes, profileRes] = await Promise.all([
+        const [calendarRes, logRes, profileRes, tokenRes] = await Promise.all([
           fetch("/api/calendar/sync"),
           fetch("/api/workout-log"),
           fetch("/api/onboarding"),
+          fetch("/api/tokens"),
         ])
 
         if (calendarRes.ok) {
@@ -247,6 +276,10 @@ export default function SettingsPage() {
         if (profileRes.ok) {
           const profile = (await profileRes.json()) as ProfileData
           if (profile.workoutsPerWeek) setWorkoutsPerWeek(profile.workoutsPerWeek)
+        }
+
+        if (tokenRes.ok) {
+          setFitTokens((await tokenRes.json()) as FitTokenData)
         }
       } catch {}
       setLoading(false)
@@ -423,6 +456,25 @@ export default function SettingsPage() {
             </motion.div>
 
             <motion.div variants={fadeUp}>
+              <div style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                background: "rgba(107, 191, 184, 0.12)",
+                border: "1px solid rgba(107, 191, 184, 0.32)",
+                color: ACCENT,
+                borderRadius: "999px",
+                padding: "8px 14px",
+                fontSize: "13px",
+                fontWeight: 700,
+                marginBottom: "14px",
+              }}>
+                <span>FitTokens</span>
+                <span>{formatFitTokenAmount(fitTokens.balance)}</span>
+              </div>
+            </motion.div>
+
+            <motion.div variants={fadeUp}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                 {[
                   { value: stats.totalWorkouts, suffix: "", label: "Workouts completed" },
@@ -439,6 +491,43 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </motion.div>
+
+            <motion.div variants={fadeUp}>
+              <div style={sectionLabelStyle}>FitToken Earnings</div>
+              <div style={{ ...cardStyle, padding: "6px 0", overflow: "hidden" }}>
+                {fitTokens.transactions.length > 0 ? (
+                  fitTokens.transactions.map((transaction, index) => (
+                    <div
+                      key={transaction.id}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "14px",
+                        padding: "12px 16px",
+                        borderBottom: index < fitTokens.transactions.length - 1 ? "1px solid var(--border)" : "none",
+                      }}
+                    >
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: "13px", fontWeight: 650, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {formatTokenReason(transaction.reason, transaction.workoutName)}
+                        </div>
+                        <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "3px" }}>
+                          {new Date(transaction.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div style={{ color: ACCENT, fontSize: "13px", fontWeight: 800, flexShrink: 0 }}>
+                        +{formatFitTokenAmount(transaction.amount)}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ padding: "18px 16px", color: "var(--text-muted)", fontSize: "13px", textAlign: "center" }}>
+                    Complete a workout to earn your first FitToken.
+                  </div>
+                )}
               </div>
             </motion.div>
 

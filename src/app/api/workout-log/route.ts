@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { awardFitTokensForWorkoutLogTx } from "@/lib/fitTokens"
 import { NextResponse } from "next/server"
 
 export async function GET() {
@@ -31,6 +32,7 @@ export async function POST(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+    const userId = session.user.id
 
     const { date, workoutName, exercises } = await req.json()
 
@@ -41,16 +43,26 @@ export async function POST(req: Request) {
       )
     }
 
-    const log = await db.workoutSessionLog.create({
-      data: {
-        userId: session.user.id,
-        date,
-        workoutName,
-        exercises,
-      },
+    const { log, fitTokenReward } = await db.$transaction(async (tx) => {
+      const createdLog = await tx.workoutSessionLog.create({
+        data: {
+          userId,
+          date,
+          workoutName,
+          exercises,
+        },
+      })
+
+      const reward = await awardFitTokensForWorkoutLogTx(
+        tx,
+        userId,
+        createdLog.id,
+      )
+
+      return { log: createdLog, fitTokenReward: reward }
     })
 
-    return NextResponse.json(log, { status: 201 })
+    return NextResponse.json({ ...log, fitTokenReward }, { status: 201 })
   } catch (error) {
     console.error("Workout log POST error:", error)
     return NextResponse.json(
