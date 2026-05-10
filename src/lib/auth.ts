@@ -80,4 +80,32 @@ export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 }
 
+import { getServerSession as gss } from "next-auth"
+import type { Session } from "next-auth"
+import type { AuthOptions } from "next-auth"
+import { headers, cookies } from "next/headers"
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string
+      name?: string | null
+      email?: string | null
+      image?: string | null
+    }
+  }
+}
+
+const mockRes = { getHeader() {}, setCookie() {}, setHeader() {} }
+
+export async function getServerSession(options?: AuthOptions): Promise<Session | null> {
+  const h = await headers()
+  const c = await cookies()
+  const req = {
+    headers: Object.fromEntries(h),
+    cookies: Object.fromEntries(c.getAll().map((co: any) => [co.name, co.value]))
+  }
+  return gss(req as any, mockRes as any, options || authOptions)
+}
+
 export default NextAuth(authOptions)

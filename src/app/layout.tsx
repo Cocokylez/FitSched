@@ -6,8 +6,7 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { ProvidersWrapper } from "@/components/ProvidersWrapper";
 import { NativeShell } from "@/components/NativeShell";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getServerSession, authOptions } from "@/lib/auth";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-sans",
