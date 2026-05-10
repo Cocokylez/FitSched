@@ -1,11 +1,12 @@
 import NextAuth from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { PrismaAdapter } from "@next-auth/prisma-adapter"
+import { PrismaAdapter } from "@auth/prisma-adapter"
 import { compare, hash } from "bcryptjs"
 import { db } from "./db"
 
-export const authOptions = {
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  trustHost: true,
   adapter: PrismaAdapter(db),
   providers: [
     GoogleProvider({
@@ -60,7 +61,7 @@ export const authOptions = {
     signIn: "/login",
   },
   session: {
-    strategy: "jwt" as const,
+    strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60,
   },
   callbacks: {
@@ -77,35 +78,4 @@ export const authOptions = {
       return token
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
-}
-
-import { getServerSession as gss } from "next-auth"
-import type { Session } from "next-auth"
-import type { AuthOptions } from "next-auth"
-import { headers, cookies } from "next/headers"
-
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string
-      name?: string | null
-      email?: string | null
-      image?: string | null
-    }
-  }
-}
-
-const mockRes = { getHeader() {}, setCookie() {}, setHeader() {} }
-
-export async function getServerSession(options?: AuthOptions): Promise<Session | null> {
-  const h = await headers()
-  const c = await cookies()
-  const req = {
-    headers: Object.fromEntries(h),
-    cookies: Object.fromEntries(c.getAll().map((co: any) => [co.name, co.value]))
-  }
-  return gss(req as any, mockRes as any, options || authOptions)
-}
-
-export default NextAuth(authOptions)
+})
