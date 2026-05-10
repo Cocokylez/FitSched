@@ -38,23 +38,21 @@ export function AuthGoogleButton({
   }, [callbackPath, router])
 
   const startGooglePopup = () => {
-    const completeUrl = new URL("/auth/popup-complete", window.location.origin)
-    completeUrl.searchParams.set("next", callbackPath)
-
-    const authUrl = `/api/auth/signin/google?callbackUrl=${encodeURIComponent(completeUrl.toString())}`
+    const popupUrl = new URL("/auth/google-popup", window.location.origin)
+    popupUrl.searchParams.set("next", callbackPath)
     const width = 460
     const height = 640
     const left = window.screenX + Math.max(0, (window.outerWidth - width) / 2)
     const top = window.screenY + Math.max(0, (window.outerHeight - height) / 2)
 
     const popup = window.open(
-      authUrl,
+      popupUrl.toString(),
       "fitsched-google-login",
       `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
     )
 
     if (!popup) {
-      window.location.href = authUrl
+      window.location.href = `/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackPath)}`
       return
     }
 
