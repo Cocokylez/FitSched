@@ -7,21 +7,27 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useLanguage } from "@/context/LanguageContext"
 import {
   Activity,
+  BicepsFlexed,
+  Bone,
   CalendarCheck,
   CalendarClock,
   CalendarDays,
   CalendarRange,
+  CircleDot,
   Dumbbell,
   FileImage,
   Gauge,
   HeartPulse,
   ImagePlus,
   Link2,
+  PersonStanding,
+  Shield,
   SkipForward,
   Target,
   Trophy,
   Upload,
   UserRound,
+  Zap,
 } from "lucide-react"
 
 const steps = ["goal", "target", "experience", "frequency", "calendar", "schedule"]
@@ -34,13 +40,13 @@ const goals = [
 ]
 
 const muscleTargets = [
-  { id: "CHEST", Icon: Target, label: "Chest" },
-  { id: "BACK", Icon: Target, label: "Back" },
-  { id: "LEGS", Icon: Target, label: "Legs" },
-  { id: "SHOULDERS", Icon: Target, label: "Shoulders" },
-  { id: "ARMS", Icon: Dumbbell, label: "Arms" },
-  { id: "CORE", Icon: Activity, label: "Core" },
-  { id: "FULL_BODY", Icon: HeartPulse, label: "Full Body" },
+  { id: "CHEST", Icon: Shield, label: "Chest" },
+  { id: "BACK", Icon: Bone, label: "Back" },
+  { id: "LEGS", Icon: PersonStanding, label: "Legs" },
+  { id: "SHOULDERS", Icon: Zap, label: "Shoulders" },
+  { id: "ARMS", Icon: BicepsFlexed, label: "Arms" },
+  { id: "CORE", Icon: CircleDot, label: "Core" },
+  { id: "FULL_BODY", Icon: Activity, label: "Full Body" },
 ]
 
 const levels = [
@@ -75,6 +81,7 @@ export default function OnboardingPage() {
     workoutsPerWeek: 0,
     calendarPreference: "",
     scheduleImageName: "",
+    scheduleImageDataUrl: "",
   })
 
   useEffect(() => {
@@ -102,6 +109,7 @@ export default function OnboardingPage() {
       targetMuscles: updated.targetMuscles,
       calendarPreference: updated.calendarPreference,
       scheduleImageName: updated.scheduleImageName,
+      scheduleImageDataUrl: updated.scheduleImageDataUrl,
     }))
   }
 
@@ -155,17 +163,26 @@ export default function OnboardingPage() {
     })
   }
 
-  const handleScheduleFile = (file?: File) => {
+  const handleScheduleFile = async (file?: File) => {
     if (!file) return
 
-    setSelections((current) => ({ ...current, scheduleImageName: file.name }))
+    localStorage.removeItem("fitsched-schedule-upload-notice-dismissed")
 
     if (file.type.startsWith("image/")) {
-      const reader = new FileReader()
-      reader.onload = () => setSchedulePreview(String(reader.result))
-      reader.readAsDataURL(file)
+      const preview = await createSchedulePreview(file)
+      setSchedulePreview(preview)
+      setSelections((current) => ({
+        ...current,
+        scheduleImageName: file.name,
+        scheduleImageDataUrl: preview,
+      }))
     } else {
       setSchedulePreview(null)
+      setSelections((current) => ({
+        ...current,
+        scheduleImageName: file.name,
+        scheduleImageDataUrl: "",
+      }))
     }
   }
 
@@ -458,4 +475,41 @@ function OptionText({ label, sub }: { label: string; sub: string }) {
       </div>
     </div>
   )
+}
+
+async function createSchedulePreview(file: File) {
+  const source = await readFileAsDataUrl(file)
+
+  return new Promise<string>((resolve) => {
+    const image = new Image()
+    image.onload = () => {
+      const maxSide = 1200
+      const scale = Math.min(1, maxSide / Math.max(image.width, image.height))
+      const width = Math.max(1, Math.round(image.width * scale))
+      const height = Math.max(1, Math.round(image.height * scale))
+      const canvas = document.createElement("canvas")
+      const context = canvas.getContext("2d")
+
+      if (!context) {
+        resolve(source)
+        return
+      }
+
+      canvas.width = width
+      canvas.height = height
+      context.drawImage(image, 0, 0, width, height)
+      resolve(canvas.toDataURL("image/jpeg", 0.78))
+    }
+    image.onerror = () => resolve(source)
+    image.src = source
+  })
+}
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
 }

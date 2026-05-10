@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 type OnboardingPreferences = {
   calendarPreference?: string;
   scheduleImageName?: string;
+  scheduleImageDataUrl?: string;
 };
 
 const STORAGE_KEY = "fitsched-onboarding-preferences";
@@ -15,6 +16,7 @@ const DISMISSED_KEY = "fitsched-schedule-upload-notice-dismissed";
 export function ScheduleUploadNotice() {
   const pathname = usePathname();
   const [fileName, setFileName] = useState("");
+  const [imagePreview, setImagePreview] = useState("");
   const [dismissed, setDismissed] = useState(true);
   const [connecting, setConnecting] = useState(false);
 
@@ -24,23 +26,29 @@ export function ScheduleUploadNotice() {
     }
 
     try {
-      const wasDismissed = localStorage.getItem(DISMISSED_KEY) === "true";
       const rawPreferences = localStorage.getItem(STORAGE_KEY);
 
-      if (!rawPreferences || wasDismissed) {
-        setDismissed(wasDismissed);
+      if (!rawPreferences) {
+        setDismissed(true);
         return;
       }
 
       const preferences = JSON.parse(rawPreferences) as OnboardingPreferences;
       const uploadedName = preferences.scheduleImageName?.trim();
+      const dismissedFor = localStorage.getItem(DISMISSED_KEY);
 
-      if (preferences.calendarPreference === "upload" && uploadedName) {
+      if (
+        preferences.calendarPreference === "upload" &&
+        uploadedName &&
+        dismissedFor !== uploadedName
+      ) {
         setFileName(uploadedName);
+        setImagePreview(preferences.scheduleImageDataUrl || "");
         setDismissed(false);
       }
     } catch {
       setFileName("");
+      setImagePreview("");
     }
   }, [pathname]);
 
@@ -49,7 +57,7 @@ export function ScheduleUploadNotice() {
   }
 
   const handleDismiss = () => {
-    localStorage.setItem(DISMISSED_KEY, "true");
+    localStorage.setItem(DISMISSED_KEY, fileName);
     setDismissed(true);
   };
 
@@ -101,9 +109,17 @@ export function ScheduleUploadNotice() {
               </button>
             </div>
             <p className="mt-3 text-sm leading-5 text-[var(--muted)]">
-              FitSched saved your upload, but image reading is not automatic yet.
+              FitSched saved your upload and preview.
               Connect Google Calendar for live schedule sync.
             </p>
+            {imagePreview && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={imagePreview}
+                alt="Uploaded schedule preview"
+                className="mt-3 max-h-48 w-full rounded-xl border border-white/10 object-cover"
+              />
+            )}
             <button
               type="button"
               onClick={handleConnectCalendar}
