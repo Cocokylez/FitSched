@@ -5,34 +5,45 @@ import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useLanguage } from "@/context/LanguageContext"
-import { useTheme } from "@/context/ThemeContext"
+import {
+  Activity,
+  CalendarCheck,
+  CalendarClock,
+  CalendarDays,
+  CalendarRange,
+  Dumbbell,
+  Gauge,
+  HeartPulse,
+  Target,
+  Trophy,
+  UserRound,
+} from "lucide-react"
 
 const steps = ["goal", "experience", "frequency"]
 
 const goals = [
-  { id: "lose_weight", emoji: "🔥", label: "Lose Weight", sub: "Burn fat, get leaner" },
-  { id: "build_muscle", emoji: "💪", label: "Build Muscle", sub: "Get stronger, gain mass" },
-  { id: "stay_active", emoji: "⚡", label: "Stay Active", sub: "General fitness & health" },
-  { id: "improve_endurance", emoji: "🏃", label: "Endurance", sub: "Cardio & stamina" },
+  { id: "lose_weight", Icon: Target, label: "Lose Weight", sub: "Burn fat, get leaner" },
+  { id: "build_muscle", Icon: Dumbbell, label: "Build Muscle", sub: "Get stronger, gain mass" },
+  { id: "stay_active", Icon: HeartPulse, label: "Stay Active", sub: "General fitness & health" },
+  { id: "improve_endurance", Icon: Activity, label: "Endurance", sub: "Cardio & stamina" },
 ]
 
 const levels = [
-  { id: "beginner", emoji: "🌱", label: "Beginner", sub: "Less than 1 year" },
-  { id: "intermediate", emoji: "⚡", label: "Intermediate", sub: "1-3 years" },
-  { id: "advanced", emoji: "🔥", label: "Advanced", sub: "3+ years" },
+  { id: "beginner", Icon: UserRound, label: "Beginner", sub: "Less than 1 year" },
+  { id: "intermediate", Icon: Gauge, label: "Intermediate", sub: "1-3 years" },
+  { id: "advanced", Icon: Trophy, label: "Advanced", sub: "3+ years" },
 ]
 
 const frequencies = [
-  { id: 2, emoji: "😌", label: "2x a week", sub: "Easy going" },
-  { id: 3, emoji: "💪", label: "3x a week", sub: "Recommended" },
-  { id: 4, emoji: "⚡", label: "4x a week", sub: "Serious" },
-  { id: 5, emoji: "🔥", label: "5x a week", sub: "Intense" },
+  { id: 2, Icon: CalendarDays, label: "2x a week", sub: "Easy going" },
+  { id: 3, Icon: CalendarCheck, label: "3x a week", sub: "Recommended" },
+  { id: 4, Icon: CalendarRange, label: "4x a week", sub: "Serious" },
+  { id: 5, Icon: CalendarClock, label: "5x a week", sub: "Intense" },
 ]
 
 export default function OnboardingPage() {
   const router = useRouter()
   const { status } = useSession()
-  const { theme } = useTheme()
   const [step, setStep] = useState(0)
 
   useEffect(() => {
@@ -73,6 +84,19 @@ export default function OnboardingPage() {
     marginBottom: "10px",
     transition: "all 0.2s",
     color: selected ? "var(--bg)" : "var(--text)",
+  })
+
+  const optionIconStyle = (selected: boolean) => ({
+    width: 40,
+    height: 40,
+    borderRadius: "10px",
+    background: selected ? "var(--bg)" : "var(--surface-2)",
+    border: `1px solid ${selected ? "var(--bg)" : "var(--border)"}`,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: selected ? "var(--text)" : "var(--text-muted)",
+    flexShrink: 0,
   })
 
   return (
@@ -139,7 +163,9 @@ export default function OnboardingPage() {
                 onClick={() => handleSelect("fitnessGoal", goal.id)}
                 style={optionStyle(selections.fitnessGoal === goal.id)}
               >
-                <span style={{ fontSize: "28px" }}>{goal.emoji}</span>
+                <div style={optionIconStyle(selections.fitnessGoal === goal.id)}>
+                  <goal.Icon size={20} strokeWidth={1.8} />
+                </div>
                 <div style={{ textAlign: "left" }}>
                   <div style={{ fontSize: "15px", fontWeight: 700, marginBottom: "2px" }}>
                     {goal.label}
@@ -194,7 +220,9 @@ export default function OnboardingPage() {
                 onClick={() => handleSelect("experienceLevel", level.id)}
                 style={optionStyle(selections.experienceLevel === level.id)}
               >
-                <span style={{ fontSize: "28px" }}>{level.emoji}</span>
+                <div style={optionIconStyle(selections.experienceLevel === level.id)}>
+                  <level.Icon size={20} strokeWidth={1.8} />
+                </div>
                 <div style={{ textAlign: "left" }}>
                   <div style={{ fontSize: "15px", fontWeight: 700, marginBottom: "2px" }}>
                     {level.label}
@@ -249,7 +277,9 @@ export default function OnboardingPage() {
                 onClick={() => handleSelect("workoutsPerWeek", freq.id)}
                 style={optionStyle(selections.workoutsPerWeek === freq.id)}
               >
-                <span style={{ fontSize: "28px" }}>{freq.emoji}</span>
+                <div style={optionIconStyle(selections.workoutsPerWeek === freq.id)}>
+                  <freq.Icon size={20} strokeWidth={1.8} />
+                </div>
                 <div style={{ textAlign: "left" }}>
                   <div style={{ fontSize: "15px", fontWeight: 700, marginBottom: "2px" }}>
                     {freq.label}
