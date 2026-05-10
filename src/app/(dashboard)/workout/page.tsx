@@ -36,6 +36,103 @@ const DEFAULT_EXERCISES: Record<number, Array<[string, string]>> = {
   6: [["Curl to Press","3×12"],["Tricep Extension","3×12"],["Plank Reaches","3×10 each"],["Leg Raises","3×15"],["Bicycle Crunches","3×20"]],
 }
 
+interface ExerciseDef {
+  name: string
+  muscleGroup: string
+  difficulty: string
+  goalTypes: string[]
+}
+
+const EXERCISE_LIBRARY: ExerciseDef[] = [
+  { name: "Push-ups", muscleGroup: "CHEST", difficulty: "BEGINNER", goalTypes: ["stay_active", "lose_weight", "build_muscle", "improve_endurance"] },
+  { name: "Diamond Push-ups", muscleGroup: "CHEST", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
+  { name: "Wide Push-ups", muscleGroup: "CHEST", difficulty: "BEGINNER", goalTypes: ["stay_active", "lose_weight", "build_muscle"] },
+  { name: "Incline Push-ups", muscleGroup: "CHEST", difficulty: "BEGINNER", goalTypes: ["stay_active", "lose_weight"] },
+  { name: "Decline Push-ups", muscleGroup: "CHEST", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
+  { name: "Bench Press", muscleGroup: "CHEST", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
+  { name: "Dumbbell Fly", muscleGroup: "CHEST", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
+  { name: "Chest Dips", muscleGroup: "CHEST", difficulty: "ADVANCED", goalTypes: ["build_muscle"] },
+  { name: "Pull-ups", muscleGroup: "BACK", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
+  { name: "Chin-ups", muscleGroup: "BACK", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
+  { name: "Bent-over Row", muscleGroup: "BACK", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
+  { name: "Dumbbell Row", muscleGroup: "BACK", difficulty: "BEGINNER", goalTypes: ["stay_active", "build_muscle"] },
+  { name: "Superman Hold", muscleGroup: "BACK", difficulty: "BEGINNER", goalTypes: ["stay_active", "lose_weight"] },
+  { name: "Reverse Fly", muscleGroup: "BACK", difficulty: "BEGINNER", goalTypes: ["stay_active", "build_muscle"] },
+  { name: "Deadlift", muscleGroup: "BACK", difficulty: "ADVANCED", goalTypes: ["build_muscle"] },
+  { name: "Lat Pulldown", muscleGroup: "BACK", difficulty: "BEGINNER", goalTypes: ["build_muscle", "stay_active"] },
+  { name: "Pike Push-ups", muscleGroup: "SHOULDERS", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
+  { name: "Lateral Raises", muscleGroup: "SHOULDERS", difficulty: "BEGINNER", goalTypes: ["stay_active", "build_muscle"] },
+  { name: "Front Raises", muscleGroup: "SHOULDERS", difficulty: "BEGINNER", goalTypes: ["stay_active"] },
+  { name: "Overhead Press", muscleGroup: "SHOULDERS", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
+  { name: "Arnold Press", muscleGroup: "SHOULDERS", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
+  { name: "Face Pull", muscleGroup: "SHOULDERS", difficulty: "BEGINNER", goalTypes: ["stay_active", "build_muscle"] },
+  { name: "Shrugs", muscleGroup: "SHOULDERS", difficulty: "BEGINNER", goalTypes: ["stay_active", "build_muscle"] },
+  { name: "Bicep Curls", muscleGroup: "ARMS", difficulty: "BEGINNER", goalTypes: ["build_muscle", "stay_active"] },
+  { name: "Hammer Curls", muscleGroup: "ARMS", difficulty: "BEGINNER", goalTypes: ["build_muscle"] },
+  { name: "Tricep Dips", muscleGroup: "ARMS", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
+  { name: "Tricep Extension", muscleGroup: "ARMS", difficulty: "BEGINNER", goalTypes: ["build_muscle"] },
+  { name: "Close-grip Push-ups", muscleGroup: "ARMS", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
+  { name: "Preacher Curl", muscleGroup: "ARMS", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
+  { name: "Concentration Curl", muscleGroup: "ARMS", difficulty: "BEGINNER", goalTypes: ["build_muscle"] },
+  { name: "Bodyweight Squats", muscleGroup: "LEGS", difficulty: "BEGINNER", goalTypes: ["lose_weight", "stay_active", "build_muscle", "improve_endurance"] },
+  { name: "Walking Lunges", muscleGroup: "LEGS", difficulty: "BEGINNER", goalTypes: ["lose_weight", "stay_active"] },
+  { name: "Glute Bridges", muscleGroup: "LEGS", difficulty: "BEGINNER", goalTypes: ["stay_active"] },
+  { name: "Wall Sit", muscleGroup: "LEGS", difficulty: "BEGINNER", goalTypes: ["lose_weight", "stay_active"] },
+  { name: "Calf Raises", muscleGroup: "LEGS", difficulty: "BEGINNER", goalTypes: ["stay_active"] },
+  { name: "Bulgarian Split Squats", muscleGroup: "LEGS", difficulty: "ADVANCED", goalTypes: ["build_muscle"] },
+  { name: "Romanian Deadlift", muscleGroup: "LEGS", difficulty: "ADVANCED", goalTypes: ["build_muscle"] },
+  { name: "Goblet Squats", muscleGroup: "LEGS", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
+  { name: "Step-ups", muscleGroup: "LEGS", difficulty: "BEGINNER", goalTypes: ["lose_weight", "stay_active"] },
+  { name: "Jump Squats", muscleGroup: "LEGS", difficulty: "INTERMEDIATE", goalTypes: ["lose_weight", "improve_endurance"] },
+  { name: "Plank", muscleGroup: "CORE", difficulty: "BEGINNER", goalTypes: ["stay_active", "lose_weight"] },
+  { name: "Russian Twist", muscleGroup: "CORE", difficulty: "BEGINNER", goalTypes: ["stay_active", "lose_weight"] },
+  { name: "Leg Raises", muscleGroup: "CORE", difficulty: "BEGINNER", goalTypes: ["build_muscle", "stay_active"] },
+  { name: "Bicycle Crunches", muscleGroup: "CORE", difficulty: "BEGINNER", goalTypes: ["lose_weight", "stay_active"] },
+  { name: "Mountain Climbers", muscleGroup: "CORE", difficulty: "INTERMEDIATE", goalTypes: ["lose_weight", "improve_endurance"] },
+  { name: "Hanging Knee Raises", muscleGroup: "CORE", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
+  { name: "Plank Reaches", muscleGroup: "CORE", difficulty: "BEGINNER", goalTypes: ["stay_active"] },
+  { name: "Dead Bug", muscleGroup: "CORE", difficulty: "BEGINNER", goalTypes: ["stay_active", "lose_weight"] },
+  { name: "Burpees", muscleGroup: "FULL_BODY", difficulty: "INTERMEDIATE", goalTypes: ["lose_weight", "improve_endurance"] },
+  { name: "Jumping Jacks", muscleGroup: "FULL_BODY", difficulty: "BEGINNER", goalTypes: ["lose_weight", "improve_endurance"] },
+  { name: "High Knees", muscleGroup: "FULL_BODY", difficulty: "BEGINNER", goalTypes: ["lose_weight", "improve_endurance"] },
+  { name: "Squat Thrusts", muscleGroup: "FULL_BODY", difficulty: "INTERMEDIATE", goalTypes: ["lose_weight", "improve_endurance"] },
+  { name: "Bear Crawl", muscleGroup: "FULL_BODY", difficulty: "INTERMEDIATE", goalTypes: ["stay_active"] },
+  { name: "Tuck Jumps", muscleGroup: "FULL_BODY", difficulty: "ADVANCED", goalTypes: ["improve_endurance", "lose_weight"] },
+  { name: "Box Jumps", muscleGroup: "FULL_BODY", difficulty: "ADVANCED", goalTypes: ["build_muscle", "improve_endurance"] },
+  { name: "Sprints", muscleGroup: "CARDIO", difficulty: "INTERMEDIATE", goalTypes: ["improve_endurance", "lose_weight"] },
+  { name: "Jump Rope", muscleGroup: "CARDIO", difficulty: "BEGINNER", goalTypes: ["lose_weight", "improve_endurance"] },
+  { name: "Battle Ropes", muscleGroup: "CARDIO", difficulty: "INTERMEDIATE", goalTypes: ["improve_endurance", "lose_weight"] },
+]
+
+function getStoredTargetMuscles(): string[] {
+  try {
+    const raw = localStorage.getItem("fitsched-onboarding-preferences")
+    if (!raw) return []
+
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed?.targetMuscles) ? parsed.targetMuscles : []
+  } catch {
+    return []
+  }
+}
+
+function getMuscleGroupsForDay(day: number, workoutsPerWeek: number): { groups: string[]; isRestDay: boolean } {
+  if (day === 0) return { groups: [], isRestDay: true }
+  const workoutDayOrder = [1, 2, 3, 4, 5, 6]
+  const workoutDayIndex = workoutDayOrder.indexOf(day)
+  if (workoutDayIndex === -1 || workoutDayIndex >= workoutsPerWeek) return { groups: [], isRestDay: true }
+  if (workoutsPerWeek === 3) {
+    const splits = [["CHEST", "SHOULDERS", "ARMS"], ["BACK", "ARMS"], ["LEGS", "CORE"]]
+    return { groups: splits[workoutDayIndex], isRestDay: false }
+  }
+  if (workoutsPerWeek === 4) {
+    const splits = [["CHEST", "BACK"], ["LEGS", "CORE"], ["SHOULDERS", "ARMS"], ["BACK", "ARMS"]]
+    return { groups: splits[workoutDayIndex], isRestDay: false }
+  }
+  const splits = [["CHEST"], ["BACK"], ["SHOULDERS"], ["ARMS"], ["LEGS", "CORE"]]
+  return { groups: splits[workoutDayIndex], isRestDay: false }
+}
+
 export default function WorkoutPage() {
   const { status } = useSession()
   const router = useRouter()
@@ -100,58 +197,89 @@ export default function WorkoutPage() {
 
     const compute = async () => {
       try {
-        const [exRes, profileRes] = await Promise.all([
-          fetch("/api/exercises"),
-          fetch("/api/onboarding"),
-        ])
-
-        const exercises = exRes.ok ? await exRes.json() : []
+        const profileRes = await fetch("/api/onboarding")
         const profile = profileRes.ok ? await profileRes.json() : {}
+        const fitnessGoal = profile.fitnessGoal || "stay_active"
         const experienceLevel = profile.experienceLevel || "intermediate"
+        const workoutsPerWeek = profile.workoutsPerWeek || 3
 
-        const MUSCLE_GROUP_MAP: Record<number, string[]> = {
-          1: ["CHEST", "ARMS"],
-          2: ["BACK", "ARMS"],
-          3: ["LEGS"],
-          4: ["SHOULDERS", "CORE"],
-          5: ["FULL_BODY"],
-          6: ["ARMS", "CORE"],
+        const groupResult = getMuscleGroupsForDay(selectedDay, workoutsPerWeek)
+        const allowedGroups = [...groupResult.groups]
+        const targetMuscles = getStoredTargetMuscles()
+        const targetForToday = targetMuscles.length > 0
+          ? targetMuscles[(selectedDay - 1 + targetMuscles.length) % targetMuscles.length]
+          : null
+
+        if (targetForToday && !allowedGroups.includes(targetForToday)) {
+          allowedGroups.unshift(targetForToday)
         }
 
-        const allowedGroups = MUSCLE_GROUP_MAP[selectedDay] || []
+        if ((fitnessGoal === "lose_weight" || fitnessGoal === "improve_endurance") && !allowedGroups.includes("FULL_BODY") && !allowedGroups.includes("CARDIO")) {
+          allowedGroups.push("FULL_BODY")
+        }
 
         const DIFFICULTY_MAP: Record<string, string[]> = {
           beginner: ["BEGINNER"],
           intermediate: ["BEGINNER", "INTERMEDIATE"],
           advanced: ["BEGINNER", "INTERMEDIATE", "ADVANCED"],
         }
-
         const allowedDifficulties = DIFFICULTY_MAP[experienceLevel] || ["BEGINNER", "INTERMEDIATE"]
 
-        let filtered = exercises.filter((ex: any) =>
+        let filtered = EXERCISE_LIBRARY.filter((ex) =>
           allowedGroups.includes(ex.muscleGroup) &&
-          allowedDifficulties.includes(ex.difficulty)
+          allowedDifficulties.includes(ex.difficulty) &&
+          (fitnessGoal === "stay_active" || ex.goalTypes.includes(fitnessGoal))
         )
 
-        if (filtered.length === 0) {
-          filtered = exercises.filter((ex: any) =>
+        if (filtered.length < 3) {
+          filtered = EXERCISE_LIBRARY.filter((ex) =>
+            allowedGroups.includes(ex.muscleGroup) &&
+            allowedDifficulties.includes(ex.difficulty)
+          )
+        }
+
+        if (filtered.length < 3) {
+          filtered = EXERCISE_LIBRARY.filter((ex) =>
             allowedGroups.includes(ex.muscleGroup)
           )
         }
 
         if (filtered.length === 0) {
-          setSmartExercises(null)
-          setComputing(false)
-          return
+          filtered = [...EXERCISE_LIBRARY]
         }
+
+        let recentNames: string[] = []
+        try {
+          const logRes = await fetch("/api/workout-log")
+          if (logRes.ok) {
+            const logs = await logRes.json()
+            const oneWeekAgo = new Date()
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+            recentNames = logs
+              .filter((l: any) => new Date(l.completedAt || l.createdAt) > oneWeekAgo)
+              .flatMap((l: any) => l.exercises?.map((e: any) => e.name) || [])
+          }
+        } catch {}
+
+        const available = recentNames.length > 0
+          ? filtered.filter((ex) => !recentNames.includes(ex.name))
+          : filtered
+
+        const pool = available.length >= 3 ? available : filtered
 
         const now = new Date()
         const startOfYear = new Date(now.getFullYear(), 0, 1)
         const weekNum = Math.floor((now.getTime() - startOfYear.getTime()) / (7 * 24 * 60 * 60 * 1000))
 
-        const shuffled = [...filtered].sort((a, b) => {
-          const hashA = (a.name.charCodeAt(0) + weekNum) % 1000
-          const hashB = (b.name.charCodeAt(0) + weekNum) % 1000
+        const shuffled = [...pool].sort((a, b) => {
+          if (targetForToday) {
+            const aTarget = a.muscleGroup === targetForToday ? 0 : 1
+            const bTarget = b.muscleGroup === targetForToday ? 0 : 1
+            if (aTarget !== bTarget) return aTarget - bTarget
+          }
+
+          const hashA = (a.name.charCodeAt(0) + weekNum * 7) % 1000
+          const hashB = (b.name.charCodeAt(0) + weekNum * 7) % 1000
           return hashA - hashB
         })
 
@@ -162,9 +290,16 @@ export default function WorkoutPage() {
           intermediate: "3×12",
           advanced: "4×12",
         }
-        const setsReps = SETS_REPS_MAP[experienceLevel] || "3×12"
+        const ENDURANCE_REPS_MAP: Record<string, string> = {
+          beginner: "3×15",
+          intermediate: "4×15",
+          advanced: "4×20",
+        }
 
-        setSmartExercises(selected.map((ex: any) => [ex.name, setsReps]))
+        const repsMap = fitnessGoal === "improve_endurance" ? ENDURANCE_REPS_MAP : SETS_REPS_MAP
+        const setsReps = repsMap[experienceLevel] || "3×12"
+
+        setSmartExercises(selected.map((ex) => [ex.name, setsReps]))
       } catch {
         setSmartExercises(null)
       }
