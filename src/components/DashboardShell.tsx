@@ -16,7 +16,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <AnimatePresence>
         {showLoader && <LoadingScreen onDone={handleDone} />}
       </AnimatePresence>
-      <div className="flex flex-col h-dvh overflow-hidden bg-[var(--bg)]">
+      <div className="relative flex flex-col h-dvh overflow-hidden bg-[var(--bg)]">
         <FitTokenBalancePill />
         <ScheduleUploadNotice />
         {children}
