@@ -746,7 +746,7 @@ export default function WorkoutPage() {
                       const selectedDate = weekDates[selectedDay]
                       if (!selectedDate) return
                       const dateStr = selectedDate.toISOString().split("T")[0]
-                      await fetch("/api/workout-log", {
+                      const response = await fetch("/api/workout-log", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
@@ -755,6 +755,9 @@ export default function WorkoutPage() {
                           exercises: loggedExercises,
                         }),
                       })
+                      if (response.ok) {
+                        window.dispatchEvent(new Event("fitsched:tokens-updated"))
+                      }
                       setLogging(false)
                       setCompleted(true)
                     }}
