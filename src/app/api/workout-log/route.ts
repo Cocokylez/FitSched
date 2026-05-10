@@ -12,7 +12,7 @@ export async function GET() {
     const logs = await db.workoutSessionLog.findMany({
       where: { userId: session.user.id },
       orderBy: { completedAt: "desc" },
-      take: 30,
+      take: 365,
     })
 
     return NextResponse.json(logs)
