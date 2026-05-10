@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
@@ -8,20 +9,16 @@ import { useLanguage } from "@/context/LanguageContext"
 import {
   Activity,
   AlertTriangle,
-  BicepsFlexed,
-  Bone,
   CalendarCheck,
   CalendarClock,
   CalendarDays,
   CalendarRange,
-  CircleDot,
   Dumbbell,
   FileImage,
   Gauge,
   HeartPulse,
   ImagePlus,
   Link2,
-  PersonStanding,
   Ruler,
   Scale,
   Shield,
@@ -43,13 +40,13 @@ const goals = [
 ]
 
 const muscleTargets = [
-  { id: "CHEST", Icon: Shield, label: "Chest" },
-  { id: "BACK", Icon: Bone, label: "Back" },
-  { id: "LEGS", Icon: PersonStanding, label: "Legs" },
-  { id: "SHOULDERS", Icon: Zap, label: "Shoulders" },
-  { id: "ARMS", Icon: BicepsFlexed, label: "Arms" },
-  { id: "CORE", Icon: CircleDot, label: "Core" },
-  { id: "FULL_BODY", Icon: Activity, label: "Full Body" },
+  { id: "CHEST", Icon: ChestMuscleIcon, label: "Chest" },
+  { id: "BACK", Icon: BackMuscleIcon, label: "Back" },
+  { id: "LEGS", Icon: LegsMuscleIcon, label: "Legs" },
+  { id: "SHOULDERS", Icon: ShouldersMuscleIcon, label: "Shoulders" },
+  { id: "ARMS", Icon: ArmsMuscleIcon, label: "Arms" },
+  { id: "CORE", Icon: CoreMuscleIcon, label: "Core" },
+  { id: "FULL_BODY", Icon: FullBodyMuscleIcon, label: "Full Body" },
 ]
 
 const levels = [
@@ -392,7 +389,7 @@ export default function OnboardingPage() {
                 return (
                   <motion.button key={target.id} whileTap={{ scale: 0.98 }} onClick={() => toggleTarget(target.id)} style={{ ...optionStyle(selected), marginBottom: 0, padding: "14px", flexDirection: "column", alignItems: "flex-start" }}>
                     <div style={optionIconStyle(selected)}>
-                      <target.Icon size={19} strokeWidth={1.8} />
+                      <target.Icon />
                     </div>
                     <div style={{ fontSize: "14px", fontWeight: 700 }}>{target.label}</div>
                   </motion.button>
@@ -662,6 +659,118 @@ function calculateBmi(heightCm: string | number, weightKg: string | number) {
   const weight = Number(weightKg)
   if (!height || !weight) return 0
   return weight / ((height / 100) ** 2)
+}
+
+function MuscleIconSvg({ children }: { children: ReactNode }) {
+  return (
+    <svg
+      viewBox="0 0 32 32"
+      width="22"
+      height="22"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  )
+}
+
+function ChestMuscleIcon() {
+  return (
+    <MuscleIconSvg>
+      <path d="M16 8v15" />
+      <path d="M15 10c-5.2-2.4-9.2.2-10 5.5 2.8 1.4 7.7 1.3 10-2.3" />
+      <path d="M17 10c5.2-2.4 9.2.2 10 5.5-2.8 1.4-7.7 1.3-10-2.3" />
+      <path d="M8 20c2.5 1.8 5.6 1.9 8 0 2.4 1.9 5.5 1.8 8 0" />
+    </MuscleIconSvg>
+  )
+}
+
+function BackMuscleIcon() {
+  return (
+    <MuscleIconSvg>
+      <path d="M16 6v20" />
+      <path d="M13.5 8c-4 .7-6.7 4.2-8.1 9.8 3.5-.3 6.2-2.6 8.1-6.2" />
+      <path d="M18.5 8c4 .7 6.7 4.2 8.1 9.8-3.5-.3-6.2-2.6-8.1-6.2" />
+      <path d="M12 17c-1.4 2.7-1.7 5.2-1 7" />
+      <path d="M20 17c1.4 2.7 1.7 5.2 1 7" />
+      <path d="M14 24h4" />
+    </MuscleIconSvg>
+  )
+}
+
+function LegsMuscleIcon() {
+  return (
+    <MuscleIconSvg>
+      <path d="M12 7c1.8 3.9 2.4 8.4 1.4 13.4L11.8 27" />
+      <path d="M20 7c-1.8 3.9-2.4 8.4-1.4 13.4l1.6 6.6" />
+      <path d="M13.5 8h5" />
+      <path d="M10 15c2 .5 3.2 1.8 3.6 3.7" />
+      <path d="M22 15c-2 .5-3.2 1.8-3.6 3.7" />
+      <path d="M13 22c-1.4.9-2.3 2.4-2.8 4.2" />
+      <path d="M19 22c1.4.9 2.3 2.4 2.8 4.2" />
+    </MuscleIconSvg>
+  )
+}
+
+function ShouldersMuscleIcon() {
+  return (
+    <MuscleIconSvg>
+      <path d="M10 11c-3.6.4-6 2.7-7 6.7" />
+      <path d="M22 11c3.6.4 6 2.7 7 6.7" />
+      <path d="M10 11c1.4-2.4 3.4-3.6 6-3.6s4.6 1.2 6 3.6" />
+      <path d="M11 15c1.4 1.2 3 1.8 5 1.8s3.6-.6 5-1.8" />
+      <path d="M9 20c2.1 2.5 4.4 3.7 7 3.7s4.9-1.2 7-3.7" />
+    </MuscleIconSvg>
+  )
+}
+
+function ArmsMuscleIcon() {
+  return (
+    <MuscleIconSvg>
+      <path d="M12 7c-2.9 1.7-4.3 4.4-4.1 8.1" />
+      <path d="M20 7c2.9 1.7 4.3 4.4 4.1 8.1" />
+      <path d="M8.3 15c-2.2 1-3.3 2.9-3.3 5.7 2.8.4 5-.7 6.5-3.3" />
+      <path d="M23.7 15c2.2 1 3.3 2.9 3.3 5.7-2.8.4-5-.7-6.5-3.3" />
+      <path d="M12 7c1.3 1.1 2.6 1.7 4 1.7S18.7 8.1 20 7" />
+      <path d="M11.2 17.4c-.9 2.7-.4 5 .9 7" />
+      <path d="M20.8 17.4c.9 2.7.4 5-.9 7" />
+    </MuscleIconSvg>
+  )
+}
+
+function CoreMuscleIcon() {
+  return (
+    <MuscleIconSvg>
+      <path d="M16 7v20" />
+      <path d="M11 9c1.7 1.5 3.3 2.2 5 2.2s3.3-.7 5-2.2" />
+      <path d="M11 13h10" />
+      <path d="M10.5 17h11" />
+      <path d="M11 21h10" />
+      <path d="M13 13v8" />
+      <path d="M19 13v8" />
+      <path d="M11.5 25c2.9 1.5 6.1 1.5 9 0" />
+    </MuscleIconSvg>
+  )
+}
+
+function FullBodyMuscleIcon() {
+  return (
+    <MuscleIconSvg>
+      <path d="M16 5.5a2.4 2.4 0 1 0 0 4.8 2.4 2.4 0 0 0 0-4.8Z" />
+      <path d="M16 10.5v8" />
+      <path d="M10 13c2.2-1.4 4.2-2.1 6-2.1s3.8.7 6 2.1" />
+      <path d="M10 13l-2.5 7" />
+      <path d="M22 13l2.5 7" />
+      <path d="M13.5 18.5l-2.2 8" />
+      <path d="M18.5 18.5l2.2 8" />
+      <path d="M12.2 16.5c2.4 1.5 5.2 1.5 7.6 0" />
+    </MuscleIconSvg>
+  )
 }
 
 async function createSchedulePreview(file: File) {
