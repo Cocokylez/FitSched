@@ -9,12 +9,24 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json()
+  const heightCm = Number(body.heightCm) || null
+  const weightKg = Number(body.weightKg) || null
+  const bmi = heightCm && weightKg
+    ? Math.round((weightKg / ((heightCm / 100) ** 2)) * 10) / 10
+    : null
+  const hasInjury = Boolean(body.hasInjury)
+
   await db.user.update({
     where: { id: session.user.id },
     data: {
       fitnessGoal: body.fitnessGoal,
       experienceLevel: body.experienceLevel,
       workoutsPerWeek: body.workoutsPerWeek,
+      heightCm,
+      weightKg,
+      bmi,
+      hasInjury,
+      injuryNotes: hasInjury ? String(body.injuryNotes || "").slice(0, 500) : null,
       onboardingCompleted: true,
     },
   })
@@ -35,6 +47,11 @@ export async function GET() {
       fitnessGoal: true,
       experienceLevel: true,
       workoutsPerWeek: true,
+      heightCm: true,
+      weightKg: true,
+      bmi: true,
+      hasInjury: true,
+      injuryNotes: true,
     },
   })
 

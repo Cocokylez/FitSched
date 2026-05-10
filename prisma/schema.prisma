@@ -26,6 +26,11 @@ model User {
   fitnessGoal         String?
   experienceLevel     String?
   workoutsPerWeek     Int?
+  heightCm            Float?
+  weightKg            Float?
+  bmi                 Float?
+  hasInjury           Boolean                @default(false)
+  injuryNotes         String?
   calendarConnections CalendarConnection[]
   pushSubscriptions   PushSubscription[]
   chatMessages        ChatMessage[]

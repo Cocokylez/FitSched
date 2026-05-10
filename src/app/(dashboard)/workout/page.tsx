@@ -202,6 +202,7 @@ export default function WorkoutPage() {
         const fitnessGoal = profile.fitnessGoal || "stay_active"
         const experienceLevel = profile.experienceLevel || "intermediate"
         const workoutsPerWeek = profile.workoutsPerWeek || 3
+        const hasInjury = Boolean(profile.hasInjury)
 
         const groupResult = getMuscleGroupsForDay(selectedDay, workoutsPerWeek)
         const allowedGroups = [...groupResult.groups]
@@ -223,7 +224,9 @@ export default function WorkoutPage() {
           intermediate: ["BEGINNER", "INTERMEDIATE"],
           advanced: ["BEGINNER", "INTERMEDIATE", "ADVANCED"],
         }
-        const allowedDifficulties = DIFFICULTY_MAP[experienceLevel] || ["BEGINNER", "INTERMEDIATE"]
+        const allowedDifficulties = hasInjury
+          ? ["BEGINNER"]
+          : DIFFICULTY_MAP[experienceLevel] || ["BEGINNER", "INTERMEDIATE"]
 
         let filtered = EXERCISE_LIBRARY.filter((ex) =>
           allowedGroups.includes(ex.muscleGroup) &&
@@ -246,6 +249,14 @@ export default function WorkoutPage() {
 
         if (filtered.length === 0) {
           filtered = [...EXERCISE_LIBRARY]
+        }
+
+        if (hasInjury) {
+          const cautionExercises = new Set(["Burpees", "Jump Squats", "Tuck Jumps", "Box Jumps", "Sprints", "Battle Ropes"])
+          filtered = filtered.filter((ex) => !cautionExercises.has(ex.name))
+          if (filtered.length === 0) {
+            filtered = EXERCISE_LIBRARY.filter((ex) => ex.difficulty === "BEGINNER")
+          }
         }
 
         let recentNames: string[] = []

@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useLanguage } from "@/context/LanguageContext"
 import {
   Activity,
+  AlertTriangle,
   BicepsFlexed,
   Bone,
   CalendarCheck,
@@ -21,6 +22,8 @@ import {
   ImagePlus,
   Link2,
   PersonStanding,
+  Ruler,
+  Scale,
   Shield,
   SkipForward,
   Target,
@@ -30,7 +33,7 @@ import {
   Zap,
 } from "lucide-react"
 
-const steps = ["goal", "target", "experience", "frequency", "calendar", "schedule"]
+const steps = ["goal", "body", "injury", "target", "experience", "frequency", "calendar", "schedule"]
 
 const goals = [
   { id: "lose_weight", Icon: Target, label: "Lose Weight", sub: "Burn fat, get leaner" },
@@ -76,6 +79,10 @@ export default function OnboardingPage() {
   const [schedulePreview, setSchedulePreview] = useState<string | null>(null)
   const [selections, setSelections] = useState({
     fitnessGoal: "",
+    heightCm: "",
+    weightKg: "",
+    hasInjury: false,
+    injuryNotes: "",
     targetMuscles: [] as string[],
     experienceLevel: "",
     workoutsPerWeek: 0,
@@ -107,6 +114,11 @@ export default function OnboardingPage() {
   const persistPreferences = (updated = selections) => {
     localStorage.setItem("fitsched-onboarding-preferences", JSON.stringify({
       targetMuscles: updated.targetMuscles,
+      heightCm: updated.heightCm,
+      weightKg: updated.weightKg,
+      bmi: calculateBmi(updated.heightCm, updated.weightKg),
+      hasInjury: updated.hasInjury,
+      injuryNotes: updated.injuryNotes,
       calendarPreference: updated.calendarPreference,
       scheduleImageName: updated.scheduleImageName,
       scheduleImageDataUrl: updated.scheduleImageDataUrl,
@@ -140,7 +152,7 @@ export default function OnboardingPage() {
     router.push("/schedule")
   }
 
-  const handleSelect = async (key: string, value: string | number) => {
+  const handleSelect = async (key: string, value: string | number | boolean) => {
     const updated = { ...selections, [key]: value }
     setSelections(updated)
 
@@ -215,6 +227,7 @@ export default function OnboardingPage() {
   })
 
   const stepLabel = `STEP ${step + 1} OF ${steps.length}`
+  const bmi = calculateBmi(selections.heightCm, selections.weightKg)
 
   return (
     <div style={{
@@ -255,6 +268,121 @@ export default function OnboardingPage() {
         )}
 
         {step === 1 && (
+          <motion.div key="body" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.3 }}>
+            <StepHeader label={stepLabel} title="Body basics?" body="Height and weight help FitSched estimate your BMI." />
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+              <NumberField
+                label="Height"
+                value={selections.heightCm}
+                suffix="cm"
+                Icon={Ruler}
+                onChange={(value) => setSelections((current) => ({ ...current, heightCm: value }))}
+              />
+              <NumberField
+                label="Weight"
+                value={selections.weightKg}
+                suffix="kg"
+                Icon={Scale}
+                onChange={(value) => setSelections((current) => ({ ...current, weightKg: value }))}
+              />
+            </div>
+
+            <div style={{
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderRadius: "16px",
+              padding: "14px 16px",
+              marginTop: "12px",
+              color: "var(--text)",
+            }}>
+              <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "4px" }}>Estimated BMI</div>
+              <div style={{ fontSize: "24px", fontWeight: 900 }}>{bmi ? bmi.toFixed(1) : "--"}</div>
+            </div>
+
+            <button
+              onClick={() => setStep(step + 1)}
+              disabled={!bmi}
+              style={{
+                width: "100%",
+                marginTop: "18px",
+                border: "none",
+                borderRadius: "14px",
+                padding: "14px",
+                background: "var(--text)",
+                color: "var(--bg)",
+                fontSize: "14px",
+                fontWeight: 800,
+                cursor: bmi ? "pointer" : "default",
+                opacity: bmi ? 1 : 0.45,
+              }}
+            >
+              Continue
+            </button>
+          </motion.div>
+        )}
+
+        {step === 2 && (
+          <motion.div key="injury" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.3 }}>
+            <StepHeader label={stepLabel} title="Any injuries?" body="This helps FitSched stay more careful with your plan." />
+
+            <motion.button whileTap={{ scale: 0.98 }} onClick={() => handleSelect("hasInjury", false)} style={optionStyle(!selections.hasInjury)}>
+              <div style={optionIconStyle(!selections.hasInjury)}>
+                <Shield size={20} strokeWidth={1.8} />
+              </div>
+              <OptionText label="No injuries" sub="Train normally" />
+            </motion.button>
+
+            <motion.button whileTap={{ scale: 0.98 }} onClick={() => setSelections((current) => ({ ...current, hasInjury: true }))} style={optionStyle(selections.hasInjury)}>
+              <div style={optionIconStyle(selections.hasInjury)}>
+                <AlertTriangle size={20} strokeWidth={1.8} />
+              </div>
+              <OptionText label="I have an injury" sub="FitSched will use a safer plan" />
+            </motion.button>
+
+            {selections.hasInjury && (
+              <textarea
+                value={selections.injuryNotes}
+                onChange={(event) => setSelections((current) => ({ ...current, injuryNotes: event.target.value }))}
+                placeholder="Example: knee pain, shoulder injury, lower back..."
+                rows={4}
+                style={{
+                  width: "100%",
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "14px",
+                  padding: "12px 14px",
+                  color: "var(--text)",
+                  fontSize: "14px",
+                  outline: "none",
+                  resize: "vertical",
+                }}
+              />
+            )}
+
+            {selections.hasInjury && (
+              <button
+                onClick={() => setStep(step + 1)}
+                style={{
+                  width: "100%",
+                  marginTop: "18px",
+                  border: "none",
+                  borderRadius: "14px",
+                  padding: "14px",
+                  background: "var(--text)",
+                  color: "var(--bg)",
+                  fontSize: "14px",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                }}
+              >
+                Continue
+              </button>
+            )}
+          </motion.div>
+        )}
+
+        {step === 3 && (
           <motion.div key="target" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.3 }}>
             <StepHeader label={stepLabel} title="What do you want to grow?" body="Choose the muscle groups you care about most." />
 
@@ -294,7 +422,7 @@ export default function OnboardingPage() {
           </motion.div>
         )}
 
-        {step === 2 && (
+        {step === 4 && (
           <motion.div key="experience" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.3 }}>
             <StepHeader label={stepLabel} title="Your experience?" body="We'll adjust workout intensity for you." />
 
@@ -309,7 +437,7 @@ export default function OnboardingPage() {
           </motion.div>
         )}
 
-        {step === 3 && (
+        {step === 5 && (
           <motion.div key="frequency" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.3 }}>
             <StepHeader label={stepLabel} title="How often?" body="We'll schedule workouts around your calendar." />
 
@@ -324,7 +452,7 @@ export default function OnboardingPage() {
           </motion.div>
         )}
 
-        {step === 4 && (
+        {step === 6 && (
           <motion.div key="calendar" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.3 }}>
             <StepHeader label={stepLabel} title="Connect your schedule?" body="Calendar sync gives FitSched better workout windows." />
 
@@ -339,7 +467,7 @@ export default function OnboardingPage() {
           </motion.div>
         )}
 
-        {step === 5 && (
+        {step === 7 && (
           <motion.div key="schedule" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.3 }}>
             <StepHeader label={stepLabel} title="Upload your schedule?" body="Optional. Add a screenshot or photo if you don't use Google Calendar." />
 
@@ -475,6 +603,65 @@ function OptionText({ label, sub }: { label: string; sub: string }) {
       </div>
     </div>
   )
+}
+
+function NumberField({
+  label,
+  value,
+  suffix,
+  Icon,
+  onChange,
+}: {
+  label: string
+  value: string
+  suffix: string
+  Icon: typeof Ruler
+  onChange: (value: string) => void
+}) {
+  return (
+    <label style={{
+      background: "var(--surface)",
+      border: "1px solid var(--border)",
+      borderRadius: "16px",
+      padding: "14px",
+      color: "var(--text)",
+      display: "flex",
+      flexDirection: "column",
+      gap: "10px",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--text-muted)", fontSize: "12px", fontWeight: 700 }}>
+        <Icon size={16} strokeWidth={1.8} />
+        {label}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <input
+          type="number"
+          inputMode="decimal"
+          min="1"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          style={{
+            minWidth: 0,
+            width: "100%",
+            background: "transparent",
+            border: "none",
+            outline: "none",
+            color: "var(--text)",
+            fontSize: "24px",
+            fontWeight: 900,
+          }}
+        />
+        <span style={{ color: "var(--text-muted)", fontSize: "12px", fontWeight: 700 }}>{suffix}</span>
+      </div>
+    </label>
+  )
+}
+
+function calculateBmi(heightCm: string | number, weightKg: string | number) {
+  const height = Number(heightCm)
+  const weight = Number(weightKg)
+  if (!height || !weight) return 0
+  return weight / ((height / 100) ** 2)
 }
 
 async function createSchedulePreview(file: File) {
