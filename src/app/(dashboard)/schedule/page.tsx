@@ -151,7 +151,7 @@ export default function SchedulePage() {
 
   const ds = schedule.map((b, i) => {
     const w = i === bestIdx
-    return { ...b, kind: w ? "wrk" : b.kind, label: w ? MUSCLE_GROUPS[selectedDay] : b.label, duration: w ? "AI-scheduled — 25 min" : b.duration, hint: w ? "Optimal energy window" : b.hint }
+    return { ...b, kind: w ? "wrk" : b.kind, label: w ? MUSCLE_GROUPS[selectedDay] : b.label, duration: w ? "Best window — 25 min" : b.duration, hint: w ? "Optimal energy window" : b.hint }
   })
 
   return (

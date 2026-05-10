@@ -50,6 +50,8 @@ export default function WorkoutPage() {
   const [loading, setLoading] = useState(true)
   const { t, language } = useLanguage()
   const { theme, toggleTheme } = useTheme()
+  const [smartExercises, setSmartExercises] = useState<Array<[string, string]> | null>(null)
+  const [computing, setComputing] = useState(true)
   const dayNames = [t.days.sun, t.days.mon, t.days.tue, t.days.wed, t.days.thu, t.days.fri, t.days.sat]
 
   useEffect(() => {
@@ -89,6 +91,88 @@ export default function WorkoutPage() {
   useEffect(() => {
     setCompleted(false)
   }, [selectedDay])
+
+  useEffect(() => {
+    if (status !== "authenticated") return
+    if (selectedDay === 0) { setSmartExercises([]); setComputing(false); return }
+
+    setComputing(true)
+
+    const compute = async () => {
+      try {
+        const [exRes, profileRes] = await Promise.all([
+          fetch("/api/exercises"),
+          fetch("/api/onboarding"),
+        ])
+
+        const exercises = exRes.ok ? await exRes.json() : []
+        const profile = profileRes.ok ? await profileRes.json() : {}
+        const experienceLevel = profile.experienceLevel || "intermediate"
+
+        const MUSCLE_GROUP_MAP: Record<number, string[]> = {
+          1: ["CHEST", "ARMS"],
+          2: ["BACK", "ARMS"],
+          3: ["LEGS"],
+          4: ["SHOULDERS", "CORE"],
+          5: ["FULL_BODY"],
+          6: ["ARMS", "CORE"],
+        }
+
+        const allowedGroups = MUSCLE_GROUP_MAP[selectedDay] || []
+
+        const DIFFICULTY_MAP: Record<string, string[]> = {
+          beginner: ["BEGINNER"],
+          intermediate: ["BEGINNER", "INTERMEDIATE"],
+          advanced: ["BEGINNER", "INTERMEDIATE", "ADVANCED"],
+        }
+
+        const allowedDifficulties = DIFFICULTY_MAP[experienceLevel] || ["BEGINNER", "INTERMEDIATE"]
+
+        let filtered = exercises.filter((ex: any) =>
+          allowedGroups.includes(ex.muscleGroup) &&
+          allowedDifficulties.includes(ex.difficulty)
+        )
+
+        if (filtered.length === 0) {
+          filtered = exercises.filter((ex: any) =>
+            allowedGroups.includes(ex.muscleGroup)
+          )
+        }
+
+        if (filtered.length === 0) {
+          setSmartExercises(null)
+          setComputing(false)
+          return
+        }
+
+        const now = new Date()
+        const startOfYear = new Date(now.getFullYear(), 0, 1)
+        const weekNum = Math.floor((now.getTime() - startOfYear.getTime()) / (7 * 24 * 60 * 60 * 1000))
+
+        const shuffled = [...filtered].sort((a, b) => {
+          const hashA = (a.name.charCodeAt(0) + weekNum) % 1000
+          const hashB = (b.name.charCodeAt(0) + weekNum) % 1000
+          return hashA - hashB
+        })
+
+        const selected = shuffled.slice(0, 5)
+
+        const SETS_REPS_MAP: Record<string, string> = {
+          beginner: "3×10",
+          intermediate: "3×12",
+          advanced: "4×12",
+        }
+        const setsReps = SETS_REPS_MAP[experienceLevel] || "3×12"
+
+        setSmartExercises(selected.map((ex: any) => [ex.name, setsReps]))
+      } catch {
+        setSmartExercises(null)
+      }
+      setComputing(false)
+    }
+
+    compute()
+  }, [status, selectedDay])
 
   if (selectedDay === 0) {
     return (
@@ -135,22 +219,7 @@ export default function WorkoutPage() {
                 <p style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.5, marginBottom: "20px" }}>
                   {t.restBody}
                 </p>
-                <button
-                  onClick={() => router.push("/ai")}
-                  style={{
-                    width: "100%",
-                    background: "var(--surface-2)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "12px",
-                    padding: "12px",
-                    color: "var(--text)",
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  {t.showStretch}
-                </button>
+
               </div>
             </motion.div>
           </motion.div>
@@ -160,7 +229,7 @@ export default function WorkoutPage() {
   }
 
   const muscle = MUSCLE_GROUPS[selectedDay]
-  const todayExercises = DEFAULT_EXERCISES[selectedDay] || []
+  const todayExercises = smartExercises ?? (DEFAULT_EXERCISES[selectedDay] || [])
 
   const currentExercises = todayExercises.map(([name, reps]) => {
     const parts = reps.split("×")
@@ -282,7 +351,7 @@ export default function WorkoutPage() {
             </div>
           </motion.div>
 
-          {loading ? (
+          {loading || computing ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -373,40 +442,7 @@ export default function WorkoutPage() {
             </button>
           </motion.div>
 
-          <motion.div variants={fadeUp}>
-            <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-              <button onClick={() => router.push("/ai")} style={{
-                flex: 1,
-                background: "var(--surface-2)",
-                border: "1px solid var(--border)",
-                borderRadius: "14px",
-                padding: "13px",
-                color: "var(--text)",
-                fontSize: "14px",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}>
-                <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                  {t.askForTips}
-                </motion.span>
-              </button>
-              <button onClick={() => router.push("/ai")} style={{
-                flex: 1,
-                background: "var(--surface-2)",
-                border: "1px solid var(--border)",
-                borderRadius: "14px",
-                padding: "13px",
-                color: "var(--text)",
-                fontSize: "14px",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}>
-                <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                  {t.alternative}
-                </motion.span>
-              </button>
-            </div>
-          </motion.div>
+
 
           <motion.div variants={fadeUp}>
             {!completed ? (
