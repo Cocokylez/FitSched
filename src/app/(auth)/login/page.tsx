@@ -1,12 +1,12 @@
 "use client"
 
-import Image from 'next/image'
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useLanguage } from '@/context/LanguageContext'
 import { AuthTopControls } from '@/components/AuthTopControls'
+import { AuthGoogleButton } from '@/components/AuthGoogleButton'
 
 const fadeIn = {
   hidden: { opacity: 0, y: 10 },
@@ -137,27 +137,7 @@ export default function LoginPage() {
           </motion.div>
 
           <motion.div variants={fadeIn}>
-            <button
-              onClick={() => { signIn('google', { callbackUrl: '/onboarding' }) }}
-              style={{
-                width: '100%',
-                background: 'var(--surface-2)',
-                border: '1px solid var(--border)',
-                borderRadius: '12px',
-                padding: '14px',
-                color: 'var(--text)',
-                fontSize: '14px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                marginBottom: '24px',
-              }}
-            >
-              <Image src="/google.svg" width={16} height={16} alt="Google" />
-              {t.continueGoogle}
-            </button>
+            <AuthGoogleButton label={t.continueGoogle} />
           </motion.div>
 
           <motion.div variants={fadeIn}>
