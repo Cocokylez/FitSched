@@ -8,6 +8,22 @@ function isDateId(value: unknown): value is string {
   return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
 }
 
+function getTodayDateId() {
+  const timeZone = process.env.FITSCHED_TIME_ZONE || "Asia/Singapore"
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date())
+
+  const year = parts.find((part) => part.type === "year")?.value
+  const month = parts.find((part) => part.type === "month")?.value
+  const day = parts.find((part) => part.type === "day")?.value
+
+  return `${year}-${month}-${day}`
+}
+
 function isSerializableConflict(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034"
 }
@@ -55,6 +71,13 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: "Missing required fields: date, workoutName, exercises" },
         { status: 400 }
+      )
+    }
+
+    if (date !== getTodayDateId()) {
+      return NextResponse.json(
+        { error: "Only today's workout can earn FitTokens", todayOnly: true },
+        { status: 403 }
       )
     }
 

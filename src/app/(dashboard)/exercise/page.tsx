@@ -53,6 +53,7 @@ export default function ExerciseSessionPage() {
   const [fitTokenReward, setFitTokenReward] = useState<FitTokenReward | null>(null)
   const [checkingLock, setCheckingLock] = useState(true)
   const [locked, setLocked] = useState(false)
+  const [lockReason, setLockReason] = useState<"completed" | "date">("completed")
   const [streakDay, setStreakDay] = useState(1)
 
   useEffect(() => {
@@ -80,6 +81,7 @@ export default function ExerciseSessionPage() {
         if (response.ok) {
           const logs = await response.json()
           if (active && Array.isArray(logs) && logs.length > 0) {
+            setLockReason("completed")
             setLocked(true)
             sessionStorage.removeItem("fitsched-active-workout")
           }
@@ -197,6 +199,14 @@ export default function ExerciseSessionPage() {
       }
 
       if (response.status === 409) {
+        setLockReason("completed")
+        setLocked(true)
+        sessionStorage.removeItem("fitsched-active-workout")
+        window.dispatchEvent(new Event("fitsched:workout-completed"))
+      }
+
+      if (response.status === 403) {
+        setLockReason("date")
         setLocked(true)
         sessionStorage.removeItem("fitsched-active-workout")
         window.dispatchEvent(new Event("fitsched:workout-completed"))
@@ -220,8 +230,12 @@ export default function ExerciseSessionPage() {
         <div style={{ maxWidth: 520, margin: "0 auto" }}>
           <div style={{ background: "var(--surface)", border: "1px solid rgba(107,191,184,0.32)", borderRadius: 20, padding: 24, textAlign: "center" }}>
             <div style={{ width: 58, height: 58, borderRadius: "50%", background: "rgba(107,191,184,0.14)", color: "#6bbfb8", display: "grid", placeItems: "center", margin: "0 auto 14px", fontSize: 18, fontWeight: 950 }}>OK</div>
-            <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 8 }}>{t.workoutAlreadyComplete}</div>
-            <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 18, lineHeight: 1.5 }}>{t.workoutAlreadyCompleteBody}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 8 }}>
+              {lockReason === "date" ? t.todayWorkoutOnlyTitle : t.workoutAlreadyComplete}
+            </div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 18, lineHeight: 1.5 }}>
+              {lockReason === "date" ? t.todayWorkoutOnlyBody : t.workoutAlreadyCompleteBody}
+            </div>
             <button
               onClick={() => router.push("/workout")}
               style={{ border: "none", borderRadius: 14, padding: "13px 18px", background: "#6bbfb8", color: "#fff", fontWeight: 900, cursor: "pointer" }}

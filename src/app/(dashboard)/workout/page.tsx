@@ -354,7 +354,10 @@ export default function WorkoutPage() {
 
   const selectedDate = weekDates[selectedDay]
   const selectedDateId = selectedDate ? formatLocalDate(selectedDate) : ""
+  const todayDateId = formatLocalDate(new Date())
+  const selectedDayBlocked = Boolean(selectedDateId && selectedDateId !== todayDateId)
   const workoutLocked = Boolean(selectedDateId && completedDateIds.has(selectedDateId)) || completed
+  const workoutBlocked = selectedDayBlocked || workoutLocked
 
   if (selectedDay === 0) {
     return (
@@ -533,7 +536,7 @@ export default function WorkoutPage() {
             </div>
           </motion.div>
 
-          {workoutLocked && (
+          {workoutBlocked && (
             <motion.div variants={fadeUp}>
               <div style={{
                 background: "rgba(107, 191, 184, 0.12)",
@@ -543,9 +546,11 @@ export default function WorkoutPage() {
                 marginBottom: "14px",
                 color: "var(--text)",
               }}>
-                <div style={{ fontSize: "14px", fontWeight: 900, marginBottom: "4px" }}>{t.workoutLockedTitle}</div>
+                <div style={{ fontSize: "14px", fontWeight: 900, marginBottom: "4px" }}>
+                  {selectedDayBlocked ? t.todayWorkoutOnlyTitle : t.workoutLockedTitle}
+                </div>
                 <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: 1.45 }}>
-                  {t.workoutLockedBody}
+                  {selectedDayBlocked ? t.todayWorkoutOnlyBody : t.workoutLockedBody}
                 </div>
               </div>
             </motion.div>
@@ -645,7 +650,7 @@ export default function WorkoutPage() {
 
 
           <motion.div variants={fadeUp}>
-            {!workoutLocked ? (
+            {!workoutBlocked ? (
               <button
                 onClick={() => {
                   const selectedDate = weekDates[selectedDay]
@@ -687,7 +692,7 @@ export default function WorkoutPage() {
                 fontWeight: 600,
                 textAlign: "center"
               }}>
-                {t.workoutCompleted}
+                {selectedDayBlocked ? t.todayOnly : t.workoutCompleted}
               </div>
             )}
           </motion.div>

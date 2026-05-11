@@ -255,6 +255,9 @@ export default function SchedulePage() {
   })
 
   const selectedDate = weekDates[selectedDay]
+  const selectedDateId = selectedDate ? formatLocalDate(selectedDate) : ""
+  const todayDateId = formatLocalDate(new Date())
+  const canStartExerciseToday = Boolean(selectedDateId && selectedDateId === todayDateId)
 
   const resetManualForm = () => {
     setManualTitle("")
@@ -355,6 +358,7 @@ export default function SchedulePage() {
 
   const startExerciseFromSchedule = (block: ScheduleBlock) => {
     if (!selectedDate) return
+    if (!canStartExerciseToday) return
 
     const exercises = Array.isArray(block.exercises) && block.exercises.length > 0
       ? block.exercises.map((exercise) => ({
@@ -696,19 +700,22 @@ export default function SchedulePage() {
                               type="button"
                               onPointerDown={(event) => event.stopPropagation()}
                               onClick={() => startExerciseFromSchedule(block)}
+                              disabled={!canStartExerciseToday}
+                              title={!canStartExerciseToday ? t.todayWorkoutOnlyBody : undefined}
                               style={{
                                 border: "none",
-                                background: "#6bbfb8",
-                                color: "#ffffff",
+                                background: canStartExerciseToday ? "#6bbfb8" : "var(--surface-2)",
+                                color: canStartExerciseToday ? "#ffffff" : "var(--text-muted)",
                                 borderRadius: "999px",
                                 padding: "7px 10px",
                                 fontSize: "11px",
                                 fontWeight: 800,
-                                cursor: "pointer",
+                                cursor: canStartExerciseToday ? "pointer" : "default",
                                 whiteSpace: "nowrap",
+                                opacity: canStartExerciseToday ? 1 : 0.72,
                               }}
                             >
-                              {t.goExercise}
+                              {canStartExerciseToday ? t.goExercise : t.todayOnly}
                             </button>
                           )}
                         </div>
