@@ -52,20 +52,21 @@ export function DashboardNav() {
   }
 
   useEffect(() => {
-    const el =
-      document.querySelector<HTMLElement>("[data-dashboard-scroll]") ||
-      document.querySelector<HTMLElement>("main") ||
-      document.documentElement
-    if (!el) return
+    const scrollEls = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-dashboard-scroll], main")
+    )
+    const els = scrollEls.length ? scrollEls : [document.documentElement]
+
+    const getScrollY = () => Math.max(window.scrollY, ...els.map((el) => el.scrollTop))
 
     setVisible(true)
-    lastScrollY.current = el.scrollTop || window.scrollY
+    lastScrollY.current = getScrollY()
     ticking.current = false
 
     const handleScroll = () => {
       if (!ticking.current) {
         window.requestAnimationFrame(() => {
-          const currentScrollY = el.scrollTop || window.scrollY
+          const currentScrollY = getScrollY()
 
           if (currentScrollY <= 10) {
             setVisible(true)
@@ -82,13 +83,15 @@ export function DashboardNav() {
       }
     }
 
-    el.addEventListener("scroll", handleScroll, { passive: true })
+    els.forEach((el) => el.addEventListener("scroll", handleScroll, { passive: true }))
     window.addEventListener("scroll", handleScroll, { passive: true })
     window.addEventListener("touchmove", handleScroll, { passive: true })
+    window.addEventListener("wheel", handleScroll, { passive: true })
     return () => {
-      el.removeEventListener("scroll", handleScroll)
+      els.forEach((el) => el.removeEventListener("scroll", handleScroll))
       window.removeEventListener("scroll", handleScroll)
       window.removeEventListener("touchmove", handleScroll)
+      window.removeEventListener("wheel", handleScroll)
     }
   }, [pathname])
 
