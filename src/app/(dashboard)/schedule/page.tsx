@@ -76,7 +76,7 @@ interface ScheduleBlock {
   hint?: string
   description?: string
   source?: "manual" | "calendar" | "workout" | "mock"
-  exercises?: Array<{ name: string; sets?: number; reps?: number }>
+  exercises?: Array<{ name: string; sets?: number; reps?: number; description?: string; time?: string }>
 }
 
 const MOCK: Record<number, ScheduleBlock[]> = {
@@ -126,6 +126,7 @@ export default function SchedulePage() {
   const [savingManual, setSavingManual] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
   const [openDeleteId, setOpenDeleteId] = useState<string | null>(null)
+  const [editingBlockId, setEditingBlockId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const longPressTimer = useRef<number | null>(null)
 
@@ -255,32 +256,49 @@ export default function SchedulePage() {
 
   const selectedDate = weekDates[selectedDay]
 
+  const resetManualForm = () => {
+    setManualTitle("")
+    setManualDescription("")
+    setManualTime("08:00")
+    setEditingBlockId(null)
+  }
+
+  const openAddSchedule = () => {
+    resetManualForm()
+    setAddOpen(true)
+  }
+
+  const closeScheduleEditor = () => {
+    setAddOpen(false)
+    resetManualForm()
+  }
+
   const saveManualSchedule = async () => {
     const title = manualTitle.trim()
     if (!title || !selectedDate) return
 
     setSavingManual(true)
     try {
+      const body = {
+        ...(editingBlockId ? { id: editingBlockId } : {}),
+        date: formatLocalDate(selectedDate),
+        workoutName: title,
+        source: "manual",
+        exercises: [{
+          name: title,
+          description: manualDescription.trim(),
+          time: manualTime,
+        }],
+      }
+
       const response = await fetch("/api/workout-schedule", {
-        method: "POST",
+        method: editingBlockId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          date: formatLocalDate(selectedDate),
-          workoutName: title,
-          source: "manual",
-          exercises: [{
-            name: title,
-            description: manualDescription.trim(),
-            time: manualTime,
-          }],
-        }),
+        body: JSON.stringify(body),
       })
 
       if (response.ok) {
-        setManualTitle("")
-        setManualDescription("")
-        setManualTime("08:00")
-        setAddOpen(false)
+        closeScheduleEditor()
         setReloadKey((value) => value + 1)
       }
     } finally {
@@ -305,6 +323,17 @@ export default function SchedulePage() {
 
   const handlePressEnd = () => {
     clearLongPressTimer()
+  }
+
+  const editScheduleBlock = (block: ScheduleBlock) => {
+    if (!block.id || block.source !== "manual") return
+    const details = Array.isArray(block.exercises) ? block.exercises[0] : null
+    setEditingBlockId(block.id)
+    setManualTitle(block.label)
+    setManualDescription(block.description || details?.description || "")
+    setManualTime(typeof details?.time === "string" && details.time ? details.time : "08:00")
+    setOpenDeleteId(null)
+    setAddOpen(true)
   }
 
   const deleteScheduleBlock = async (id: string) => {
@@ -470,7 +499,7 @@ export default function SchedulePage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setAddOpen(true)}
+                  onClick={openAddSchedule}
                   style={{
                     border: "1px solid rgba(107, 191, 184, 0.34)",
                     background: "rgba(107, 191, 184, 0.12)",
@@ -524,38 +553,68 @@ export default function SchedulePage() {
                   const isWorkout = block.kind === "wrk"
                   const isManual = block.source === "manual"
                   const canDelete = Boolean(block.id)
+                  const canEdit = Boolean(block.id && block.source === "manual")
                   const deleteOpen = Boolean(block.id && openDeleteId === block.id)
+                  const actionWidth = canEdit ? 172 : 86
                   return (
                     <motion.div key={block.id || `${block.label}-${i}`} variants={fadeUp}>
                       <div style={{ position: "relative", marginBottom: "10px", overflow: "hidden", borderRadius: "14px" }}>
                         {canDelete && (
-                          <button
-                            type="button"
-                            onClick={() => block.id && deleteScheduleBlock(block.id)}
-                            disabled={deletingId === block.id}
+                          <div
                             style={{
                               position: "absolute",
                               top: 0,
                               right: 0,
                               bottom: 0,
-                              width: "86px",
-                              border: "1px solid rgba(255, 92, 92, 0.35)",
-                              background: "rgba(255, 92, 92, 0.18)",
-                              color: "#ff6b6b",
-                              borderRadius: "14px",
-                              fontSize: "12px",
-                              fontWeight: 900,
-                              cursor: deletingId === block.id ? "default" : "pointer",
-                              opacity: deleteOpen ? 1 : 0.72,
+                              width: `${actionWidth}px`,
+                              display: "flex",
+                              gap: "6px",
                             }}
-                            aria-label={`Delete ${block.label}`}
                           >
-                            {deletingId === block.id ? "..." : "Delete"}
-                          </button>
+                            {canEdit && (
+                              <button
+                                type="button"
+                                onClick={() => editScheduleBlock(block)}
+                                style={{
+                                  flex: 1,
+                                  border: "1px solid rgba(107, 191, 184, 0.36)",
+                                  background: "rgba(107, 191, 184, 0.16)",
+                                  color: "#6bbfb8",
+                                  borderRadius: "14px",
+                                  fontSize: "12px",
+                                  fontWeight: 900,
+                                  cursor: "pointer",
+                                  opacity: deleteOpen ? 1 : 0.72,
+                                }}
+                                aria-label={`Edit ${block.label}`}
+                              >
+                                Edit
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => block.id && deleteScheduleBlock(block.id)}
+                              disabled={deletingId === block.id}
+                              style={{
+                                flex: 1,
+                                border: "1px solid rgba(255, 92, 92, 0.35)",
+                                background: "rgba(255, 92, 92, 0.18)",
+                                color: "#ff6b6b",
+                                borderRadius: "14px",
+                                fontSize: "12px",
+                                fontWeight: 900,
+                                cursor: deletingId === block.id ? "default" : "pointer",
+                                opacity: deleteOpen ? 1 : 0.72,
+                              }}
+                              aria-label={`Delete ${block.label}`}
+                            >
+                              {deletingId === block.id ? "..." : "Delete"}
+                            </button>
+                          </div>
                         )}
                         <motion.div
                           drag={canDelete ? "x" : false}
-                          dragConstraints={{ left: -92, right: 0 }}
+                          dragConstraints={{ left: -(actionWidth + 6), right: 0 }}
                           dragElastic={0.08}
                           onDragEnd={(_, info) => {
                             if (!block.id) return
@@ -565,7 +624,7 @@ export default function SchedulePage() {
                           onPointerUp={handlePressEnd}
                           onPointerCancel={handlePressEnd}
                           onPointerLeave={handlePressEnd}
-                          animate={{ x: deleteOpen ? -92 : 0 }}
+                          animate={{ x: deleteOpen ? -(actionWidth + 6) : 0 }}
                           transition={{ type: "spring", stiffness: 420, damping: 34 }}
                           style={{
                             background: "var(--surface)",
@@ -682,7 +741,7 @@ export default function SchedulePage() {
               justifyContent: "center",
               padding: "18px",
             }}
-            onClick={() => setAddOpen(false)}
+            onClick={closeScheduleEditor}
           >
             <motion.div
               initial={{ opacity: 0, y: 18, scale: 0.98 }}
@@ -705,14 +764,14 @@ export default function SchedulePage() {
             >
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px", marginBottom: "16px" }}>
                 <div>
-                  <div style={{ fontSize: "20px", fontWeight: 900, letterSpacing: "-0.2px" }}>Add schedule</div>
+                  <div style={{ fontSize: "20px", fontWeight: 900, letterSpacing: "-0.2px" }}>{editingBlockId ? "Edit schedule" : "Add schedule"}</div>
                   <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px" }}>
                     {selectedDate ? `${dayNames[selectedDay]}, ${selectedDate.toLocaleDateString([], { month: "short", day: "numeric" })}` : "This week"}
                   </div>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setAddOpen(false)}
+                  onClick={closeScheduleEditor}
                   style={{
                     width: 34,
                     height: 34,
@@ -809,7 +868,7 @@ export default function SchedulePage() {
                   opacity: manualTitle.trim() && !savingManual ? 1 : 0.5,
                 }}
               >
-                {savingManual ? "Adding..." : "Add to schedule"}
+                {savingManual ? (editingBlockId ? "Saving..." : "Adding...") : (editingBlockId ? "Save changes" : "Add to schedule")}
               </button>
             </motion.div>
           </motion.div>

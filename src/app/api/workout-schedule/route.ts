@@ -88,6 +88,54 @@ export async function POST(req: Request) {
   }
 }
 
+export async function PATCH(req: Request) {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { id, date, workoutName, exercises, source } = await req.json()
+
+    if (!id || !date || !workoutName || !exercises) {
+      return NextResponse.json(
+        { error: "Missing required fields: id, date, workoutName, exercises" },
+        { status: 400 }
+      )
+    }
+
+    const existing = await db.workoutSchedule.findFirst({
+      where: {
+        id,
+        userId: session.user.id,
+      },
+      select: { id: true },
+    })
+
+    if (!existing) {
+      return NextResponse.json({ error: "Schedule not found" }, { status: 404 })
+    }
+
+    const workout = await db.workoutSchedule.update({
+      where: { id },
+      data: {
+        date,
+        workoutName,
+        exercises,
+        source: source || "manual",
+      },
+    })
+
+    return NextResponse.json(workout)
+  } catch (error) {
+    console.error("Workout schedule PATCH error:", error)
+    return NextResponse.json(
+      { error: "Failed to update workout schedule" },
+      { status: 500 }
+    )
+  }
+}
+
 export async function DELETE(req: Request) {
   try {
     const session = await auth()
