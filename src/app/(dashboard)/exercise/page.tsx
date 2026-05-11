@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { useLanguage } from "@/context/LanguageContext"
-import { ExerciseDemoPanel } from "@/components/ExerciseDemoPanel"
+import { ExerciseDemoPanel, ExerciseDemoVisual } from "@/components/ExerciseDemoPanel"
 
 type ActiveExercise = {
   name: string
@@ -105,7 +105,7 @@ export default function ExerciseSessionPage() {
   }, [running])
 
   useEffect(() => {
-    if (!resting) return
+    if (!resting || !running) return
 
     if (restLeft <= 0) {
       setResting(false)
@@ -117,7 +117,7 @@ export default function ExerciseSessionPage() {
       setRestLeft((value) => Math.max(0, value - 1))
     }, 1000)
     return () => window.clearInterval(timer)
-  }, [resting, restLeft])
+  }, [resting, restLeft, running])
 
   const current = workout?.exercises[currentIndex]
   const currentCompletedSets = completedSets[currentIndex] || 0
@@ -298,21 +298,15 @@ export default function ExerciseSessionPage() {
             {resting ? t.restTime : t.nowTraining}
           </div>
           <div style={{ fontSize: 28, fontWeight: 950, letterSpacing: "-0.5px", marginBottom: 18 }}>{workout.workoutName}</div>
-          <div style={{ display: "grid", placeItems: "center", marginBottom: 18 }}>
-            <div style={{ width: 148, height: 148, borderRadius: "50%", border: "1px solid rgba(107,191,184,0.35)", display: "grid", placeItems: "center", boxShadow: "inset 0 0 34px rgba(107,191,184,0.12)" }}>
-              <div style={{ fontSize: 34, fontWeight: 950, color: "#6bbfb8", fontVariantNumeric: "tabular-nums" }}>
-                {resting ? formatTime(restLeft) : formatTime(elapsed)}
-              </div>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setRunning((value) => !value)}
-            disabled={resting}
-            style={{ width: "100%", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", borderRadius: 14, padding: 13, fontSize: 14, fontWeight: 850, cursor: resting ? "default" : "pointer", opacity: resting ? 0.55 : 1 }}
-          >
-            {resting ? t.resting : running ? t.pauseTimer : t.resumeTimer}
-          </button>
+          {current && (
+            <ExerciseDemoVisual
+              exerciseName={current.name}
+              height={210}
+              timerText={resting ? formatTime(restLeft) : formatTime(elapsed)}
+              paused={!running}
+              onToggleTimer={() => setRunning((value) => !value)}
+            />
+          )}
         </motion.div>
 
         {current && (
@@ -329,7 +323,7 @@ export default function ExerciseSessionPage() {
             <div style={{ display: "inline-flex", borderRadius: 999, background: "var(--surface-2)", color: "var(--text-muted)", padding: "5px 11px", fontSize: 12, fontWeight: 750, marginBottom: 16 }}>
               {current.reps} {t.repsThisSet} · {currentCompletedSets}/{current.sets} {t.setsDone}
             </div>
-            <ExerciseDemoPanel exerciseName={current.name} />
+            <ExerciseDemoPanel exerciseName={current.name} showVisual={false} />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <button
                 disabled={!resting}

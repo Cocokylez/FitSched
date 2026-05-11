@@ -7,6 +7,16 @@ type ExerciseDemoPanelProps = {
   exerciseName: string
   compact?: boolean
   showName?: boolean
+  showVisual?: boolean
+}
+
+type ExerciseDemoVisualProps = {
+  exerciseName: string
+  compact?: boolean
+  height?: number | string
+  timerText?: string
+  paused?: boolean
+  onToggleTimer?: () => void
 }
 
 function DemoFrame({
@@ -16,6 +26,9 @@ function DemoFrame({
   endFallbackSrcs,
   startAlt,
   endAlt,
+  timerText,
+  paused = false,
+  onToggleTimer,
 }: {
   startSrc: string
   endSrc: string
@@ -23,6 +36,9 @@ function DemoFrame({
   endFallbackSrcs: string[]
   startAlt: string
   endAlt: string
+  timerText?: string
+  paused?: boolean
+  onToggleTimer?: () => void
 }) {
   const [phase, setPhase] = useState<"start" | "end">("start")
   const [startImageSrc, setStartImageSrc] = useState(startSrc)
@@ -74,15 +90,25 @@ function DemoFrame({
   const visiblePhase = startFailed ? "end" : endFailed ? "start" : phase
 
   return (
-    <div
+    <button
+      type="button"
+      onClick={onToggleTimer}
+      aria-label={onToggleTimer ? (paused ? "Resume timer" : "Pause timer") : undefined}
       style={{
         position: "relative",
         minWidth: 0,
+        width: "100%",
         height: "100%",
+        border: "none",
+        padding: 0,
+        color: "inherit",
+        font: "inherit",
+        cursor: onToggleTimer ? "pointer" : "default",
         display: "grid",
         placeItems: "center",
         overflow: "hidden",
         background: "rgba(255, 255, 255, 0.03)",
+        WebkitTapHighlightColor: "transparent",
       }}
     >
       {startFailed && endFailed ? (
@@ -145,6 +171,66 @@ function DemoFrame({
       >
         {visiblePhase === "start" ? "START" : "END"}
       </div>
+      {timerText && (
+        <div
+          style={{
+            position: "absolute",
+            right: "7px",
+            bottom: "7px",
+            borderRadius: "999px",
+            padding: paused ? "5px 8px" : "6px 9px",
+            background: "rgba(15, 18, 18, 0.74)",
+            border: "1px solid rgba(107, 191, 184, 0.32)",
+            color: "#7fd8d1",
+            fontSize: paused ? "11px" : "13px",
+            fontWeight: 950,
+            fontVariantNumeric: "tabular-nums",
+            lineHeight: 1,
+            opacity: paused ? 0.72 : 1,
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
+          }}
+        >
+          {timerText}
+        </div>
+      )}
+    </button>
+  )
+}
+
+export function ExerciseDemoVisual({
+  exerciseName,
+  compact = false,
+  height,
+  timerText,
+  paused = false,
+  onToggleTimer,
+}: ExerciseDemoVisualProps) {
+  const demo = useMemo(() => getExerciseDemo(exerciseName), [exerciseName])
+  const frameHeight = height ?? (compact ? 88 : 126)
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        minHeight: typeof frameHeight === "number" ? `${frameHeight}px` : frameHeight,
+        height: typeof frameHeight === "number" ? `${frameHeight}px` : frameHeight,
+        borderRadius: compact ? "11px" : "14px",
+        overflow: "hidden",
+        border: "1px solid rgba(107, 191, 184, 0.22)",
+        background: "linear-gradient(135deg, rgba(107,191,184,0.14), rgba(255,255,255,0.04))",
+      }}
+    >
+      <DemoFrame
+        startSrc={demo.startAssetPath}
+        endSrc={demo.endAssetPath}
+        startFallbackSrcs={[demo.startFallbackAssetPath, demo.fallbackImagePath]}
+        endFallbackSrcs={[demo.endFallbackAssetPath, demo.fallbackImagePath]}
+        startAlt={`${demo.name} start position`}
+        endAlt={`${demo.name} end position`}
+        timerText={timerText}
+        paused={paused}
+        onToggleTimer={onToggleTimer}
+      />
     </div>
   )
 }
@@ -153,6 +239,7 @@ export function ExerciseDemoPanel({
   exerciseName,
   compact = false,
   showName = false,
+  showVisual = true,
 }: ExerciseDemoPanelProps) {
   const demo = useMemo(() => getExerciseDemo(exerciseName), [exerciseName])
   const visibleInstructions = compact ? demo.instructions.slice(0, 2) : demo.instructions
@@ -161,7 +248,7 @@ export function ExerciseDemoPanel({
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: compact ? "92px 1fr" : "128px 1fr",
+        gridTemplateColumns: showVisual ? (compact ? "92px 1fr" : "128px 1fr") : "1fr",
         gap: compact ? "10px" : "14px",
         alignItems: "stretch",
         marginTop: compact ? "10px" : "14px",
@@ -172,25 +259,7 @@ export function ExerciseDemoPanel({
         background: "var(--surface-2)",
       }}
     >
-      <div
-        style={{
-          position: "relative",
-          minHeight: compact ? "88px" : "126px",
-          borderRadius: compact ? "11px" : "14px",
-          overflow: "hidden",
-          border: "1px solid rgba(107, 191, 184, 0.22)",
-          background: "linear-gradient(135deg, rgba(107,191,184,0.14), rgba(255,255,255,0.04))",
-        }}
-      >
-        <DemoFrame
-          startSrc={demo.startAssetPath}
-          endSrc={demo.endAssetPath}
-          startFallbackSrcs={[demo.startFallbackAssetPath, demo.fallbackImagePath]}
-          endFallbackSrcs={[demo.endFallbackAssetPath, demo.fallbackImagePath]}
-          startAlt={`${demo.name} start position`}
-          endAlt={`${demo.name} end position`}
-        />
-      </div>
+      {showVisual && <ExerciseDemoVisual exerciseName={demo.name} compact={compact} />}
 
       <div style={{ minWidth: 0 }}>
         {showName && (
