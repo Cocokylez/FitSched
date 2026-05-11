@@ -141,6 +141,7 @@ model ChatMessage {
 
   @@index([userId])
   @@index([createdAt])
+  @@index([userId, createdAt])
 }
 
 model WorkoutPlan {
@@ -213,6 +214,7 @@ model WorkoutLog {
 
   @@index([userId])
   @@index([date])
+  @@index([userId, date])
   @@index([exerciseId])
 }
 
@@ -262,6 +264,7 @@ model CalendarEvent {
 
   @@index([connectionId])
   @@index([startTime])
+  @@index([connectionId, startTime])
 }
 
 model WorkoutSchedule {
@@ -277,6 +280,7 @@ model WorkoutSchedule {
 
   @@index([userId])
   @@index([date])
+  @@index([userId, date])
 }
 
 model WorkoutSessionLog {
@@ -291,6 +295,7 @@ model WorkoutSessionLog {
 
   @@index([userId])
   @@index([date])
+  @@index([userId, date])
 }
 
 model FitToken {
@@ -307,6 +312,7 @@ model FitToken {
   @@index([userId])
   @@index([workoutLogId])
   @@index([createdAt])
+  @@index([userId, createdAt])
   @@unique([userId, workoutLogId, reason])
 }
 
