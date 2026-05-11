@@ -24,6 +24,13 @@ const scaleIn = {
   visible: { scale: 1, opacity: 1, transition: { duration: 0.25, ease: "easeOut" as const } },
 }
 
+function formatLocalDate(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
 const MUSCLE_GROUPS = ["Rest", "Chest & Triceps", "Back & Biceps", "Legs", "Shoulders & Core", "Full Body", "Arms & Core"]
 
 const DEFAULT_EXERCISES: Record<number, Array<[string, string]>> = {
@@ -145,6 +152,7 @@ export default function WorkoutPage() {
   const [logging, setLogging] = useState(false)
   const [loggedExercises, setLoggedExercises] = useState<Array<{name: string; sets: number; reps: number}>>([])
   const [loading, setLoading] = useState(true)
+  const [completedDateIds, setCompletedDateIds] = useState<Set<string>>(new Set())
   const { t, language } = useLanguage()
   const { theme, toggleTheme } = useTheme()
   const [smartExercises, setSmartExercises] = useState<Array<[string, string]> | null>(null)
@@ -174,7 +182,7 @@ export default function WorkoutPage() {
     setLoading(true)
     const selectedDate = weekDates[selectedDay]
     if (!selectedDate) return
-    const dateStr = selectedDate.toISOString().split("T")[0]
+    const dateStr = formatLocalDate(selectedDate)
     fetch(`/api/workout-schedule?date=${dateStr}`)
       .then(r => r.ok ? r.json() : [])
       .then(data => {
@@ -188,6 +196,33 @@ export default function WorkoutPage() {
   useEffect(() => {
     setCompleted(false)
   }, [selectedDay])
+
+  useEffect(() => {
+    if (status !== "authenticated") return
+
+    let active = true
+    const loadCompletedDates = async () => {
+      try {
+        const response = await fetch("/api/workout-log")
+        if (!response.ok) return
+        const logs = await response.json()
+        if (!active) return
+        setCompletedDateIds(new Set(
+          logs.map((log: any) => log.date || formatLocalDate(new Date(log.completedAt)))
+        ))
+      } catch {}
+    }
+
+    loadCompletedDates()
+    window.addEventListener("focus", loadCompletedDates)
+    window.addEventListener("fitsched:workout-completed", loadCompletedDates)
+
+    return () => {
+      active = false
+      window.removeEventListener("focus", loadCompletedDates)
+      window.removeEventListener("fitsched:workout-completed", loadCompletedDates)
+    }
+  }, [status])
 
   useEffect(() => {
     if (status !== "authenticated") return
@@ -315,6 +350,10 @@ export default function WorkoutPage() {
 
     compute()
   }, [status, selectedDay])
+
+  const selectedDate = weekDates[selectedDay]
+  const selectedDateId = selectedDate ? formatLocalDate(selectedDate) : ""
+  const workoutLocked = Boolean(selectedDateId && completedDateIds.has(selectedDateId)) || completed
 
   if (selectedDay === 0) {
     return (
@@ -493,6 +532,24 @@ export default function WorkoutPage() {
             </div>
           </motion.div>
 
+          {workoutLocked && (
+            <motion.div variants={fadeUp}>
+              <div style={{
+                background: "rgba(107, 191, 184, 0.12)",
+                border: "1px solid rgba(107, 191, 184, 0.32)",
+                borderRadius: "16px",
+                padding: "14px 16px",
+                marginBottom: "14px",
+                color: "var(--text)",
+              }}>
+                <div style={{ fontSize: "14px", fontWeight: 900, marginBottom: "4px" }}>Workout locked for this day</div>
+                <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: 1.45 }}>
+                  You already completed this workout, so FitTokens are protected until the next workout day.
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {loading || computing ? (
             <motion.div
               initial={{ opacity: 0 }}
@@ -554,7 +611,7 @@ export default function WorkoutPage() {
             <button onClick={async () => {
               const selectedDate = weekDates[selectedDay]
               if (!selectedDate) return
-              const dateStr = selectedDate.toISOString().split("T")[0]
+              const dateStr = formatLocalDate(selectedDate)
               const exercises = todayExercises.map(([name, reps]) => {
                 const parts = reps.split("×")
                 return { name, sets: parseInt(parts[0]) || 3, reps: parseInt(parts[1]) || 12 }
@@ -587,12 +644,12 @@ export default function WorkoutPage() {
 
 
           <motion.div variants={fadeUp}>
-            {!completed ? (
+            {!workoutLocked ? (
               <button
                 onClick={() => {
                   const selectedDate = weekDates[selectedDay]
                   if (!selectedDate) return
-                  const dateStr = selectedDate.toISOString().split("T")[0]
+                  const dateStr = formatLocalDate(selectedDate)
                   sessionStorage.setItem("fitsched-active-workout", JSON.stringify({
                     date: dateStr,
                     workoutName: muscle,
@@ -759,7 +816,7 @@ export default function WorkoutPage() {
                     onClick={async () => {
                       const selectedDate = weekDates[selectedDay]
                       if (!selectedDate) return
-                      const dateStr = selectedDate.toISOString().split("T")[0]
+                      const dateStr = formatLocalDate(selectedDate)
                       const response = await fetch("/api/workout-log", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -771,6 +828,8 @@ export default function WorkoutPage() {
                       })
                       if (response.ok) {
                         window.dispatchEvent(new Event("fitsched:tokens-updated"))
+                        window.dispatchEvent(new Event("fitsched:workout-completed"))
+                        setCompletedDateIds((current) => new Set([...current, dateStr]))
                       }
                       setLogging(false)
                       setCompleted(true)

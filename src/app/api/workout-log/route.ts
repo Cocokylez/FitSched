@@ -1,19 +1,34 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { awardFitTokensForWorkoutLogTx } from "@/lib/fitTokens"
+import { Prisma } from "@prisma/client"
 import { NextResponse } from "next/server"
 
-export async function GET() {
+function isDateId(value: unknown): value is string {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
+}
+
+function isSerializableConflict(error: unknown) {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034"
+}
+
+export async function GET(req: Request) {
   try {
     const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { searchParams } = new URL(req.url)
+    const date = searchParams.get("date")
+
     const logs = await db.workoutSessionLog.findMany({
-      where: { userId: session.user.id },
+      where: {
+        userId: session.user.id,
+        ...(date ? { date } : {}),
+      },
       orderBy: { completedAt: "desc" },
-      take: 365,
+      take: date ? 10 : 365,
     })
 
     return NextResponse.json(logs)
@@ -36,14 +51,35 @@ export async function POST(req: Request) {
 
     const { date, workoutName, exercises } = await req.json()
 
-    if (!date || !workoutName || !exercises) {
+    if (!isDateId(date) || !workoutName || !Array.isArray(exercises) || exercises.length === 0) {
       return NextResponse.json(
         { error: "Missing required fields: date, workoutName, exercises" },
         { status: 400 }
       )
     }
 
-    const { log, fitTokenReward } = await db.$transaction(async (tx) => {
+    const result = await db.$transaction(async (tx) => {
+      const existingLog = await tx.workoutSessionLog.findFirst({
+        where: {
+          userId,
+          date,
+        },
+        orderBy: { completedAt: "desc" },
+      })
+
+      if (existingLog) {
+        return {
+          alreadyCompleted: true,
+          log: existingLog,
+          fitTokenReward: {
+            awarded: false,
+            amount: 0,
+            balance: 0,
+            transactions: [],
+          },
+        }
+      }
+
       const createdLog = await tx.workoutSessionLog.create({
         data: {
           userId,
@@ -60,10 +96,30 @@ export async function POST(req: Request) {
       )
 
       return { log: createdLog, fitTokenReward: reward }
+    }, {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
     })
 
-    return NextResponse.json({ ...log, fitTokenReward }, { status: 201 })
+    if (result.alreadyCompleted) {
+      return NextResponse.json(
+        {
+          error: "Workout already completed for this date",
+          alreadyCompleted: true,
+          log: result.log,
+        },
+        { status: 409 }
+      )
+    }
+
+    return NextResponse.json({ ...result.log, fitTokenReward: result.fitTokenReward }, { status: 201 })
   } catch (error) {
+    if (isSerializableConflict(error)) {
+      return NextResponse.json(
+        { error: "Workout completion is already being processed", alreadyCompleted: true },
+        { status: 409 }
+      )
+    }
+
     console.error("Workout log POST error:", error)
     return NextResponse.json(
       { error: "Failed to save workout log" },

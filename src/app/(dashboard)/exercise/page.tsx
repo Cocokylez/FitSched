@@ -17,6 +17,7 @@ type ActiveWorkout = {
 }
 
 type FitTokenReward = {
+  amount?: number
   totalAwarded?: number
 }
 
@@ -47,12 +48,49 @@ export default function ExerciseSessionPage() {
   const [saving, setSaving] = useState(false)
   const [celebrating, setCelebrating] = useState(false)
   const [fitTokenReward, setFitTokenReward] = useState<FitTokenReward | null>(null)
+  const [checkingLock, setCheckingLock] = useState(true)
+  const [locked, setLocked] = useState(false)
+  const [streakDay, setStreakDay] = useState(1)
 
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem("fitsched-active-workout")
-      if (raw) setWorkout(JSON.parse(raw) as ActiveWorkout)
-    } catch {}
+    let active = true
+
+    const loadWorkout = async () => {
+      setCheckingLock(true)
+      let parsed: ActiveWorkout | null = null
+
+      try {
+        const raw = sessionStorage.getItem("fitsched-active-workout")
+        if (raw) parsed = JSON.parse(raw) as ActiveWorkout
+      } catch {}
+
+      if (!active) return
+      setWorkout(parsed)
+
+      if (!parsed?.date) {
+        setCheckingLock(false)
+        return
+      }
+
+      try {
+        const response = await fetch(`/api/workout-log?date=${encodeURIComponent(parsed.date)}`)
+        if (response.ok) {
+          const logs = await response.json()
+          if (active && Array.isArray(logs) && logs.length > 0) {
+            setLocked(true)
+            sessionStorage.removeItem("fitsched-active-workout")
+          }
+        }
+      } catch {}
+
+      if (active) setCheckingLock(false)
+    }
+
+    loadWorkout()
+
+    return () => {
+      active = false
+    }
   }, [])
 
   useEffect(() => {
@@ -142,12 +180,55 @@ export default function ExerciseSessionPage() {
         const savedLog = await response.json()
         setFitTokenReward(savedLog.fitTokenReward || null)
         window.dispatchEvent(new Event("fitsched:tokens-updated"))
+        window.dispatchEvent(new Event("fitsched:workout-completed"))
         sessionStorage.removeItem("fitsched-active-workout")
+        try {
+          const streakResponse = await fetch("/api/streak")
+          if (streakResponse.ok) {
+            const streakData = await streakResponse.json()
+            setStreakDay(Number(streakData.streak) || 1)
+          }
+        } catch {}
         setCelebrating(true)
+        return
+      }
+
+      if (response.status === 409) {
+        setLocked(true)
+        sessionStorage.removeItem("fitsched-active-workout")
+        window.dispatchEvent(new Event("fitsched:workout-completed"))
       }
     } finally {
       setSaving(false)
     }
+  }
+
+  if (checkingLock) {
+    return (
+      <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)", padding: "24px 16px", display: "grid", placeItems: "center" }}>
+        <div style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 800, letterSpacing: "0.12em" }}>CHECKING WORKOUT</div>
+      </div>
+    )
+  }
+
+  if (locked) {
+    return (
+      <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)", padding: "24px 16px" }}>
+        <div style={{ maxWidth: 520, margin: "0 auto" }}>
+          <div style={{ background: "var(--surface)", border: "1px solid rgba(107,191,184,0.32)", borderRadius: 20, padding: 24, textAlign: "center" }}>
+            <div style={{ width: 58, height: 58, borderRadius: "50%", background: "rgba(107,191,184,0.14)", color: "#6bbfb8", display: "grid", placeItems: "center", margin: "0 auto 14px", fontSize: 18, fontWeight: 950 }}>OK</div>
+            <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 8 }}>Workout already complete</div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 18, lineHeight: 1.5 }}>This day is locked so FitTokens stay fair. Come back for the next workout day.</div>
+            <button
+              onClick={() => router.push("/workout")}
+              style={{ border: "none", borderRadius: 14, padding: "13px 18px", background: "#6bbfb8", color: "#fff", fontWeight: 900, cursor: "pointer" }}
+            >
+              Back to Workout
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (!workout) {
@@ -385,7 +466,7 @@ export default function ExerciseSessionPage() {
                 }}
               >
                 <span style={{ color: "rgba(255,255,255,0.68)", fontSize: 13, fontWeight: 800 }}>STREAK</span>
-                <span style={{ fontSize: 16, fontWeight: 950, color: "#6bbfb8" }}>Day 1 streak</span>
+                <span style={{ fontSize: 16, fontWeight: 950, color: "#6bbfb8" }}>Day {streakDay} streak</span>
               </motion.div>
 
               <motion.div
@@ -404,7 +485,7 @@ export default function ExerciseSessionPage() {
                   RECEIVE FITTOKEN
                 </div>
                 <div style={{ fontSize: 34, fontWeight: 950, color: "#6bbfb8", fontVariantNumeric: "tabular-nums" }}>
-                  +{Number(fitTokenReward?.totalAwarded || 1).toFixed(2)} FT
+                  +{Number(fitTokenReward?.amount ?? fitTokenReward?.totalAwarded ?? 1).toFixed(2)} FT
                 </div>
               </motion.div>
 
