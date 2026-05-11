@@ -28,7 +28,9 @@ export default function ExerciseSessionPage() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [elapsed, setElapsed] = useState(0)
   const [running, setRunning] = useState(true)
-  const [done, setDone] = useState<Record<number, boolean>>({})
+  const [completedSets, setCompletedSets] = useState<Record<number, number>>({})
+  const [resting, setResting] = useState(false)
+  const [restLeft, setRestLeft] = useState(30)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -44,12 +46,70 @@ export default function ExerciseSessionPage() {
     return () => window.clearInterval(timer)
   }, [running])
 
-  const completedCount = useMemo(() => Object.values(done).filter(Boolean).length, [done])
-  const current = workout?.exercises[currentIndex]
-  const allDone = Boolean(workout?.exercises.length && completedCount === workout.exercises.length)
+  useEffect(() => {
+    if (!resting) return
 
-  const toggleDone = (index: number) => {
-    setDone((currentDone) => ({ ...currentDone, [index]: !currentDone[index] }))
+    if (restLeft <= 0) {
+      setResting(false)
+      advanceAfterRest()
+      return
+    }
+
+    const timer = window.setInterval(() => {
+      setRestLeft((value) => Math.max(0, value - 1))
+    }, 1000)
+    return () => window.clearInterval(timer)
+  }, [resting, restLeft])
+
+  const current = workout?.exercises[currentIndex]
+  const currentCompletedSets = completedSets[currentIndex] || 0
+  const currentSetNumber = current ? Math.min(currentCompletedSets + 1, current.sets) : 1
+
+  const completedExerciseCount = useMemo(() => {
+    if (!workout) return 0
+    return workout.exercises.filter((exercise, index) => (completedSets[index] || 0) >= exercise.sets).length
+  }, [completedSets, workout])
+
+  const allDone = Boolean(workout?.exercises.length && completedExerciseCount === workout.exercises.length)
+
+  function advanceAfterRest() {
+    if (!workout) return
+
+    const nextUnfinished = workout.exercises.findIndex((exercise, index) =>
+      index > currentIndex && (completedSets[index] || 0) < exercise.sets
+    )
+    if (nextUnfinished !== -1) {
+      setCurrentIndex(nextUnfinished)
+      return
+    }
+
+    const firstUnfinished = workout.exercises.findIndex((exercise, index) =>
+      (completedSets[index] || 0) < exercise.sets
+    )
+    if (firstUnfinished !== -1) setCurrentIndex(firstUnfinished)
+  }
+
+  function completeCurrentSet() {
+    if (!workout || !current || resting) return
+
+    const nextCompleted = Math.min(current.sets, currentCompletedSets + 1)
+    const nextState = { ...completedSets, [currentIndex]: nextCompleted }
+    setCompletedSets(nextState)
+
+    const exerciseDone = nextCompleted >= current.sets
+    const workoutDone = workout.exercises.every((exercise, index) =>
+      (nextState[index] || 0) >= exercise.sets
+    )
+
+    if (!workoutDone) {
+      setRestLeft(exerciseDone ? 45 : 30)
+      setResting(true)
+    }
+  }
+
+  function skipRest() {
+    setResting(false)
+    advanceAfterRest()
   }
 
   const finishWorkout = async () => {
@@ -104,7 +164,7 @@ export default function ExerciseSessionPage() {
             Back
           </button>
           <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 800, letterSpacing: "0.12em" }}>
-            {completedCount}/{workout.exercises.length} DONE
+            {completedExerciseCount}/{workout.exercises.length} EXERCISES DONE
           </div>
         </div>
 
@@ -119,21 +179,24 @@ export default function ExerciseSessionPage() {
             marginBottom: 14,
           }}
         >
-          <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 4 }}>Now training</div>
+          <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 4 }}>
+            {resting ? "Rest time" : "Now training"}
+          </div>
           <div style={{ fontSize: 28, fontWeight: 950, letterSpacing: "-0.5px", marginBottom: 18 }}>{workout.workoutName}</div>
           <div style={{ display: "grid", placeItems: "center", marginBottom: 18 }}>
             <div style={{ width: 148, height: 148, borderRadius: "50%", border: "1px solid rgba(107,191,184,0.35)", display: "grid", placeItems: "center", boxShadow: "inset 0 0 34px rgba(107,191,184,0.12)" }}>
               <div style={{ fontSize: 34, fontWeight: 950, color: "#6bbfb8", fontVariantNumeric: "tabular-nums" }}>
-                {formatTime(elapsed)}
+                {resting ? formatTime(restLeft) : formatTime(elapsed)}
               </div>
             </div>
           </div>
           <button
             type="button"
             onClick={() => setRunning((value) => !value)}
-            style={{ width: "100%", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", borderRadius: 14, padding: 13, fontSize: 14, fontWeight: 850, cursor: "pointer" }}
+            disabled={resting}
+            style={{ width: "100%", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", borderRadius: 14, padding: 13, fontSize: 14, fontWeight: 850, cursor: resting ? "default" : "pointer", opacity: resting ? 0.55 : 1 }}
           >
-            {running ? "Pause Timer" : "Resume Timer"}
+            {resting ? "Resting..." : running ? "Pause Timer" : "Resume Timer"}
           </button>
         </motion.div>
 
@@ -145,63 +208,64 @@ export default function ExerciseSessionPage() {
             style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 20, padding: 18, marginBottom: 14 }}
           >
             <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 800, letterSpacing: "0.13em", marginBottom: 8 }}>
-              EXERCISE {currentIndex + 1}
+              EXERCISE {currentIndex + 1} · SET {currentSetNumber} OF {current.sets}
             </div>
             <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 8 }}>{current.name}</div>
             <div style={{ display: "inline-flex", borderRadius: 999, background: "var(--surface-2)", color: "var(--text-muted)", padding: "5px 11px", fontSize: 12, fontWeight: 750, marginBottom: 16 }}>
-              {current.sets} sets × {current.reps} reps
+              {current.reps} reps this set · {currentCompletedSets}/{current.sets} sets done
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <button
-                disabled={currentIndex === 0}
-                onClick={() => setCurrentIndex((value) => Math.max(0, value - 1))}
-                style={{ border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", borderRadius: 13, padding: 12, fontWeight: 800, opacity: currentIndex === 0 ? 0.45 : 1, cursor: currentIndex === 0 ? "default" : "pointer" }}
+                disabled={!resting}
+                onClick={skipRest}
+                style={{ border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", borderRadius: 13, padding: 12, fontWeight: 800, opacity: resting ? 1 : 0.45, cursor: resting ? "pointer" : "default" }}
               >
-                Previous
+                Skip Rest
               </button>
               <button
-                disabled={currentIndex === workout.exercises.length - 1}
-                onClick={() => setCurrentIndex((value) => Math.min(workout.exercises.length - 1, value + 1))}
-                style={{ border: "none", background: "#6bbfb8", color: "#fff", borderRadius: 13, padding: 12, fontWeight: 900, opacity: currentIndex === workout.exercises.length - 1 ? 0.55 : 1, cursor: currentIndex === workout.exercises.length - 1 ? "default" : "pointer" }}
+                disabled={resting || currentCompletedSets >= current.sets}
+                onClick={completeCurrentSet}
+                style={{ border: "none", background: "#6bbfb8", color: "#fff", borderRadius: 13, padding: 12, fontWeight: 900, opacity: resting || currentCompletedSets >= current.sets ? 0.55 : 1, cursor: resting || currentCompletedSets >= current.sets ? "default" : "pointer" }}
               >
-                Next
+                Done Set
               </button>
             </div>
           </motion.div>
         )}
 
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 20, overflow: "hidden" }}>
-          {workout.exercises.map((exercise, index) => (
-            <button
-              key={`${exercise.name}-${index}`}
-              type="button"
-              onClick={() => {
-                setCurrentIndex(index)
-                toggleDone(index)
-              }}
-              style={{
-                width: "100%",
-                border: "none",
-                borderBottom: index < workout.exercises.length - 1 ? "1px solid var(--border)" : "none",
-                background: "transparent",
-                color: "var(--text)",
-                padding: "14px 16px",
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                cursor: "pointer",
-                textAlign: "left",
-              }}
-            >
-              <span style={{ width: 26, height: 26, borderRadius: "50%", display: "grid", placeItems: "center", background: done[index] ? "#6bbfb8" : "var(--surface-2)", color: done[index] ? "#fff" : "var(--text-muted)", fontSize: 12, fontWeight: 900 }}>
-                {done[index] ? "✓" : index + 1}
-              </span>
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: "block", fontSize: 14, fontWeight: 800 }}>{exercise.name}</span>
-                <span style={{ display: "block", fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{exercise.sets} × {exercise.reps}</span>
-              </span>
-            </button>
-          ))}
+          {workout.exercises.map((exercise, index) => {
+            const setsDone = completedSets[index] || 0
+            const exerciseDone = setsDone >= exercise.sets
+            return (
+              <button
+                key={`${exercise.name}-${index}`}
+                type="button"
+                onClick={() => setCurrentIndex(index)}
+                style={{
+                  width: "100%",
+                  border: "none",
+                  borderBottom: index < workout.exercises.length - 1 ? "1px solid var(--border)" : "none",
+                  background: "transparent",
+                  color: "var(--text)",
+                  padding: "14px 16px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
+                <span style={{ width: 26, height: 26, borderRadius: "50%", display: "grid", placeItems: "center", background: exerciseDone ? "#6bbfb8" : "var(--surface-2)", color: exerciseDone ? "#fff" : "var(--text-muted)", fontSize: 12, fontWeight: 900 }}>
+                  {exerciseDone ? "✓" : index + 1}
+                </span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: "block", fontSize: 14, fontWeight: 800 }}>{exercise.name}</span>
+                  <span style={{ display: "block", fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{setsDone}/{exercise.sets} sets · {exercise.reps} reps</span>
+                </span>
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -209,11 +273,11 @@ export default function ExerciseSessionPage() {
         <div style={{ maxWidth: 560, margin: "0 auto" }}>
           <button
             type="button"
-            onClick={finishWorkout}
-            disabled={saving || !allDone}
-            style={{ width: "100%", border: "none", borderRadius: 16, padding: 15, background: "#6bbfb8", color: "#fff", fontSize: 15, fontWeight: 950, cursor: allDone && !saving ? "pointer" : "default", opacity: allDone && !saving ? 1 : 0.5, boxShadow: "0 10px 28px rgba(107,191,184,0.28)" }}
+            onClick={allDone ? finishWorkout : completeCurrentSet}
+            disabled={saving || resting}
+            style={{ width: "100%", border: "none", borderRadius: 16, padding: 15, background: "#6bbfb8", color: "#fff", fontSize: 15, fontWeight: 950, cursor: !saving && !resting ? "pointer" : "default", opacity: !saving && !resting ? 1 : 0.5, boxShadow: "0 10px 28px rgba(107,191,184,0.28)" }}
           >
-            {saving ? "Saving..." : allDone ? "Finish Workout" : "Complete all exercises"}
+            {saving ? "Saving..." : allDone ? "Finish Workout" : resting ? "Resting..." : "Done Set"}
           </button>
         </div>
       </div>
