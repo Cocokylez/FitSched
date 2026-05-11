@@ -8,6 +8,7 @@ import { useStore } from "@/store/useStore"
 import { useLanguage } from "@/context/LanguageContext"
 import { useTheme } from "@/context/ThemeContext"
 import { SkeletonExerciseRow } from "@/components/Skeleton"
+import { ExerciseDemoPanel } from "@/components/ExerciseDemoPanel"
 
 const stagger = {
   hidden: {},
@@ -570,37 +571,37 @@ export default function WorkoutPage() {
                     style={{
                       padding: "14px 16px",
                       borderBottom: i < todayExercises.length - 1 ? "1px solid var(--border)" : "none",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
                     }}
                   >
-                    <motion.div variants={scaleIn} style={{
-                      background: "var(--surface-2)",
-                      borderRadius: "8px",
-                      width: "28px",
-                      height: "28px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      color: "var(--text-muted)",
-                      flexShrink: 0,
-                    }}>
-                      {String(i + 1).padStart(2, "0")}
-                    </motion.div>
-                    <div style={{ flex: 1, fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>{ex[0]}</div>
-                    <div style={{
-                      background: "var(--surface-2)",
-                      borderRadius: "20px",
-                      padding: "4px 10px",
-                      fontSize: "11px",
-                      color: "var(--text-muted)",
-                      flexShrink: 0,
-                    }}>
-                      {ex[1]}
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <motion.div variants={scaleIn} style={{
+                        background: "var(--surface-2)",
+                        borderRadius: "8px",
+                        width: "28px",
+                        height: "28px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        color: "var(--text-muted)",
+                        flexShrink: 0,
+                      }}>
+                        {String(i + 1).padStart(2, "0")}
+                      </motion.div>
+                      <div style={{ flex: 1, fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>{ex[0]}</div>
+                      <div style={{
+                        background: "var(--surface-2)",
+                        borderRadius: "20px",
+                        padding: "4px 10px",
+                        fontSize: "11px",
+                        color: "var(--text-muted)",
+                        flexShrink: 0,
+                      }}>
+                        {ex[1]}
+                      </div>
                     </div>
+                    <ExerciseDemoPanel exerciseName={ex[0]} compact />
                   </div>
                 ))}
               </div>

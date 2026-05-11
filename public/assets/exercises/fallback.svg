@@ -1,0 +1,14 @@
+<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="640" height="480" rx="36" fill="#1f1f1f"/>
+  <rect x="34" y="34" width="572" height="412" rx="28" fill="#252525" stroke="#3a3a3a"/>
+  <circle cx="326" cy="134" r="28" fill="#6bbfb8" fill-opacity="0.18" stroke="#6bbfb8" stroke-width="8"/>
+  <path d="M326 166V252" stroke="#6bbfb8" stroke-width="12" stroke-linecap="round"/>
+  <path d="M326 196L252 232" stroke="#6bbfb8" stroke-width="12" stroke-linecap="round"/>
+  <path d="M326 196L398 232" stroke="#6bbfb8" stroke-width="12" stroke-linecap="round"/>
+  <path d="M326 252L274 326" stroke="#6bbfb8" stroke-width="12" stroke-linecap="round"/>
+  <path d="M326 252L384 326" stroke="#6bbfb8" stroke-width="12" stroke-linecap="round"/>
+  <path d="M206 365H434" stroke="#4a4a4a" stroke-width="10" stroke-linecap="round"/>
+  <path d="M214 254C247 224 276 210 310 207" stroke="#ffffff" stroke-opacity="0.18" stroke-width="8" stroke-linecap="round"/>
+  <path d="M426 254C393 224 364 210 330 207" stroke="#ffffff" stroke-opacity="0.18" stroke-width="8" stroke-linecap="round"/>
+  <text x="320" y="404" text-anchor="middle" fill="#9ca3af" font-family="Arial, sans-serif" font-size="24" font-weight="700">Demo asset pending</text>
+</svg>

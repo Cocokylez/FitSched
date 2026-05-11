@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { useLanguage } from "@/context/LanguageContext"
+import { ExerciseDemoPanel } from "@/components/ExerciseDemoPanel"
 
 type ActiveExercise = {
   name: string
@@ -314,6 +315,7 @@ export default function ExerciseSessionPage() {
             <div style={{ display: "inline-flex", borderRadius: 999, background: "var(--surface-2)", color: "var(--text-muted)", padding: "5px 11px", fontSize: 12, fontWeight: 750, marginBottom: 16 }}>
               {current.reps} {t.repsThisSet} · {currentCompletedSets}/{current.sets} {t.setsDone}
             </div>
+            <ExerciseDemoPanel exerciseName={current.name} />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <button
                 disabled={!resting}

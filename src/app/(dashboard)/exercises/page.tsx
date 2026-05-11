@@ -13,6 +13,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { SkeletonCard } from "@/components/LoadingScreen";
 import { useLanguage } from "@/context/LanguageContext";
+import { ExerciseDemoPanel } from "@/components/ExerciseDemoPanel";
 
 interface Exercise {
   id: string;
@@ -217,6 +218,7 @@ export default function ExercisesPage() {
                           </span>
                         )}
                       </div>
+                      <ExerciseDemoPanel exerciseName={ex.name} compact />
                     </div>
                   </div>
                   {!ex.isSystem && (
