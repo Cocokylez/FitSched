@@ -10,35 +10,68 @@ type ExerciseDemoPanelProps = {
 }
 
 function DemoFrame({
-  src,
-  fallbackSrcs,
-  alt,
-  label,
+  startSrc,
+  endSrc,
+  startFallbackSrcs,
+  endFallbackSrcs,
+  startAlt,
+  endAlt,
 }: {
-  src: string
-  fallbackSrcs: string[]
-  alt: string
-  label: string
+  startSrc: string
+  endSrc: string
+  startFallbackSrcs: string[]
+  endFallbackSrcs: string[]
+  startAlt: string
+  endAlt: string
 }) {
-  const [imageSrc, setImageSrc] = useState(src)
-  const [fallbackIndex, setFallbackIndex] = useState(0)
-  const [imageFailed, setImageFailed] = useState(false)
+  const [phase, setPhase] = useState<"start" | "end">("start")
+  const [startImageSrc, setStartImageSrc] = useState(startSrc)
+  const [endImageSrc, setEndImageSrc] = useState(endSrc)
+  const [startFallbackIndex, setStartFallbackIndex] = useState(0)
+  const [endFallbackIndex, setEndFallbackIndex] = useState(0)
+  const [startFailed, setStartFailed] = useState(false)
+  const [endFailed, setEndFailed] = useState(false)
 
   useEffect(() => {
-    setImageSrc(src)
-    setFallbackIndex(0)
-    setImageFailed(false)
-  }, [src])
+    setPhase("start")
+    setStartImageSrc(startSrc)
+    setEndImageSrc(endSrc)
+    setStartFallbackIndex(0)
+    setEndFallbackIndex(0)
+    setStartFailed(false)
+    setEndFailed(false)
+  }, [startSrc, endSrc])
 
-  const handleImageError = () => {
-    if (fallbackIndex < fallbackSrcs.length) {
-      setImageSrc(fallbackSrcs[fallbackIndex])
-      setFallbackIndex((index) => index + 1)
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setPhase((current) => (current === "start" ? "end" : "start"))
+    }, 2000)
+
+    return () => window.clearInterval(timer)
+  }, [])
+
+  const handleImageError = (position: "start" | "end") => {
+    if (position === "start") {
+      if (startFallbackIndex < startFallbackSrcs.length) {
+        setStartImageSrc(startFallbackSrcs[startFallbackIndex])
+        setStartFallbackIndex((index) => index + 1)
+        return
+      }
+
+      setStartFailed(true)
       return
     }
 
-    setImageFailed(true)
+    if (endFallbackIndex < endFallbackSrcs.length) {
+      setEndImageSrc(endFallbackSrcs[endFallbackIndex])
+      setEndFallbackIndex((index) => index + 1)
+      return
+    }
+
+    setEndFailed(true)
   }
+
+  const visiblePhase = startFailed ? "end" : endFailed ? "start" : phase
 
   return (
     <div
@@ -52,23 +85,49 @@ function DemoFrame({
         background: "rgba(255, 255, 255, 0.03)",
       }}
     >
-      {imageFailed ? (
+      {startFailed && endFailed ? (
         <div style={{ color: "var(--text-muted)", fontSize: "9px", fontWeight: 800, textAlign: "center", padding: "6px" }}>
           Pending
         </div>
       ) : (
-        <img
-          src={imageSrc}
-          alt={alt}
-          onError={handleImageError}
-          loading="lazy"
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            display: "block",
-          }}
-        />
+        <>
+          {!startFailed && (
+            <img
+              src={startImageSrc}
+              alt={startAlt}
+              onError={() => handleImageError("start")}
+              loading="lazy"
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+                opacity: visiblePhase === "start" ? 1 : 0,
+                transition: "opacity 460ms ease",
+              }}
+            />
+          )}
+          {!endFailed && (
+            <img
+              src={endImageSrc}
+              alt={endAlt}
+              onError={() => handleImageError("end")}
+              loading="lazy"
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+                opacity: visiblePhase === "end" ? 1 : 0,
+                transition: "opacity 460ms ease",
+              }}
+            />
+          )}
+        </>
       )}
       <div
         style={{
@@ -84,7 +143,7 @@ function DemoFrame({
           letterSpacing: 0,
         }}
       >
-        {label}
+        {visiblePhase === "start" ? "START" : "END"}
       </div>
     </div>
   )
@@ -121,21 +180,15 @@ export function ExerciseDemoPanel({
           overflow: "hidden",
           border: "1px solid rgba(107, 191, 184, 0.22)",
           background: "linear-gradient(135deg, rgba(107,191,184,0.14), rgba(255,255,255,0.04))",
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
         }}
       >
         <DemoFrame
-          src={demo.startAssetPath}
-          fallbackSrcs={[demo.startFallbackAssetPath, demo.fallbackImagePath]}
-          alt={`${demo.name} start position`}
-          label="START"
-        />
-        <DemoFrame
-          src={demo.endAssetPath}
-          fallbackSrcs={[demo.endFallbackAssetPath, demo.fallbackImagePath]}
-          alt={`${demo.name} end position`}
-          label="END"
+          startSrc={demo.startAssetPath}
+          endSrc={demo.endAssetPath}
+          startFallbackSrcs={[demo.startFallbackAssetPath, demo.fallbackImagePath]}
+          endFallbackSrcs={[demo.endFallbackAssetPath, demo.fallbackImagePath]}
+          startAlt={`${demo.name} start position`}
+          endAlt={`${demo.name} end position`}
         />
       </div>
 
