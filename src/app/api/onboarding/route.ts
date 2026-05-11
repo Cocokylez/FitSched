@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 
-const WORKOUT_ENVIRONMENTS = new Set(["home_bodyweight", "home_dumbbells", "gym"])
+const WORKOUT_ENVIRONMENTS = new Set(["home_bodyweight", "home_dumbbells", "gym", "hike"])
 
 function parseWorkoutEnvironment(value: unknown) {
   return typeof value === "string" && WORKOUT_ENVIRONMENTS.has(value) ? value : null

@@ -52,7 +52,7 @@ interface ExerciseDef {
   goalTypes: string[]
 }
 
-type WorkoutEnvironment = "home_bodyweight" | "home_dumbbells" | "gym"
+type WorkoutEnvironment = "home_bodyweight" | "home_dumbbells" | "gym" | "hike"
 type ExerciseAccess = "BODYWEIGHT" | "DUMBBELLS" | "GYM"
 
 const EXERCISE_LIBRARY: ExerciseDef[] = [
@@ -147,6 +147,7 @@ const EXERCISE_ACCESS: Record<string, ExerciseAccess> = {
 
 function getAllowedExerciseAccess(environment: string): ExerciseAccess[] {
   if (environment === "home_bodyweight") return ["BODYWEIGHT"]
+  if (environment === "hike") return ["BODYWEIGHT"]
   if (environment === "home_dumbbells") return ["BODYWEIGHT", "DUMBBELLS"]
   return ["BODYWEIGHT", "DUMBBELLS", "GYM"]
 }
@@ -201,6 +202,7 @@ export default function WorkoutPage() {
   const { theme, toggleTheme } = useTheme()
   const [smartExercises, setSmartExercises] = useState<Array<[string, string]> | null>(null)
   const [computing, setComputing] = useState(true)
+  const [workoutEnvironment, setWorkoutEnvironment] = useState<WorkoutEnvironment>("gym")
   const dayNames = [t.days.sun, t.days.mon, t.days.tue, t.days.wed, t.days.thu, t.days.fri, t.days.sat]
 
   useEffect(() => {
@@ -282,11 +284,14 @@ export default function WorkoutPage() {
         const experienceLevel = profile.experienceLevel || "intermediate"
         const workoutsPerWeek = profile.workoutsPerWeek || 3
         const workoutEnvironment = (profile.workoutEnvironment || "gym") as WorkoutEnvironment
+        setWorkoutEnvironment(workoutEnvironment)
         const hasInjury = Boolean(profile.hasInjury)
         const allowedAccess = getAllowedExerciseAccess(workoutEnvironment)
 
         const groupResult = getMuscleGroupsForDay(selectedDay, workoutsPerWeek)
-        const allowedGroups = [...groupResult.groups]
+        const allowedGroups = workoutEnvironment === "hike"
+          ? ["CARDIO", "LEGS", "CORE", "FULL_BODY"]
+          : [...groupResult.groups]
         const targetMuscles = getStoredTargetMuscles()
         const targetForToday = targetMuscles.length > 0
           ? targetMuscles[(selectedDay - 1 + targetMuscles.length) % targetMuscles.length]
@@ -479,7 +484,7 @@ export default function WorkoutPage() {
     )
   }
 
-  const muscle = MUSCLE_GROUPS[selectedDay]
+  const muscle = workoutEnvironment === "hike" ? "Hike Conditioning" : MUSCLE_GROUPS[selectedDay]
   const todayExercises = smartExercises ?? getSmartExercisePlan({ selectedDay })
 
   const currentExercises = toWorkoutExercises(todayExercises)
