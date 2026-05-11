@@ -542,9 +542,9 @@ export default function WorkoutPage() {
                 marginBottom: "14px",
                 color: "var(--text)",
               }}>
-                <div style={{ fontSize: "14px", fontWeight: 900, marginBottom: "4px" }}>Workout locked for this day</div>
+                <div style={{ fontSize: "14px", fontWeight: 900, marginBottom: "4px" }}>{t.workoutLockedTitle}</div>
                 <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: 1.45 }}>
-                  You already completed this workout, so FitTokens are protected until the next workout day.
+                  {t.workoutLockedBody}
                 </div>
               </div>
             </motion.div>
@@ -671,7 +671,7 @@ export default function WorkoutPage() {
                   boxShadow: "0 4px 16px rgba(107, 191, 184, 0.3)",
                 }}
               >
-                Go Exercise
+                {t.goExercise}
               </button>
             ) : (
               <div style={{

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
+import { useLanguage } from "@/context/LanguageContext"
 
 type ActiveExercise = {
   name: string
@@ -38,6 +39,7 @@ function formatTime(totalSeconds: number) {
 
 export default function ExerciseSessionPage() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [workout, setWorkout] = useState<ActiveWorkout | null>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [elapsed, setElapsed] = useState(0)
@@ -206,7 +208,7 @@ export default function ExerciseSessionPage() {
   if (checkingLock) {
     return (
       <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)", padding: "24px 16px", display: "grid", placeItems: "center" }}>
-        <div style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 800, letterSpacing: "0.12em" }}>CHECKING WORKOUT</div>
+        <div style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 800, letterSpacing: "0.12em" }}>{t.checkingWorkout}</div>
       </div>
     )
   }
@@ -217,13 +219,13 @@ export default function ExerciseSessionPage() {
         <div style={{ maxWidth: 520, margin: "0 auto" }}>
           <div style={{ background: "var(--surface)", border: "1px solid rgba(107,191,184,0.32)", borderRadius: 20, padding: 24, textAlign: "center" }}>
             <div style={{ width: 58, height: 58, borderRadius: "50%", background: "rgba(107,191,184,0.14)", color: "#6bbfb8", display: "grid", placeItems: "center", margin: "0 auto 14px", fontSize: 18, fontWeight: 950 }}>OK</div>
-            <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 8 }}>Workout already complete</div>
-            <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 18, lineHeight: 1.5 }}>This day is locked so FitTokens stay fair. Come back for the next workout day.</div>
+            <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 8 }}>{t.workoutAlreadyComplete}</div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 18, lineHeight: 1.5 }}>{t.workoutAlreadyCompleteBody}</div>
             <button
               onClick={() => router.push("/workout")}
               style={{ border: "none", borderRadius: 14, padding: "13px 18px", background: "#6bbfb8", color: "#fff", fontWeight: 900, cursor: "pointer" }}
             >
-              Back to Workout
+              {t.backToWorkout}
             </button>
           </div>
         </div>
@@ -236,13 +238,13 @@ export default function ExerciseSessionPage() {
       <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)", padding: "24px 16px" }}>
         <div style={{ maxWidth: 520, margin: "0 auto" }}>
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 20, padding: 24, textAlign: "center" }}>
-            <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 8 }}>No workout loaded</div>
-            <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 18 }}>Start from the Workout tab to begin an exercise session.</div>
+            <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 8 }}>{t.noWorkoutLoaded}</div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 18 }}>{t.noWorkoutLoadedBody}</div>
             <button
               onClick={() => router.push("/workout")}
               style={{ border: "none", borderRadius: 14, padding: "13px 18px", background: "var(--text)", color: "var(--bg)", fontWeight: 800, cursor: "pointer" }}
             >
-              Back to Workout
+              {t.backToWorkout}
             </button>
           </div>
         </div>
@@ -259,10 +261,10 @@ export default function ExerciseSessionPage() {
             onClick={() => router.push("/workout")}
             style={{ border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", borderRadius: 999, padding: "9px 14px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}
           >
-            Back
+            {t.back}
           </button>
           <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 800, letterSpacing: "0.12em" }}>
-            {completedExerciseCount}/{workout.exercises.length} EXERCISES DONE
+            {completedExerciseCount}/{workout.exercises.length} {t.exercisesDone}
           </div>
         </div>
 
@@ -278,7 +280,7 @@ export default function ExerciseSessionPage() {
           }}
         >
           <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 4 }}>
-            {resting ? "Rest time" : "Now training"}
+            {resting ? t.restTime : t.nowTraining}
           </div>
           <div style={{ fontSize: 28, fontWeight: 950, letterSpacing: "-0.5px", marginBottom: 18 }}>{workout.workoutName}</div>
           <div style={{ display: "grid", placeItems: "center", marginBottom: 18 }}>
@@ -294,7 +296,7 @@ export default function ExerciseSessionPage() {
             disabled={resting}
             style={{ width: "100%", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", borderRadius: 14, padding: 13, fontSize: 14, fontWeight: 850, cursor: resting ? "default" : "pointer", opacity: resting ? 0.55 : 1 }}
           >
-            {resting ? "Resting..." : running ? "Pause Timer" : "Resume Timer"}
+            {resting ? t.resting : running ? t.pauseTimer : t.resumeTimer}
           </button>
         </motion.div>
 
@@ -306,11 +308,11 @@ export default function ExerciseSessionPage() {
             style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 20, padding: 18, marginBottom: 14 }}
           >
             <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 800, letterSpacing: "0.13em", marginBottom: 8 }}>
-              EXERCISE {currentIndex + 1} · SET {currentSetNumber} OF {current.sets}
+              {t.exerciseLabel} {currentIndex + 1} · {t.setLabel} {currentSetNumber} {t.ofLabel} {current.sets}
             </div>
             <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 8 }}>{current.name}</div>
             <div style={{ display: "inline-flex", borderRadius: 999, background: "var(--surface-2)", color: "var(--text-muted)", padding: "5px 11px", fontSize: 12, fontWeight: 750, marginBottom: 16 }}>
-              {current.reps} reps this set · {currentCompletedSets}/{current.sets} sets done
+              {current.reps} {t.repsThisSet} · {currentCompletedSets}/{current.sets} {t.setsDone}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <button
@@ -318,14 +320,14 @@ export default function ExerciseSessionPage() {
                 onClick={skipRest}
                 style={{ border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", borderRadius: 13, padding: 12, fontWeight: 800, opacity: resting ? 1 : 0.45, cursor: resting ? "pointer" : "default" }}
               >
-                Skip Rest
+                {t.skipRest}
               </button>
               <button
                 disabled={resting || currentCompletedSets >= current.sets}
                 onClick={completeCurrentSet}
                 style={{ border: "none", background: "#6bbfb8", color: "#fff", borderRadius: 13, padding: 12, fontWeight: 900, opacity: resting || currentCompletedSets >= current.sets ? 0.55 : 1, cursor: resting || currentCompletedSets >= current.sets ? "default" : "pointer" }}
               >
-                Done Set
+                {t.doneSet}
               </button>
             </div>
           </motion.div>
@@ -359,7 +361,7 @@ export default function ExerciseSessionPage() {
                 </span>
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: "block", fontSize: 14, fontWeight: 800 }}>{exercise.name}</span>
-                  <span style={{ display: "block", fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{setsDone}/{exercise.sets} sets · {exercise.reps} reps</span>
+                  <span style={{ display: "block", fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{setsDone}/{exercise.sets} {t.sets.toLowerCase()} · {exercise.reps} {t.reps.toLowerCase()}</span>
                 </span>
               </button>
             )
@@ -443,10 +445,10 @@ export default function ExerciseSessionPage() {
                 FT
               </motion.div>
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} style={{ fontSize: 30, fontWeight: 950, letterSpacing: "-0.5px", marginBottom: 6 }}>
-                Workout complete
+                {t.workoutCompleteTitle}
               </motion.div>
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} style={{ color: "rgba(255,255,255,0.64)", fontSize: 14, lineHeight: 1.45, marginBottom: 18 }}>
-                You showed up today. Keep this rhythm going.
+                {t.workoutCompleteBody}
               </motion.div>
 
               <motion.div
@@ -465,8 +467,8 @@ export default function ExerciseSessionPage() {
                   marginBottom: 10,
                 }}
               >
-                <span style={{ color: "rgba(255,255,255,0.68)", fontSize: 13, fontWeight: 800 }}>STREAK</span>
-                <span style={{ fontSize: 16, fontWeight: 950, color: "#6bbfb8" }}>Day {streakDay} streak</span>
+                <span style={{ color: "rgba(255,255,255,0.68)", fontSize: 13, fontWeight: 800 }}>{t.streakLabel}</span>
+                <span style={{ fontSize: 16, fontWeight: 950, color: "#6bbfb8" }}>{streakDay} {t.dayStreak}</span>
               </motion.div>
 
               <motion.div
@@ -482,7 +484,7 @@ export default function ExerciseSessionPage() {
                 }}
               >
                 <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.12em", marginBottom: 7 }}>
-                  RECEIVE FITTOKEN
+                  {t.receiveFitToken}
                 </div>
                 <div style={{ fontSize: 34, fontWeight: 950, color: "#6bbfb8", fontVariantNumeric: "tabular-nums" }}>
                   +{Number(fitTokenReward?.amount ?? fitTokenReward?.totalAwarded ?? 1).toFixed(2)} FT
@@ -505,7 +507,7 @@ export default function ExerciseSessionPage() {
                   boxShadow: "0 12px 28px rgba(107,191,184,0.3)",
                 }}
               >
-                Continue
+                {t.continueLabel}
               </button>
             </motion.div>
           </motion.div>
@@ -520,7 +522,7 @@ export default function ExerciseSessionPage() {
             disabled={saving || resting}
             style={{ width: "100%", border: "none", borderRadius: 16, padding: 15, background: "#6bbfb8", color: "#fff", fontSize: 15, fontWeight: 950, cursor: !saving && !resting ? "pointer" : "default", opacity: !saving && !resting ? 1 : 0.5, boxShadow: "0 10px 28px rgba(107,191,184,0.28)" }}
           >
-            {saving ? "Saving..." : allDone ? "Finish Workout" : resting ? "Resting..." : "Done Set"}
+            {saving ? t.saving : allDone ? t.finishWorkout : resting ? t.resting : t.doneSet}
           </button>
         </div>
       </div>

@@ -185,7 +185,7 @@ export default function SchedulePage() {
                 time: isManual ? formatManualTime(details?.time || "") : t.workout,
                 label: w.workoutName,
                 kind: isManual ? "cls" as const : "wrk" as const,
-                duration: isManual ? "Manual" : `${w.exercises.length} exercises`,
+                duration: isManual ? t.manual : `${w.exercises.length} ${t.exercisesCount}`,
                 description: isManual ? details?.description || "" : "",
                 source: isManual ? "manual" as const : "workout" as const,
                 exercises: w.exercises,
@@ -511,7 +511,7 @@ export default function SchedulePage() {
                     cursor: "pointer",
                   }}
                 >
-                  Add
+                  {t.add}
                 </button>
               </div>
             </motion.div>
@@ -586,9 +586,9 @@ export default function SchedulePage() {
                                   cursor: "pointer",
                                   opacity: deleteOpen ? 1 : 0.72,
                                 }}
-                                aria-label={`Edit ${block.label}`}
+                                aria-label={`${t.edit} ${block.label}`}
                               >
-                                Edit
+                                {t.edit}
                               </button>
                             )}
                             <button
@@ -606,9 +606,9 @@ export default function SchedulePage() {
                                 cursor: deletingId === block.id ? "default" : "pointer",
                                 opacity: deleteOpen ? 1 : 0.72,
                               }}
-                              aria-label={`Delete ${block.label}`}
+                              aria-label={`${t.delete} ${block.label}`}
                             >
-                              {deletingId === block.id ? "..." : "Delete"}
+                              {deletingId === block.id ? t.deleting : t.delete}
                             </button>
                           </div>
                         )}
@@ -662,7 +662,7 @@ export default function SchedulePage() {
                                 borderRadius: "20px",
                                 padding: "2px 8px",
                               }}>
-                                Manual
+                                {t.manual}
                               </span>
                             )}
                           </div>
@@ -708,7 +708,7 @@ export default function SchedulePage() {
                                 whiteSpace: "nowrap",
                               }}
                             >
-                              Go Exercise
+                              {t.goExercise}
                             </button>
                           )}
                         </div>
@@ -764,7 +764,7 @@ export default function SchedulePage() {
             >
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px", marginBottom: "16px" }}>
                 <div>
-                  <div style={{ fontSize: "20px", fontWeight: 900, letterSpacing: "-0.2px" }}>{editingBlockId ? "Edit schedule" : "Add schedule"}</div>
+                  <div style={{ fontSize: "20px", fontWeight: 900, letterSpacing: "-0.2px" }}>{editingBlockId ? t.editSchedule : t.addSchedule}</div>
                   <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px" }}>
                     {selectedDate ? `${dayNames[selectedDay]}, ${selectedDate.toLocaleDateString([], { month: "short", day: "numeric" })}` : "This week"}
                   </div>
@@ -790,11 +790,11 @@ export default function SchedulePage() {
               </div>
 
               <label style={{ display: "block", marginBottom: "12px" }}>
-                <div style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.14em", color: "var(--text-muted)", marginBottom: "7px" }}>TITLE</div>
+                <div style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.14em", color: "var(--text-muted)", marginBottom: "7px" }}>{t.title}</div>
                 <input
                   value={manualTitle}
                   onChange={(event) => setManualTitle(event.target.value)}
-                  placeholder="Class, work, appointment..."
+                  placeholder={t.classWorkAppointment}
                   style={{
                     width: "100%",
                     boxSizing: "border-box",
@@ -810,7 +810,7 @@ export default function SchedulePage() {
               </label>
 
               <label style={{ display: "block", marginBottom: "12px" }}>
-                <div style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.14em", color: "var(--text-muted)", marginBottom: "7px" }}>TIME</div>
+                <div style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.14em", color: "var(--text-muted)", marginBottom: "7px" }}>{t.time}</div>
                 <input
                   type="time"
                   value={manualTime}
@@ -830,11 +830,11 @@ export default function SchedulePage() {
               </label>
 
               <label style={{ display: "block", marginBottom: "16px" }}>
-                <div style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.14em", color: "var(--text-muted)", marginBottom: "7px" }}>DESCRIPTION</div>
+                <div style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.14em", color: "var(--text-muted)", marginBottom: "7px" }}>{t.description}</div>
                 <textarea
                   value={manualDescription}
                   onChange={(event) => setManualDescription(event.target.value)}
-                  placeholder="Optional notes"
+                  placeholder={t.optionalNotes}
                   rows={4}
                   style={{
                     width: "100%",
@@ -868,7 +868,7 @@ export default function SchedulePage() {
                   opacity: manualTitle.trim() && !savingManual ? 1 : 0.5,
                 }}
               >
-                {savingManual ? (editingBlockId ? "Saving..." : "Adding...") : (editingBlockId ? "Save changes" : "Add to schedule")}
+                {savingManual ? (editingBlockId ? t.saving : t.adding) : (editingBlockId ? t.saveChanges : t.addToSchedule)}
               </button>
             </motion.div>
           </motion.div>
