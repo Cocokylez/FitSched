@@ -17,7 +17,39 @@ export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const { t } = useLanguage()
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setError('')
+    setLoading(true)
+
+    const result = await signIn('credentials', {
+      email,
+      password,
+      redirect: false,
+    })
+
+    setLoading(false)
+
+    if (result?.error) {
+      setError('Email or password is incorrect')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/onboarding', { cache: 'no-store' })
+      if (response.ok) {
+        const data = await response.json()
+        router.push(data?.onboardingCompleted ? '/schedule' : '/onboarding')
+        return
+      }
+    } catch {}
+
+    router.push('/schedule')
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
@@ -64,6 +96,23 @@ export default function LoginPage() {
             <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '24px' }}>{t.signInContinue}</div>
           </motion.div>
 
+          <form onSubmit={handleSubmit}>
+          {error && (
+            <motion.div variants={fadeIn}>
+              <div style={{
+                background: 'var(--surface-2)',
+                border: '1px solid #ff4444',
+                borderRadius: '10px',
+                padding: '12px 16px',
+                color: '#ff6666',
+                fontSize: '13px',
+                marginBottom: '16px',
+              }}>
+                {error}
+              </div>
+            </motion.div>
+          )}
+
           <motion.div variants={fadeIn}>
             <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.15em', color: 'var(--text-muted)', marginBottom: '6px' }}>{t.email}</div>
             <input
@@ -71,6 +120,9 @@ export default function LoginPage() {
               placeholder="you@example.com"
               value={email}
               onChange={e => setEmail(e.target.value)}
+              required
+              autoCapitalize="none"
+              autoCorrect="off"
               style={{
                 background: 'var(--surface-2)',
                 border: '1px solid var(--border)',
@@ -93,6 +145,7 @@ export default function LoginPage() {
               placeholder="••••••••"
               value={password}
               onChange={e => setPassword(e.target.value)}
+              required
               style={{
                 background: 'var(--surface-2)',
                 border: '1px solid var(--border)',
@@ -110,7 +163,8 @@ export default function LoginPage() {
 
           <motion.div variants={fadeIn}>
             <button
-              onClick={async () => { await signIn('credentials', { email, password, callbackUrl: '/schedule' }) }}
+              type="submit"
+              disabled={loading}
               style={{
                 width: '100%',
                 background: 'var(--text)',
@@ -122,11 +176,13 @@ export default function LoginPage() {
                 fontWeight: 700,
                 cursor: 'pointer',
                 marginBottom: '20px',
+                opacity: loading ? 0.55 : 1,
               }}
             >
-              {t.signIn}
+              {loading ? 'Signing in...' : t.signIn}
             </button>
           </motion.div>
+          </form>
 
           <motion.div variants={fadeIn}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>

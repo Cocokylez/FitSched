@@ -15,6 +15,26 @@ export function AuthGoogleButton({
   const popupRef = useRef<Window | null>(null)
   const closeCheckRef = useRef<number | null>(null)
   const [waiting, setWaiting] = useState(false)
+  const [googleAvailable, setGoogleAvailable] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+
+    const loadProviders = async () => {
+      try {
+        const response = await fetch("/api/auth/providers")
+        if (!response.ok) return
+
+        const providers = await response.json()
+        if (mounted) setGoogleAvailable(Boolean(providers?.google))
+      } catch {}
+    }
+
+    loadProviders()
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -35,6 +55,8 @@ export function AuthGoogleButton({
   }, [callbackPath])
 
   const startGooglePopup = () => {
+    if (!googleAvailable) return
+
     const popupUrl = new URL("/auth/google-popup", window.location.origin)
     popupUrl.searchParams.set("next", callbackPath)
     const width = 460
@@ -70,7 +92,7 @@ export function AuthGoogleButton({
     <button
       type="button"
       onClick={startGooglePopup}
-      disabled={waiting}
+      disabled={waiting || !googleAvailable}
       style={{
         width: "100%",
         background: "var(--surface-2)",
@@ -79,17 +101,17 @@ export function AuthGoogleButton({
         padding: "14px",
         color: "var(--text)",
         fontSize: "14px",
-        cursor: waiting ? "default" : "pointer",
+        cursor: waiting || !googleAvailable ? "default" : "pointer",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         gap: "8px",
         marginBottom: "24px",
-        opacity: waiting ? 0.7 : 1,
+        opacity: waiting || !googleAvailable ? 0.7 : 1,
       }}
     >
       <Image src="/google.svg" width={16} height={16} alt="Google" />
-      {waiting ? "Waiting for Google..." : label}
+      {!googleAvailable ? "Google sign in unavailable" : waiting ? "Waiting for Google..." : label}
     </button>
   )
 }

@@ -456,23 +456,53 @@ export default function SettingsPage() {
             </motion.div>
 
             <motion.div variants={fadeUp}>
-              <div style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                background: "rgba(107, 191, 184, 0.12)",
-                border: "1px solid rgba(107, 191, 184, 0.32)",
-                color: ACCENT,
-                borderRadius: "999px",
-                padding: "8px 14px",
-                fontSize: "13px",
-                fontWeight: 700,
-                marginBottom: "14px",
-              }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/fittoken.svg" alt="" style={{ width: 20, height: 20, flexShrink: 0 }} />
-                <span>FitTokens</span>
-                <span>{formatFitTokenAmount(fitTokens.balance)}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "14px" }}>
+                <div style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  background: "rgba(107, 191, 184, 0.12)",
+                  border: "1px solid rgba(107, 191, 184, 0.32)",
+                  color: ACCENT,
+                  borderRadius: "999px",
+                  padding: "8px 14px",
+                  fontSize: "13px",
+                  fontWeight: 700,
+                }}>
+                  <span style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: "999px",
+                    border: "1px solid rgba(107, 191, 184, 0.38)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "9px",
+                    fontWeight: 900,
+                    lineHeight: 1,
+                    flexShrink: 0,
+                  }}>
+                    FT
+                  </span>
+                  <span>FitTokens</span>
+                  <span>{formatFitTokenAmount(fitTokens.balance)}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => router.push("/withdrawal")}
+                  style={{
+                    border: "1px solid var(--border)",
+                    background: "var(--surface-2)",
+                    color: "var(--text)",
+                    borderRadius: "999px",
+                    padding: "8px 14px",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
+                >
+                  Withdrawal
+                </button>
               </div>
             </motion.div>
 

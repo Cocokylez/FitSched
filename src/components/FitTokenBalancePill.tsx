@@ -51,13 +51,11 @@ export function FitTokenBalancePill() {
 
   return (
     <div className="inline-flex h-9 items-center gap-2 rounded-full border border-cyan-300/25 bg-[var(--surface)] px-3 text-cyan-300">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/fittoken.svg" alt="" className="h-5 w-5 shrink-0" />
+        <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full border border-cyan-300/35 bg-cyan-300/10 text-[9px] font-black leading-none">
+          FT
+        </span>
         <span className="text-xs font-bold tabular-nums">
           {loading ? "--" : formatTokenBalance(balance)}
-        </span>
-        <span className="text-[10px] font-bold uppercase tracking-[0.08em] opacity-75">
-          FT
         </span>
     </div>
   );
