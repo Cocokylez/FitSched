@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { cleanText, rateLimitByUser, rateLimitPresets, readJsonBody, requestBodyErrorResponse, safeError, validateSameOrigin } from "@/lib/security";
 import { NextResponse } from "next/server";
 import webpush from "web-push";
 
@@ -14,12 +15,25 @@ function getWebpush() {
 
 export async function POST(req: Request) {
   try {
+    const originError = validateSameOrigin(req);
+    if (originError) return originError;
+
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.strictWrite, "push:send");
+    if (limited) return limited;
 
-    const { title, body, icon } = await req.json();
+    const requestBody = await readJsonBody(req, 8_000);
+    const title = cleanText(requestBody.title, 80);
+    const body = cleanText(requestBody.body, 240);
+    const requestedIcon = cleanText(requestBody.icon, 120);
+    const icon = requestedIcon.startsWith("/") || requestedIcon.startsWith("https://")
+      ? requestedIcon
+      : "/icon-512.png";
+
+    if (!title || !body) return safeError("Notification title and body required");
 
     const subscriptions = await db.pushSubscription.findMany({
       where: { userId: session.user.id },
@@ -28,7 +42,7 @@ export async function POST(req: Request) {
     const payload = JSON.stringify({
       title,
       body,
-      icon: icon || "/icon-512.png",
+      icon,
     });
 
     const wp = getWebpush();
@@ -61,6 +75,9 @@ export async function POST(req: Request) {
       sent: results.filter((r) => r.status === "fulfilled").length,
     });
   } catch (error) {
+    const bodyError = requestBodyErrorResponse(error);
+    if (bodyError) return bodyError;
+
     console.error("Push send error:", error);
     return NextResponse.json(
       { error: "Failed to send notification" },

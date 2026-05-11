@@ -4,6 +4,15 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { compare, hash } from "bcryptjs"
 import { db } from "./db"
+import { cleanText, logSecurityEvent } from "./security"
+
+function normalizeEmail(value: unknown) {
+  return typeof value === "string" ? value.trim().toLowerCase().slice(0, 254) : ""
+}
+
+function normalizePassword(value: unknown) {
+  return typeof value === "string" ? value : ""
+}
 
 const providers: any[] = [
   CredentialsProvider({
@@ -15,19 +24,28 @@ const providers: any[] = [
       action: { label: "Action", type: "text" },
     },
     async authorize(credentials) {
-      if (!credentials?.email || !credentials?.password) return null
+      const email = normalizeEmail(credentials?.email)
+      const password = normalizePassword(credentials?.password)
+      const action = typeof credentials?.action === "string" ? credentials.action : "login"
 
-      if (credentials.action === "register") {
+      if (!email || !password || password.length > 128) return null
+
+      if (action === "register") {
+        if (password.length < 8) {
+          logSecurityEvent("weak_registration_password")
+          return null
+        }
+
         const existing = await db.user.findUnique({
-          where: { email: credentials.email as string },
+          where: { email },
         })
-        if (existing) throw new Error("Email already registered")
+        if (existing) throw new Error("Unable to create account")
 
-        const hashed = await hash(credentials.password as string, 12)
+        const hashed = await hash(password, 12)
         const user = await db.user.create({
           data: {
-            email: credentials.email as string,
-            name: (credentials.name as string) || null,
+            email,
+            name: cleanText(credentials.name, 80) || null,
             password: hashed,
           },
         })
@@ -35,15 +53,18 @@ const providers: any[] = [
       }
 
       const user = await db.user.findUnique({
-        where: { email: credentials.email as string },
+        where: { email },
       })
-      if (!user || !user.password) return null
+      if (!user || !user.password) {
+        logSecurityEvent("failed_credentials_login")
+        return null
+      }
 
-      const valid = await compare(
-        credentials.password as string,
-        user.password
-      )
-      if (!valid) return null
+      const valid = await compare(password, user.password)
+      if (!valid) {
+        logSecurityEvent("failed_credentials_login")
+        return null
+      }
 
       return user
     },

@@ -19,13 +19,14 @@ export async function registerNativePush() {
       })
     })
 
-    PushNotifications.addListener("pushNotificationReceived", (notification) => {
-      console.log("Push received:", notification)
+    PushNotifications.addListener("pushNotificationReceived", () => {
+      // Avoid logging notification payloads because they can include personal data.
     })
 
     PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
-      if (action.notification.data?.url) {
-        window.location.href = action.notification.data.url
+      const url = action.notification.data?.url
+      if (typeof url === "string" && url.startsWith("/") && !url.startsWith("//")) {
+        window.location.href = url
       }
     })
 

@@ -1,5 +1,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { encryptSecret } from "@/lib/fieldEncryption";
+import { rateLimitByUser, rateLimitPresets } from "@/lib/security";
 import { google } from "googleapis";
 import { NextResponse } from "next/server";
 
@@ -10,6 +12,8 @@ export async function GET(req: Request) {
       const origin = new URL(req.url).origin;
       return NextResponse.redirect(`${origin}/login`);
     }
+    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.strictWrite, "calendar:callback");
+    if (limited) return limited;
 
     const { searchParams } = new URL(req.url);
     const code = searchParams.get("code");
@@ -27,6 +31,10 @@ export async function GET(req: Request) {
       return NextResponse.redirect(
         `${origin}/settings?error=invalid_state`
       );
+    }
+
+    if (!process.env.GOOGLE_CALENDAR_CLIENT_ID || !process.env.GOOGLE_CALENDAR_CLIENT_SECRET) {
+      return NextResponse.redirect(`${origin}/settings?error=calendar_not_configured`);
     }
 
     const oauth2Client = new google.auth.OAuth2(
@@ -56,14 +64,14 @@ export async function GET(req: Request) {
       },
       create: {
         userId: session.user.id,
-        googleToken: tokens.access_token,
-        refreshToken: tokens.refresh_token,
+        googleToken: encryptSecret(tokens.access_token),
+        refreshToken: encryptSecret(tokens.refresh_token),
         tokenExpiry: expiry,
         calendarId: "primary",
       },
       update: {
-        googleToken: tokens.access_token,
-        refreshToken: tokens.refresh_token,
+        googleToken: encryptSecret(tokens.access_token),
+        refreshToken: encryptSecret(tokens.refresh_token),
         tokenExpiry: expiry,
       },
     });

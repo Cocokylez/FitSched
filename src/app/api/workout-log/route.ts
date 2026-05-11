@@ -1,12 +1,9 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { awardFitTokensForWorkoutLogTx } from "@/lib/fitTokens"
+import { cleanText, clampInt, isDateId, rateLimitByUser, rateLimitPresets, readJsonBody, requestBodyErrorResponse, safeError, validateSameOrigin } from "@/lib/security"
 import { Prisma } from "@prisma/client"
 import { NextResponse } from "next/server"
-
-function isDateId(value: unknown): value is string {
-  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
-}
 
 function getTodayDateId() {
   const timeZone = process.env.FITSCHED_TIME_ZONE || "Asia/Singapore"
@@ -28,15 +25,28 @@ function isSerializableConflict(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034"
 }
 
+function normalizeCompletedExercises(value: unknown) {
+  if (!Array.isArray(value) || value.length === 0 || value.length > 20) return null
+
+  return value.map((exercise) => ({
+    name: cleanText((exercise as any)?.name, 100),
+    sets: clampInt((exercise as any)?.sets, 1, 10, 3),
+    reps: clampInt((exercise as any)?.reps, 1, 200, 12),
+  })).filter((exercise) => exercise.name)
+}
+
 export async function GET(req: Request) {
   try {
     const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.read, "workout-log:get")
+    if (limited) return limited
 
     const { searchParams } = new URL(req.url)
     const date = searchParams.get("date")
+    if (date && !isDateId(date)) return safeError("Invalid date")
 
     const logs = await db.workoutSessionLog.findMany({
       where: {
@@ -59,19 +69,24 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const originError = validateSameOrigin(req)
+    if (originError) return originError
+
     const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
     const userId = session.user.id
+    const limited = rateLimitByUser(req, userId, rateLimitPresets.strictWrite, "workout-log:post")
+    if (limited) return limited
 
-    const { date, workoutName, exercises } = await req.json()
+    const body = await readJsonBody(req)
+    const date = body.date
+    const workoutName = cleanText(body.workoutName, 100)
+    const exercises = normalizeCompletedExercises(body.exercises)
 
-    if (!isDateId(date) || !workoutName || !Array.isArray(exercises) || exercises.length === 0) {
-      return NextResponse.json(
-        { error: "Missing required fields: date, workoutName, exercises" },
-        { status: 400 }
-      )
+    if (!isDateId(date) || !workoutName || !exercises?.length) {
+      return safeError("Missing or invalid workout log fields")
     }
 
     if (date !== getTodayDateId()) {
@@ -136,6 +151,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ...result.log, fitTokenReward: result.fitTokenReward }, { status: 201 })
   } catch (error) {
+    const bodyError = requestBodyErrorResponse(error)
+    if (bodyError) return bodyError
+
     if (isSerializableConflict(error)) {
       return NextResponse.json(
         { error: "Workout completion is already being processed", alreadyCompleted: true },

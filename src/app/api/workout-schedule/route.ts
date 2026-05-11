@@ -1,6 +1,21 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { cleanText, clampInt, isDateId, rateLimitByUser, rateLimitPresets, readJsonBody, requestBodyErrorResponse, safeError, validateSameOrigin } from "@/lib/security"
 import { NextResponse } from "next/server"
+
+const SOURCES = new Set(["ai", "manual", "calendar", "workout"])
+
+function normalizeScheduleExercises(value: unknown) {
+  if (!Array.isArray(value) || value.length === 0 || value.length > 20) return null
+
+  return value.map((exercise) => ({
+    name: cleanText((exercise as any)?.name, 100),
+    description: cleanText((exercise as any)?.description, 500),
+    time: cleanText((exercise as any)?.time, 20),
+    sets: clampInt((exercise as any)?.sets, 1, 10, 3),
+    reps: clampInt((exercise as any)?.reps, 1, 200, 12),
+  })).filter((exercise) => exercise.name)
+}
 
 export async function GET(req: Request) {
   try {
@@ -8,13 +23,15 @@ export async function GET(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.read, "workout-schedule:get")
+    if (limited) return limited
 
     const { searchParams } = new URL(req.url)
     const date = searchParams.get("date")
     const days = searchParams.get("days")
 
     if (days) {
-      const numDays = parseInt(days)
+      const numDays = clampInt(days, 1, 90, 7)
       const startDate = new Date()
       startDate.setDate(startDate.getDate() - numDays)
       const startStr = startDate.toISOString().split("T")[0]
@@ -31,6 +48,7 @@ export async function GET(req: Request) {
     }
 
     if (date) {
+      if (!isDateId(date)) return safeError("Invalid date")
       const workouts = await db.workoutSchedule.findMany({
         where: {
           userId: session.user.id,
@@ -54,18 +72,24 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const originError = validateSameOrigin(req)
+    if (originError) return originError
+
     const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.write, "workout-schedule:post")
+    if (limited) return limited
 
-    const { date, workoutName, exercises, source } = await req.json()
+    const body = await readJsonBody(req)
+    const date = body.date
+    const workoutName = cleanText(body.workoutName, 100)
+    const exercises = normalizeScheduleExercises(body.exercises)
+    const source = typeof body.source === "string" && SOURCES.has(body.source) ? body.source : "ai"
 
-    if (!date || !workoutName || !exercises) {
-      return NextResponse.json(
-        { error: "Missing required fields: date, workoutName, exercises" },
-        { status: 400 }
-      )
+    if (!isDateId(date) || !workoutName || !exercises?.length) {
+      return safeError("Missing or invalid schedule fields")
     }
 
     const workout = await db.workoutSchedule.create({
@@ -74,12 +98,15 @@ export async function POST(req: Request) {
         date,
         workoutName,
         exercises,
-        source: source || "ai",
+        source,
       },
     })
 
     return NextResponse.json(workout, { status: 201 })
   } catch (error) {
+    const bodyError = requestBodyErrorResponse(error)
+    if (bodyError) return bodyError
+
     console.error("Workout schedule POST error:", error)
     return NextResponse.json(
       { error: "Failed to save workout schedule" },
@@ -90,18 +117,25 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
+    const originError = validateSameOrigin(req)
+    if (originError) return originError
+
     const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.write, "workout-schedule:patch")
+    if (limited) return limited
 
-    const { id, date, workoutName, exercises, source } = await req.json()
+    const body = await readJsonBody(req)
+    const id = cleanText(body.id, 80)
+    const date = body.date
+    const workoutName = cleanText(body.workoutName, 100)
+    const exercises = normalizeScheduleExercises(body.exercises)
+    const source = typeof body.source === "string" && SOURCES.has(body.source) ? body.source : "manual"
 
-    if (!id || !date || !workoutName || !exercises) {
-      return NextResponse.json(
-        { error: "Missing required fields: id, date, workoutName, exercises" },
-        { status: 400 }
-      )
+    if (!id || !isDateId(date) || !workoutName || !exercises?.length) {
+      return safeError("Missing or invalid schedule fields")
     }
 
     const existing = await db.workoutSchedule.findFirst({
@@ -122,12 +156,15 @@ export async function PATCH(req: Request) {
         date,
         workoutName,
         exercises,
-        source: source || "manual",
+        source,
       },
     })
 
     return NextResponse.json(workout)
   } catch (error) {
+    const bodyError = requestBodyErrorResponse(error)
+    if (bodyError) return bodyError
+
     console.error("Workout schedule PATCH error:", error)
     return NextResponse.json(
       { error: "Failed to update workout schedule" },
@@ -138,10 +175,15 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const originError = validateSameOrigin(req)
+    if (originError) return originError
+
     const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.write, "workout-schedule:delete")
+    if (limited) return limited
 
     const { searchParams } = new URL(req.url)
     const id = searchParams.get("id")

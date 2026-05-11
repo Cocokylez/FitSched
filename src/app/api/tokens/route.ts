@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { rateLimitByUser, rateLimitPresets } from "@/lib/security"
 import { NextResponse } from "next/server"
 
 function formatTransaction(transaction: {
@@ -18,12 +19,14 @@ function formatTransaction(transaction: {
   }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.read, "tokens:get")
+    if (limited) return limited
 
     const [balance, transactions] = await Promise.all([
       db.fitTokenBalance.findUnique({

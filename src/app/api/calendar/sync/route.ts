@@ -1,13 +1,24 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { decryptSecret } from "@/lib/fieldEncryption";
+import { rateLimitByUser, rateLimitPresets, validateSameOrigin } from "@/lib/security";
 import { google } from "googleapis";
 import { NextResponse } from "next/server";
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
+    const originError = validateSameOrigin(req);
+    if (originError) return originError;
+
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.strictWrite, "calendar:sync");
+    if (limited) return limited;
+
+    if (!process.env.GOOGLE_CALENDAR_CLIENT_ID || !process.env.GOOGLE_CALENDAR_CLIENT_SECRET) {
+      return NextResponse.json({ error: "Calendar integration is not configured" }, { status: 503 });
     }
 
     const connection = await db.calendarConnection.findFirst({
@@ -27,8 +38,8 @@ export async function POST() {
     );
 
     oauth2Client.setCredentials({
-      access_token: connection.googleToken,
-      refresh_token: connection.refreshToken,
+      access_token: decryptSecret(connection.googleToken),
+      refresh_token: decryptSecret(connection.refreshToken),
     });
 
     const calendar = google.calendar({ version: "v3", auth: oauth2Client });
@@ -104,12 +115,17 @@ export async function POST() {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(req: Request) {
   try {
+    const originError = validateSameOrigin(req);
+    if (originError) return originError;
+
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.strictWrite, "calendar:disconnect");
+    if (limited) return limited;
 
     await db.calendarConnection.deleteMany({
       where: { userId: session.user.id },
@@ -130,9 +146,14 @@ export async function GET(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.read, "calendar:get");
+    if (limited) return limited;
 
     const { searchParams } = new URL(req.url);
     const date = searchParams.get("date");
+    if (date && Number.isNaN(new Date(date).getTime())) {
+      return NextResponse.json({ error: "Invalid date" }, { status: 400 });
+    }
 
     const connection = await db.calendarConnection.findFirst({
       where: { userId: session.user.id },
