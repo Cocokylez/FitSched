@@ -9,6 +9,7 @@ import { SkeletonCard } from "@/components/Skeleton"
 import { FitTokenBalancePill } from "@/components/FitTokenBalancePill"
 import { useLanguage } from "@/context/LanguageContext"
 import { useTheme } from "@/context/ThemeContext"
+import { getSmartExercisePlan, toWorkoutExercises } from "@/lib/workoutRecommendations"
 
 const stagger = {
   hidden: {},
@@ -128,6 +129,7 @@ export default function SchedulePage() {
   const [openDeleteId, setOpenDeleteId] = useState<string | null>(null)
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [suggestedExercises, setSuggestedExercises] = useState<Array<{ name: string; sets: number; reps: number }>>([])
   const longPressTimer = useRef<number | null>(null)
 
   useEffect(() => {
@@ -170,9 +172,37 @@ export default function SchedulePage() {
 
       // Fetch workout schedule for selected day
       let workoutEvents: any[] = []
+      let recommendationExercises: Array<{ name: string; sets: number; reps: number }> = []
       try {
         const selectedDate = weekDates[selectedDay]
         if (selectedDate) {
+          try {
+            const profileRes = await fetch("/api/onboarding")
+            const profile = profileRes.ok ? await profileRes.json() : {}
+            const targetMuscles = (() => {
+              try {
+                const raw = localStorage.getItem("fitsched-onboarding-preferences")
+                const parsed = raw ? JSON.parse(raw) : {}
+                return Array.isArray(parsed?.targetMuscles) ? parsed.targetMuscles : []
+              } catch {
+                return []
+              }
+            })()
+
+            recommendationExercises = toWorkoutExercises(getSmartExercisePlan({
+              selectedDay,
+              fitnessGoal: profile.fitnessGoal || "stay_active",
+              experienceLevel: profile.experienceLevel || "intermediate",
+              workoutEnvironment: profile.workoutEnvironment || "gym",
+              hasInjury: Boolean(profile.hasInjury),
+              targetMuscles,
+            }))
+            setSuggestedExercises(recommendationExercises)
+          } catch {
+            recommendationExercises = toWorkoutExercises(getSmartExercisePlan({ selectedDay }))
+            setSuggestedExercises(recommendationExercises)
+          }
+
           const dateStr = formatLocalDate(selectedDate)
           const wsRes = await fetch(`/api/workout-schedule?date=${dateStr}`)
           if (wsRes.ok) {
@@ -188,7 +218,7 @@ export default function SchedulePage() {
                 duration: isManual ? t.manual : `${w.exercises.length} ${t.exercisesCount}`,
                 description: isManual ? details?.description || "" : "",
                 source: isManual ? "manual" as const : "workout" as const,
-                exercises: w.exercises,
+                exercises: isManual ? w.exercises : (Array.isArray(w.exercises) && w.exercises.length > 0 ? w.exercises : recommendationExercises),
               }
             })
           }
@@ -366,7 +396,7 @@ export default function SchedulePage() {
           sets: Number(exercise.sets) || 3,
           reps: Number(exercise.reps) || 12,
         }))
-      : DAY_EXERCISES[selectedDay] || [{ name: block.label, sets: 3, reps: 12 }]
+      : suggestedExercises.length > 0 ? suggestedExercises : (DAY_EXERCISES[selectedDay] || [{ name: block.label, sets: 3, reps: 12 }])
 
     sessionStorage.setItem("fitsched-active-workout", JSON.stringify({
       date: formatLocalDate(selectedDate),

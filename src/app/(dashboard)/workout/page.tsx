@@ -9,6 +9,7 @@ import { useLanguage } from "@/context/LanguageContext"
 import { useTheme } from "@/context/ThemeContext"
 import { SkeletonExerciseRow } from "@/components/Skeleton"
 import { ExerciseDemoPanel } from "@/components/ExerciseDemoPanel"
+import { getSmartExercisePlan, parseSetsReps, toWorkoutExercises } from "@/lib/workoutRecommendations"
 
 const stagger = {
   hidden: {},
@@ -399,7 +400,15 @@ export default function WorkoutPage() {
         const repsMap = fitnessGoal === "improve_endurance" ? ENDURANCE_REPS_MAP : SETS_REPS_MAP
         const setsReps = repsMap[experienceLevel] || "3×12"
 
-        setSmartExercises(selected.map((ex) => [ex.name, setsReps]))
+        setSmartExercises(getSmartExercisePlan({
+          selectedDay,
+          fitnessGoal,
+          experienceLevel,
+          workoutEnvironment,
+          hasInjury,
+          targetMuscles,
+          recentNames,
+        }))
       } catch {
         setSmartExercises(null)
       }
@@ -471,12 +480,9 @@ export default function WorkoutPage() {
   }
 
   const muscle = MUSCLE_GROUPS[selectedDay]
-  const todayExercises = smartExercises ?? (DEFAULT_EXERCISES[selectedDay] || [])
+  const todayExercises = smartExercises ?? getSmartExercisePlan({ selectedDay })
 
-  const currentExercises = todayExercises.map(([name, reps]) => {
-    const parts = reps.split("×")
-    return { name, sets: parseInt(parts[0]) || 3, reps: parseInt(parts[1]) || 12 }
-  })
+  const currentExercises = toWorkoutExercises(todayExercises)
 
   const updateLog = (index: number, field: string, value: string) => {
     setLoggedExercises(prev => {
@@ -675,10 +681,7 @@ export default function WorkoutPage() {
               const selectedDate = weekDates[selectedDay]
               if (!selectedDate) return
               const dateStr = formatLocalDate(selectedDate)
-              const exercises = todayExercises.map(([name, reps]) => {
-                const parts = reps.split("×")
-                return { name, sets: parseInt(parts[0]) || 3, reps: parseInt(parts[1]) || 12 }
-              })
+              const exercises = todayExercises.map(([name, reps]) => ({ name, ...parseSetsReps(reps) }))
               const res = await fetch("/api/workout-schedule", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
