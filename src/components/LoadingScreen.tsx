@@ -1,22 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
 export function LoadingScreen({ onDone }: { onDone: () => void }) {
-  const [stage, setStage] = useState<"dots" | "circle" | "square">("dots");
   const [exiting, setExiting] = useState(false);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
     const activeTimers = [
-      setTimeout(() => setStage("circle"), 700),
-      setTimeout(() => setStage("square"), 1550),
-      setTimeout(() => setExiting(true), 2100),
-      setTimeout(() => onDone(), 2800),
+      setTimeout(() => setExiting(true), 1250),
+      setTimeout(() => onDone(), 1650),
     ];
 
-    timers.current = activeTimers;
     return () => activeTimers.forEach(clearTimeout);
   }, [onDone]);
 
@@ -29,61 +24,135 @@ export function LoadingScreen({ onDone }: { onDone: () => void }) {
         position: "fixed", inset: 0, zIndex: 9999,
         background: "var(--bg)",
         display: "flex", alignItems: "center", justifyContent: "center",
+        padding: 24,
         pointerEvents: exiting ? "none" : "auto",
       }}
     >
-      <motion.div
-        animate={exiting ? { scale: 0.92 } : { scale: 1 }}
-        transition={{ duration: 0.18, ease: [0.25, 0.1, 0.25, 1] }}
+      <FitSchedLoader compact={false} />
+    </motion.div>
+  );
+}
+
+export function FitSchedLoader({ compact = true }: { compact?: boolean }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+      style={{
+        width: compact ? 220 : 244,
+        maxWidth: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "stretch",
+        gap: 14,
+      }}
+    >
+      <div
         style={{
-          width: 110, height: 110, borderRadius: 28,
-          background: "var(--bg1)",
-          boxShadow: "var(--shadow), 0 8px 40px rgba(99,102,241,0.14)",
-          display: "flex", alignItems: "center", justifyContent: "center",
+          background: "linear-gradient(180deg, var(--surface), var(--surface-2))",
+          border: "1px solid rgba(107,191,184,0.18)",
+          borderRadius: 24,
+          padding: compact ? 14 : 16,
+          boxShadow: "0 18px 60px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.05)",
+          overflow: "hidden",
         }}
       >
-        {stage === "dots" && (
-          <div style={{ display: "flex", gap: 9, alignItems: "center" }}>
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 15,
+              background: "rgba(107,191,184,0.12)",
+              border: "1px solid rgba(107,191,184,0.34)",
+              color: "#88ded7",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 13,
+              fontWeight: 900,
+              letterSpacing: "0.02em",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
+            }}
+          >
+            FS
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ color: "var(--text)", fontSize: 18, fontWeight: 900, lineHeight: 1 }}>
+              FitSched
+            </div>
+            <div style={{ color: "var(--text-muted)", fontSize: 11, fontWeight: 650, marginTop: 5 }}>
+              Preparing your workout
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gap: 8 }}>
+          {[
+            { width: "74%", delay: "0s" },
+            { width: "92%", delay: "0.18s" },
+            { width: "58%", delay: "0.36s" },
+          ].map((item, index) => (
+            <div
+              key={index}
+              style={{
+                height: 30,
+                borderRadius: 14,
+                background: "rgba(255,255,255,0.045)",
+                border: "1px solid rgba(255,255,255,0.055)",
+                display: "flex",
+                alignItems: "center",
+                gap: 9,
+                padding: "0 10px",
+              }}
+            >
+              <span
                 style={{
-                  width: 11, height: 11, borderRadius: "50%",
-                  background: i === 2 ? "#a5b4fc" : "var(--brand)",
-                  animation: "dotPop 1s ease-in-out infinite",
-                  animationDelay: `${i * 0.18}s`,
+                  width: 8,
+                  height: 8,
+                  borderRadius: 999,
+                  background: index === 1 ? "#6bbfb8" : "rgba(107,191,184,0.44)",
+                  animation: "loaderPulse 1.4s ease-in-out infinite",
+                  animationDelay: item.delay,
+                  flexShrink: 0,
                 }}
               />
-            ))}
-          </div>
-        )}
-        {stage === "circle" && (
-          <svg viewBox="0 0 60 60" style={{ width: 58, height: 58 }}>
-            <circle
-              cx="30" cy="30" r="24"
-              fill="none" stroke="var(--brand)" strokeWidth="5"
-              strokeLinecap="round"
-              strokeDasharray="150.8" strokeDashoffset="150.8"
-              style={{
-                transformOrigin: "center",
-                transform: "rotate(-90deg)",
-                animation: "drawRing 0.75s cubic-bezier(0.4, 0, 0.2, 1) forwards",
-              }}
-            />
-          </svg>
-        )}
-        {stage === "square" && (
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-            style={{
-              width: 34, height: 34, borderRadius: 10,
-              background: "var(--brand)",
-            }}
-          />
-        )}
-      </motion.div>
+              <span
+                style={{
+                  height: 7,
+                  width: item.width,
+                  borderRadius: 999,
+                  background: "linear-gradient(90deg, rgba(255,255,255,0.08), rgba(107,191,184,0.32), rgba(255,255,255,0.08))",
+                  backgroundSize: "220% 100%",
+                  animation: "loaderSweep 1.35s ease-in-out infinite",
+                  animationDelay: item.delay,
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div
+        style={{
+          height: 5,
+          borderRadius: 999,
+          background: "rgba(255,255,255,0.07)",
+          overflow: "hidden",
+          border: "1px solid rgba(255,255,255,0.04)",
+        }}
+      >
+        <div
+          style={{
+            width: "46%",
+            height: "100%",
+            borderRadius: 999,
+            background: "linear-gradient(90deg, rgba(107,191,184,0.15), #6bbfb8, rgba(107,191,184,0.25))",
+            animation: "loaderTrack 1.18s cubic-bezier(0.65, 0, 0.35, 1) infinite",
+          }}
+        />
+      </div>
     </motion.div>
   );
 }

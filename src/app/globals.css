@@ -92,6 +92,22 @@ body {
   to { transform: scale(1); opacity: 1; }
 }
 
+@keyframes loaderPulse {
+  0%, 100% { opacity: 0.45; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.18); }
+}
+
+@keyframes loaderSweep {
+  0% { background-position: 180% 0; opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { background-position: -40% 0; opacity: 0.72; }
+}
+
+@keyframes loaderTrack {
+  0% { transform: translateX(-110%); }
+  100% { transform: translateX(230%); }
+}
+
 /* ── Page Animations ── */
 
 @keyframes iosFadeUp {
