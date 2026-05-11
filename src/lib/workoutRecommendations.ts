@@ -1,4 +1,4 @@
-export type WorkoutEnvironment = "home_bodyweight" | "home_dumbbells" | "gym" | "hike"
+export type WorkoutEnvironment = "home_bodyweight" | "home_dumbbells" | "gym"
 export type ExerciseAccess = "BODYWEIGHT" | "DUMBBELLS" | "GYM"
 export type ExerciseDifficulty = "BEGINNER" | "INTERMEDIATE" | "ADVANCED"
 export type MuscleGroup = "CHEST" | "BACK" | "LEGS" | "SHOULDERS" | "CORE" | "ARMS" | "FULL_BODY" | "CARDIO"
@@ -157,7 +157,6 @@ function getWeekSeed() {
 
 export function getAllowedExerciseAccess(environment?: string | null): ExerciseAccess[] {
   if (environment === "home_bodyweight") return ["BODYWEIGHT"]
-  if (environment === "hike") return ["BODYWEIGHT"]
   if (environment === "home_dumbbells") return ["BODYWEIGHT", "DUMBBELLS"]
   return ["BODYWEIGHT", "DUMBBELLS", "GYM"]
 }
@@ -169,16 +168,6 @@ export function getExerciseAccess(name: string): ExerciseAccess {
 export function getMuscleGroupsForDay(day: number): { groups: MuscleGroup[]; isRestDay: boolean } {
   const groups = DAY_GROUPS[day] || []
   return { groups, isRestDay: groups.length === 0 }
-}
-
-function getMuscleGroupsForEnvironment(day: number, environment?: string | null) {
-  const result = getMuscleGroupsForDay(day)
-  if (result.isRestDay || environment !== "hike") return result
-
-  return {
-    groups: ["CARDIO", "LEGS", "CORE", "FULL_BODY"] as MuscleGroup[],
-    isRestDay: false,
-  }
 }
 
 export function parseSetsReps(label: string) {
@@ -237,7 +226,7 @@ export function getSmartExercisePlan({
   recentNames?: string[]
   limit?: number
 }): ExercisePlanItem[] {
-  const { groups, isRestDay } = getMuscleGroupsForEnvironment(selectedDay, workoutEnvironment)
+  const { groups, isRestDay } = getMuscleGroupsForDay(selectedDay)
   if (isRestDay) return []
 
   const allowedAccess = getAllowedExerciseAccess(workoutEnvironment)

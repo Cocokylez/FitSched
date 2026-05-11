@@ -15,7 +15,6 @@ import {
   CalendarDays,
   CalendarRange,
   Dumbbell,
-  Footprints,
   Gauge,
   HeartPulse,
   Home,
@@ -58,7 +57,6 @@ const workoutSetups = [
   { id: "home_bodyweight", Icon: Home, label: "Home workout", sub: "No equipment needed" },
   { id: "home_dumbbells", Icon: Dumbbell, label: "Home with dumbbells", sub: "Bodyweight plus dumbbell moves" },
   { id: "gym", Icon: Building2, label: "Gym", sub: "Machines, cables, free weights" },
-  { id: "hike", Icon: Footprints, label: "Hike", sub: "Outdoor trails and conditioning" },
 ]
 
 const frequencies = [

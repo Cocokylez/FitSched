@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 
-const WORKOUT_ENVIRONMENTS = new Set(["home_bodyweight", "home_dumbbells", "gym", "hike"])
+const WORKOUT_ENVIRONMENTS = new Set(["home_bodyweight", "home_dumbbells", "gym"])
 
 function parseWorkoutEnvironment(value: unknown) {
   return typeof value === "string" && WORKOUT_ENVIRONMENTS.has(value) ? value : null
@@ -67,7 +67,10 @@ export async function PATCH(req: Request) {
     },
   })
 
-  return NextResponse.json(user)
+  return NextResponse.json(user ? {
+    ...user,
+    workoutEnvironment: parseWorkoutEnvironment(user.workoutEnvironment) || "gym",
+  } : user)
 }
 
 export async function GET() {

@@ -31,7 +31,6 @@ function parseOptionalDate(value: unknown) {
 function getWorkoutSetupLabel(environment?: string | null) {
   if (environment === "home_bodyweight") return "home workout with bodyweight only";
   if (environment === "home_dumbbells") return "home workout with bodyweight and dumbbells";
-  if (environment === "hike") return "outdoor hike conditioning with bodyweight-only trail preparation";
   return "gym workout with full equipment access";
 }
 
@@ -60,7 +59,6 @@ export async function POST(req: Request) {
             ],
           },
           ...(allowedEquipment ? [{ equipment: { in: allowedEquipment as any } }] : []),
-          ...(user?.workoutEnvironment === "hike" ? [{ muscleGroup: { in: ["LEGS", "CORE", "FULL_BODY", "CARDIO"] as any } }] : []),
         ],
       },
     });

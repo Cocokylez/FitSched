@@ -101,7 +101,6 @@ export const SYSTEM_EXERCISES = [
 
 export function getAllowedEquipmentForEnvironment(environment?: string | null) {
   if (environment === "home_bodyweight") return ["BODYWEIGHT"]
-  if (environment === "hike") return ["BODYWEIGHT"]
   if (environment === "home_dumbbells") return ["BODYWEIGHT", "DUMBBELLS"]
   return null
 }

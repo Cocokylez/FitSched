@@ -5,7 +5,7 @@ import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip } from "recharts"
-import { Building2, ChevronDown, ChevronRight, Dumbbell, Footprints, Home } from "lucide-react"
+import { Building2, ChevronDown, ChevronRight, Dumbbell, Home } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
 import { SkeletonCard } from "@/components/Skeleton"
 
@@ -69,8 +69,8 @@ const EXERCISE_MUSCLE: Record<string, string> = {
   "Sprints": "Cardio", "Sprint": "Cardio", "Jump Rope": "Cardio", "Battle Ropes": "Cardio",
 }
 
-type WorkoutEnvironment = "home_bodyweight" | "home_dumbbells" | "gym" | "hike"
-type WorkoutSetupTextKey = "homeWorkout" | "noEquipment" | "homeDumbbells" | "dumbbellAccess" | "gym" | "fullEquipment" | "hike" | "outdoorTrails"
+type WorkoutEnvironment = "home_bodyweight" | "home_dumbbells" | "gym"
+type WorkoutSetupTextKey = "homeWorkout" | "noEquipment" | "homeDumbbells" | "dumbbellAccess" | "gym" | "fullEquipment"
 
 const WORKOUT_SETUP_OPTIONS: Array<{
   id: WorkoutEnvironment
@@ -81,7 +81,6 @@ const WORKOUT_SETUP_OPTIONS: Array<{
   { id: "home_bodyweight", Icon: Home, labelKey: "homeWorkout", subKey: "noEquipment" },
   { id: "home_dumbbells", Icon: Dumbbell, labelKey: "homeDumbbells", subKey: "dumbbellAccess" },
   { id: "gym", Icon: Building2, labelKey: "gym", subKey: "fullEquipment" },
-  { id: "hike", Icon: Footprints, labelKey: "hike", subKey: "outdoorTrails" },
 ]
 
 interface WorkoutLog {
@@ -800,7 +799,7 @@ export default function SettingsPage() {
                   )}
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "8px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "8px" }}>
                   {WORKOUT_SETUP_OPTIONS.map((option) => {
                     const selected = workoutEnvironment === option.id
                     return (

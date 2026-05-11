@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { Dumbbell, User } from 'lucide-react'
+import { Dumbbell, Footprints, User } from 'lucide-react'
 import { useTheme } from "@/context/ThemeContext"
 import { useLanguage } from "@/context/LanguageContext"
 
@@ -19,6 +19,12 @@ const navItems = [
     label: "Workout",
     href: "/workout",
     icon: <Dumbbell size={20} />,
+  },
+  {
+    id: "hike",
+    label: "Hike",
+    href: "/hike",
+    icon: <Footprints size={20} />,
   },
   {
     id: "settings",

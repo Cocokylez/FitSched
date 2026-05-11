@@ -130,7 +130,6 @@ export default function SchedulePage() {
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [suggestedExercises, setSuggestedExercises] = useState<Array<{ name: string; sets: number; reps: number }>>([])
-  const [workoutEnvironment, setWorkoutEnvironment] = useState("gym")
   const longPressTimer = useRef<number | null>(null)
 
   useEffect(() => {
@@ -180,7 +179,6 @@ export default function SchedulePage() {
           try {
             const profileRes = await fetch("/api/onboarding")
             const profile = profileRes.ok ? await profileRes.json() : {}
-            setWorkoutEnvironment(profile.workoutEnvironment || "gym")
             const targetMuscles = (() => {
               try {
                 const raw = localStorage.getItem("fitsched-onboarding-preferences")
@@ -281,18 +279,14 @@ export default function SchedulePage() {
 
   const bestIdx = selectedDay !== 0 ? schedule.findIndex(b => b.kind === "free" && b.duration.includes("best")) : -1
 
-  const workoutLabelForDay = selectedDay !== 0 && workoutEnvironment === "hike"
-    ? "Hike Conditioning"
-    : MUSCLE_GROUPS[selectedDay]
-
   const ds = schedule.map((b, i) => {
     const w = i === bestIdx
     return {
       ...b,
       kind: w ? "wrk" : b.kind,
-      label: w ? workoutLabelForDay : b.label,
-      duration: w ? (workoutEnvironment === "hike" ? "Best window - 35 min" : "Best window - 25 min") : b.duration,
-      hint: w ? (workoutEnvironment === "hike" ? "Trail-ready conditioning" : "Optimal energy window") : b.hint,
+      label: w ? MUSCLE_GROUPS[selectedDay] : b.label,
+      duration: w ? "Best window - 25 min" : b.duration,
+      hint: w ? "Optimal energy window" : b.hint,
     }
   })
 
