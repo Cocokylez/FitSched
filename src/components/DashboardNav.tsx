@@ -38,6 +38,8 @@ export function DashboardNav() {
   const { theme } = useTheme()
   const { t } = useLanguage()
 
+  if (pathname.startsWith("/exercise")) return null
+
   const navStyle = theme === "dark" ? {
     background: "rgba(30, 30, 30, 0.6)",
     backdropFilter: "blur(20px)",
