@@ -11,26 +11,29 @@ type ExerciseDemoPanelProps = {
 
 function DemoFrame({
   src,
-  fallbackSrc,
+  fallbackSrcs,
   alt,
   label,
 }: {
   src: string
-  fallbackSrc: string
+  fallbackSrcs: string[]
   alt: string
   label: string
 }) {
   const [imageSrc, setImageSrc] = useState(src)
+  const [fallbackIndex, setFallbackIndex] = useState(0)
   const [imageFailed, setImageFailed] = useState(false)
 
   useEffect(() => {
     setImageSrc(src)
+    setFallbackIndex(0)
     setImageFailed(false)
   }, [src])
 
   const handleImageError = () => {
-    if (imageSrc !== fallbackSrc) {
-      setImageSrc(fallbackSrc)
+    if (fallbackIndex < fallbackSrcs.length) {
+      setImageSrc(fallbackSrcs[fallbackIndex])
+      setFallbackIndex((index) => index + 1)
       return
     }
 
@@ -124,13 +127,13 @@ export function ExerciseDemoPanel({
       >
         <DemoFrame
           src={demo.startAssetPath}
-          fallbackSrc={demo.fallbackImagePath}
+          fallbackSrcs={[demo.startFallbackAssetPath, demo.fallbackImagePath]}
           alt={`${demo.name} start position`}
           label="START"
         />
         <DemoFrame
           src={demo.endAssetPath}
-          fallbackSrc={demo.fallbackImagePath}
+          fallbackSrcs={[demo.endFallbackAssetPath, demo.fallbackImagePath]}
           alt={`${demo.name} end position`}
           label="END"
         />

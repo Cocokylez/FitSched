@@ -9,13 +9,20 @@ Hardcoded exercise sources found:
 
 Demo assets should be placed in `public/assets/exercises/`.
 
-The app expects each primary demo file at:
+The app keeps the future animated demo path at:
 
 ```text
 /assets/exercises/exercise-name.gif
 ```
 
-Each exercise also has lightweight static demo pair files for the in-app start/end preview:
+The in-app start/end preview now prefers user-supplied PNG stills:
+
+```text
+/assets/exercises/exercise-name/start.png
+/assets/exercises/exercise-name/end.png
+```
+
+Each exercise also keeps lightweight generated SVG pair files as backups:
 
 ```text
 /assets/exercises/exercise-name/start.svg

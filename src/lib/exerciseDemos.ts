@@ -11,6 +11,8 @@ export interface ExerciseDemo {
   demoAssetPath: string
   startAssetPath: string
   endAssetPath: string
+  startFallbackAssetPath: string
+  endFallbackAssetPath: string
   fallbackImagePath: string
   prompt: string
 }
@@ -48,8 +50,10 @@ function demo(
     targetMuscles,
     difficulty,
     demoAssetPath: `/assets/exercises/${slug}.gif`,
-    startAssetPath: `/assets/exercises/${slug}/start.svg`,
-    endAssetPath: `/assets/exercises/${slug}/end.svg`,
+    startAssetPath: `/assets/exercises/${slug}/start.png`,
+    endAssetPath: `/assets/exercises/${slug}/end.png`,
+    startFallbackAssetPath: `/assets/exercises/${slug}/start.svg`,
+    endFallbackAssetPath: `/assets/exercises/${slug}/end.svg`,
     fallbackImagePath: FALLBACK_EXERCISE_IMAGE_PATH,
     prompt: makePrompt(name, cue),
   }
