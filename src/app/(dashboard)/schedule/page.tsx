@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useStore } from "@/store/useStore"
 import { SkeletonCard } from "@/components/Skeleton"
 import { FitTokenBalancePill } from "@/components/FitTokenBalancePill"
+import { StreakWelcomeCard } from "@/components/StreakWelcomeCard"
 import { useLanguage } from "@/context/LanguageContext"
 import { useTheme } from "@/context/ThemeContext"
 import { getSmartExercisePlan, toWorkoutExercises } from "@/lib/workoutRecommendations"
@@ -119,6 +120,8 @@ export default function SchedulePage() {
   const { theme, toggleTheme } = useTheme()
   const dayNames = [t.days.sun, t.days.mon, t.days.tue, t.days.wed, t.days.thu, t.days.fri, t.days.sat]
   const [streak, setStreak] = useState(0)
+  const [previousStreak, setPreviousStreak] = useState(0)
+  const [streakBroken, setStreakBroken] = useState(false)
   const [newMilestone, setNewMilestone] = useState<number | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [manualTitle, setManualTitle] = useState("")
@@ -165,7 +168,9 @@ export default function SchedulePage() {
         const streakRes = await fetch("/api/streak")
         if (streakRes.ok) {
           const streakData = await streakRes.json()
-          setStreak(streakData.streak)
+          setStreak(Number(streakData.streak) || 0)
+          setPreviousStreak(Number(streakData.previousStreak) || 0)
+          setStreakBroken(Boolean(streakData.streakBroken))
           setNewMilestone(streakData.newMilestone)
         }
       } catch {}
@@ -465,28 +470,13 @@ export default function SchedulePage() {
           <motion.div variants={stagger} initial="hidden" animate="visible">
             <motion.div variants={fadeUp}>
               <div style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "2px" }}>{t.goodMorning}</div>
-              <div style={{ fontSize: "28px", fontWeight: 900, color: "var(--text)", letterSpacing: "-0.5px", marginBottom: streak > 0 ? "8px" : "20px" }}>{t.yourDay}</div>
-              {streak > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    background: "var(--surface-2)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "20px",
-                    padding: "6px 14px",
-                    marginBottom: "16px",
-                    fontSize: "13px",
-                    color: "var(--text)",
-                  }}
-                >
-                  <span>🔥</span>
-                  <span style={{ fontWeight: 600 }}>{streak} day streak</span>
-                </motion.div>
-              )}
+              <div style={{ fontSize: "28px", fontWeight: 900, color: "var(--text)", letterSpacing: "-0.5px", marginBottom: "14px" }}>{t.yourDay}</div>
+              <StreakWelcomeCard
+                streak={streak}
+                previousStreak={previousStreak}
+                streakBroken={streakBroken}
+                onGoWorkout={() => router.push("/workout")}
+              />
             </motion.div>
 
             <motion.div variants={fadeUp}>

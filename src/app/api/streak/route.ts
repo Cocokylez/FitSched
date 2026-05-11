@@ -5,11 +5,54 @@ import { NextResponse } from "next/server"
 
 interface StreakData {
   streak: number
+  previousStreak: number
+  streakBroken: boolean
+  lastCompletedDate: string | null
   newMilestone: number | null
 }
 
 const cache = new Map<string, { data: StreakData; expiresAt: number }>()
 const CACHE_TTL = 30_000
+
+function getLocalDateId(offsetDays = 0) {
+  const timeZone = process.env.FITSCHED_TIME_ZONE || "Asia/Singapore"
+  const date = new Date()
+  date.setDate(date.getDate() + offsetDays)
+
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date)
+
+  const year = parts.find((part) => part.type === "year")?.value
+  const month = parts.find((part) => part.type === "month")?.value
+  const day = parts.find((part) => part.type === "day")?.value
+
+  return `${year}-${month}-${day}`
+}
+
+function addDays(dateId: string, days: number) {
+  const date = new Date(`${dateId}T00:00:00.000Z`)
+  date.setUTCDate(date.getUTCDate() + days)
+  return date.toISOString().split("T")[0]
+}
+
+function countStreakFrom(sortedDates: string[], startDate: string) {
+  let streak = 0
+
+  for (let i = 0; i < sortedDates.length; i++) {
+    const expected = addDays(startDate, -i)
+    if (sortedDates[i] === expected) {
+      streak++
+    } else {
+      break
+    }
+  }
+
+  return streak
+}
 
 export async function GET(req: Request) {
   const session = await auth()
@@ -28,30 +71,23 @@ export async function GET(req: Request) {
 
   const logs = await db.workoutSessionLog.findMany({
     where: { userId },
-    orderBy: { completedAt: "desc" },
-    select: { completedAt: true },
+    orderBy: { date: "desc" },
+    select: { date: true },
   })
 
   const uniqueDates = new Set<string>()
   logs.forEach((log) => {
-    uniqueDates.add(log.completedAt.toISOString().split("T")[0])
+    uniqueDates.add(log.date)
   })
 
   const sortedDates = Array.from(uniqueDates).sort().reverse()
-
-  let streak = 0
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  for (let i = 0; i < sortedDates.length; i++) {
-    const expected = new Date(today)
-    expected.setDate(expected.getDate() - i)
-    if (sortedDates[i] === expected.toISOString().split("T")[0]) {
-      streak++
-    } else {
-      break
-    }
-  }
+  const today = getLocalDateId()
+  const yesterday = getLocalDateId(-1)
+  const lastCompletedDate = sortedDates[0] || null
+  const streakAnchor = lastCompletedDate === today || lastCompletedDate === yesterday ? lastCompletedDate : null
+  const streak = streakAnchor ? countStreakFrom(sortedDates, streakAnchor) : 0
+  const previousStreak = lastCompletedDate ? countStreakFrom(sortedDates, lastCompletedDate) : 0
+  const streakBroken = Boolean(lastCompletedDate && lastCompletedDate < yesterday)
 
   const MILESTONES = [3, 7, 14, 30]
   let newMilestone: number | null = null
@@ -72,7 +108,13 @@ export async function GET(req: Request) {
     }
   }
 
-  const result: StreakData = { streak, newMilestone }
+  const result: StreakData = {
+    streak,
+    previousStreak,
+    streakBroken,
+    lastCompletedDate,
+    newMilestone,
+  }
   cache.set(userId, { data: result, expiresAt: Date.now() + CACHE_TTL })
 
   return NextResponse.json(result)
