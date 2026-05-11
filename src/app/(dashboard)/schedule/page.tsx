@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
@@ -68,6 +68,7 @@ const DAY_EXERCISES: Record<number, Array<{ name: string; sets: number; reps: nu
 }
 
 interface ScheduleBlock {
+  id?: string
   time: string
   label: string
   kind: "cls" | "free" | "wrk" | "rst"
@@ -124,6 +125,9 @@ export default function SchedulePage() {
   const [manualTime, setManualTime] = useState("08:00")
   const [savingManual, setSavingManual] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
+  const [openDeleteId, setOpenDeleteId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const longPressTimer = useRef<number | null>(null)
 
   useEffect(() => {
     const t = new Date()
@@ -176,6 +180,7 @@ export default function SchedulePage() {
               const details = Array.isArray(w.exercises) ? w.exercises[0] : null
               const isManual = w.source === "manual"
               return {
+                id: w.id,
                 time: isManual ? formatManualTime(details?.time || "") : t.workout,
                 label: w.workoutName,
                 kind: isManual ? "cls" as const : "wrk" as const,
@@ -237,6 +242,10 @@ export default function SchedulePage() {
     if (sp.get("connected") === "true") setCalendarConnected(true)
   }, [sp, setCalendarConnected])
 
+  useEffect(() => {
+    setOpenDeleteId(null)
+  }, [selectedDay])
+
   const bestIdx = selectedDay !== 0 ? schedule.findIndex(b => b.kind === "free" && b.duration.includes("best")) : -1
 
   const ds = schedule.map((b, i) => {
@@ -276,6 +285,42 @@ export default function SchedulePage() {
       }
     } finally {
       setSavingManual(false)
+    }
+  }
+
+  const clearLongPressTimer = () => {
+    if (longPressTimer.current) {
+      window.clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+  }
+
+  const handlePressStart = (id?: string) => {
+    if (!id) return
+    clearLongPressTimer()
+    longPressTimer.current = window.setTimeout(() => {
+      setOpenDeleteId(id)
+    }, 520)
+  }
+
+  const handlePressEnd = () => {
+    clearLongPressTimer()
+  }
+
+  const deleteScheduleBlock = async (id: string) => {
+    setDeletingId(id)
+    try {
+      const response = await fetch(`/api/workout-schedule?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      })
+
+      if (response.ok) {
+        setSchedule((current) => current.filter((block) => block.id !== id))
+        setOpenDeleteId(null)
+        setReloadKey((value) => value + 1)
+      }
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -478,19 +523,64 @@ export default function SchedulePage() {
                 {ds.map((block, i) => {
                   const isWorkout = block.kind === "wrk"
                   const isManual = block.source === "manual"
+                  const canDelete = Boolean(block.id)
+                  const deleteOpen = Boolean(block.id && openDeleteId === block.id)
                   return (
-                    <motion.div key={i} variants={fadeUp}>
-                      <div style={{
-                        background: "var(--surface)",
-                        border: "1px solid var(--border)",
-                        borderLeft: isWorkout ? "3px solid var(--text)" : "3px solid #555555",
-                        borderRadius: "14px",
-                        padding: "14px 16px",
-                        marginBottom: "10px",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}>
+                    <motion.div key={block.id || `${block.label}-${i}`} variants={fadeUp}>
+                      <div style={{ position: "relative", marginBottom: "10px", overflow: "hidden", borderRadius: "14px" }}>
+                        {canDelete && (
+                          <button
+                            type="button"
+                            onClick={() => block.id && deleteScheduleBlock(block.id)}
+                            disabled={deletingId === block.id}
+                            style={{
+                              position: "absolute",
+                              top: 0,
+                              right: 0,
+                              bottom: 0,
+                              width: "86px",
+                              border: "1px solid rgba(255, 92, 92, 0.35)",
+                              background: "rgba(255, 92, 92, 0.18)",
+                              color: "#ff6b6b",
+                              borderRadius: "14px",
+                              fontSize: "12px",
+                              fontWeight: 900,
+                              cursor: deletingId === block.id ? "default" : "pointer",
+                              opacity: deleteOpen ? 1 : 0.72,
+                            }}
+                            aria-label={`Delete ${block.label}`}
+                          >
+                            {deletingId === block.id ? "..." : "Delete"}
+                          </button>
+                        )}
+                        <motion.div
+                          drag={canDelete ? "x" : false}
+                          dragConstraints={{ left: -92, right: 0 }}
+                          dragElastic={0.08}
+                          onDragEnd={(_, info) => {
+                            if (!block.id) return
+                            setOpenDeleteId(info.offset.x < -64 ? block.id : null)
+                          }}
+                          onPointerDown={() => handlePressStart(block.id)}
+                          onPointerUp={handlePressEnd}
+                          onPointerCancel={handlePressEnd}
+                          onPointerLeave={handlePressEnd}
+                          animate={{ x: deleteOpen ? -92 : 0 }}
+                          transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                          style={{
+                            background: "var(--surface)",
+                            border: "1px solid var(--border)",
+                            borderLeft: isWorkout ? "3px solid var(--text)" : "3px solid #555555",
+                            borderRadius: "14px",
+                            padding: "14px 16px",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            touchAction: canDelete ? "pan-y" : "auto",
+                            position: "relative",
+                            zIndex: 1,
+                          }}
+                        >
                         <div style={{ flex: 1 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" }}>
                             <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>{block.label}</div>
@@ -545,6 +635,7 @@ export default function SchedulePage() {
                           {isWorkout && (
                             <button
                               type="button"
+                              onPointerDown={(event) => event.stopPropagation()}
                               onClick={() => startExerciseFromSchedule(block)}
                               style={{
                                 border: "none",
@@ -562,6 +653,7 @@ export default function SchedulePage() {
                             </button>
                           )}
                         </div>
+                        </motion.div>
                       </div>
                     </motion.div>
                   )

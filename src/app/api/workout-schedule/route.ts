@@ -87,3 +87,46 @@ export async function POST(req: Request) {
     )
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(req.url)
+    const id = searchParams.get("id")
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Missing required field: id" },
+        { status: 400 }
+      )
+    }
+
+    const workout = await db.workoutSchedule.findFirst({
+      where: {
+        id,
+        userId: session.user.id,
+      },
+      select: { id: true },
+    })
+
+    if (!workout) {
+      return NextResponse.json({ error: "Schedule not found" }, { status: 404 })
+    }
+
+    await db.workoutSchedule.delete({
+      where: { id },
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("Workout schedule DELETE error:", error)
+    return NextResponse.json(
+      { error: "Failed to delete workout schedule" },
+      { status: 500 }
+    )
+  }
+}
