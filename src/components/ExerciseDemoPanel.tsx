@@ -14,6 +14,7 @@ type ExerciseDemoVisualProps = {
   exerciseName: string
   compact?: boolean
   height?: number | string
+  objectFit?: "cover" | "contain"
   timerText?: string
   paused?: boolean
   onToggleTimer?: () => void
@@ -26,6 +27,7 @@ function DemoFrame({
   endFallbackSrcs,
   startAlt,
   endAlt,
+  objectFit = "contain",
   timerText,
   paused = false,
   onToggleTimer,
@@ -36,6 +38,7 @@ function DemoFrame({
   endFallbackSrcs: string[]
   startAlt: string
   endAlt: string
+  objectFit?: "cover" | "contain"
   timerText?: string
   paused?: boolean
   onToggleTimer?: () => void
@@ -128,7 +131,7 @@ function DemoFrame({
                 inset: 0,
                 width: "100%",
                 height: "100%",
-                objectFit: "cover",
+                objectFit,
                 display: "block",
                 opacity: visiblePhase === "start" ? 1 : 0,
                 transition: "opacity 460ms ease",
@@ -146,7 +149,7 @@ function DemoFrame({
                 inset: 0,
                 width: "100%",
                 height: "100%",
-                objectFit: "cover",
+                objectFit,
                 display: "block",
                 opacity: visiblePhase === "end" ? 1 : 0,
                 transition: "opacity 460ms ease",
@@ -201,6 +204,7 @@ export function ExerciseDemoVisual({
   exerciseName,
   compact = false,
   height,
+  objectFit = "contain",
   timerText,
   paused = false,
   onToggleTimer,
@@ -227,6 +231,7 @@ export function ExerciseDemoVisual({
         endFallbackSrcs={[demo.endFallbackAssetPath, demo.fallbackImagePath]}
         startAlt={`${demo.name} start position`}
         endAlt={`${demo.name} end position`}
+        objectFit={objectFit}
         timerText={timerText}
         paused={paused}
         onToggleTimer={onToggleTimer}
@@ -251,12 +256,12 @@ export function ExerciseDemoPanel({
         gridTemplateColumns: showVisual ? (compact ? "92px 1fr" : "128px 1fr") : "1fr",
         gap: compact ? "10px" : "14px",
         alignItems: "stretch",
-        marginTop: compact ? "10px" : "14px",
-        marginBottom: compact ? 0 : "14px",
-        padding: compact ? "10px" : "12px",
+        marginTop: showVisual ? (compact ? "10px" : "14px") : 0,
+        marginBottom: showVisual ? (compact ? 0 : "14px") : "10px",
+        padding: showVisual ? (compact ? "10px" : "12px") : 0,
         borderRadius: compact ? "14px" : "18px",
-        border: "1px solid var(--border)",
-        background: "var(--surface-2)",
+        border: showVisual ? "1px solid var(--border)" : "none",
+        background: showVisual ? "var(--surface-2)" : "transparent",
       }}
     >
       {showVisual && <ExerciseDemoVisual exerciseName={demo.name} compact={compact} />}

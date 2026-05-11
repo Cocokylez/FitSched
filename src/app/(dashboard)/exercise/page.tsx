@@ -268,13 +268,13 @@ export default function ExerciseSessionPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)", padding: "18px 16px 112px" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)", padding: "12px 10px 18px" }}>
       <div style={{ maxWidth: 560, margin: "0 auto" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
           <button
             type="button"
             onClick={() => router.push("/workout")}
-            style={{ border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", borderRadius: 999, padding: "9px 14px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}
+            style={{ border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", borderRadius: 999, padding: "8px 13px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}
           >
             {t.back}
           </button>
@@ -283,48 +283,42 @@ export default function ExerciseSessionPage() {
           </div>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{
-            border: "1px solid rgba(107, 191, 184, 0.25)",
-            background: "linear-gradient(180deg, rgba(107,191,184,0.16), var(--surface))",
-            borderRadius: 24,
-            padding: "22px 18px",
-            marginBottom: 14,
-          }}
-        >
-          <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 4 }}>
-            {resting ? t.restTime : t.nowTraining}
-          </div>
-          <div style={{ fontSize: 28, fontWeight: 950, letterSpacing: "-0.5px", marginBottom: 18 }}>{workout.workoutName}</div>
-          {current && (
-            <ExerciseDemoVisual
-              exerciseName={current.name}
-              height={210}
-              timerText={resting ? formatTime(restLeft) : formatTime(elapsed)}
-              paused={!running}
-              onToggleTimer={() => setRunning((value) => !value)}
-            />
-          )}
-        </motion.div>
-
         {current && (
           <motion.div
             key={currentIndex}
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
-            style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 20, padding: 18, marginBottom: 14 }}
+            style={{
+              border: "1px solid rgba(107, 191, 184, 0.25)",
+              background: "linear-gradient(180deg, rgba(107,191,184,0.14), var(--surface))",
+              borderRadius: 22,
+              padding: 14,
+              marginBottom: 12,
+            }}
           >
-            <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 800, letterSpacing: "0.13em", marginBottom: 8 }}>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 3 }}>
+              {resting ? t.restTime : t.nowTraining}
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 950, letterSpacing: "-0.4px", marginBottom: 12 }}>{workout.workoutName}</div>
+            <ExerciseDemoVisual
+              exerciseName={current.name}
+              height="clamp(260px, 52dvh, 390px)"
+              objectFit="contain"
+              timerText={resting ? formatTime(restLeft) : formatTime(elapsed)}
+              paused={!running}
+              onToggleTimer={() => setRunning((value) => !value)}
+            />
+            <div style={{ paddingTop: 12 }}>
+            <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 850, letterSpacing: "0.13em", marginBottom: 6 }}>
               {t.exerciseLabel} {currentIndex + 1} · {t.setLabel} {currentSetNumber} {t.ofLabel} {current.sets}
             </div>
-            <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 8 }}>{current.name}</div>
-            <div style={{ display: "inline-flex", borderRadius: 999, background: "var(--surface-2)", color: "var(--text-muted)", padding: "5px 11px", fontSize: 12, fontWeight: 750, marginBottom: 16 }}>
+            <div style={{ fontSize: 21, fontWeight: 900, marginBottom: 8 }}>{current.name}</div>
+            <div style={{ display: "inline-flex", borderRadius: 999, background: "var(--surface-2)", color: "var(--text-muted)", padding: "5px 10px", fontSize: 11, fontWeight: 750, marginBottom: 10 }}>
               {current.reps} {t.repsThisSet} · {currentCompletedSets}/{current.sets} {t.setsDone}
             </div>
             <ExerciseDemoPanel exerciseName={current.name} showVisual={false} />
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1.15fr", gap: 10 }}>
               <button
                 disabled={!resting}
                 onClick={skipRest}
@@ -333,11 +327,11 @@ export default function ExerciseSessionPage() {
                 {t.skipRest}
               </button>
               <button
-                disabled={resting || currentCompletedSets >= current.sets}
-                onClick={completeCurrentSet}
-                style={{ border: "none", background: "#6bbfb8", color: "#fff", borderRadius: 13, padding: 12, fontWeight: 900, opacity: resting || currentCompletedSets >= current.sets ? 0.55 : 1, cursor: resting || currentCompletedSets >= current.sets ? "default" : "pointer" }}
+                disabled={saving || resting || (!allDone && currentCompletedSets >= current.sets)}
+                onClick={allDone ? finishWorkout : completeCurrentSet}
+                style={{ border: "none", background: "#6bbfb8", color: "#fff", borderRadius: 13, padding: 13, fontWeight: 950, opacity: saving || resting || (!allDone && currentCompletedSets >= current.sets) ? 0.55 : 1, cursor: saving || resting || (!allDone && currentCompletedSets >= current.sets) ? "default" : "pointer" }}
               >
-                {t.doneSet}
+                {saving ? t.saving : allDone ? t.finishWorkout : resting ? t.resting : t.doneSet}
               </button>
             </div>
           </motion.div>
@@ -524,18 +518,6 @@ export default function ExerciseSessionPage() {
         )}
       </AnimatePresence>
 
-      <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 30, padding: "12px 16px 22px", background: "linear-gradient(180deg, transparent, var(--bg) 28%)" }}>
-        <div style={{ maxWidth: 560, margin: "0 auto" }}>
-          <button
-            type="button"
-            onClick={allDone ? finishWorkout : completeCurrentSet}
-            disabled={saving || resting}
-            style={{ width: "100%", border: "none", borderRadius: 16, padding: 15, background: "#6bbfb8", color: "#fff", fontSize: 15, fontWeight: 950, cursor: !saving && !resting ? "pointer" : "default", opacity: !saving && !resting ? 1 : 0.5, boxShadow: "0 10px 28px rgba(107,191,184,0.28)" }}
-          >
-            {saving ? t.saving : allDone ? t.finishWorkout : resting ? t.resting : t.doneSet}
-          </button>
-        </div>
-      </div>
     </div>
   )
 }
