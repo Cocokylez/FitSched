@@ -1,0 +1,18 @@
+<svg width="320" height="240" viewBox="0 0 320 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>diamond-push-ups end</title>
+  <rect width="320" height="240" rx="22" fill="#1f1f1f"/>
+  <rect x="10" y="10" width="300" height="220" rx="18" fill="#252525" stroke="#3a3a3a"/>
+  <line x1="32" y1="205" x2="288" y2="205" stroke="#3a3a3a" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+  <path d="M76 150 C104 138 140 139 170 151" fill="none" stroke="#6bbfb8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.42"/>
+  <circle cx="84" cy="144" r="11" fill="#252525" stroke="#6bbfb8" stroke-width="5"/>
+  <line x1="100" y1="157" x2="202" y2="156" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="100" y1="157" x2="117" y2="169" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="117" y1="169" x2="124" y2="187" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="100" y1="157" x2="132" y2="169" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="132" y1="169" x2="124" y2="187" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <path d="M116 185 L124 177 L132 185 L124 193 Z" fill="none" stroke="#6bbfb8" stroke-width="3" opacity="0.9"/>
+  <line x1="202" y1="156" x2="236" y2="180" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="236" y1="180" x2="266" y2="188" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="202" y1="156" x2="225" y2="186" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="225" y1="186" x2="255" y2="196" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+</svg>

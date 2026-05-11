@@ -1,0 +1,15 @@
+<svg width="320" height="240" viewBox="0 0 320 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>sprints start</title>
+  <rect width="320" height="240" rx="22" fill="#1f1f1f"/>
+  <rect x="10" y="10" width="300" height="220" rx="18" fill="#252525" stroke="#3a3a3a"/>
+  <line x1="32" y1="205" x2="288" y2="205" stroke="#3a3a3a" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+  <circle cx="128" cy="73" r="11" fill="#252525" stroke="#6bbfb8" stroke-width="5"/>
+  <line x1="138" y1="85" x2="128" y2="132" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="138" y1="96" x2="104" y2="112" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="138" y1="96" x2="168" y2="118" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="128" y1="132" x2="93" y2="170" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="93" y1="170" x2="72" y2="202" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="128" y1="132" x2="179" y2="160" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="179" y1="160" x2="224" y2="194" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <path d="M74 184 C121 159 171 150 246 154" fill="none" stroke="#6bbfb8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.32"/>
+</svg>

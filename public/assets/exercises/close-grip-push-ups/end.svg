@@ -1,0 +1,18 @@
+<svg width="320" height="240" viewBox="0 0 320 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>close-grip-push-ups end</title>
+  <rect width="320" height="240" rx="22" fill="#1f1f1f"/>
+  <rect x="10" y="10" width="300" height="220" rx="18" fill="#252525" stroke="#3a3a3a"/>
+  <line x1="32" y1="205" x2="288" y2="205" stroke="#3a3a3a" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+  <circle cx="84" cy="144" r="11" fill="#252525" stroke="#6bbfb8" stroke-width="5"/>
+  <line x1="100" y1="157" x2="202" y2="156" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="100" y1="157" x2="111" y2="169" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="111" y1="169" x2="108" y2="188" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="100" y1="157" x2="143" y2="166" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="143" y1="166" x2="145" y2="188" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="105" y1="190" x2="114" y2="190" stroke="#6bbfb8" stroke-width="4" stroke-linecap="round" opacity="1"/>
+  <line x1="141" y1="190" x2="150" y2="190" stroke="#6bbfb8" stroke-width="4" stroke-linecap="round" opacity="1"/>
+  <line x1="202" y1="156" x2="237" y2="180" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="237" y1="180" x2="267" y2="188" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="202" y1="156" x2="226" y2="186" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="226" y1="186" x2="256" y2="196" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+</svg>

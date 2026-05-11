@@ -1,0 +1,17 @@
+<svg width="320" height="240" viewBox="0 0 320 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>tricep-dips end</title>
+  <rect width="320" height="240" rx="22" fill="#1f1f1f"/>
+  <rect x="10" y="10" width="300" height="220" rx="18" fill="#252525" stroke="#3a3a3a"/>
+  <line x1="32" y1="205" x2="288" y2="205" stroke="#3a3a3a" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+  <rect x="74" y="123" width="92" height="18" rx="7" fill="none" stroke="#3a3a3a" stroke-width="4" opacity="1"/>
+  <line x1="88" y1="142" x2="88" y2="194" stroke="#3a3a3a" stroke-width="5" stroke-linecap="round" opacity="1"/>
+  <line x1="152" y1="142" x2="152" y2="194" stroke="#3a3a3a" stroke-width="5" stroke-linecap="round" opacity="1"/>
+  <circle cx="174" cy="101" r="11" fill="#252525" stroke="#6bbfb8" stroke-width="5"/>
+  <line x1="174" y1="115" x2="190" y2="154" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="171" y1="119" x2="151" y2="130" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="151" y1="130" x2="142" y2="139" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="190" y1="154" x2="225" y2="173" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="225" y1="173" x2="262" y2="192" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="190" y1="154" x2="220" y2="187" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="220" y1="187" x2="256" y2="199" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+</svg>

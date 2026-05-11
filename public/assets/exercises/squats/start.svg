@@ -1,0 +1,17 @@
+<svg width="320" height="240" viewBox="0 0 320 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>squats start</title>
+  <rect width="320" height="240" rx="22" fill="#1f1f1f"/>
+  <rect x="10" y="10" width="300" height="220" rx="18" fill="#252525" stroke="#3a3a3a"/>
+  <line x1="32" y1="205" x2="288" y2="205" stroke="#3a3a3a" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+  <line x1="104" y1="75" x2="216" y2="75" stroke="#6bbfb8" stroke-width="5" stroke-linecap="round" opacity="1"/>
+  <line x1="96" y1="68" x2="96" y2="82" stroke="#6bbfb8" stroke-width="4" stroke-linecap="round" opacity="1"/>
+  <line x1="224" y1="68" x2="224" y2="82" stroke="#6bbfb8" stroke-width="4" stroke-linecap="round" opacity="1"/>
+  <circle cx="160" cy="70" r="11" fill="#252525" stroke="#6bbfb8" stroke-width="5"/>
+  <line x1="160" y1="84" x2="160" y2="135" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="160" y1="102" x2="116" y2="75" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="160" y1="102" x2="204" y2="75" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="160" y1="135" x2="140" y2="190" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="140" y1="190" x2="134" y2="204" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="160" y1="135" x2="180" y2="190" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="180" y1="190" x2="186" y2="204" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+</svg>

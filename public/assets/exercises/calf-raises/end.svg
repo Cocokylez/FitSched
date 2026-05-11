@@ -1,0 +1,15 @@
+<svg width="320" height="240" viewBox="0 0 320 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>calf-raises end</title>
+  <rect width="320" height="240" rx="22" fill="#1f1f1f"/>
+  <rect x="10" y="10" width="300" height="220" rx="18" fill="#252525" stroke="#3a3a3a"/>
+  <line x1="32" y1="205" x2="288" y2="205" stroke="#3a3a3a" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+  <circle cx="160" cy="64" r="11" fill="#252525" stroke="#6bbfb8" stroke-width="5"/>
+  <line x1="160" y1="78" x2="160" y2="132" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="160" y1="96" x2="132" y2="104" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="160" y1="96" x2="188" y2="104" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="160" y1="132" x2="143" y2="188" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="160" y1="132" x2="177" y2="188" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="143" y1="188" x2="129" y2="198" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="177" y1="188" x2="191" y2="198" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <path d="M128 202 C147 184 173 184 193 202" fill="none" stroke="#6bbfb8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+</svg>

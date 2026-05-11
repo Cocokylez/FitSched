@@ -15,6 +15,13 @@ The app expects each primary demo file at:
 /assets/exercises/exercise-name.gif
 ```
 
+Each exercise also has lightweight static demo pair files for the in-app start/end preview:
+
+```text
+/assets/exercises/exercise-name/start.svg
+/assets/exercises/exercise-name/end.svg
+```
+
 Fallback for every exercise:
 
 ```text

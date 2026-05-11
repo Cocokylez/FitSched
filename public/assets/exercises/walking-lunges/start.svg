@@ -1,0 +1,16 @@
+<svg width="320" height="240" viewBox="0 0 320 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>walking-lunges start</title>
+  <rect width="320" height="240" rx="22" fill="#1f1f1f"/>
+  <rect x="10" y="10" width="300" height="220" rx="18" fill="#252525" stroke="#3a3a3a"/>
+  <line x1="32" y1="205" x2="288" y2="205" stroke="#3a3a3a" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+  <circle cx="142" cy="70" r="11" fill="#252525" stroke="#6bbfb8" stroke-width="5"/>
+  <line x1="142" y1="84" x2="149" y2="135" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="142" y1="102" x2="118" y2="112" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="146" y1="102" x2="184" y2="111" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="149" y1="135" x2="172" y2="184" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="172" y1="184" x2="194" y2="201" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="149" y1="135" x2="119" y2="185" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="119" y1="185" x2="103" y2="202" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <path d="M84 190 C111 174 135 170 166 173" fill="none" stroke="#6bbfb8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.35"/>
+  <path d="M208 85 L246 85 L236 75 M246 85 L236 95" fill="none" stroke="#6bbfb8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.75"/>
+</svg>

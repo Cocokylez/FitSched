@@ -9,6 +9,8 @@ export interface ExerciseDemo {
   targetMuscles: string[]
   difficulty: ExerciseDifficulty
   demoAssetPath: string
+  startAssetPath: string
+  endAssetPath: string
   fallbackImagePath: string
   prompt: string
 }
@@ -37,13 +39,17 @@ function demo(
   difficulty: ExerciseDifficulty,
   cue: string,
 ): ExerciseDemo {
+  const slug = slugifyExerciseName(name)
+
   return {
     name,
     description,
     instructions,
     targetMuscles,
     difficulty,
-    demoAssetPath: `/assets/exercises/${slugifyExerciseName(name)}.gif`,
+    demoAssetPath: `/assets/exercises/${slug}.gif`,
+    startAssetPath: `/assets/exercises/${slug}/start.svg`,
+    endAssetPath: `/assets/exercises/${slug}/end.svg`,
     fallbackImagePath: FALLBACK_EXERCISE_IMAGE_PATH,
     prompt: makePrompt(name, cue),
   }

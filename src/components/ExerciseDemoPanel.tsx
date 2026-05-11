@@ -9,29 +9,91 @@ type ExerciseDemoPanelProps = {
   showName?: boolean
 }
 
+function DemoFrame({
+  src,
+  fallbackSrc,
+  alt,
+  label,
+}: {
+  src: string
+  fallbackSrc: string
+  alt: string
+  label: string
+}) {
+  const [imageSrc, setImageSrc] = useState(src)
+  const [imageFailed, setImageFailed] = useState(false)
+
+  useEffect(() => {
+    setImageSrc(src)
+    setImageFailed(false)
+  }, [src])
+
+  const handleImageError = () => {
+    if (imageSrc !== fallbackSrc) {
+      setImageSrc(fallbackSrc)
+      return
+    }
+
+    setImageFailed(true)
+  }
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        minWidth: 0,
+        height: "100%",
+        display: "grid",
+        placeItems: "center",
+        overflow: "hidden",
+        background: "rgba(255, 255, 255, 0.03)",
+      }}
+    >
+      {imageFailed ? (
+        <div style={{ color: "var(--text-muted)", fontSize: "9px", fontWeight: 800, textAlign: "center", padding: "6px" }}>
+          Pending
+        </div>
+      ) : (
+        <img
+          src={imageSrc}
+          alt={alt}
+          onError={handleImageError}
+          loading="lazy"
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            display: "block",
+          }}
+        />
+      )}
+      <div
+        style={{
+          position: "absolute",
+          left: "5px",
+          bottom: "5px",
+          padding: "2px 5px",
+          borderRadius: "999px",
+          background: "rgba(0, 0, 0, 0.5)",
+          color: "#ffffff",
+          fontSize: "8px",
+          fontWeight: 900,
+          letterSpacing: 0,
+        }}
+      >
+        {label}
+      </div>
+    </div>
+  )
+}
+
 export function ExerciseDemoPanel({
   exerciseName,
   compact = false,
   showName = false,
 }: ExerciseDemoPanelProps) {
   const demo = useMemo(() => getExerciseDemo(exerciseName), [exerciseName])
-  const [imageSrc, setImageSrc] = useState(demo.demoAssetPath)
-  const [imageFailed, setImageFailed] = useState(false)
   const visibleInstructions = compact ? demo.instructions.slice(0, 2) : demo.instructions
-
-  useEffect(() => {
-    setImageSrc(demo.demoAssetPath)
-    setImageFailed(false)
-  }, [demo.demoAssetPath])
-
-  const handleImageError = () => {
-    if (imageSrc !== demo.fallbackImagePath) {
-      setImageSrc(demo.fallbackImagePath)
-      return
-    }
-
-    setImageFailed(true)
-  }
 
   return (
     <div
@@ -57,43 +119,21 @@ export function ExerciseDemoPanel({
           border: "1px solid rgba(107, 191, 184, 0.22)",
           background: "linear-gradient(135deg, rgba(107,191,184,0.14), rgba(255,255,255,0.04))",
           display: "grid",
-          placeItems: "center",
+          gridTemplateColumns: "1fr 1fr",
         }}
       >
-        {imageFailed ? (
-          <div style={{ color: "var(--text-muted)", fontSize: "11px", fontWeight: 800, textAlign: "center", padding: "10px" }}>
-            Demo asset pending
-          </div>
-        ) : (
-          <img
-            src={imageSrc}
-            alt={`${demo.name} exercise demo`}
-            onError={handleImageError}
-            loading="lazy"
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              display: "block",
-            }}
-          />
-        )}
-        <div
-          style={{
-            position: "absolute",
-            left: "8px",
-            bottom: "8px",
-            padding: "3px 7px",
-            borderRadius: "999px",
-            background: "rgba(0, 0, 0, 0.45)",
-            color: "#ffffff",
-            fontSize: "9px",
-            fontWeight: 900,
-            letterSpacing: 0,
-          }}
-        >
-          DEMO
-        </div>
+        <DemoFrame
+          src={demo.startAssetPath}
+          fallbackSrc={demo.fallbackImagePath}
+          alt={`${demo.name} start position`}
+          label="START"
+        />
+        <DemoFrame
+          src={demo.endAssetPath}
+          fallbackSrc={demo.fallbackImagePath}
+          alt={`${demo.name} end position`}
+          label="END"
+        />
       </div>
 
       <div style={{ minWidth: 0 }}>

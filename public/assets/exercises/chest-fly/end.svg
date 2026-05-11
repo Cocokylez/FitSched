@@ -1,0 +1,22 @@
+<svg width="320" height="240" viewBox="0 0 320 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>chest-fly end</title>
+  <rect width="320" height="240" rx="22" fill="#1f1f1f"/>
+  <rect x="10" y="10" width="300" height="220" rx="18" fill="#252525" stroke="#3a3a3a"/>
+  <line x1="32" y1="205" x2="288" y2="205" stroke="#3a3a3a" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+  <line x1="54" y1="94" x2="147" y2="112" stroke="#3a3a3a" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
+  <line x1="266" y1="94" x2="173" y2="112" stroke="#3a3a3a" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
+  <circle cx="160" cy="72" r="11" fill="#252525" stroke="#6bbfb8" stroke-width="5"/>
+  <line x1="160" y1="86" x2="160" y2="136" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="160" y1="136" x2="138" y2="190" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="160" y1="136" x2="182" y2="190" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="160" y1="98" x2="150" y2="116" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="160" y1="98" x2="170" y2="116" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+  <line x1="136" y1="116" x2="160" y2="116" stroke="#6bbfb8" stroke-width="3" stroke-linecap="round" opacity="1"/>
+  <line x1="136" y1="110" x2="136" y2="122" stroke="#6bbfb8" stroke-width="4" stroke-linecap="round" opacity="1"/>
+  <line x1="160" y1="110" x2="160" y2="122" stroke="#6bbfb8" stroke-width="4" stroke-linecap="round" opacity="1"/>
+  <line x1="160" y1="116" x2="184" y2="116" stroke="#6bbfb8" stroke-width="3" stroke-linecap="round" opacity="1"/>
+  <line x1="160" y1="110" x2="160" y2="122" stroke="#6bbfb8" stroke-width="4" stroke-linecap="round" opacity="1"/>
+  <line x1="184" y1="110" x2="184" y2="122" stroke="#6bbfb8" stroke-width="4" stroke-linecap="round" opacity="1"/>
+  <path d="M104 112 C126 130 145 133 158 118" fill="none" stroke="#6bbfb8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+  <path d="M216 112 C194 130 175 133 162 118" fill="none" stroke="#6bbfb8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+</svg>

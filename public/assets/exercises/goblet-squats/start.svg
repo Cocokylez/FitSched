@@ -1,0 +1,29 @@
+<svg width="320" height="240" viewBox="0 0 320 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="320" height="240" rx="22" fill="#1f1f1f"/>
+  <rect x="10" y="10" width="300" height="220" rx="18" fill="#252525" stroke="#3a3a3a"/>
+  <line x1="32" y1="205" x2="288" y2="205" stroke="#3a3a3a" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+<g transform="translate(115 124) rotate(-48) scale(0.58)">
+    <line x1="-22" y1="0" x2="22" y2="0" stroke="#d9f7f4" stroke-width="5" stroke-linecap="round" opacity="0.72"/>
+    <rect x="-31" y="-10" width="9" height="20" rx="2" fill="#6bbfb8" stroke="#6bbfb8" stroke-width="2" opacity="0.82"/>
+    <rect x="22" y="-10" width="9" height="20" rx="2" fill="#6bbfb8" stroke="#6bbfb8" stroke-width="2" opacity="0.82"/>
+  </g>
+<g transform="translate(205 124) rotate(48) scale(0.58)">
+    <line x1="-22" y1="0" x2="22" y2="0" stroke="#d9f7f4" stroke-width="5" stroke-linecap="round" opacity="0.72"/>
+    <rect x="-31" y="-10" width="9" height="20" rx="2" fill="#6bbfb8" stroke="#6bbfb8" stroke-width="2" opacity="0.82"/>
+    <rect x="22" y="-10" width="9" height="20" rx="2" fill="#6bbfb8" stroke="#6bbfb8" stroke-width="2" opacity="0.82"/>
+  </g>
+<circle cx="160" cy="78" r="11" fill="#252525" stroke="#6bbfb8" stroke-width="5"/>
+<line x1="160" y1="96" x2="160" y2="180" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+<line x1="160" y1="96" x2="140" y2="138" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+<line x1="140" y1="138" x2="116" y2="125" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+<line x1="160" y1="96" x2="180" y2="138" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+<line x1="180" y1="138" x2="204" y2="125" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+<line x1="160" y1="180" x2="138" y2="206" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+<line x1="138" y1="206" x2="124" y2="254" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+<line x1="160" y1="180" x2="182" y2="206" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/>
+<line x1="182" y1="206" x2="196" y2="254" stroke="#6bbfb8" stroke-width="7" stroke-linecap="round" opacity="1"/><g transform="translate(160 116) rotate(0) scale(0.62)">
+    <line x1="-22" y1="0" x2="22" y2="0" stroke="#d9f7f4" stroke-width="5" stroke-linecap="round" opacity="0.72"/>
+    <rect x="-31" y="-10" width="9" height="20" rx="2" fill="#6bbfb8" stroke="#6bbfb8" stroke-width="2" opacity="0.82"/>
+    <rect x="22" y="-10" width="9" height="20" rx="2" fill="#6bbfb8" stroke="#6bbfb8" stroke-width="2" opacity="0.82"/>
+  </g>
+</svg>
