@@ -22,6 +22,51 @@ const fadeUp = {
 
 const MUSCLE_GROUPS = ["Rest", "Chest & Triceps", "Back & Biceps", "Legs", "Shoulders & Core", "Full Body", "Arms & Core"]
 
+const DAY_EXERCISES: Record<number, Array<{ name: string; sets: number; reps: number }>> = {
+  1: [
+    { name: "Push-ups", sets: 3, reps: 15 },
+    { name: "Diamond Push-ups", sets: 3, reps: 10 },
+    { name: "Tricep Dips", sets: 3, reps: 12 },
+    { name: "Chest Fly", sets: 3, reps: 12 },
+    { name: "Close-grip Push-ups", sets: 3, reps: 10 },
+  ],
+  2: [
+    { name: "Pull-ups", sets: 3, reps: 10 },
+    { name: "Bicep Curls", sets: 3, reps: 12 },
+    { name: "Hammer Curls", sets: 3, reps: 10 },
+    { name: "Superman Hold", sets: 3, reps: 30 },
+    { name: "Reverse Fly", sets: 3, reps: 12 },
+  ],
+  3: [
+    { name: "Squats", sets: 4, reps: 15 },
+    { name: "Lunges", sets: 3, reps: 12 },
+    { name: "Glute Bridges", sets: 3, reps: 15 },
+    { name: "Wall Sit", sets: 3, reps: 45 },
+    { name: "Calf Raises", sets: 3, reps: 20 },
+  ],
+  4: [
+    { name: "Pike Push-ups", sets: 3, reps: 12 },
+    { name: "Lateral Raises", sets: 3, reps: 15 },
+    { name: "Plank", sets: 3, reps: 45 },
+    { name: "Russian Twist", sets: 3, reps: 20 },
+    { name: "Mountain Climbers", sets: 3, reps: 30 },
+  ],
+  5: [
+    { name: "Burpees", sets: 4, reps: 10 },
+    { name: "Jump Squats", sets: 4, reps: 15 },
+    { name: "High Knees", sets: 4, reps: 30 },
+    { name: "Box Jumps", sets: 3, reps: 12 },
+    { name: "Sprint", sets: 4, reps: 20 },
+  ],
+  6: [
+    { name: "Curl to Press", sets: 3, reps: 12 },
+    { name: "Tricep Extension", sets: 3, reps: 12 },
+    { name: "Plank Reaches", sets: 3, reps: 10 },
+    { name: "Leg Raises", sets: 3, reps: 15 },
+    { name: "Bicycle Crunches", sets: 3, reps: 20 },
+  ],
+}
+
 interface ScheduleBlock {
   time: string
   label: string
@@ -243,11 +288,7 @@ export default function SchedulePage() {
           sets: Number(exercise.sets) || 3,
           reps: Number(exercise.reps) || 12,
         }))
-      : [
-          { name: "Warm-up", sets: 1, reps: 10 },
-          { name: block.label, sets: 3, reps: 12 },
-          { name: "Cooldown", sets: 1, reps: 10 },
-        ]
+      : DAY_EXERCISES[selectedDay] || [{ name: block.label, sets: 3, reps: 12 }]
 
     sessionStorage.setItem("fitsched-active-workout", JSON.stringify({
       date: formatLocalDate(selectedDate),

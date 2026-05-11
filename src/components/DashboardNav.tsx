@@ -33,6 +33,7 @@ export function DashboardNav() {
   const router = useRouter()
   const [visible, setVisible] = useState(true)
   const lastScrollY = useRef(0)
+  const lastTouchY = useRef(0)
   const ticking = useRef(false)
   const { theme } = useTheme()
   const { t } = useLanguage()
@@ -63,35 +64,59 @@ export function DashboardNav() {
     lastScrollY.current = getScrollY()
     ticking.current = false
 
-    const handleScroll = () => {
+    const updateFromY = (currentScrollY: number) => {
+      if (currentScrollY <= 10) {
+        setVisible(true)
+      } else if (currentScrollY > lastScrollY.current + 8) {
+        setVisible(false)
+      } else if (currentScrollY < lastScrollY.current - 8) {
+        setVisible(true)
+      }
+
+      lastScrollY.current = currentScrollY
+    }
+
+    const handleScroll = (event?: Event) => {
       if (!ticking.current) {
         window.requestAnimationFrame(() => {
-          const currentScrollY = getScrollY()
-
-          if (currentScrollY <= 10) {
-            setVisible(true)
-          } else if (currentScrollY > lastScrollY.current + 8) {
-            setVisible(false)
-          } else if (currentScrollY < lastScrollY.current - 8) {
-            setVisible(true)
-          }
-
-          lastScrollY.current = currentScrollY
+          const target = event?.currentTarget instanceof HTMLElement ? event.currentTarget : null
+          updateFromY(target ? target.scrollTop : getScrollY())
           ticking.current = false
         })
         ticking.current = true
       }
     }
 
+    const handleWheel = (event: WheelEvent) => {
+      if (event.deltaY > 6) setVisible(false)
+      if (event.deltaY < -6) setVisible(true)
+      handleScroll(event)
+    }
+
+    const handleTouchStart = (event: TouchEvent) => {
+      lastTouchY.current = event.touches[0]?.clientY || 0
+    }
+
+    const handleTouchMove = (event: TouchEvent) => {
+      const currentY = event.touches[0]?.clientY || 0
+      const delta = lastTouchY.current - currentY
+      if (delta > 6) setVisible(false)
+      if (delta < -6) setVisible(true)
+      lastTouchY.current = currentY
+      handleScroll(event)
+    }
+
     els.forEach((el) => el.addEventListener("scroll", handleScroll, { passive: true }))
     window.addEventListener("scroll", handleScroll, { passive: true })
-    window.addEventListener("touchmove", handleScroll, { passive: true })
-    window.addEventListener("wheel", handleScroll, { passive: true })
+    window.addEventListener("touchstart", handleTouchStart, { passive: true })
+    window.addEventListener("touchmove", handleTouchMove, { passive: true })
+    window.addEventListener("wheel", handleWheel, { passive: true })
     return () => {
       els.forEach((el) => el.removeEventListener("scroll", handleScroll))
       window.removeEventListener("scroll", handleScroll)
-      window.removeEventListener("touchmove", handleScroll)
-      window.removeEventListener("wheel", handleScroll)
+      window.removeEventListener("touchstart", handleTouchStart)
+      window.removeEventListener("touchmove", handleTouchMove)
+      window.removeEventListener("wheel", handleWheel)
     }
   }, [pathname])
 

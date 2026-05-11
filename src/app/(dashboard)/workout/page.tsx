@@ -211,10 +211,6 @@ export default function WorkoutPage() {
           ? targetMuscles[(selectedDay - 1 + targetMuscles.length) % targetMuscles.length]
           : null
 
-        if (targetForToday && !allowedGroups.includes(targetForToday)) {
-          allowedGroups.unshift(targetForToday)
-        }
-
         if ((fitnessGoal === "lose_weight" || fitnessGoal === "improve_endurance") && !allowedGroups.includes("FULL_BODY") && !allowedGroups.includes("CARDIO")) {
           allowedGroups.push("FULL_BODY")
         }
@@ -283,7 +279,7 @@ export default function WorkoutPage() {
         const weekNum = Math.floor((now.getTime() - startOfYear.getTime()) / (7 * 24 * 60 * 60 * 1000))
 
         const shuffled = [...pool].sort((a, b) => {
-          if (targetForToday) {
+          if (targetForToday && allowedGroups.includes(targetForToday)) {
             const aTarget = a.muscleGroup === targetForToday ? 0 : 1
             const bTarget = b.muscleGroup === targetForToday ? 0 : 1
             if (aTarget !== bTarget) return aTarget - bTarget
