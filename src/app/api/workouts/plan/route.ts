@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { Equipment } from "@prisma/client";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
@@ -27,6 +28,18 @@ function parseOptionalDate(value: unknown) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+function getAllowedEquipment(environment?: string | null): Equipment[] | null {
+  if (environment === "home_bodyweight") return [Equipment.BODYWEIGHT];
+  if (environment === "home_dumbbells") return [Equipment.BODYWEIGHT, Equipment.DUMBBELLS];
+  return null;
+}
+
+function getWorkoutSetupLabel(environment?: string | null) {
+  if (environment === "home_bodyweight") return "home workout with bodyweight only";
+  if (environment === "home_dumbbells") return "home workout with bodyweight and dumbbells";
+  return "gym workout with full equipment access";
+}
+
 export async function POST(req: Request) {
   try {
     const session = await auth();
@@ -35,12 +48,22 @@ export async function POST(req: Request) {
     }
 
     const { name, prompt, startDate, endDate, goal } = await req.json();
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { workoutEnvironment: true },
+    });
+    const allowedEquipment = getAllowedEquipment(user?.workoutEnvironment);
 
     const exercises = await db.exercise.findMany({
       where: {
-        OR: [
-          { isSystem: true },
-          { userId: session.user.id },
+        AND: [
+          {
+            OR: [
+              { isSystem: true },
+              { userId: session.user.id },
+            ],
+          },
+          ...(allowedEquipment ? [{ equipment: { in: allowedEquipment } }] : []),
         ],
       },
     });
@@ -53,6 +76,8 @@ export async function POST(req: Request) {
       .join("\n");
 
     const systemPrompt = `You are a workout plan generator. Create a weekly workout plan in JSON format.
+User training setup: ${getWorkoutSetupLabel(user?.workoutEnvironment)}.
+Only choose exercises from the available exercise list below.
 Available exercises:
 ${exerciseList}
 

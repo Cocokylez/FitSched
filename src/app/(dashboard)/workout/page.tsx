@@ -51,6 +51,9 @@ interface ExerciseDef {
   goalTypes: string[]
 }
 
+type WorkoutEnvironment = "home_bodyweight" | "home_dumbbells" | "gym"
+type ExerciseAccess = "BODYWEIGHT" | "DUMBBELLS" | "GYM"
+
 const EXERCISE_LIBRARY: ExerciseDef[] = [
   { name: "Push-ups", muscleGroup: "CHEST", difficulty: "BEGINNER", goalTypes: ["stay_active", "lose_weight", "build_muscle", "improve_endurance"] },
   { name: "Diamond Push-ups", muscleGroup: "CHEST", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
@@ -111,6 +114,45 @@ const EXERCISE_LIBRARY: ExerciseDef[] = [
   { name: "Jump Rope", muscleGroup: "CARDIO", difficulty: "BEGINNER", goalTypes: ["lose_weight", "improve_endurance"] },
   { name: "Battle Ropes", muscleGroup: "CARDIO", difficulty: "INTERMEDIATE", goalTypes: ["improve_endurance", "lose_weight"] },
 ]
+
+const EXERCISE_ACCESS: Record<string, ExerciseAccess> = {
+  "Bench Press": "GYM",
+  "Chest Dips": "GYM",
+  "Pull-ups": "GYM",
+  "Chin-ups": "GYM",
+  "Deadlift": "GYM",
+  "Lat Pulldown": "GYM",
+  "Preacher Curl": "GYM",
+  "Hanging Knee Raises": "GYM",
+  "Face Pull": "GYM",
+  "Box Jumps": "GYM",
+  "Battle Ropes": "GYM",
+  "Bicep Curls": "DUMBBELLS",
+  "Hammer Curls": "DUMBBELLS",
+  "Bent-over Row": "DUMBBELLS",
+  "Dumbbell Row": "DUMBBELLS",
+  "Dumbbell Fly": "DUMBBELLS",
+  "Lateral Raises": "DUMBBELLS",
+  "Front Raises": "DUMBBELLS",
+  "Overhead Press": "DUMBBELLS",
+  "Arnold Press": "DUMBBELLS",
+  "Shrugs": "DUMBBELLS",
+  "Tricep Extension": "DUMBBELLS",
+  "Concentration Curl": "DUMBBELLS",
+  "Curl to Press": "DUMBBELLS",
+  "Romanian Deadlift": "DUMBBELLS",
+  "Goblet Squats": "DUMBBELLS",
+}
+
+function getAllowedExerciseAccess(environment: string): ExerciseAccess[] {
+  if (environment === "home_bodyweight") return ["BODYWEIGHT"]
+  if (environment === "home_dumbbells") return ["BODYWEIGHT", "DUMBBELLS"]
+  return ["BODYWEIGHT", "DUMBBELLS", "GYM"]
+}
+
+function getExerciseAccess(name: string): ExerciseAccess {
+  return EXERCISE_ACCESS[name] || "BODYWEIGHT"
+}
 
 function getStoredTargetMuscles(): string[] {
   try {
@@ -238,7 +280,9 @@ export default function WorkoutPage() {
         const fitnessGoal = profile.fitnessGoal || "stay_active"
         const experienceLevel = profile.experienceLevel || "intermediate"
         const workoutsPerWeek = profile.workoutsPerWeek || 3
+        const workoutEnvironment = (profile.workoutEnvironment || "gym") as WorkoutEnvironment
         const hasInjury = Boolean(profile.hasInjury)
+        const allowedAccess = getAllowedExerciseAccess(workoutEnvironment)
 
         const groupResult = getMuscleGroupsForDay(selectedDay, workoutsPerWeek)
         const allowedGroups = [...groupResult.groups]
@@ -263,31 +307,44 @@ export default function WorkoutPage() {
         let filtered = EXERCISE_LIBRARY.filter((ex) =>
           allowedGroups.includes(ex.muscleGroup) &&
           allowedDifficulties.includes(ex.difficulty) &&
+          allowedAccess.includes(getExerciseAccess(ex.name)) &&
           (fitnessGoal === "stay_active" || ex.goalTypes.includes(fitnessGoal))
         )
 
         if (filtered.length < 3) {
           filtered = EXERCISE_LIBRARY.filter((ex) =>
             allowedGroups.includes(ex.muscleGroup) &&
-            allowedDifficulties.includes(ex.difficulty)
+            allowedDifficulties.includes(ex.difficulty) &&
+            allowedAccess.includes(getExerciseAccess(ex.name))
           )
         }
 
         if (filtered.length < 3) {
           filtered = EXERCISE_LIBRARY.filter((ex) =>
-            allowedGroups.includes(ex.muscleGroup)
+            allowedGroups.includes(ex.muscleGroup) &&
+            allowedAccess.includes(getExerciseAccess(ex.name))
+          )
+        }
+
+        if (filtered.length < 3) {
+          filtered = EXERCISE_LIBRARY.filter((ex) =>
+            allowedDifficulties.includes(ex.difficulty) &&
+            allowedAccess.includes(getExerciseAccess(ex.name))
           )
         }
 
         if (filtered.length === 0) {
-          filtered = [...EXERCISE_LIBRARY]
+          filtered = EXERCISE_LIBRARY.filter((ex) => allowedAccess.includes(getExerciseAccess(ex.name)))
         }
 
         if (hasInjury) {
           const cautionExercises = new Set(["Burpees", "Jump Squats", "Tuck Jumps", "Box Jumps", "Sprints", "Battle Ropes"])
           filtered = filtered.filter((ex) => !cautionExercises.has(ex.name))
           if (filtered.length === 0) {
-            filtered = EXERCISE_LIBRARY.filter((ex) => ex.difficulty === "BEGINNER")
+            filtered = EXERCISE_LIBRARY.filter((ex) =>
+              ex.difficulty === "BEGINNER" &&
+              allowedAccess.includes(getExerciseAccess(ex.name))
+            )
           }
         }
 

@@ -5,7 +5,7 @@ import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip } from "recharts"
-import { ChevronDown, ChevronRight } from "lucide-react"
+import { Building2, ChevronDown, ChevronRight, Dumbbell, Home } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
 import { SkeletonCard } from "@/components/Skeleton"
 
@@ -69,6 +69,20 @@ const EXERCISE_MUSCLE: Record<string, string> = {
   "Sprints": "Cardio", "Sprint": "Cardio", "Jump Rope": "Cardio", "Battle Ropes": "Cardio",
 }
 
+type WorkoutEnvironment = "home_bodyweight" | "home_dumbbells" | "gym"
+type WorkoutSetupTextKey = "homeWorkout" | "noEquipment" | "homeDumbbells" | "dumbbellAccess" | "gym" | "fullEquipment"
+
+const WORKOUT_SETUP_OPTIONS: Array<{
+  id: WorkoutEnvironment
+  Icon: typeof Home
+  labelKey: WorkoutSetupTextKey
+  subKey: WorkoutSetupTextKey
+}> = [
+  { id: "home_bodyweight", Icon: Home, labelKey: "homeWorkout", subKey: "noEquipment" },
+  { id: "home_dumbbells", Icon: Dumbbell, labelKey: "homeDumbbells", subKey: "dumbbellAccess" },
+  { id: "gym", Icon: Building2, labelKey: "gym", subKey: "fullEquipment" },
+]
+
 interface WorkoutLog {
   id: string
   date: string
@@ -79,6 +93,7 @@ interface WorkoutLog {
 
 interface ProfileData {
   workoutsPerWeek?: number | null
+  workoutEnvironment?: WorkoutEnvironment | null
 }
 
 interface FitTokenData {
@@ -231,6 +246,8 @@ export default function SettingsPage() {
   const [pushEnabled, setPushEnabled] = useState(false)
   const [logs, setLogs] = useState<WorkoutLog[]>([])
   const [workoutsPerWeek, setWorkoutsPerWeek] = useState(3)
+  const [workoutEnvironment, setWorkoutEnvironment] = useState<WorkoutEnvironment>("gym")
+  const [savingWorkoutEnvironment, setSavingWorkoutEnvironment] = useState(false)
   const [expandedLog, setExpandedLog] = useState<string | null>(null)
   const [fitTokens, setFitTokens] = useState<FitTokenData>({
     balance: 0,
@@ -276,6 +293,7 @@ export default function SettingsPage() {
         if (profileRes.ok) {
           const profile = (await profileRes.json()) as ProfileData
           if (profile.workoutsPerWeek) setWorkoutsPerWeek(profile.workoutsPerWeek)
+          if (profile.workoutEnvironment) setWorkoutEnvironment(profile.workoutEnvironment)
         }
 
         if (tokenRes.ok) {
@@ -314,6 +332,26 @@ export default function SettingsPage() {
       const res = await fetch("/api/calendar/sync", { method: "DELETE" })
       if (res.ok) setIsCalendarConnected(false)
     } catch {}
+  }
+
+  const saveWorkoutEnvironment = async (next: WorkoutEnvironment) => {
+    const previous = workoutEnvironment
+    setWorkoutEnvironment(next)
+    setSavingWorkoutEnvironment(true)
+
+    try {
+      const res = await fetch("/api/onboarding", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ workoutEnvironment: next }),
+      })
+
+      if (!res.ok) throw new Error("Failed to save workout setup")
+    } catch {
+      setWorkoutEnvironment(previous)
+    } finally {
+      setSavingWorkoutEnvironment(false)
+    }
   }
 
   const togglePush = async () => {
@@ -743,6 +781,58 @@ export default function SettingsPage() {
 
             <motion.div variants={fadeUp}>
               <div style={sectionLabelStyle}>{t.preferences}</div>
+            </motion.div>
+
+            <motion.div variants={fadeUp}>
+              <div style={cardStyle}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px", marginBottom: "12px" }}>
+                  <div>
+                    <div style={{ fontSize: "14px", color: "var(--text)", fontWeight: 700 }}>{t.workoutSetup}</div>
+                    <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>
+                      {t.workoutSetupDescription}
+                    </div>
+                  </div>
+                  {savingWorkoutEnvironment && (
+                    <div style={{ color: "var(--text-muted)", fontSize: "11px", fontWeight: 700, paddingTop: "2px" }}>
+                      {t.saving}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "8px" }}>
+                  {WORKOUT_SETUP_OPTIONS.map((option) => {
+                    const selected = workoutEnvironment === option.id
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => saveWorkoutEnvironment(option.id)}
+                        disabled={savingWorkoutEnvironment}
+                        style={{
+                          minWidth: 0,
+                          minHeight: "86px",
+                          border: `1px solid ${selected ? "rgba(107,191,184,0.72)" : "var(--border)"}`,
+                          background: selected ? "rgba(107,191,184,0.12)" : "var(--surface-2)",
+                          color: selected ? ACCENT : "var(--text)",
+                          borderRadius: "14px",
+                          padding: "11px 8px",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "7px",
+                          cursor: savingWorkoutEnvironment ? "default" : "pointer",
+                          opacity: savingWorkoutEnvironment ? 0.72 : 1,
+                        }}
+                      >
+                        <option.Icon size={18} strokeWidth={1.8} />
+                        <span style={{ fontSize: "12px", fontWeight: 800, lineHeight: 1.1 }}>{t[option.labelKey]}</span>
+                        <span style={{ color: "var(--text-muted)", fontSize: "10px", lineHeight: 1.15 }}>{t[option.subKey]}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             </motion.div>
 
             <motion.div variants={fadeUp}>

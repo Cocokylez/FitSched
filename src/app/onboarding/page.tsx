@@ -9,6 +9,7 @@ import { useLanguage } from "@/context/LanguageContext"
 import {
   Activity,
   AlertTriangle,
+  Building2,
   CalendarCheck,
   CalendarClock,
   CalendarDays,
@@ -16,6 +17,7 @@ import {
   Dumbbell,
   Gauge,
   HeartPulse,
+  Home,
   Link2,
   Ruler,
   Scale,
@@ -26,7 +28,7 @@ import {
   UserRound,
 } from "lucide-react"
 
-const steps = ["goal", "body", "injury", "target", "experience", "frequency", "calendar"]
+const steps = ["goal", "body", "injury", "setup", "target", "experience", "frequency", "calendar"]
 
 const goals = [
   { id: "lose_weight", Icon: Target, label: "Lose Weight", sub: "Burn fat, get leaner" },
@@ -49,6 +51,12 @@ const levels = [
   { id: "beginner", Icon: UserRound, label: "Beginner", sub: "Less than 1 year" },
   { id: "intermediate", Icon: Gauge, label: "Intermediate", sub: "1-3 years" },
   { id: "advanced", Icon: Trophy, label: "Advanced", sub: "3+ years" },
+]
+
+const workoutSetups = [
+  { id: "home_bodyweight", Icon: Home, label: "Home workout", sub: "No equipment needed" },
+  { id: "home_dumbbells", Icon: Dumbbell, label: "Home with dumbbells", sub: "Bodyweight plus dumbbell moves" },
+  { id: "gym", Icon: Building2, label: "Gym", sub: "Machines, cables, free weights" },
 ]
 
 const frequencies = [
@@ -74,6 +82,7 @@ export default function OnboardingPage() {
     weightKg: "",
     hasInjury: false,
     injuryNotes: "",
+    workoutEnvironment: "",
     targetMuscles: [] as string[],
     experienceLevel: "",
     workoutsPerWeek: 0,
@@ -108,6 +117,7 @@ export default function OnboardingPage() {
       bmi: calculateBmi(updated.heightCm, updated.weightKg),
       hasInjury: updated.hasInjury,
       injuryNotes: updated.injuryNotes,
+      workoutEnvironment: updated.workoutEnvironment,
       calendarPreference: updated.calendarPreference,
     }))
   }
@@ -347,6 +357,21 @@ export default function OnboardingPage() {
         )}
 
         {step === 3 && (
+          <motion.div key="setup" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.3 }}>
+            <StepHeader label={stepLabel} title="Where do you train?" body="FitSched will pick exercises that match your setup." />
+
+            {workoutSetups.map(setup => (
+              <motion.button key={setup.id} whileTap={{ scale: 0.98 }} onClick={() => handleSelect("workoutEnvironment", setup.id)} style={optionStyle(selections.workoutEnvironment === setup.id)}>
+                <div style={optionIconStyle(selections.workoutEnvironment === setup.id)}>
+                  <setup.Icon size={20} strokeWidth={1.8} />
+                </div>
+                <OptionText label={setup.label} sub={setup.sub} />
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
+
+        {step === 4 && (
           <motion.div key="target" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.3 }}>
             <StepHeader label={stepLabel} title="What do you want to grow?" body="Choose the muscle groups you care about most." />
 
@@ -386,7 +411,7 @@ export default function OnboardingPage() {
           </motion.div>
         )}
 
-        {step === 4 && (
+        {step === 5 && (
           <motion.div key="experience" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.3 }}>
             <StepHeader label={stepLabel} title="Your experience?" body="We'll adjust workout intensity for you." />
 
@@ -401,7 +426,7 @@ export default function OnboardingPage() {
           </motion.div>
         )}
 
-        {step === 5 && (
+        {step === 6 && (
           <motion.div key="frequency" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.3 }}>
             <StepHeader label={stepLabel} title="How often?" body="We'll schedule workouts around your calendar." />
 
@@ -416,7 +441,7 @@ export default function OnboardingPage() {
           </motion.div>
         )}
 
-        {step === 6 && (
+        {step === 7 && (
           <motion.div key="calendar" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.3 }}>
             <StepHeader label={stepLabel} title="Connect your schedule?" body="Calendar sync gives FitSched better workout windows." />
 

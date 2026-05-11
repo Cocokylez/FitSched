@@ -26,6 +26,7 @@ model User {
   fitnessGoal         String?
   experienceLevel     String?
   workoutsPerWeek     Int?
+  workoutEnvironment  String?
   heightCm            Float?
   weightKg            Float?
   bmi                 Float?

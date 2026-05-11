@@ -2,6 +2,12 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NextResponse } from "next/server"
 
+const WORKOUT_ENVIRONMENTS = new Set(["home_bodyweight", "home_dumbbells", "gym"])
+
+function parseWorkoutEnvironment(value: unknown) {
+  return typeof value === "string" && WORKOUT_ENVIRONMENTS.has(value) ? value : null
+}
+
 export async function POST(req: Request) {
   const session = await auth()
   if (!session?.user?.id) {
@@ -15,6 +21,7 @@ export async function POST(req: Request) {
     ? Math.round((weightKg / ((heightCm / 100) ** 2)) * 10) / 10
     : null
   const hasInjury = Boolean(body.hasInjury)
+  const workoutEnvironment = parseWorkoutEnvironment(body.workoutEnvironment)
 
   await db.user.update({
     where: { id: session.user.id },
@@ -22,6 +29,7 @@ export async function POST(req: Request) {
       fitnessGoal: body.fitnessGoal,
       experienceLevel: body.experienceLevel,
       workoutsPerWeek: body.workoutsPerWeek,
+      workoutEnvironment,
       heightCm,
       weightKg,
       bmi,
@@ -32,6 +40,34 @@ export async function POST(req: Request) {
   })
 
   return NextResponse.json({ success: true })
+}
+
+export async function PATCH(req: Request) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const body = await req.json()
+  const data: { workoutEnvironment?: string } = {}
+
+  if ("workoutEnvironment" in body) {
+    const workoutEnvironment = parseWorkoutEnvironment(body.workoutEnvironment)
+    if (!workoutEnvironment) {
+      return NextResponse.json({ error: "Invalid workout environment" }, { status: 400 })
+    }
+    data.workoutEnvironment = workoutEnvironment
+  }
+
+  const user = await db.user.update({
+    where: { id: session.user.id },
+    data,
+    select: {
+      workoutEnvironment: true,
+    },
+  })
+
+  return NextResponse.json(user)
 }
 
 export async function GET() {
@@ -47,6 +83,7 @@ export async function GET() {
       fitnessGoal: true,
       experienceLevel: true,
       workoutsPerWeek: true,
+      workoutEnvironment: true,
       heightCm: true,
       weightKg: true,
       bmi: true,
