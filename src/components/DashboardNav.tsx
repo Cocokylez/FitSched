@@ -37,8 +37,7 @@ export function DashboardNav() {
   const ticking = useRef(false)
   const { theme } = useTheme()
   const { t } = useLanguage()
-
-  if (pathname.startsWith("/exercise")) return null
+  const hideNav = pathname.startsWith("/exercise")
 
   const navStyle = theme === "dark" ? {
     background: "rgba(30, 30, 30, 0.6)",
@@ -55,6 +54,11 @@ export function DashboardNav() {
   }
 
   useEffect(() => {
+    if (hideNav) {
+      setVisible(false)
+      return
+    }
+
     const scrollEls = Array.from(
       document.querySelectorAll<HTMLElement>("[data-dashboard-scroll], main")
     )
@@ -120,7 +124,9 @@ export function DashboardNav() {
       window.removeEventListener("touchmove", handleTouchMove)
       window.removeEventListener("wheel", handleWheel)
     }
-  }, [pathname])
+  }, [pathname, hideNav])
+
+  if (hideNav) return null
 
   return (
     <AnimatePresence>
