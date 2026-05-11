@@ -594,8 +594,15 @@ export default function WorkoutPage() {
             {!completed ? (
               <button
                 onClick={() => {
-                  setLoggedExercises(currentExercises.map(e => ({ ...e })))
-                  setLogging(true)
+                  const selectedDate = weekDates[selectedDay]
+                  if (!selectedDate) return
+                  const dateStr = selectedDate.toISOString().split("T")[0]
+                  sessionStorage.setItem("fitsched-active-workout", JSON.stringify({
+                    date: dateStr,
+                    workoutName: muscle,
+                    exercises: currentExercises.map(e => ({ ...e })),
+                  }))
+                  router.push("/exercise")
                 }}
                 style={{
                   width: "100%",
@@ -611,7 +618,7 @@ export default function WorkoutPage() {
                   boxShadow: "0 4px 16px rgba(107, 191, 184, 0.3)",
                 }}
               >
-                {t.markAsDone}
+                Go Exercise
               </button>
             ) : (
               <div style={{
