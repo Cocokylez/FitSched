@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, useRef } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
@@ -30,6 +30,7 @@ interface ScheduleBlock {
   hint?: string
   description?: string
   source?: "manual" | "calendar" | "workout" | "mock"
+  exercises?: Array<{ name: string; sets?: number; reps?: number }>
 }
 
 const MOCK: Record<number, ScheduleBlock[]> = {
@@ -233,6 +234,29 @@ export default function SchedulePage() {
     }
   }
 
+  const startExerciseFromSchedule = (block: ScheduleBlock) => {
+    if (!selectedDate) return
+
+    const exercises = Array.isArray(block.exercises) && block.exercises.length > 0
+      ? block.exercises.map((exercise) => ({
+          name: exercise.name || block.label,
+          sets: Number(exercise.sets) || 3,
+          reps: Number(exercise.reps) || 12,
+        }))
+      : [
+          { name: "Warm-up", sets: 1, reps: 10 },
+          { name: block.label, sets: 3, reps: 12 },
+          { name: "Cooldown", sets: 1, reps: 10 },
+        ]
+
+    sessionStorage.setItem("fitsched-active-workout", JSON.stringify({
+      date: formatLocalDate(selectedDate),
+      workoutName: block.label,
+      exercises,
+    }))
+    router.push("/exercise")
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
       <motion.div
@@ -282,7 +306,7 @@ export default function SchedulePage() {
           </div>
         </motion.div>
 
-        <div style={{ padding: "20px", flex: 1, overflowY: "auto", paddingBottom: "100px" }}>
+        <div data-dashboard-scroll style={{ padding: "20px", flex: 1, overflowY: "auto", paddingBottom: "100px" }}>
           <motion.div variants={stagger} initial="hidden" animate="visible">
             <motion.div variants={fadeUp}>
               <div style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "2px" }}>{t.goodMorning}</div>
@@ -465,19 +489,38 @@ export default function SchedulePage() {
                             </div>
                           )}
                         </div>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "8px", flexShrink: 0, marginLeft: "8px" }}>
                           {block.duration && (
-                          <div style={{
-                            background: "var(--surface-2)",
-                            borderRadius: "20px",
-                            padding: "4px 10px",
-                            fontSize: "11px",
-                            color: "var(--text-muted)",
-                            flexShrink: 0,
-                            marginLeft: "8px",
-                          }}>
-                            {block.duration}
-                          </div>
-                        )}
+                            <div style={{
+                              background: "var(--surface-2)",
+                              borderRadius: "20px",
+                              padding: "4px 10px",
+                              fontSize: "11px",
+                              color: "var(--text-muted)",
+                            }}>
+                              {block.duration}
+                            </div>
+                          )}
+                          {isWorkout && (
+                            <button
+                              type="button"
+                              onClick={() => startExerciseFromSchedule(block)}
+                              style={{
+                                border: "none",
+                                background: "#6bbfb8",
+                                color: "#ffffff",
+                                borderRadius: "999px",
+                                padding: "7px 10px",
+                                fontSize: "11px",
+                                fontWeight: 800,
+                                cursor: "pointer",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              Go Exercise
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </motion.div>
                   )
