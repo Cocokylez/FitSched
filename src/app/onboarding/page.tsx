@@ -14,10 +14,8 @@ import {
   CalendarDays,
   CalendarRange,
   Dumbbell,
-  FileImage,
   Gauge,
   HeartPulse,
-  ImagePlus,
   Link2,
   Ruler,
   Scale,
@@ -25,12 +23,10 @@ import {
   SkipForward,
   Target,
   Trophy,
-  Upload,
   UserRound,
-  Zap,
 } from "lucide-react"
 
-const steps = ["goal", "body", "injury", "target", "experience", "frequency", "calendar", "schedule"]
+const steps = ["goal", "body", "injury", "target", "experience", "frequency", "calendar"]
 
 const goals = [
   { id: "lose_weight", Icon: Target, label: "Lose Weight", sub: "Burn fat, get leaner" },
@@ -64,7 +60,6 @@ const frequencies = [
 
 const calendarChoices = [
   { id: "connect", Icon: Link2, label: "Connect Google Calendar", sub: "Best for automatic scheduling" },
-  { id: "upload", Icon: ImagePlus, label: "Upload schedule instead", sub: "Use a screenshot or photo" },
   { id: "skip", Icon: SkipForward, label: "Skip for now", sub: "You can connect it later" },
 ]
 
@@ -73,7 +68,6 @@ export default function OnboardingPage() {
   const { status } = useSession()
   const { t } = useLanguage()
   const [step, setStep] = useState(0)
-  const [schedulePreview, setSchedulePreview] = useState<string | null>(null)
   const [selections, setSelections] = useState({
     fitnessGoal: "",
     heightCm: "",
@@ -84,8 +78,6 @@ export default function OnboardingPage() {
     experienceLevel: "",
     workoutsPerWeek: 0,
     calendarPreference: "",
-    scheduleImageName: "",
-    scheduleImageDataUrl: "",
   })
 
   useEffect(() => {
@@ -117,8 +109,6 @@ export default function OnboardingPage() {
       hasInjury: updated.hasInjury,
       injuryNotes: updated.injuryNotes,
       calendarPreference: updated.calendarPreference,
-      scheduleImageName: updated.scheduleImageName,
-      scheduleImageDataUrl: updated.scheduleImageDataUrl,
     }))
   }
 
@@ -170,29 +160,6 @@ export default function OnboardingPage() {
           : [...current.targetMuscles, target],
       }
     })
-  }
-
-  const handleScheduleFile = async (file?: File) => {
-    if (!file) return
-
-    localStorage.removeItem("fitsched-schedule-upload-notice-dismissed")
-
-    if (file.type.startsWith("image/")) {
-      const preview = await createSchedulePreview(file)
-      setSchedulePreview(preview)
-      setSelections((current) => ({
-        ...current,
-        scheduleImageName: file.name,
-        scheduleImageDataUrl: preview,
-      }))
-    } else {
-      setSchedulePreview(null)
-      setSelections((current) => ({
-        ...current,
-        scheduleImageName: file.name,
-        scheduleImageDataUrl: "",
-      }))
-    }
   }
 
   const optionStyle = (selected: boolean) => ({
@@ -464,75 +431,6 @@ export default function OnboardingPage() {
           </motion.div>
         )}
 
-        {step === 7 && (
-          <motion.div key="schedule" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.3 }}>
-            <StepHeader label={stepLabel} title="Upload your schedule?" body="Optional. Add a screenshot or photo if you don't use Google Calendar." />
-
-            <label style={{
-              background: "var(--surface)",
-              border: "1px dashed var(--border)",
-              borderRadius: "18px",
-              padding: "22px",
-              minHeight: "150px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexDirection: "column",
-              gap: "10px",
-              color: "var(--text)",
-              cursor: "pointer",
-              textAlign: "center",
-            }}>
-              {schedulePreview ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={schedulePreview} alt="Schedule preview" style={{ maxWidth: "100%", maxHeight: "220px", borderRadius: "14px", objectFit: "cover" }} />
-              ) : (
-                <>
-                  <div style={optionIconStyle(false)}>
-                    <Upload size={20} strokeWidth={1.8} />
-                  </div>
-                  <div style={{ fontSize: "14px", fontWeight: 700 }}>
-                    {selections.scheduleImageName || "Choose schedule image"}
-                  </div>
-                  <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: 1.4 }}>
-                    Screenshots and photos work best.
-                  </div>
-                </>
-              )}
-              <input
-                type="file"
-                accept="image/*,.pdf"
-                onChange={(event) => handleScheduleFile(event.target.files?.[0])}
-                style={{ display: "none" }}
-              />
-            </label>
-
-            {selections.scheduleImageName && !schedulePreview && (
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--text-muted)", fontSize: "12px", marginTop: "12px" }}>
-                <FileImage size={14} />
-                {selections.scheduleImageName}
-              </div>
-            )}
-
-            <button
-              onClick={() => finishOnboarding()}
-              style={{
-                width: "100%",
-                marginTop: "18px",
-                border: "none",
-                borderRadius: "14px",
-                padding: "14px",
-                background: "var(--text)",
-                color: "var(--bg)",
-                fontSize: "14px",
-                fontWeight: 800,
-                cursor: "pointer",
-              }}
-            >
-              Finish
-            </button>
-          </motion.div>
-        )}
       </AnimatePresence>
 
       {step > 0 && (
@@ -771,41 +669,4 @@ function FullBodyMuscleIcon() {
       <path d="M12.2 16.5c2.4 1.5 5.2 1.5 7.6 0" />
     </MuscleIconSvg>
   )
-}
-
-async function createSchedulePreview(file: File) {
-  const source = await readFileAsDataUrl(file)
-
-  return new Promise<string>((resolve) => {
-    const image = new Image()
-    image.onload = () => {
-      const maxSide = 1200
-      const scale = Math.min(1, maxSide / Math.max(image.width, image.height))
-      const width = Math.max(1, Math.round(image.width * scale))
-      const height = Math.max(1, Math.round(image.height * scale))
-      const canvas = document.createElement("canvas")
-      const context = canvas.getContext("2d")
-
-      if (!context) {
-        resolve(source)
-        return
-      }
-
-      canvas.width = width
-      canvas.height = height
-      context.drawImage(image, 0, 0, width, height)
-      resolve(canvas.toDataURL("image/jpeg", 0.78))
-    }
-    image.onerror = () => resolve(source)
-    image.src = source
-  })
-}
-
-function readFileAsDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(String(reader.result))
-    reader.onerror = () => reject(reader.error)
-    reader.readAsDataURL(file)
-  })
 }

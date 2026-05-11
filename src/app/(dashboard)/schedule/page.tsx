@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { useStore } from "@/store/useStore"
 import { SkeletonCard } from "@/components/Skeleton"
 import { FitTokenBalancePill } from "@/components/FitTokenBalancePill"
@@ -28,6 +28,8 @@ interface ScheduleBlock {
   kind: "cls" | "free" | "wrk" | "rst"
   duration: string
   hint?: string
+  description?: string
+  source?: "manual" | "calendar" | "workout" | "mock"
 }
 
 const MOCK: Record<number, ScheduleBlock[]> = {
@@ -38,6 +40,23 @@ const MOCK: Record<number, ScheduleBlock[]> = {
   4: [{ time: "8:00", label: "Data Structures", kind: "cls", duration: "90m" }, { time: "9:30", label: "Free", kind: "free", duration: "2h" }, { time: "11:30", label: "STS", kind: "cls", duration: "90m" }, { time: "13:00", label: "Free", kind: "free", duration: "2h" }],
   5: [{ time: "8:00", label: "Free", kind: "free", duration: "All morning" }, { time: "12:00", label: "Lunch", kind: "free", duration: "1h" }, { time: "13:00", label: "Free", kind: "free", duration: "All afternoon" }],
   6: [{ time: "9:00", label: "Free", kind: "free", duration: "All day" }, { time: "12:00", label: "Lunch", kind: "free", duration: "1h" }],
+}
+
+function formatLocalDate(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+function formatManualTime(value: string) {
+  if (!value) return ""
+  const [hourRaw, minute = "00"] = value.split(":")
+  const hour = Number(hourRaw)
+  if (Number.isNaN(hour)) return value
+  const suffix = hour >= 12 ? "PM" : "AM"
+  const displayHour = hour % 12 || 12
+  return `${displayHour}:${minute} ${suffix}`
 }
 
 export default function SchedulePage() {
@@ -51,6 +70,14 @@ export default function SchedulePage() {
   const { t, language } = useLanguage()
   const { theme, toggleTheme } = useTheme()
   const dayNames = [t.days.sun, t.days.mon, t.days.tue, t.days.wed, t.days.thu, t.days.fri, t.days.sat]
+  const [streak, setStreak] = useState(0)
+  const [newMilestone, setNewMilestone] = useState<number | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
+  const [manualTitle, setManualTitle] = useState("")
+  const [manualDescription, setManualDescription] = useState("")
+  const [manualTime, setManualTime] = useState("08:00")
+  const [savingManual, setSavingManual] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     const t = new Date()
@@ -80,22 +107,38 @@ export default function SchedulePage() {
       setLoading(true)
       const { connected, events } = await fetchEvents()
 
+      // Fetch streak data
+      try {
+        const streakRes = await fetch("/api/streak")
+        if (streakRes.ok) {
+          const streakData = await streakRes.json()
+          setStreak(streakData.streak)
+          setNewMilestone(streakData.newMilestone)
+        }
+      } catch {}
+
       // Fetch workout schedule for selected day
       let workoutEvents: any[] = []
       try {
         const selectedDate = weekDates[selectedDay]
         if (selectedDate) {
-          const dateStr = selectedDate.toISOString().split("T")[0]
+          const dateStr = formatLocalDate(selectedDate)
           const wsRes = await fetch(`/api/workout-schedule?date=${dateStr}`)
           if (wsRes.ok) {
             const wsData = await wsRes.json()
-            workoutEvents = wsData.map((w: any) => ({
-              time: t.workout,
-              label: w.workoutName,
-              kind: "wrk" as const,
-              duration: `${w.exercises.length} exercises`,
-              exercises: w.exercises,
-            }))
+            workoutEvents = wsData.map((w: any) => {
+              const details = Array.isArray(w.exercises) ? w.exercises[0] : null
+              const isManual = w.source === "manual"
+              return {
+                time: isManual ? formatManualTime(details?.time || "") : t.workout,
+                label: w.workoutName,
+                kind: isManual ? "cls" as const : "wrk" as const,
+                duration: isManual ? "Manual" : `${w.exercises.length} exercises`,
+                description: isManual ? details?.description || "" : "",
+                source: isManual ? "manual" as const : "workout" as const,
+                exercises: w.exercises,
+              }
+            })
           }
         }
       } catch {}
@@ -142,7 +185,7 @@ export default function SchedulePage() {
       setLoading(false)
     }
     load()
-  }, [status, selectedDay, fetchEvents, syncNow, router, weekDates, t.workout])
+  }, [status, selectedDay, fetchEvents, syncNow, router, weekDates, t.workout, reloadKey])
 
   useEffect(() => {
     if (sp.get("connected") === "true") setCalendarConnected(true)
@@ -154,6 +197,41 @@ export default function SchedulePage() {
     const w = i === bestIdx
     return { ...b, kind: w ? "wrk" : b.kind, label: w ? MUSCLE_GROUPS[selectedDay] : b.label, duration: w ? "Best window — 25 min" : b.duration, hint: w ? "Optimal energy window" : b.hint }
   })
+
+  const selectedDate = weekDates[selectedDay]
+
+  const saveManualSchedule = async () => {
+    const title = manualTitle.trim()
+    if (!title || !selectedDate) return
+
+    setSavingManual(true)
+    try {
+      const response = await fetch("/api/workout-schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: formatLocalDate(selectedDate),
+          workoutName: title,
+          source: "manual",
+          exercises: [{
+            name: title,
+            description: manualDescription.trim(),
+            time: manualTime,
+          }],
+        }),
+      })
+
+      if (response.ok) {
+        setManualTitle("")
+        setManualDescription("")
+        setManualTime("08:00")
+        setAddOpen(false)
+        setReloadKey((value) => value + 1)
+      }
+    } finally {
+      setSavingManual(false)
+    }
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
@@ -208,7 +286,28 @@ export default function SchedulePage() {
           <motion.div variants={stagger} initial="hidden" animate="visible">
             <motion.div variants={fadeUp}>
               <div style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "2px" }}>{t.goodMorning}</div>
-              <div style={{ fontSize: "28px", fontWeight: 900, color: "var(--text)", letterSpacing: "-0.5px", marginBottom: "20px" }}>{t.yourDay}</div>
+              <div style={{ fontSize: "28px", fontWeight: 900, color: "var(--text)", letterSpacing: "-0.5px", marginBottom: streak > 0 ? "8px" : "20px" }}>{t.yourDay}</div>
+              {streak > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    background: "var(--surface-2)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "20px",
+                    padding: "6px 14px",
+                    marginBottom: "16px",
+                    fontSize: "13px",
+                    color: "var(--text)",
+                  }}
+                >
+                  <span>🔥</span>
+                  <span style={{ fontWeight: 600 }}>{streak} day streak</span>
+                </motion.div>
+              )}
             </motion.div>
 
             <motion.div variants={fadeUp}>
@@ -252,11 +351,29 @@ export default function SchedulePage() {
               </div>
             </motion.div>
 
-              <motion.div variants={fadeUp}>
-              <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-muted)", marginBottom: "12px" }}>
-                <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                  {t.timeline}
-                </motion.span>
+            <motion.div variants={fadeUp}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", marginBottom: "12px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-muted)" }}>
+                  <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                    {t.timeline}
+                  </motion.span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAddOpen(true)}
+                  style={{
+                    border: "1px solid rgba(107, 191, 184, 0.34)",
+                    background: "rgba(107, 191, 184, 0.12)",
+                    color: "#6bbfb8",
+                    borderRadius: "999px",
+                    padding: "7px 13px",
+                    fontSize: "12px",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                  }}
+                >
+                  Add
+                </button>
               </div>
             </motion.div>
 
@@ -294,7 +411,8 @@ export default function SchedulePage() {
             ) : (
               <motion.div variants={stagger}>
                 {ds.map((block, i) => {
-                  const isWorkout = block.kind === "wrk" || (block as any).exercises
+                  const isWorkout = block.kind === "wrk"
+                  const isManual = block.source === "manual"
                   return (
                     <motion.div key={i} variants={fadeUp}>
                       <div style={{
@@ -311,7 +429,7 @@ export default function SchedulePage() {
                         <div style={{ flex: 1 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" }}>
                             <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>{block.label}</div>
-                            {isWorkout && (
+                            {isWorkout && !isManual && (
                               <span style={{
                                 background: "var(--surface-2)",
                                 color: "var(--text-muted)",
@@ -322,8 +440,24 @@ export default function SchedulePage() {
                                 {t.workoutLabel}
                               </span>
                             )}
+                            {isManual && (
+                              <span style={{
+                                background: "rgba(107, 191, 184, 0.12)",
+                                color: "#6bbfb8",
+                                fontSize: "10px",
+                                borderRadius: "20px",
+                                padding: "2px 8px",
+                              }}>
+                                Manual
+                              </span>
+                            )}
                           </div>
                           <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px" }}>{block.time}</div>
+                          {block.description && (
+                            <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "6px", lineHeight: 1.45 }}>
+                              {block.description}
+                            </div>
+                          )}
                           {block.hint && (
                             <div style={{ fontSize: "11px", color: "var(--text)", marginTop: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
                               <svg viewBox="0 0 24 24" width={12} height={12} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
@@ -354,6 +488,194 @@ export default function SchedulePage() {
         </div>
       </motion.div>
 
+      <AnimatePresence>
+        {addOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 9997,
+              background: "rgba(0, 0, 0, 0.42)",
+              backdropFilter: "blur(14px)",
+              WebkitBackdropFilter: "blur(14px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "18px",
+            }}
+            onClick={() => setAddOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 18, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 18, scale: 0.98 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              onClick={(event) => event.stopPropagation()}
+              style={{
+                width: "100%",
+                maxWidth: "420px",
+                border: "1px solid rgba(255, 255, 255, 0.12)",
+                background: theme === "dark" ? "rgba(31, 31, 31, 0.78)" : "rgba(255, 255, 255, 0.78)",
+                boxShadow: "0 24px 80px rgba(0, 0, 0, 0.35)",
+                backdropFilter: "blur(24px)",
+                WebkitBackdropFilter: "blur(24px)",
+                borderRadius: "22px",
+                padding: "18px",
+                color: "var(--text)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px", marginBottom: "16px" }}>
+                <div>
+                  <div style={{ fontSize: "20px", fontWeight: 900, letterSpacing: "-0.2px" }}>Add schedule</div>
+                  <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px" }}>
+                    {selectedDate ? `${dayNames[selectedDay]}, ${selectedDate.toLocaleDateString([], { month: "short", day: "numeric" })}` : "This week"}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAddOpen(false)}
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: "999px",
+                    border: "1px solid var(--border)",
+                    background: "var(--surface-2)",
+                    color: "var(--text)",
+                    cursor: "pointer",
+                    fontSize: "20px",
+                    lineHeight: 1,
+                  }}
+                  aria-label="Close add schedule"
+                >
+                  ×
+                </button>
+              </div>
+
+              <label style={{ display: "block", marginBottom: "12px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.14em", color: "var(--text-muted)", marginBottom: "7px" }}>TITLE</div>
+                <input
+                  value={manualTitle}
+                  onChange={(event) => setManualTitle(event.target.value)}
+                  placeholder="Class, work, appointment..."
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    border: "1px solid var(--border)",
+                    background: "var(--surface)",
+                    color: "var(--text)",
+                    borderRadius: "13px",
+                    padding: "13px 14px",
+                    fontSize: "14px",
+                    outline: "none",
+                  }}
+                />
+              </label>
+
+              <label style={{ display: "block", marginBottom: "12px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.14em", color: "var(--text-muted)", marginBottom: "7px" }}>TIME</div>
+                <input
+                  type="time"
+                  value={manualTime}
+                  onChange={(event) => setManualTime(event.target.value)}
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    border: "1px solid var(--border)",
+                    background: "var(--surface)",
+                    color: "var(--text)",
+                    borderRadius: "13px",
+                    padding: "13px 14px",
+                    fontSize: "14px",
+                    outline: "none",
+                  }}
+                />
+              </label>
+
+              <label style={{ display: "block", marginBottom: "16px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.14em", color: "var(--text-muted)", marginBottom: "7px" }}>DESCRIPTION</div>
+                <textarea
+                  value={manualDescription}
+                  onChange={(event) => setManualDescription(event.target.value)}
+                  placeholder="Optional notes"
+                  rows={4}
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    border: "1px solid var(--border)",
+                    background: "var(--surface)",
+                    color: "var(--text)",
+                    borderRadius: "13px",
+                    padding: "13px 14px",
+                    fontSize: "14px",
+                    outline: "none",
+                    resize: "vertical",
+                  }}
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={saveManualSchedule}
+                disabled={!manualTitle.trim() || savingManual}
+                style={{
+                  width: "100%",
+                  border: "none",
+                  borderRadius: "14px",
+                  padding: "14px",
+                  background: "var(--text)",
+                  color: "var(--bg)",
+                  fontSize: "14px",
+                  fontWeight: 900,
+                  cursor: manualTitle.trim() && !savingManual ? "pointer" : "default",
+                  opacity: manualTitle.trim() && !savingManual ? 1 : 0.5,
+                }}
+              >
+                {savingManual ? "Adding..." : "Add to schedule"}
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {newMilestone && (
+          <motion.div
+            key={newMilestone}
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onAnimationComplete={() => setTimeout(() => setNewMilestone(null), 2500)}
+            style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
+          >
+            {Array.from({ length: 30 }, (_, i) => {
+              const colors = ["#ff6b6b", "#ffd93d", "#6bcb77", "#4d96ff", "#ff6b9d", "#c084fc"]
+              const color = colors[Math.floor(Math.random() * colors.length)]
+              const x = (Math.random() - 0.5) * 300
+              const y = -(Math.random() * 250 + 50)
+              const size = Math.random() * 6 + 4
+              const rotation = Math.random() * 720 - 360
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ x: 0, y: 0, opacity: 1, rotate: 0, scale: 1 }}
+                  animate={{ x, y, opacity: [1, 1, 0], rotate: rotation, scale: [1, 0.8, 0] }}
+                  transition={{ duration: 2, ease: "easeOut" }}
+                  style={{
+                    position: "absolute",
+                    width: size,
+                    height: size,
+                    borderRadius: "50%",
+                    background: color,
+                  }}
+                />
+              )
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
