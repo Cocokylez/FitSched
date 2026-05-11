@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
 
 type ActiveExercise = {
   name: string
@@ -15,6 +15,19 @@ type ActiveWorkout = {
   workoutName: string
   exercises: ActiveExercise[]
 }
+
+type FitTokenReward = {
+  totalAwarded?: number
+}
+
+const CONFETTI = Array.from({ length: 42 }, (_, index) => ({
+  id: index,
+  left: 8 + ((index * 17) % 84),
+  delay: (index % 9) * 0.08,
+  drift: ((index % 7) - 3) * 18,
+  rotate: ((index * 47) % 220) - 110,
+  color: ["#6bbfb8", "#f6d365", "#f97373", "#8ab4ff", "#ffffff"][index % 5],
+}))
 
 function formatTime(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60)
@@ -32,6 +45,8 @@ export default function ExerciseSessionPage() {
   const [resting, setResting] = useState(false)
   const [restLeft, setRestLeft] = useState(30)
   const [saving, setSaving] = useState(false)
+  const [celebrating, setCelebrating] = useState(false)
+  const [fitTokenReward, setFitTokenReward] = useState<FitTokenReward | null>(null)
 
   useEffect(() => {
     try {
@@ -124,9 +139,11 @@ export default function ExerciseSessionPage() {
       })
 
       if (response.ok) {
+        const savedLog = await response.json()
+        setFitTokenReward(savedLog.fitTokenReward || null)
         window.dispatchEvent(new Event("fitsched:tokens-updated"))
         sessionStorage.removeItem("fitsched-active-workout")
-        router.push("/workout")
+        setCelebrating(true)
       }
     } finally {
       setSaving(false)
@@ -268,6 +285,151 @@ export default function ExerciseSessionPage() {
           })}
         </div>
       </div>
+
+      <AnimatePresence>
+        {celebrating && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 60,
+              overflow: "hidden",
+              background: "radial-gradient(circle at 50% 18%, rgba(107,191,184,0.22), rgba(0,0,0,0.76) 58%)",
+              backdropFilter: "blur(18px)",
+              WebkitBackdropFilter: "blur(18px)",
+              display: "grid",
+              placeItems: "center",
+              padding: "22px",
+            }}
+          >
+            {CONFETTI.map((piece) => (
+              <motion.div
+                key={piece.id}
+                initial={{ y: -80, x: 0, rotate: 0, opacity: 0 }}
+                animate={{ y: "110vh", x: piece.drift, rotate: piece.rotate, opacity: [0, 1, 1, 0] }}
+                transition={{ duration: 2.8 + (piece.id % 5) * 0.18, delay: piece.delay, ease: "easeOut", repeat: Infinity, repeatDelay: 0.6 }}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: `${piece.left}%`,
+                  width: piece.id % 3 === 0 ? 6 : 9,
+                  height: piece.id % 3 === 0 ? 18 : 9,
+                  borderRadius: piece.id % 3 === 0 ? 999 : 3,
+                  background: piece.color,
+                  boxShadow: "0 0 12px rgba(255,255,255,0.16)",
+                }}
+              />
+            ))}
+
+            <motion.div
+              initial={{ opacity: 0, y: 24, scale: 0.92 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ type: "spring", stiffness: 220, damping: 18 }}
+              style={{
+                width: "100%",
+                maxWidth: 430,
+                border: "1px solid rgba(255,255,255,0.14)",
+                background: "rgba(26, 26, 26, 0.82)",
+                color: "#fff",
+                borderRadius: 28,
+                padding: "28px 22px 22px",
+                textAlign: "center",
+                boxShadow: "0 30px 90px rgba(0,0,0,0.45)",
+                position: "relative",
+              }}
+            >
+              <motion.div
+                initial={{ scale: 0.5, rotate: -18 }}
+                animate={{ scale: [0.5, 1.15, 1], rotate: [-18, 8, 0] }}
+                transition={{ duration: 0.75, ease: "easeOut" }}
+                style={{
+                  width: 72,
+                  height: 72,
+                  borderRadius: "50%",
+                  margin: "0 auto 16px",
+                  display: "grid",
+                  placeItems: "center",
+                  background: "rgba(107,191,184,0.16)",
+                  border: "1px solid rgba(107,191,184,0.42)",
+                  color: "#6bbfb8",
+                  fontSize: 26,
+                  fontWeight: 950,
+                }}
+              >
+                FT
+              </motion.div>
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} style={{ fontSize: 30, fontWeight: 950, letterSpacing: "-0.5px", marginBottom: 6 }}>
+                Workout complete
+              </motion.div>
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} style={{ color: "rgba(255,255,255,0.64)", fontSize: 14, lineHeight: 1.45, marginBottom: 18 }}>
+                You showed up today. Keep this rhythm going.
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: -16 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.32 }}
+                style={{
+                  borderRadius: 18,
+                  padding: "14px 16px",
+                  background: "rgba(255,255,255,0.07)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  marginBottom: 10,
+                }}
+              >
+                <span style={{ color: "rgba(255,255,255,0.68)", fontSize: 13, fontWeight: 800 }}>STREAK</span>
+                <span style={{ fontSize: 16, fontWeight: 950, color: "#6bbfb8" }}>Day 1 streak</span>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.42 }}
+                style={{
+                  borderRadius: 18,
+                  padding: "16px",
+                  background: "linear-gradient(135deg, rgba(107,191,184,0.2), rgba(107,191,184,0.06))",
+                  border: "1px solid rgba(107,191,184,0.32)",
+                  marginBottom: 18,
+                }}
+              >
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.12em", marginBottom: 7 }}>
+                  RECEIVE FITTOKEN
+                </div>
+                <div style={{ fontSize: 34, fontWeight: 950, color: "#6bbfb8", fontVariantNumeric: "tabular-nums" }}>
+                  +{Number(fitTokenReward?.totalAwarded || 1).toFixed(2)} FT
+                </div>
+              </motion.div>
+
+              <button
+                type="button"
+                onClick={() => router.push("/workout")}
+                style={{
+                  width: "100%",
+                  border: "none",
+                  borderRadius: 16,
+                  padding: 15,
+                  background: "#6bbfb8",
+                  color: "#fff",
+                  fontSize: 15,
+                  fontWeight: 950,
+                  cursor: "pointer",
+                  boxShadow: "0 12px 28px rgba(107,191,184,0.3)",
+                }}
+              >
+                Continue
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 30, padding: "12px 16px 22px", background: "linear-gradient(180deg, transparent, var(--bg) 28%)" }}>
         <div style={{ maxWidth: 560, margin: "0 auto" }}>
