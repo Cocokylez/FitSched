@@ -14,7 +14,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <AnimatePresence>
         {showLoader && <LoadingScreen onDone={handleDone} />}
       </AnimatePresence>
-      <div className="flex flex-col h-dvh overflow-hidden bg-[var(--bg)]">
+      <div className="relative flex h-dvh flex-col overflow-hidden bg-[var(--bg)]">
         {children}
       </div>
     </>

@@ -428,14 +428,17 @@ export default function WorkoutPage() {
 
   if (selectedDay === 0) {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
+      <div style={{ minHeight: "100vh", background: "transparent", display: "flex", flexDirection: "column" }}>
         <div style={{
-          background: "var(--surface)",
+          background: "var(--panel)",
           padding: "16px 20px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          borderBottom: "1px solid var(--border)",
+          border: "1px solid var(--border)",
+          borderRadius: "24px",
+          margin: "12px 12px 0",
+          boxShadow: "var(--shadow)",
         }}>
           <div style={{ fontSize: "13px", fontWeight: 800, color: "var(--text)" }}>
             <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
@@ -461,11 +464,12 @@ export default function WorkoutPage() {
           <motion.div variants={stagger} initial="hidden" animate="visible">
             <motion.div variants={fadeUp}>
               <div style={{
-                background: "var(--surface)",
+                background: "var(--panel)",
                 border: "1px solid var(--border)",
-                borderRadius: "16px",
+                borderRadius: "22px",
                 padding: "32px 24px",
                 textAlign: "center",
+                boxShadow: "var(--shadow)",
               }}>
                 <div style={{ fontSize: "24px", fontWeight: 800, color: "var(--text)", marginBottom: "8px" }}>{t.restDay}</div>
                 <p style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.5, marginBottom: "20px" }}>
@@ -511,14 +515,17 @@ export default function WorkoutPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", background: "transparent", display: "flex", flexDirection: "column" }}>
       <div style={{
-        background: "var(--surface)",
+        background: "var(--panel)",
         padding: "16px 20px",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        borderBottom: "1px solid var(--border)",
+        border: "1px solid var(--border)",
+        borderRadius: "24px",
+        margin: "12px 12px 0",
+        boxShadow: "var(--shadow)",
       }}>
         <div style={{ fontSize: "13px", fontWeight: 800, color: "var(--text)" }}>{t.workout}</div>
         <button onClick={toggleTheme} style={{
@@ -551,19 +558,20 @@ export default function WorkoutPage() {
                     whileTap={{ scale: 0.95 }}
                     transition={{ type: "spring", stiffness: 400, damping: 17 }}
                     style={{
-                      background: i === selectedDay ? "var(--text)" : "var(--surface)",
-                      border: i === selectedDay ? "1px solid var(--text)" : "1px solid var(--border)",
-                      borderRadius: "14px",
+                      background: i === selectedDay ? "var(--accent)" : "var(--panel)",
+                      border: i === selectedDay ? "1px solid var(--accent)" : "1px solid var(--border)",
+                      borderRadius: "18px",
                       padding: "10px 14px",
                       textAlign: "center",
                       minWidth: "52px",
                       cursor: "pointer",
                       flexShrink: 0,
+                      boxShadow: i === selectedDay ? "0 12px 32px rgba(107, 191, 184, 0.18)" : "none",
                     }}
                   >
                     <div style={{
                       fontSize: "10px",
-                      color: "var(--text-muted)",
+                      color: i === selectedDay ? "rgba(10,18,17,0.72)" : "var(--text-muted)",
                       fontWeight: 600,
                       letterSpacing: "0.08em",
                       marginBottom: "4px",
@@ -573,7 +581,7 @@ export default function WorkoutPage() {
                     <div style={{
                       fontSize: "18px",
                       fontWeight: 800,
-                      color: i === selectedDay ? "var(--bg)" : "var(--text)",
+                      color: i === selectedDay ? "#0b1715" : "var(--text)",
                     }}>
                       {date.getDate()}
                     </div>
@@ -592,7 +600,7 @@ export default function WorkoutPage() {
           </motion.div>
 
           <motion.div variants={fadeUp}>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "20px", padding: "6px 12px", fontSize: "11px", color: "var(--text-muted)", marginBottom: "12px" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "var(--accent-soft)", border: "1px solid var(--border-strong)", borderRadius: "999px", padding: "6px 12px", fontSize: "11px", color: "var(--accent-strong)", marginBottom: "12px", fontWeight: 800 }}>
               <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M6.5 6.5h11"/><path d="M6.5 17.5h11"/><path d="M3 9.5h2v5H3z"/><path d="M19 9.5h2v5h-2z"/><path d="M5 12h14"/>
               </svg>
@@ -625,7 +633,7 @@ export default function WorkoutPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "20px", overflow: "hidden", marginBottom: "16px" }}>
+              <div style={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: "22px", overflow: "hidden", marginBottom: "16px", boxShadow: "var(--shadow)" }}>
                 {[1,2,3,4,5].map(i => (
                   <SkeletonExerciseRow key={i} />
                 ))}
@@ -633,7 +641,7 @@ export default function WorkoutPage() {
             </motion.div>
           ) : (
             <motion.div variants={fadeUp}>
-              <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "20px", overflow: "hidden", marginBottom: "16px" }}>
+              <div style={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: "22px", overflow: "hidden", marginBottom: "16px", boxShadow: "var(--shadow)" }}>
                 {todayExercises.map((ex, i) => (
                   <div
                     key={i}
@@ -645,7 +653,7 @@ export default function WorkoutPage() {
                     <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                       <motion.div variants={scaleIn} style={{
                         background: "var(--surface-2)",
-                        borderRadius: "8px",
+                        borderRadius: "10px",
                         width: "28px",
                         height: "28px",
                         display: "flex",

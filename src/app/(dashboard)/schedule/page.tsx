@@ -419,7 +419,7 @@ export default function SchedulePage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", background: "transparent", display: "flex", flexDirection: "column" }}>
       <motion.div
         variants={stagger}
         initial="hidden"
@@ -428,12 +428,15 @@ export default function SchedulePage() {
       >
         <motion.div variants={fadeUp}>
           <div style={{
-            background: "var(--surface)",
+            background: "var(--panel)",
             padding: "16px 20px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            borderBottom: "1px solid var(--border)",
+            border: "1px solid var(--border)",
+            borderRadius: "24px",
+            margin: "12px 12px 0",
+            boxShadow: "var(--shadow)",
           }}>
             <div style={{ fontSize: "13px", fontWeight: 800, color: "var(--text)" }}>{t.fitSched}</div>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -471,7 +474,7 @@ export default function SchedulePage() {
           <motion.div variants={stagger} initial="hidden" animate="visible">
             <motion.div variants={fadeUp}>
               <div style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "2px" }}>{t.goodMorning}</div>
-              <div style={{ fontSize: "28px", fontWeight: 900, color: "var(--text)", letterSpacing: "-0.5px", marginBottom: "14px" }}>{t.yourDay}</div>
+              <div style={{ fontSize: "30px", fontWeight: 900, color: "var(--text)", letterSpacing: "-0.02em", lineHeight: 1.04, marginBottom: "14px" }}>{t.yourDay}</div>
               <StreakWelcomeCard
                 streak={streak}
                 previousStreak={previousStreak}
@@ -490,19 +493,20 @@ export default function SchedulePage() {
                     whileTap={{ scale: 0.95 }}
                     transition={{ type: "spring", stiffness: 400, damping: 17 }}
                     style={{
-                      background: i === selectedDay ? "var(--text)" : "var(--surface)",
-                      border: i === selectedDay ? "1px solid var(--text)" : "1px solid var(--border)",
-                      borderRadius: "14px",
+                      background: i === selectedDay ? "var(--accent)" : "var(--panel)",
+                      border: i === selectedDay ? "1px solid var(--accent)" : "1px solid var(--border)",
+                      borderRadius: "18px",
                       padding: "10px 14px",
                       textAlign: "center",
                       minWidth: "52px",
                       cursor: "pointer",
                       flexShrink: 0,
+                      boxShadow: i === selectedDay ? "0 12px 32px rgba(107, 191, 184, 0.18)" : "none",
                     }}
                   >
                     <div style={{
                       fontSize: "10px",
-                      color: "var(--text-muted)",
+                      color: i === selectedDay ? "rgba(10,18,17,0.72)" : "var(--text-muted)",
                       fontWeight: 600,
                       letterSpacing: "0.08em",
                       marginBottom: "4px",
@@ -512,7 +516,7 @@ export default function SchedulePage() {
                     <div style={{
                       fontSize: "18px",
                       fontWeight: 800,
-                      color: i === selectedDay ? "var(--bg)" : "var(--text)",
+                      color: i === selectedDay ? "#0b1715" : "var(--text)",
                     }}>
                       {date.getDate()}
                     </div>
@@ -560,11 +564,12 @@ export default function SchedulePage() {
             ) : ds.length === 1 && ds[0].label === "No events today" ? (
               <motion.div variants={fadeUp}>
                 <div style={{
-                  background: "var(--surface)",
+                  background: "var(--panel)",
                   border: "1px dashed var(--border)",
-                  borderRadius: "14px",
+                  borderRadius: "20px",
                   padding: "24px",
                   textAlign: "center",
+                  boxShadow: "var(--shadow)",
                 }}>
                   <div style={{ fontSize: "15px", fontWeight: 600, color: "var(--text)" }}>
                     <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
@@ -589,7 +594,7 @@ export default function SchedulePage() {
                   const actionWidth = canEdit ? 172 : 86
                   return (
                     <motion.div key={block.id || `${block.label}-${i}`} variants={fadeUp}>
-                      <div style={{ position: "relative", marginBottom: "10px", overflow: "hidden", borderRadius: "14px" }}>
+                      <div style={{ position: "relative", marginBottom: "12px", overflow: "hidden", borderRadius: "20px" }}>
                         {canDelete && (
                           <div
                             style={{
@@ -611,7 +616,7 @@ export default function SchedulePage() {
                                   border: "1px solid rgba(107, 191, 184, 0.36)",
                                   background: "rgba(107, 191, 184, 0.16)",
                                   color: "#6bbfb8",
-                                  borderRadius: "14px",
+                                  borderRadius: "18px",
                                   fontSize: "12px",
                                   fontWeight: 900,
                                   cursor: "pointer",
@@ -631,7 +636,7 @@ export default function SchedulePage() {
                                 border: "1px solid rgba(255, 92, 92, 0.35)",
                                 background: "rgba(255, 92, 92, 0.18)",
                                 color: "#ff6b6b",
-                                borderRadius: "14px",
+                                borderRadius: "18px",
                                 fontSize: "12px",
                                 fontWeight: 900,
                                 cursor: deletingId === block.id ? "default" : "pointer",
@@ -658,17 +663,18 @@ export default function SchedulePage() {
                           animate={{ x: deleteOpen ? -(actionWidth + 6) : 0 }}
                           transition={{ type: "spring", stiffness: 420, damping: 34 }}
                           style={{
-                            background: "var(--surface)",
+                            background: "var(--panel)",
                             border: "1px solid var(--border)",
-                            borderLeft: isWorkout ? "3px solid var(--text)" : "3px solid #555555",
-                            borderRadius: "14px",
-                            padding: "14px 16px",
+                            borderLeft: isWorkout ? "3px solid var(--accent)" : "3px solid rgba(141,153,150,0.42)",
+                            borderRadius: "20px",
+                            padding: "15px 17px",
                             display: "flex",
                             justifyContent: "space-between",
                             alignItems: "center",
                             touchAction: canDelete ? "pan-y" : "auto",
                             position: "relative",
                             zIndex: 1,
+                            boxShadow: "var(--shadow)",
                           }}
                         >
                         <div style={{ flex: 1 }}>

@@ -52,7 +52,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', position: 'relative', padding: '0 16px 24px' }}>
       <AuthTopControls />
 
       <motion.div
@@ -60,8 +60,8 @@ export default function LoginPage() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
         style={{
-          height: '40vh',
-          background: "linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%)",
+          minHeight: '36vh',
+          background: "linear-gradient(180deg, rgba(107,191,184,0.1) 0%, transparent 78%)",
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -77,13 +77,18 @@ export default function LoginPage() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: 'easeOut', delay: 0.15 }}
         style={{
-          background: 'var(--surface)',
-          borderRadius: '28px 28px 0 0',
+          background: 'var(--panel)',
+          border: '1px solid var(--border)',
+          borderRadius: '28px',
           padding: '32px 24px 40px',
           position: 'relative',
           zIndex: 2,
-          marginTop: '-28px',
-          flex: 1,
+          margin: '-28px auto 0',
+          width: '100%',
+          maxWidth: '480px',
+          boxShadow: 'var(--shadow-lg)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
         }}
       >
         <motion.div

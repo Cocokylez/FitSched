@@ -46,17 +46,13 @@ export function DashboardNav() {
   const hideNav = pathname.startsWith("/exercise")
 
   const navStyle = theme === "dark" ? {
-    background: "rgba(30, 30, 30, 0.6)",
-    backdropFilter: "blur(20px)",
-    WebkitBackdropFilter: "blur(20px)",
-    borderTop: "1px solid rgba(255, 255, 255, 0.08)",
-    boxShadow: "0 -4px 24px rgba(0, 0, 0, 0.3)",
+    background: "rgba(19, 23, 22, 0.74)",
+    border: "1px solid rgba(255, 255, 255, 0.08)",
+    boxShadow: "0 18px 60px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255,255,255,0.05)",
   } : {
-    background: "rgba(255, 255, 255, 0.7)",
-    backdropFilter: "blur(20px)",
-    WebkitBackdropFilter: "blur(20px)",
-    borderTop: "1px solid rgba(0, 0, 0, 0.08)",
-    boxShadow: "0 -4px 24px rgba(0, 0, 0, 0.1)",
+    background: "rgba(255, 255, 255, 0.76)",
+    border: "1px solid rgba(17, 24, 22, 0.09)",
+    boxShadow: "0 18px 44px rgba(22, 32, 30, 0.12), inset 0 1px 0 rgba(255,255,255,0.75)",
   }
 
   useEffect(() => {
@@ -139,58 +135,88 @@ export function DashboardNav() {
       {visible && (
         <motion.nav
           key="bottom-nav"
-          initial={{ y: 80 }}
-          animate={{ y: 0 }}
-          exit={{ y: 80 }}
-          transition={{ duration: 0.25, ease: "easeInOut" }}
+          initial={{ y: 76, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 76, opacity: 0 }}
+          transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
           style={{
             position: "fixed",
-            bottom: 0, left: 0, right: 0,
-            zIndex: 9998,
-            ...navStyle,
-            padding: "12px 0 20px",
+            bottom: "max(14px, env(safe-area-inset-bottom))",
+            left: 0,
+            right: 0,
+            zIndex: 70,
+            padding: "0 14px",
             display: "flex",
-            justifyContent: "space-around",
+            justifyContent: "center",
             alignItems: "center",
+            pointerEvents: "none",
           }}
         >
           <div style={{
-            display: "flex",
-            justifyContent: "space-around",
+            ...navStyle,
+            display: "grid",
+            gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))`,
             alignItems: "center",
             width: "100%",
-            maxWidth: "500px",
-            margin: "0 auto",
+            maxWidth: "430px",
+            borderRadius: "28px",
+            padding: "6px",
+            backdropFilter: "blur(22px)",
+            WebkitBackdropFilter: "blur(22px)",
+            pointerEvents: "auto",
           }}>
             {navItems.map((item) => {
               const isActive = pathname.startsWith(item.href)
               return (
-                <button
+                <motion.button
                   key={item.id}
                   onClick={() => router.push(item.href)}
+                  whileTap={{ scale: 0.96 }}
                   style={{
+                    position: "relative",
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    gap: "4px",
+                    justifyContent: "center",
+                    gap: "3px",
                     background: "transparent",
                     border: "none",
                     cursor: "pointer",
-                    padding: "4px 16px",
+                    minWidth: 0,
+                    minHeight: 54,
+                    padding: "7px 8px",
+                    borderRadius: "22px",
+                    color: isActive ? "var(--text)" : "var(--text-muted)",
+                    overflow: "hidden",
                   }}
                 >
-                  <span style={{ color: isActive ? "var(--text)" : "var(--text-muted)", display: "flex" }}>
+                  {isActive && (
+                    <motion.span
+                      layoutId="dashboard-nav-active"
+                      transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        borderRadius: "20px",
+                        background: "linear-gradient(180deg, rgba(107,191,184,0.18), rgba(107,191,184,0.08))",
+                        border: "1px solid rgba(107,191,184,0.22)",
+                      }}
+                    />
+                  )}
+                  <span style={{ position: "relative", display: "flex", color: isActive ? "var(--accent-strong)" : "var(--text-muted)" }}>
                     {item.icon}
                   </span>
                   <span style={{
+                    position: "relative",
                     fontSize: "10px",
-                    fontWeight: 600,
-                    letterSpacing: "0.05em",
+                    fontWeight: 800,
+                    lineHeight: 1,
+                    letterSpacing: "0",
                     color: isActive ? "var(--text)" : "var(--text-muted)",
                   }}>
                     {t[item.id as keyof typeof t] as string}
                   </span>
-                </button>
+                </motion.button>
               )
             })}
           </div>

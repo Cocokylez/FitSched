@@ -12,24 +12,25 @@ import { SkeletonCard } from "@/components/Skeleton"
 const ACCENT = "#6bbfb8"
 
 const cardStyle = {
-  background: "var(--surface)",
+  background: "var(--panel)",
   backdropFilter: "blur(20px)",
   WebkitBackdropFilter: "blur(20px)",
   border: "1px solid var(--border)",
-  borderRadius: "16px",
-  padding: "16px 20px",
-  marginBottom: "10px",
+  borderRadius: "20px",
+  padding: "17px 20px",
+  marginBottom: "12px",
+  boxShadow: "var(--shadow)",
   width: "100%",
   boxSizing: "border-box" as const,
 }
 
 const sectionLabelStyle = {
   fontSize: "10px",
-  fontWeight: "600",
-  letterSpacing: "0.12em",
+  fontWeight: "800",
+  letterSpacing: "0.11em",
   color: "var(--text-muted)",
-  marginBottom: "8px",
-  marginTop: "22px",
+  marginBottom: "10px",
+  marginTop: "24px",
   textTransform: "uppercase" as const,
 }
 
@@ -421,7 +422,7 @@ export default function SettingsPage() {
     : 0
 
   return (
-    <div style={{ padding: "20px 16px 24px", minHeight: "100vh", background: "var(--bg)" }}>
+    <div style={{ padding: "24px 16px 28px", minHeight: "100vh", background: "transparent" }}>
       <motion.div variants={stagger} initial="hidden" animate="visible">
         <motion.div variants={fadeUp}>
           <div style={{ fontSize: "22px", fontWeight: "bold", color: "var(--text)", marginBottom: "18px" }}>
@@ -446,7 +447,7 @@ export default function SettingsPage() {
                   width: 52,
                   height: 52,
                   borderRadius: "50%",
-                  background: "linear-gradient(135deg, rgba(99,102,241,0.95), rgba(107,191,184,0.9))",
+                  background: "linear-gradient(135deg, rgba(107,191,184,0.96), rgba(40,73,70,0.92))",
                   color: "#fff",
                   display: "flex",
                   alignItems: "center",

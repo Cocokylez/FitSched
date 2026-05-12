@@ -23,7 +23,7 @@ export default async function DashboardLayout({
 
   return (
     <DashboardShell>
-      <main className="flex-1 overflow-y-auto pb-[80px]">
+      <main className="dashboard-main flex-1 overflow-y-auto pb-[94px]" data-dashboard-scroll>
         {children}
       </main>
       <DashboardNav />

@@ -22,7 +22,7 @@ export function LoadingScreen({ onDone }: { onDone: () => void }) {
       transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
       style={{
         position: "fixed", inset: 0, zIndex: 9999,
-        background: "var(--bg)",
+        background: "linear-gradient(180deg, rgba(107,191,184,0.045), var(--bg) 46%)",
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: 24,
         pointerEvents: exiting ? "none" : "auto",
@@ -50,11 +50,13 @@ export function FitSchedLoader({ compact = true }: { compact?: boolean }) {
     >
       <div
         style={{
-          background: "linear-gradient(180deg, var(--surface), var(--surface-2))",
-          border: "1px solid rgba(107,191,184,0.18)",
-          borderRadius: 24,
+          background: "var(--panel)",
+          border: "1px solid var(--border)",
+          borderRadius: 28,
           padding: compact ? 14 : 16,
-          boxShadow: "0 18px 60px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.05)",
+          boxShadow: "var(--shadow-lg)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
           overflow: "hidden",
         }}
       >
@@ -64,9 +66,9 @@ export function FitSchedLoader({ compact = true }: { compact?: boolean }) {
               width: 44,
               height: 44,
               borderRadius: 15,
-              background: "rgba(107,191,184,0.12)",
-              border: "1px solid rgba(107,191,184,0.34)",
-              color: "#88ded7",
+              background: "var(--accent-soft)",
+              border: "1px solid var(--border-strong)",
+              color: "var(--accent-strong)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -99,8 +101,8 @@ export function FitSchedLoader({ compact = true }: { compact?: boolean }) {
               style={{
                 height: 30,
                 borderRadius: 14,
-                background: "rgba(255,255,255,0.045)",
-                border: "1px solid rgba(255,255,255,0.055)",
+                background: "var(--surface-2)",
+                border: "1px solid var(--border)",
                 display: "flex",
                 alignItems: "center",
                 gap: 9,
