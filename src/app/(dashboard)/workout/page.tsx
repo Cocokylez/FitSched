@@ -440,7 +440,7 @@ export default function WorkoutPage() {
           margin: "12px 12px 0",
           boxShadow: "var(--shadow)",
         }}>
-          <div style={{ fontSize: "13px", fontWeight: 800, color: "var(--text)" }}>
+          <div className="brand-wordmark" style={{ fontSize: "15px", fontWeight: 900, color: "var(--text)" }}>
             <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
               {t.workout}
             </motion.span>
@@ -527,7 +527,7 @@ export default function WorkoutPage() {
         margin: "12px 12px 0",
         boxShadow: "var(--shadow)",
       }}>
-        <div style={{ fontSize: "13px", fontWeight: 800, color: "var(--text)" }}>{t.workout}</div>
+        <div className="brand-wordmark" style={{ fontSize: "15px", fontWeight: 900, color: "var(--text)" }}>{t.workout}</div>
         <button onClick={toggleTheme} style={{
           background: "var(--surface-2)", border: "1px solid var(--border)",
           borderRadius: "50%", width: "32px", height: "32px",
@@ -557,6 +557,7 @@ export default function WorkoutPage() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                    className="motion-lift"
                     style={{
                       background: i === selectedDay ? "var(--accent)" : "var(--panel)",
                       border: i === selectedDay ? "1px solid var(--accent)" : "1px solid var(--border)",
@@ -592,7 +593,7 @@ export default function WorkoutPage() {
           </motion.div>
 
           <motion.div variants={fadeUp}>
-            <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-muted)", marginBottom: "12px" }}>
+            <div className="label-text" style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "12px" }}>
               <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
                 {t.todaysPlan}
               </motion.span>
@@ -633,7 +634,7 @@ export default function WorkoutPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <div style={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: "22px", overflow: "hidden", marginBottom: "16px", boxShadow: "var(--shadow)" }}>
+              <div className="shine-surface" style={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: "22px", overflow: "hidden", marginBottom: "16px", boxShadow: "var(--shadow)" }}>
                 {[1,2,3,4,5].map(i => (
                   <SkeletonExerciseRow key={i} />
                 ))}
@@ -666,7 +667,7 @@ export default function WorkoutPage() {
                       }}>
                         {String(i + 1).padStart(2, "0")}
                       </motion.div>
-                      <div style={{ flex: 1, fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>{ex[0]}</div>
+                      <div className="display-text" style={{ flex: 1, fontSize: "15px", fontWeight: 700, color: "var(--text)", letterSpacing: "-0.015em" }}>{ex[0]}</div>
                       <div style={{
                         background: "var(--surface-2)",
                         borderRadius: "20px",
@@ -686,7 +687,7 @@ export default function WorkoutPage() {
           )}
 
           <motion.div variants={fadeUp}>
-            <button onClick={async () => {
+            <button className="motion-lift" onClick={async () => {
               const selectedDate = weekDates[selectedDay]
               if (!selectedDate) return
               const dateStr = formatLocalDate(selectedDate)
@@ -732,6 +733,7 @@ export default function WorkoutPage() {
                   }))
                   router.push("/exercise")
                 }}
+                className="motion-lift"
                 style={{
                   width: "100%",
                   marginTop: "8px",

@@ -59,6 +59,7 @@ export function FitSchedLoader({ compact = true }: { compact?: boolean }) {
           WebkitBackdropFilter: "blur(24px)",
           overflow: "hidden",
         }}
+        className="shine-surface"
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
           <div
@@ -72,6 +73,7 @@ export function FitSchedLoader({ compact = true }: { compact?: boolean }) {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              fontFamily: "var(--font-display)",
               fontSize: 13,
               fontWeight: 900,
               letterSpacing: "0.02em",
@@ -81,7 +83,7 @@ export function FitSchedLoader({ compact = true }: { compact?: boolean }) {
             FS
           </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ color: "var(--text)", fontSize: 18, fontWeight: 900, lineHeight: 1 }}>
+            <div className="brand-wordmark" style={{ color: "var(--text)", fontSize: 19, fontWeight: 900, lineHeight: 1 }}>
               FitSched
             </div>
             <div style={{ color: "var(--text-muted)", fontSize: 11, fontWeight: 650, marginTop: 5 }}>

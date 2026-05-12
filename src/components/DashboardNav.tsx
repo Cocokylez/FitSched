@@ -172,6 +172,7 @@ export function DashboardNav() {
                   key={item.id}
                   onClick={() => router.push(item.href)}
                   whileTap={{ scale: 0.96 }}
+                  animate={{ y: isActive ? -1 : 0 }}
                   style={{
                     position: "relative",
                     display: "flex",
@@ -203,11 +204,16 @@ export function DashboardNav() {
                       }}
                     />
                   )}
-                  <span style={{ position: "relative", display: "flex", color: isActive ? "var(--accent-strong)" : "var(--text-muted)" }}>
+                  <motion.span
+                    animate={{ scale: isActive ? 1.08 : 1 }}
+                    transition={{ type: "spring", stiffness: 380, damping: 26 }}
+                    style={{ position: "relative", display: "flex", color: isActive ? "var(--accent-strong)" : "var(--text-muted)" }}
+                  >
                     {item.icon}
-                  </span>
+                  </motion.span>
                   <span style={{
                     position: "relative",
+                    fontFamily: "var(--font-display)",
                     fontSize: "10px",
                     fontWeight: 800,
                     lineHeight: 1,

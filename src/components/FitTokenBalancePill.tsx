@@ -54,12 +54,12 @@ export function FitTokenBalancePill() {
   return (
     <div
       aria-label={`${displayBalance} FitTokens`}
-      className="inline-flex h-9 min-w-[94px] shrink-0 items-center justify-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--accent-soft)] px-3 text-[var(--accent-strong)] shadow-[var(--shadow)]"
+      className="motion-lift inline-flex h-9 min-w-[94px] shrink-0 items-center justify-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--accent-soft)] px-3 text-[var(--accent-strong)] shadow-[var(--shadow)]"
     >
-      <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full border border-[var(--border-strong)] bg-[var(--panel)] text-[8px] font-black leading-none tracking-normal">
+      <span className="brand-wordmark grid h-5 w-5 shrink-0 place-items-center rounded-full border border-[var(--border-strong)] bg-[var(--panel)] text-[8px] font-black leading-none tracking-normal">
         FT
       </span>
-      <span className="min-w-0 whitespace-nowrap text-center text-xs font-extrabold leading-none tabular-nums">
+      <span className="number-text min-w-0 whitespace-nowrap text-center text-xs font-extrabold leading-none tabular-nums">
         {displayBalance}
       </span>
     </div>

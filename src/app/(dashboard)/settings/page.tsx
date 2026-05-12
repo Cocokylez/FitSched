@@ -442,7 +442,7 @@ export default function SettingsPage() {
         ) : (
           <>
             <motion.div variants={fadeUp}>
-              <div style={{ ...cardStyle, display: "flex", alignItems: "center", gap: "14px" }}>
+              <div className="shine-surface" style={{ ...cardStyle, display: "flex", alignItems: "center", gap: "14px" }}>
                 <div style={{
                   width: 52,
                   height: 52,
@@ -461,7 +461,7 @@ export default function SettingsPage() {
                   {initials}
                 </div>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: "16px", fontWeight: 700, color: "var(--text)" }}>{profileName}</div>
+                  <div className="display-text" style={{ fontSize: "17px", fontWeight: 800, color: "var(--text)" }}>{profileName}</div>
                   <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "3px", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {profileEmail}
                   </div>
@@ -485,7 +485,7 @@ export default function SettingsPage() {
                   marginBottom: "14px",
                 }}>
                   <span>🔥</span>
-                  <span><AnimatedNumber value={stats.currentStreak} /> day streak</span>
+                  <span className="number-text"><AnimatedNumber value={stats.currentStreak} /> day streak</span>
                 </div>
               ) : (
                 <div style={{ color: "var(--text-muted)", fontSize: "13px", margin: "2px 0 16px" }}>
@@ -524,11 +524,12 @@ export default function SettingsPage() {
                     FT
                   </span>
                   <span>FitTokens</span>
-                  <span>{formatFitTokenAmount(fitTokens.balance)}</span>
+                  <span className="number-text">{formatFitTokenAmount(fitTokens.balance)}</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => router.push("/withdrawal")}
+                  className="motion-lift"
                   style={{
                     border: "1px solid var(--border)",
                     background: "var(--surface-2)",
@@ -553,8 +554,8 @@ export default function SettingsPage() {
                   { value: currentWeekPct, suffix: "%", label: "This week" },
                   { value: stats.longestStreak, suffix: "", label: "Longest streak" },
                 ].map((stat, i) => (
-                  <div key={i} style={{ ...cardStyle, textAlign: "left", marginBottom: 0, padding: "15px 14px" }}>
-                    <div style={{ fontSize: "28px", fontWeight: 800, color: "var(--text)", lineHeight: 1 }}>
+                  <div key={i} className="motion-lift" style={{ ...cardStyle, textAlign: "left", marginBottom: 0, padding: "15px 14px" }}>
+                    <div className="number-text" style={{ fontSize: "30px", fontWeight: 800, color: "var(--text)", lineHeight: 1 }}>
                       <AnimatedNumber value={stat.value} suffix={stat.suffix} />
                     </div>
                     <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "8px", lineHeight: 1.25 }}>

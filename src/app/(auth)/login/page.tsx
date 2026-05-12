@@ -68,7 +68,7 @@ export default function LoginPage() {
           flexDirection: 'column',
         }}
       >
-        <div style={{ fontSize: '32px', fontWeight: 900, color: 'var(--text)', letterSpacing: '-1px' }}>{t.fitSched}</div>
+        <div className="brand-wordmark" style={{ fontSize: '34px', fontWeight: 900, color: 'var(--text)' }}>{t.fitSched}</div>
         <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '6px' }}>{t.tagline}</div>
       </motion.div>
 
@@ -97,7 +97,7 @@ export default function LoginPage() {
           variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
         >
           <motion.div variants={fadeIn}>
-            <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text)', marginBottom: '4px' }}>{t.welcomeBack}</div>
+            <div className="display-text" style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text)', marginBottom: '4px' }}>{t.welcomeBack}</div>
             <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '24px' }}>{t.signInContinue}</div>
           </motion.div>
 
@@ -170,12 +170,13 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
+              className="motion-lift"
               style={{
                 width: '100%',
                 background: 'var(--text)',
                 color: 'var(--bg)',
                 border: 'none',
-                borderRadius: '12px',
+                borderRadius: '16px',
                 padding: '15px',
                 fontSize: '15px',
                 fontWeight: 700,

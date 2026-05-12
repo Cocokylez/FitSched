@@ -438,7 +438,7 @@ export default function SchedulePage() {
             margin: "12px 12px 0",
             boxShadow: "var(--shadow)",
           }}>
-            <div style={{ fontSize: "13px", fontWeight: 800, color: "var(--text)" }}>{t.fitSched}</div>
+            <div className="brand-wordmark" style={{ fontSize: "15px", fontWeight: 900, color: "var(--text)" }}>{t.fitSched}</div>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <FitTokenBalancePill />
               <button
@@ -474,7 +474,7 @@ export default function SchedulePage() {
           <motion.div variants={stagger} initial="hidden" animate="visible">
             <motion.div variants={fadeUp}>
               <div style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "2px" }}>{t.goodMorning}</div>
-              <div style={{ fontSize: "30px", fontWeight: 900, color: "var(--text)", letterSpacing: "-0.02em", lineHeight: 1.04, marginBottom: "14px" }}>{t.yourDay}</div>
+              <div className="display-text" style={{ fontSize: "31px", fontWeight: 900, color: "var(--text)", lineHeight: 1.04, marginBottom: "14px" }}>{t.yourDay}</div>
               <StreakWelcomeCard
                 streak={streak}
                 previousStreak={previousStreak}
@@ -492,6 +492,7 @@ export default function SchedulePage() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                    className="motion-lift"
                     style={{
                       background: i === selectedDay ? "var(--accent)" : "var(--panel)",
                       border: i === selectedDay ? "1px solid var(--accent)" : "1px solid var(--border)",
@@ -527,7 +528,7 @@ export default function SchedulePage() {
 
             <motion.div variants={fadeUp}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", marginBottom: "12px" }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-muted)" }}>
+                <div className="label-text" style={{ fontSize: "10px", color: "var(--text-muted)" }}>
                   <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
                     {t.timeline}
                   </motion.span>
@@ -535,6 +536,7 @@ export default function SchedulePage() {
                 <button
                   type="button"
                   onClick={openAddSchedule}
+                  className="motion-lift"
                   style={{
                     border: "1px solid rgba(107, 191, 184, 0.34)",
                     background: "rgba(107, 191, 184, 0.12)",
@@ -662,6 +664,7 @@ export default function SchedulePage() {
                           onPointerLeave={handlePressEnd}
                           animate={{ x: deleteOpen ? -(actionWidth + 6) : 0 }}
                           transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                          className="motion-lift"
                           style={{
                             background: "var(--panel)",
                             border: "1px solid var(--border)",
