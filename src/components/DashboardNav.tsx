@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react"
 import { usePathname, useRouter } from "next/navigation"
-import { motion, AnimatePresence, LayoutGroup } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { Dumbbell, Footprints, User } from 'lucide-react'
 import { useTheme } from "@/context/ThemeContext"
 import { useLanguage } from "@/context/LanguageContext"
@@ -44,6 +44,13 @@ export function DashboardNav() {
   const { theme } = useTheme()
   const { t } = useLanguage()
   const hideNav = pathname.startsWith("/exercise")
+  const currentIndex = navItems.findIndex((item) => pathname.startsWith(item.href))
+  const [travelIndex, setTravelIndex] = useState(Math.max(currentIndex, 0))
+  const activeIndex = currentIndex >= 0 ? travelIndex : -1
+
+  useEffect(() => {
+    if (currentIndex >= 0) setTravelIndex(currentIndex)
+  }, [currentIndex])
 
   const navStyle = theme === "dark" ? {
     background: "rgba(19, 23, 22, 0.74)",
@@ -140,6 +147,7 @@ export function DashboardNav() {
         >
           <div style={{
             ...navStyle,
+            position: "relative",
             display: "grid",
             gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))`,
             alignItems: "center",
@@ -150,75 +158,81 @@ export function DashboardNav() {
             backdropFilter: "blur(22px)",
             WebkitBackdropFilter: "blur(22px)",
             pointerEvents: "auto",
+            overflow: "hidden",
           }}>
-            <LayoutGroup id="dashboard-nav-bubble">
-              {navItems.map((item) => {
-                const isActive = pathname.startsWith(item.href)
-                return (
-                  <motion.button
-                    key={item.id}
-                    layout
-                    onClick={() => {
-                      lockedVisibleUntil.current = Date.now() + 650
-                      setVisible(true)
-                      router.push(item.href)
-                    }}
-                    whileTap={{ scale: 0.96 }}
-                    animate={{ y: isActive ? -1 : 0 }}
-                    style={{
-                      position: "relative",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "3px",
-                      background: "transparent",
-                      border: "none",
-                      cursor: "pointer",
-                      minWidth: 0,
-                      minHeight: 54,
-                      padding: "7px 8px",
-                      borderRadius: "22px",
-                      color: isActive ? "var(--text)" : "var(--text-muted)",
-                      overflow: "hidden",
-                    }}
+            {activeIndex >= 0 && (
+              <motion.span
+                aria-hidden="true"
+                initial={false}
+                animate={{ x: `${activeIndex * 100}%` }}
+                transition={{ type: "spring", stiffness: 250, damping: 25, mass: 0.78 }}
+                style={{
+                  position: "absolute",
+                  top: 6,
+                  bottom: 6,
+                  left: 6,
+                  width: `calc((100% - 12px) / ${navItems.length})`,
+                  borderRadius: "20px",
+                  background: "linear-gradient(180deg, rgba(107,191,184,0.2), rgba(107,191,184,0.08))",
+                  border: "1px solid rgba(107,191,184,0.25)",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 10px 28px rgba(107,191,184,0.12)",
+                  pointerEvents: "none",
+                }}
+              />
+            )}
+            {navItems.map((item, index) => {
+              const isActive = index === activeIndex
+              return (
+                <motion.button
+                  key={item.id}
+                  onClick={() => {
+                    lockedVisibleUntil.current = Date.now() + 700
+                    setVisible(true)
+                    setTravelIndex(index)
+                    router.push(item.href)
+                  }}
+                  whileTap={{ scale: 0.96 }}
+                  animate={{ y: isActive ? -1 : 0 }}
+                  style={{
+                    position: "relative",
+                    zIndex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "3px",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    minWidth: 0,
+                    minHeight: 54,
+                    padding: "7px 8px",
+                    borderRadius: "22px",
+                    color: isActive ? "var(--text)" : "var(--text-muted)",
+                    overflow: "hidden",
+                  }}
+                >
+                  <motion.span
+                    animate={{ scale: isActive ? 1.08 : 1 }}
+                    transition={{ type: "spring", stiffness: 380, damping: 26 }}
+                    style={{ position: "relative", display: "flex", color: isActive ? "var(--accent-strong)" : "var(--text-muted)" }}
                   >
-                    {isActive && (
-                      <motion.span
-                        layoutId="dashboard-nav-active"
-                        transition={{ type: "spring", stiffness: 360, damping: 30, mass: 0.78 }}
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          borderRadius: "20px",
-                          background: "linear-gradient(180deg, rgba(107,191,184,0.2), rgba(107,191,184,0.08))",
-                          border: "1px solid rgba(107,191,184,0.25)",
-                          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 10px 28px rgba(107,191,184,0.12)",
-                        }}
-                      />
-                    )}
-                    <motion.span
-                      animate={{ scale: isActive ? 1.08 : 1 }}
-                      transition={{ type: "spring", stiffness: 380, damping: 26 }}
-                      style={{ position: "relative", display: "flex", color: isActive ? "var(--accent-strong)" : "var(--text-muted)" }}
-                    >
-                      {item.icon}
-                    </motion.span>
-                    <span style={{
-                      position: "relative",
-                      fontFamily: "var(--font-display)",
-                      fontSize: "10px",
-                      fontWeight: 800,
-                      lineHeight: 1,
-                      letterSpacing: "0",
-                      color: isActive ? "var(--text)" : "var(--text-muted)",
-                    }}>
-                      {t[item.id as keyof typeof t] as string}
-                    </span>
-                  </motion.button>
-                )
-              })}
-            </LayoutGroup>
+                    {item.icon}
+                  </motion.span>
+                  <span style={{
+                    position: "relative",
+                    fontFamily: "var(--font-display)",
+                    fontSize: "10px",
+                    fontWeight: 800,
+                    lineHeight: 1,
+                    letterSpacing: "0",
+                    color: isActive ? "var(--text)" : "var(--text-muted)",
+                  }}>
+                    {t[item.id as keyof typeof t] as string}
+                  </span>
+                </motion.button>
+              )
+            })}
           </div>
         </motion.nav>
       )}
