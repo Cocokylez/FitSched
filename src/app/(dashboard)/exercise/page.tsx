@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { useLanguage } from "@/context/LanguageContext"
 import { ExerciseDemoPanel, ExerciseDemoVisual } from "@/components/ExerciseDemoPanel"
+import { saveWorkoutFeedback, type SessionFeedback } from "@/lib/workoutFeedback"
 
 type ActiveExercise = {
   name: string
@@ -32,6 +33,12 @@ const CONFETTI = Array.from({ length: 42 }, (_, index) => ({
   color: ["#6bbfb8", "#f6d365", "#f97373", "#8ab4ff", "#ffffff"][index % 5],
 }))
 
+const FEEDBACK_OPTIONS: Array<{ value: SessionFeedback; label: string; detail: string }> = [
+  { value: "too_easy", label: "Too easy", detail: "Add challenge" },
+  { value: "just_right", label: "Just right", detail: "Keep pace" },
+  { value: "too_hard", label: "Too hard", detail: "Scale back" },
+]
+
 function formatTime(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60)
   const seconds = totalSeconds % 60
@@ -55,6 +62,9 @@ export default function ExerciseSessionPage() {
   const [locked, setLocked] = useState(false)
   const [lockReason, setLockReason] = useState<"completed" | "date">("completed")
   const [streakDay, setStreakDay] = useState(1)
+  const [savedWorkoutLogId, setSavedWorkoutLogId] = useState<string | null>(null)
+  const [sessionFeedback, setSessionFeedback] = useState<SessionFeedback | null>(null)
+  const [feedbackSaved, setFeedbackSaved] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -130,6 +140,15 @@ export default function ExerciseSessionPage() {
 
   const allDone = Boolean(workout?.exercises.length && completedExerciseCount === workout.exercises.length)
 
+  const recap = useMemo(() => {
+    const exercises = workout?.exercises || []
+    return {
+      exerciseCount: exercises.length,
+      totalSets: exercises.reduce((sum, exercise) => sum + exercise.sets, 0),
+      totalReps: exercises.reduce((sum, exercise) => sum + exercise.sets * exercise.reps, 0),
+    }
+  }, [workout])
+
   function advanceAfterRest() {
     if (!workout) return
 
@@ -170,6 +189,25 @@ export default function ExerciseSessionPage() {
     advanceAfterRest()
   }
 
+  function saveSessionFeedback(value: SessionFeedback) {
+    if (!workout) return
+
+    setSessionFeedback(value)
+    setFeedbackSaved(true)
+
+    saveWorkoutFeedback({
+      workoutLogId: savedWorkoutLogId,
+      date: workout.date,
+      workoutName: workout.workoutName,
+      feedback: value,
+      durationSeconds: elapsed,
+      exerciseCount: recap.exerciseCount,
+      totalSets: recap.totalSets,
+      totalReps: recap.totalReps,
+      createdAt: new Date().toISOString(),
+    })
+  }
+
   const finishWorkout = async () => {
     if (!workout) return
 
@@ -183,7 +221,11 @@ export default function ExerciseSessionPage() {
 
       if (response.ok) {
         const savedLog = await response.json()
+        setSavedWorkoutLogId(savedLog.id || null)
         setFitTokenReward(savedLog.fitTokenReward || null)
+        setRunning(false)
+        setSessionFeedback(null)
+        setFeedbackSaved(false)
         window.dispatchEvent(new Event("fitsched:tokens-updated"))
         window.dispatchEvent(new Event("fitsched:workout-completed"))
         sessionStorage.removeItem("fitsched-active-workout")
@@ -426,6 +468,8 @@ export default function ExerciseSessionPage() {
                 textAlign: "center",
                 boxShadow: "0 30px 90px rgba(0,0,0,0.45)",
                 position: "relative",
+                maxHeight: "calc(100dvh - 44px)",
+                overflowY: "auto",
               }}
             >
               <motion.div
@@ -453,6 +497,43 @@ export default function ExerciseSessionPage() {
               </motion.div>
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} style={{ color: "rgba(255,255,255,0.64)", fontSize: 14, lineHeight: 1.45, marginBottom: 18 }}>
                 {t.workoutCompleteBody}
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.28 }}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 8,
+                  marginBottom: 12,
+                }}
+              >
+                {[
+                  { label: "Time", value: formatTime(elapsed) },
+                  { label: "Exercises", value: String(recap.exerciseCount) },
+                  { label: "Sets", value: String(recap.totalSets) },
+                  { label: "Reps", value: String(recap.totalReps) },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    style={{
+                      borderRadius: 16,
+                      padding: "12px 10px",
+                      background: "rgba(255,255,255,0.065)",
+                      border: "1px solid rgba(255,255,255,0.10)",
+                      textAlign: "left",
+                    }}
+                  >
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.48)", fontWeight: 850, letterSpacing: "0.12em", marginBottom: 5 }}>
+                      {item.label}
+                    </div>
+                    <div style={{ fontSize: 18, fontWeight: 950, color: "#ffffff", fontVariantNumeric: "tabular-nums" }}>
+                      {item.value}
+                    </div>
+                  </div>
+                ))}
               </motion.div>
 
               <motion.div
@@ -493,6 +574,58 @@ export default function ExerciseSessionPage() {
                 <div style={{ fontSize: 34, fontWeight: 950, color: "#6bbfb8", fontVariantNumeric: "tabular-nums" }}>
                   +{Number(fitTokenReward?.amount ?? fitTokenReward?.totalAwarded ?? 1).toFixed(2)} FT
                 </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                style={{
+                  borderRadius: 20,
+                  padding: 14,
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  marginBottom: 18,
+                  textAlign: "left",
+                }}
+              >
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.11em", marginBottom: 10 }}>
+                  HOW DID IT FEEL?
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+                  {FEEDBACK_OPTIONS.map((option) => {
+                    const selected = sessionFeedback === option.value
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => saveSessionFeedback(option.value)}
+                        style={{
+                          minWidth: 0,
+                          border: selected ? "1px solid rgba(107,191,184,0.7)" : "1px solid rgba(255,255,255,0.1)",
+                          borderRadius: 14,
+                          padding: "10px 8px",
+                          background: selected ? "rgba(107,191,184,0.18)" : "rgba(255,255,255,0.055)",
+                          color: selected ? "#6bbfb8" : "#ffffff",
+                          cursor: "pointer",
+                          textAlign: "center",
+                        }}
+                      >
+                        <span style={{ display: "block", fontSize: 12, fontWeight: 950, marginBottom: 3 }}>{option.label}</span>
+                        <span style={{ display: "block", fontSize: 10, color: selected ? "rgba(107,191,184,0.82)" : "rgba(255,255,255,0.48)", fontWeight: 750 }}>{option.detail}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+                {feedbackSaved && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{ marginTop: 9, fontSize: 11, color: "rgba(107,191,184,0.92)", fontWeight: 800, textAlign: "center" }}
+                  >
+                    Feedback saved for future recommendations.
+                  </motion.div>
+                )}
               </motion.div>
 
               <button

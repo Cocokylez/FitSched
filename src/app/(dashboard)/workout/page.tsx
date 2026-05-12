@@ -10,6 +10,7 @@ import { useTheme } from "@/context/ThemeContext"
 import { SkeletonExerciseRow } from "@/components/Skeleton"
 import { ExerciseDemoPanel } from "@/components/ExerciseDemoPanel"
 import { getSmartExercisePlan, parseSetsReps, toWorkoutExercises } from "@/lib/workoutRecommendations"
+import { getFeedbackAdjustedExperienceLevel } from "@/lib/workoutFeedback"
 
 const stagger = {
   hidden: {},
@@ -279,7 +280,7 @@ export default function WorkoutPage() {
         const profileRes = await fetch("/api/onboarding")
         const profile = profileRes.ok ? await profileRes.json() : {}
         const fitnessGoal = profile.fitnessGoal || "stay_active"
-        const experienceLevel = profile.experienceLevel || "intermediate"
+        const experienceLevel = getFeedbackAdjustedExperienceLevel(profile.experienceLevel || "intermediate")
         const workoutsPerWeek = profile.workoutsPerWeek || 3
         const workoutEnvironment = (profile.workoutEnvironment || "gym") as WorkoutEnvironment
         const hasInjury = Boolean(profile.hasInjury)

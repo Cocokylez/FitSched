@@ -10,6 +10,7 @@ import { FitTokenBalancePill } from "@/components/FitTokenBalancePill"
 import { StreakWelcomeCard } from "@/components/StreakWelcomeCard"
 import { useLanguage } from "@/context/LanguageContext"
 import { useTheme } from "@/context/ThemeContext"
+import { getFeedbackAdjustedExperienceLevel } from "@/lib/workoutFeedback"
 import { getSmartExercisePlan, toWorkoutExercises } from "@/lib/workoutRecommendations"
 
 const stagger = {
@@ -197,7 +198,7 @@ export default function SchedulePage() {
             recommendationExercises = toWorkoutExercises(getSmartExercisePlan({
               selectedDay,
               fitnessGoal: profile.fitnessGoal || "stay_active",
-              experienceLevel: profile.experienceLevel || "intermediate",
+              experienceLevel: getFeedbackAdjustedExperienceLevel(profile.experienceLevel || "intermediate"),
               workoutEnvironment: profile.workoutEnvironment || "gym",
               hasInjury: Boolean(profile.hasInjury),
               targetMuscles,
