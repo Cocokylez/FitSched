@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Space+Grotesk:wght@600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Outfit:wght@600;700;800;900&display=swap");
 @import "tailwindcss";
 
 @theme {
@@ -14,8 +14,8 @@
   --color-red: #ef4444;
   --color-red-bg: rgba(239, 68, 68, 0.10);
 
-  --font-sans: "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Space Grotesk", "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
 }
 
 *, *::before, *::after {
@@ -29,6 +29,8 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+  font-kerning: normal;
+  text-rendering: optimizeLegibility;
   scroll-behavior: smooth;
 }
 
@@ -74,6 +76,10 @@ body {
   min-height: 100dvh;
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  font-optical-sizing: auto;
+  font-synthesis-weight: none;
+  letter-spacing: -0.006em;
   background:
     linear-gradient(180deg, rgba(107, 191, 184, 0.055), transparent 26rem),
     var(--bg) !important;
@@ -84,7 +90,8 @@ body {
 .display-text,
 [data-display-text="true"] {
   font-family: var(--font-display);
-  letter-spacing: -0.035em;
+  letter-spacing: -0.026em;
+  font-feature-settings: "kern" 1, "liga" 1;
   text-wrap: balance;
 }
 
@@ -99,7 +106,7 @@ body {
 [data-number-text="true"] {
   font-family: var(--font-display);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.018em;
 }
 
 body::before {
