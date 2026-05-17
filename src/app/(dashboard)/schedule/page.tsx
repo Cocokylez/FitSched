@@ -109,6 +109,37 @@ function formatManualTime(value: string) {
   return `${displayHour}:${minute} ${suffix}`
 }
 
+type GreetingPeriod = "morning" | "afternoon" | "evening"
+
+const TIME_GREETINGS: Record<string, Record<GreetingPeriod, string>> = {
+  EN: {
+    morning: "Good morning,",
+    afternoon: "Good afternoon,",
+    evening: "Good evening,",
+  },
+  CN: {
+    morning: "早上好，",
+    afternoon: "下午好，",
+    evening: "晚上好，",
+  },
+  JP: {
+    morning: "おはようございます、",
+    afternoon: "こんにちは、",
+    evening: "こんばんは、",
+  },
+  VI: {
+    morning: "Chào buổi sáng,",
+    afternoon: "Chào buổi chiều,",
+    evening: "Chào buổi tối,",
+  },
+}
+
+function getTimeGreeting(language: string) {
+  const hour = new Date().getHours()
+  const period: GreetingPeriod = hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening"
+  return TIME_GREETINGS[language]?.[period] ?? TIME_GREETINGS.EN[period]
+}
+
 export default function SchedulePage() {
   const { status } = useSession()
   const router = useRouter()
@@ -473,7 +504,7 @@ export default function SchedulePage() {
         <div data-dashboard-scroll style={{ padding: "20px", flex: 1, overflowY: "auto", paddingBottom: "100px" }}>
           <motion.div variants={stagger} initial="hidden" animate="visible">
             <motion.div variants={fadeUp}>
-              <div style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "2px" }}>{t.goodMorning}</div>
+              <div style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "2px" }}>{getTimeGreeting(language)}</div>
               <div className="display-text" style={{ fontSize: "31px", fontWeight: 900, color: "var(--text)", lineHeight: 1.04, marginBottom: "14px" }}>{t.yourDay}</div>
               <StreakWelcomeCard
                 streak={streak}
@@ -489,10 +520,8 @@ export default function SchedulePage() {
                     <motion.button
                     key={i}
                     onClick={() => setSelectedDay(i)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                    className="motion-lift"
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ type: "spring", stiffness: 360, damping: 24 }}
                     style={{
                       background: i === selectedDay ? "var(--accent)" : "var(--panel)",
                       border: i === selectedDay ? "1px solid var(--accent)" : "1px solid var(--border)",
@@ -502,7 +531,7 @@ export default function SchedulePage() {
                       minWidth: "52px",
                       cursor: "pointer",
                       flexShrink: 0,
-                      boxShadow: i === selectedDay ? "0 12px 32px rgba(107, 191, 184, 0.18)" : "none",
+                      boxShadow: i === selectedDay ? "inset 0 1px 0 rgba(255, 255, 255, 0.24)" : "none",
                     }}
                   >
                     <div style={{
