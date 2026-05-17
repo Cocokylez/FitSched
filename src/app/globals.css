@@ -274,6 +274,12 @@ textarea::placeholder {
   animation: quietShine 6.5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
 }
 
+.exercise-demo-panel {
+  content-visibility: auto;
+  contain: layout paint style;
+  contain-intrinsic-size: 132px;
+}
+
 .streak-flame {
   position: relative;
   width: 14px;
@@ -368,4 +374,36 @@ textarea::placeholder {
   top: 0; left: 0;
   width: 1px; height: 100%;
   background: linear-gradient(180deg, rgba(255,255,255,0.8), transparent, rgba(255,255,255,0.3));
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+  body::before {
+    display: none;
+  }
+
+  .dashboard-nav-shell,
+  .glass-card {
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+  }
+
+  .shine-surface::after {
+    animation: none;
+    opacity: 0;
+  }
+
+  .motion-lift {
+    transition-duration: 160ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
 }

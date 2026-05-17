@@ -145,7 +145,7 @@ export function DashboardNav() {
             pointerEvents: "none",
           }}
         >
-          <div style={{
+          <div className="dashboard-nav-shell" style={{
             ...navStyle,
             position: "relative",
             display: "grid",

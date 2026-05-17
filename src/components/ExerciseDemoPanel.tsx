@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { getExerciseDemo } from "@/lib/exerciseDemos"
 
 type ExerciseDemoPanelProps = {
@@ -17,6 +17,7 @@ type ExerciseDemoVisualProps = {
   objectFit?: "cover" | "contain"
   timerText?: string
   paused?: boolean
+  active?: boolean
   onToggleTimer?: () => void
 }
 
@@ -30,6 +31,7 @@ function DemoFrame({
   objectFit = "contain",
   timerText,
   paused = false,
+  active = false,
   onToggleTimer,
 }: {
   startSrc: string
@@ -41,6 +43,7 @@ function DemoFrame({
   objectFit?: "cover" | "contain"
   timerText?: string
   paused?: boolean
+  active?: boolean
   onToggleTimer?: () => void
 }) {
   const [phase, setPhase] = useState<"start" | "end">("start")
@@ -62,12 +65,14 @@ function DemoFrame({
   }, [startSrc, endSrc])
 
   useEffect(() => {
+    if (!active) return
+
     const timer = window.setInterval(() => {
       setPhase((current) => (current === "start" ? "end" : "start"))
     }, 2000)
 
     return () => window.clearInterval(timer)
-  }, [])
+  }, [active])
 
   const handleImageError = (position: "start" | "end") => {
     if (position === "start") {
@@ -126,6 +131,8 @@ function DemoFrame({
               alt={startAlt}
               onError={() => handleImageError("start")}
               loading="lazy"
+              decoding="async"
+              fetchPriority={active ? "auto" : "low"}
               style={{
                 position: "absolute",
                 inset: 0,
@@ -135,6 +142,7 @@ function DemoFrame({
                 display: "block",
                 opacity: visiblePhase === "start" ? 1 : 0,
                 transition: "opacity 460ms ease",
+                transform: "translateZ(0)",
               }}
             />
           )}
@@ -144,6 +152,8 @@ function DemoFrame({
               alt={endAlt}
               onError={() => handleImageError("end")}
               loading="lazy"
+              decoding="async"
+              fetchPriority={active ? "auto" : "low"}
               style={{
                 position: "absolute",
                 inset: 0,
@@ -153,6 +163,7 @@ function DemoFrame({
                 display: "block",
                 opacity: visiblePhase === "end" ? 1 : 0,
                 transition: "opacity 460ms ease",
+                transform: "translateZ(0)",
               }}
             />
           )}
@@ -211,9 +222,25 @@ export function ExerciseDemoVisual({
 }: ExerciseDemoVisualProps) {
   const demo = useMemo(() => getExerciseDemo(exerciseName), [exerciseName])
   const frameHeight = height ?? (compact ? 88 : 126)
+  const frameRef = useRef<HTMLDivElement | null>(null)
+  const [isInView, setIsInView] = useState(false)
+
+  useEffect(() => {
+    const element = frameRef.current
+    if (!element) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsInView(entry.isIntersecting),
+      { rootMargin: "160px 0px" },
+    )
+
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
 
   return (
     <div
+      ref={frameRef}
       style={{
         position: "relative",
         minHeight: typeof frameHeight === "number" ? `${frameHeight}px` : frameHeight,
@@ -222,18 +249,20 @@ export function ExerciseDemoVisual({
         overflow: "hidden",
         border: "1px solid rgba(107, 191, 184, 0.22)",
         background: "linear-gradient(135deg, rgba(107,191,184,0.14), rgba(255,255,255,0.04))",
+        contain: "layout paint style",
       }}
     >
       <DemoFrame
         startSrc={demo.startAssetPath}
         endSrc={demo.endAssetPath}
-        startFallbackSrcs={[demo.startFallbackAssetPath, demo.fallbackImagePath]}
-        endFallbackSrcs={[demo.endFallbackAssetPath, demo.fallbackImagePath]}
+        startFallbackSrcs={[demo.startFallbackAssetPath, demo.startSvgFallbackAssetPath, demo.fallbackImagePath]}
+        endFallbackSrcs={[demo.endFallbackAssetPath, demo.endSvgFallbackAssetPath, demo.fallbackImagePath]}
         startAlt={`${demo.name} start position`}
         endAlt={`${demo.name} end position`}
         objectFit={objectFit}
         timerText={timerText}
         paused={paused}
+        active={isInView}
         onToggleTimer={onToggleTimer}
       />
     </div>
@@ -251,6 +280,7 @@ export function ExerciseDemoPanel({
 
   return (
     <div
+      className="exercise-demo-panel"
       style={{
         display: "grid",
         gridTemplateColumns: showVisual ? (compact ? "92px 1fr" : "128px 1fr") : "1fr",
