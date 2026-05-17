@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { ArrowRight, Dumbbell, X } from "lucide-react"
+import { ArrowRight, Dumbbell, Snowflake, X } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 
 type StreakWelcomeCardProps = {
@@ -53,7 +53,76 @@ function ConfettiAroundButton() {
   )
 }
 
-function FireBurst({ broken }: { broken: boolean }) {
+function FreezeHalo({ active }: { active: boolean }) {
+  const shouldReduceMotion = useReducedMotion()
+  const shards = useMemo(() => {
+    return Array.from({ length: 12 }, (_, index) => ({
+      id: index,
+      rotate: index * 30,
+      distance: 66 + (index % 3) * 7,
+      size: 8 + (index % 4) * 2,
+      delay: 0.04 * index,
+    }))
+  }, [])
+
+  if (shouldReduceMotion) return null
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.72, rotate: -10 }}
+      animate={{
+        opacity: active ? [0, 1, 0.9] : [0, 0.75, 0.55],
+        scale: active ? [0.72, 1.08, 1] : [0.72, 0.98, 0.94],
+        rotate: active ? [12, -4, 0] : [-10, 2, -2],
+      }}
+      transition={{ duration: active ? 1.05 : 0.78, ease: [0.16, 1, 0.3, 1] }}
+      style={{
+        position: "absolute",
+        inset: 0,
+        display: "grid",
+        placeItems: "center",
+        pointerEvents: "none",
+      }}
+    >
+      <motion.span
+        animate={{ scale: active ? [0.88, 1.08, 0.96] : [0.84, 0.98, 0.9], opacity: active ? [0.22, 0.54, 0.34] : [0.12, 0.3, 0.16] }}
+        transition={{ duration: 1.4, repeat: active ? Infinity : 0, ease: "easeInOut" }}
+        style={{
+          position: "absolute",
+          width: 154,
+          height: 154,
+          borderRadius: "50%",
+          border: "1px solid rgba(139, 226, 255, 0.38)",
+          boxShadow: "inset 0 0 30px rgba(139,226,255,0.14), 0 0 34px rgba(107,191,184,0.16)",
+        }}
+      />
+      {shards.map((shard) => (
+        <motion.span
+          key={shard.id}
+          initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
+          animate={{
+            opacity: active ? [0, 1, 0.72] : [0, 0.76, 0],
+            scale: active ? [0, 1.15, 0.92] : [0, 0.9, 0.4],
+            x: Math.cos((shard.rotate * Math.PI) / 180) * shard.distance,
+            y: Math.sin((shard.rotate * Math.PI) / 180) * shard.distance,
+            rotate: shard.rotate + 45,
+          }}
+          transition={{ duration: active ? 1.05 : 0.7, delay: shard.delay, ease: "easeOut" }}
+          style={{
+            position: "absolute",
+            width: shard.size,
+            height: shard.size * 2.2,
+            borderRadius: "999px 999px 2px 2px",
+            background: "linear-gradient(180deg, rgba(225,252,255,0.95), rgba(95,206,236,0.28))",
+            boxShadow: "0 0 16px rgba(139,226,255,0.34)",
+          }}
+        />
+      ))}
+    </motion.div>
+  )
+}
+
+function FireBurst({ broken, frozen }: { broken: boolean; frozen?: boolean }) {
   const shouldReduceMotion = useReducedMotion()
 
   return (
@@ -142,6 +211,8 @@ function FireBurst({ broken }: { broken: boolean }) {
         </motion.g>
       </motion.svg>
 
+      {frozen && <FreezeHalo active={frozen} />}
+
       {!broken && !shouldReduceMotion && (
         <motion.span
           initial={{ scale: 0.75, opacity: 0 }}
@@ -206,8 +277,11 @@ export function StreakWelcomeCard({
   onGoWorkout,
 }: StreakWelcomeCardProps) {
   const [open, setOpen] = useState(false)
+  const [freezeUsed, setFreezeUsed] = useState(false)
+  const [freezing, setFreezing] = useState(false)
   const hasActiveStreak = streak > 0
   const showMoment = hasActiveStreak || streakBroken
+  const missedStreak = streakBroken && !hasActiveStreak
   const displayStreak = hasActiveStreak ? streak : previousStreak
 
   useEffect(() => {
@@ -222,6 +296,8 @@ export function StreakWelcomeCard({
     if (window.sessionStorage.getItem(storageKey)) return
 
     window.sessionStorage.setItem(storageKey, "1")
+    setFreezeUsed(false)
+    setFreezing(false)
     setOpen(true)
   }, [displayStreak, hasActiveStreak, showMoment])
 
@@ -232,6 +308,18 @@ export function StreakWelcomeCard({
     setOpen(false)
     onGoWorkout()
   }
+  const useFreeze = () => {
+    setFreezing(true)
+    window.setTimeout(() => {
+      setFreezeUsed(true)
+      setFreezing(false)
+    }, 950)
+  }
+
+  const freezeActive = missedStreak && (freezing || freezeUsed)
+  const frozenTitle = freezeUsed ? `${displayStreak} day streak protected` : "Protect your streak"
+  const activeTitle = `${displayStreak} day streak is alive`
+  const title = hasActiveStreak ? activeTitle : missedStreak ? frozenTitle : "Your streak went quiet"
 
   return (
     <AnimatePresence>
@@ -294,33 +382,36 @@ export function StreakWelcomeCard({
               <X size={16} strokeWidth={2.4} />
             </button>
 
-            <FireBurst broken={streakBroken && !hasActiveStreak} />
+            <FireBurst broken={missedStreak && !freezeActive} frozen={freezeActive} />
 
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.22, duration: 0.28, ease: "easeOut" }}
             >
-              <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.17em", color: "rgba(255, 255, 255, 0.48)", textTransform: "uppercase", marginBottom: 7 }}>
-                Welcome back
+              <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.17em", color: freezeActive ? "rgba(171, 236, 255, 0.72)" : "rgba(255, 255, 255, 0.48)", textTransform: "uppercase", marginBottom: 7 }}>
+                {freezeActive ? "Streak freeze" : missedStreak ? "Recovery moment" : "Welcome back"}
               </div>
               <div style={{ fontSize: 25, lineHeight: 1.08, fontWeight: 950, letterSpacing: "-0.35px" }}>
-                {hasActiveStreak ? `${displayStreak} day streak is alive` : "Your streak went quiet"}
+                {title}
               </div>
               <div style={{ maxWidth: 288, margin: "10px auto 0", color: "rgba(255, 255, 255, 0.64)", fontSize: 13, lineHeight: 1.48 }}>
                 {hasActiveStreak
                   ? "Keep it warm with today's workout."
-                  : displayStreak > 0
-                    ? `That ${displayStreak} day run faded after a missed day. Start it again today.`
+                  : freezeUsed
+                    ? "The missed day is frozen for now. Finish today's workout to keep the streak moving."
+                    : missedStreak && displayStreak > 0
+                    ? `That ${displayStreak} day run can still become today's comeback. Freeze the miss, then train.`
                     : "Start fresh today and build the next one."}
               </div>
             </motion.div>
 
-            <ConfettiAroundButton />
+            {(hasActiveStreak || freezeUsed) && <ConfettiAroundButton />}
 
             <motion.button
               type="button"
-              onClick={goWorkout}
+              onClick={missedStreak && !freezeUsed ? useFreeze : goWorkout}
+              disabled={freezing}
               initial={{ opacity: 0, y: 18, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ delay: 0.72, type: "spring", stiffness: 220, damping: 18 }}
@@ -332,20 +423,21 @@ export function StreakWelcomeCard({
                 border: "none",
                 borderRadius: 16,
                 padding: "14px 15px",
-                background: hasActiveStreak ? "#6bbfb8" : "rgba(255, 255, 255, 0.12)",
-                color: hasActiveStreak ? "#10201f" : "#ffffff",
+                background: hasActiveStreak || freezeUsed ? "#6bbfb8" : "rgba(147, 225, 250, 0.16)",
+                color: hasActiveStreak || freezeUsed ? "#10201f" : "#dff8ff",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 9,
                 fontSize: 14,
                 fontWeight: 950,
-                cursor: "pointer",
+                cursor: freezing ? "default" : "pointer",
+                opacity: freezing ? 0.72 : 1,
               }}
             >
-              <Dumbbell size={17} strokeWidth={2.4} />
-              <span>{hasActiveStreak ? "Go exercise" : "Restart streak"}</span>
-              <ArrowRight size={16} strokeWidth={2.4} />
+              {missedStreak && !freezeUsed ? <Snowflake size={17} strokeWidth={2.4} /> : <Dumbbell size={17} strokeWidth={2.4} />}
+              <span>{freezing ? "Freezing streak" : missedStreak && !freezeUsed ? "Use freeze" : hasActiveStreak ? "Go exercise" : "Restart streak"}</span>
+              {!(missedStreak && !freezeUsed) && <ArrowRight size={16} strokeWidth={2.4} />}
             </motion.button>
           </motion.div>
         </motion.div>
