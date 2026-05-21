@@ -207,10 +207,13 @@ export default function OnboardingPage() {
     <div style={{
       minHeight: "100vh",
       background: [
-        "radial-gradient(circle at 18% -8rem, rgba(107,191,184,0.16), transparent 26rem)",
-        "radial-gradient(circle at 88% 60%, rgba(107,191,184,0.07), transparent 20rem)",
+        "radial-gradient(circle at 18% -8rem, rgba(107,191,184,0.22), transparent 30rem)",
+        "radial-gradient(circle at 85% 65%, rgba(107,191,184,0.10), transparent 22rem)",
         "var(--bg)",
       ].join(", "),
+    }}>
+    <div style={{
+      minHeight: "100vh",
       display: "flex",
       flexDirection: "column",
       padding: "40px 20px 32px",
@@ -480,6 +483,7 @@ export default function OnboardingPage() {
           Back
         </motion.button>
       )}
+    </div>
     </div>
   )
 }
