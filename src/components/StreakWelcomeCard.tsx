@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { ArrowRight, Dumbbell, Snowflake, X } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
+import { playSound } from "@/lib/sound"
 
 type StreakWelcomeCardProps = {
   streak: number
@@ -122,51 +123,6 @@ function FreezeHalo({ active }: { active: boolean }) {
   )
 }
 
-function playFirePop(ctxRef: React.MutableRefObject<AudioContext | null>) {
-  try {
-    if (!ctxRef.current || ctxRef.current.state === "closed") {
-      ctxRef.current = new AudioContext()
-    }
-    const ctx = ctxRef.current
-    if (ctx.state === "suspended") ctx.resume()
-    const t = ctx.currentTime
-
-    // Deep thud — sine sweep from ~180 Hz down to ~32 Hz
-    const osc = ctx.createOscillator()
-    const og  = ctx.createGain()
-    osc.type = "sine"
-    osc.frequency.setValueAtTime(180, t)
-    osc.frequency.exponentialRampToValueAtTime(32, t + 0.22)
-    og.gain.setValueAtTime(0, t)
-    og.gain.linearRampToValueAtTime(0.62, t + 0.006)
-    og.gain.exponentialRampToValueAtTime(0.001, t + 0.22)
-    osc.connect(og); og.connect(ctx.destination)
-    osc.start(t); osc.stop(t + 0.22)
-
-    // Primary crackle burst — bandpass-filtered noise
-    const len1 = Math.floor(ctx.sampleRate * 0.09)
-    const buf1 = ctx.createBuffer(1, len1, ctx.sampleRate)
-    const d1   = buf1.getChannelData(0)
-    for (let i = 0; i < len1; i++) d1[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len1, 1.4)
-    const ns1  = ctx.createBufferSource(); ns1.buffer = buf1
-    const bp1  = ctx.createBiquadFilter(); bp1.type = "bandpass"; bp1.frequency.value = 1100; bp1.Q.value = 0.7
-    const ng1  = ctx.createGain(); ng1.gain.setValueAtTime(0.42, t); ng1.gain.exponentialRampToValueAtTime(0.001, t + 0.09)
-    ns1.connect(bp1); bp1.connect(ng1); ng1.connect(ctx.destination); ns1.start(t)
-
-    // Secondary high crackle — delayed by 35 ms, highpass
-    const len2 = Math.floor(ctx.sampleRate * 0.04)
-    const buf2 = ctx.createBuffer(1, len2, ctx.sampleRate)
-    const d2   = buf2.getChannelData(0)
-    for (let i = 0; i < len2; i++) d2[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len2, 2)
-    const ns2  = ctx.createBufferSource(); ns2.buffer = buf2
-    const hp2  = ctx.createBiquadFilter(); hp2.type = "highpass"; hp2.frequency.value = 3200
-    const ng2  = ctx.createGain(); ng2.gain.setValueAtTime(0.28, t + 0.035); ng2.gain.exponentialRampToValueAtTime(0.001, t + 0.075)
-    ns2.connect(hp2); hp2.connect(ng2); ng2.connect(ctx.destination); ns2.start(t + 0.035)
-  } catch {
-    // Web Audio unavailable — silent fail
-  }
-}
-
 function getFirePalette(streak: number, broken: boolean) {
   if (broken) return {
     outer:  ["#c5cdd0", "#8a9498", "#586266", "#3c4548"] as const,
@@ -219,7 +175,6 @@ function FireBurst({ broken, frozen, streak = 0 }: { broken: boolean; frozen?: b
   const shouldReduceMotion = useReducedMotion()
   const fcx = 100, baseY = 182
   const p = getFirePalette(streak, broken)
-  const audioCtx = useRef<AudioContext | null>(null)
 
   const rayPositions = useMemo(() => Array.from({ length: 12 }, (_, i) => {
     const rad = (i * 30 * Math.PI) / 180
@@ -249,7 +204,7 @@ function FireBurst({ broken, frozen, streak = 0 }: { broken: boolean; frozen?: b
   return (
     <motion.div
       style={{ position: "relative", width: 200, height: 210, margin: "0 auto 14px", display: "flex", alignItems: "center", justifyContent: "center", cursor: broken ? "default" : "pointer" }}
-      onClick={broken ? undefined : () => playFirePop(audioCtx)}
+      onClick={broken ? undefined : () => playSound("pluck_001.ogg", 0.65)}
       whileTap={broken ? {} : { scale: 0.93 }}
       transition={{ type: "spring", stiffness: 380, damping: 22 }}
     >
@@ -475,16 +430,19 @@ export function StreakWelcomeCard({
     setFreezeUsed(false)
     setFreezing(false)
     setOpen(true)
+    playSound("confirmation_001.ogg", 0.58)
   }, [displayStreak, hasActiveStreak, showMoment])
 
   if (!showMoment) return null
 
-  const close = () => setOpen(false)
+  const close = () => { playSound("close_001.ogg", 0.52); setOpen(false) }
   const goWorkout = () => {
+    playSound("confirmation_002.ogg", 0.68)
     setOpen(false)
     onGoWorkout()
   }
   const useFreeze = () => {
+    playSound("switch_001.ogg", 0.6)
     setFreezing(true)
     window.setTimeout(() => {
       setFreezeUsed(true)

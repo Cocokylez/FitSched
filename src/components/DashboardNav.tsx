@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { BarChart3, Dumbbell, Footprints, User } from 'lucide-react'
 import { useTheme } from "@/context/ThemeContext"
 import { useLanguage } from "@/context/LanguageContext"
+import { playSound } from "@/lib/sound"
 
 const navItems = [
   {
@@ -203,6 +204,7 @@ export function DashboardNav() {
                 <motion.button
                   key={item.id}
                   onClick={() => {
+                    if (index !== activeIndex) playSound("tick_001.ogg", 0.45)
                     lockedVisibleUntil.current = Date.now() + 700
                     setVisible(true)
                     setTravelIndex(index)
