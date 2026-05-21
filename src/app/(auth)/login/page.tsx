@@ -52,7 +52,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', position: 'relative', padding: '0 16px 24px' }}>
+    <div style={{ minHeight: '100vh', background: ["radial-gradient(circle at 18% -8rem, rgba(107,191,184,0.18), transparent 28rem)", "radial-gradient(circle at 88% 65%, rgba(107,191,184,0.07), transparent 22rem)", "var(--bg)"].join(", "), display: 'flex', flexDirection: 'column', position: 'relative', padding: '0 16px 24px' }}>
       <AuthTopControls />
 
       <motion.div
