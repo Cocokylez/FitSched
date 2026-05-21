@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const body = await req.json()
-  const { name, distanceKm, durationMin, elevationM, notes, loggedAt } = body
+  const { name, distanceKm, durationMin, elevationM, locationName, notes, loggedAt } = body
 
   if (!distanceKm || Number(distanceKm) <= 0)
     return NextResponse.json({ error: "Distance is required" }, { status: 400 })
@@ -34,6 +34,7 @@ export async function POST(req: Request) {
       distanceKm: Number(distanceKm),
       durationMin: Number(durationMin),
       elevationM: elevationM ? Number(elevationM) : null,
+      locationName: typeof locationName === "string" && locationName.trim() ? locationName.trim() : null,
       notes: typeof notes === "string" && notes.trim() ? notes.trim() : null,
       loggedAt: loggedAt ? new Date(loggedAt) : new Date(),
     },
