@@ -175,7 +175,7 @@ export function DashboardNav() {
             backdropFilter: "blur(22px)",
             WebkitBackdropFilter: "blur(22px)",
             pointerEvents: "auto",
-            overflow: "hidden",
+            overflow: "visible",
           }}>
             {activeIndex >= 0 && (
               <motion.span
