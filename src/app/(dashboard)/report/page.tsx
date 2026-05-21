@@ -12,6 +12,9 @@ import {
 } from "lucide-react"
 import { SkeletonCard } from "@/components/Skeleton"
 import FlameIcon from "@/components/FlameIcon"
+import { stagger, fadeUp } from "@/lib/animations"
+import { getMuscleGroup } from "@/lib/exerciseData"
+import { toDateId, addDays, getWeekId, calculateLongestStreak } from "@/lib/dateUtils"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -52,15 +55,6 @@ type FitTokenData = {
 
 // ─── Animation variants ───────────────────────────────────────────────────────
 
-const stagger = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.07 } },
-}
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 14 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.32, ease: [0.23, 1, 0.32, 1] as const } },
-}
 
 const dayStagger = {
   hidden: {},
@@ -107,62 +101,6 @@ const inputStyle: React.CSSProperties = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const muscleMap: Record<string, string> = {
-  "Push-ups": "Chest", "Diamond Push-ups": "Chest", "Wide Push-ups": "Chest",
-  "Incline Push-ups": "Chest", "Decline Push-ups": "Chest", "Bench Press": "Chest",
-  "Dumbbell Fly": "Chest", "Chest Dips": "Chest",
-  "Pull-ups": "Back", "Chin-ups": "Back", "Bent-over Row": "Back",
-  "Dumbbell Row": "Back", "Superman Hold": "Back", "Reverse Fly": "Back",
-  "Deadlift": "Back", "Lat Pulldown": "Back",
-  "Pike Push-ups": "Shoulders", "Lateral Raises": "Shoulders", "Front Raises": "Shoulders",
-  "Overhead Press": "Shoulders", "Arnold Press": "Shoulders", "Face Pull": "Shoulders", "Shrugs": "Shoulders",
-  "Bicep Curls": "Arms", "Hammer Curls": "Arms", "Tricep Dips": "Arms",
-  "Tricep Extension": "Arms", "Close-grip Push-ups": "Arms", "Preacher Curl": "Arms",
-  "Concentration Curl": "Arms", "Curl to Press": "Arms",
-  "Bodyweight Squats": "Legs", "Walking Lunges": "Legs", "Glute Bridges": "Legs",
-  "Wall Sit": "Legs", "Calf Raises": "Legs", "Bulgarian Split Squats": "Legs",
-  "Romanian Deadlift": "Legs", "Goblet Squats": "Legs", "Step-ups": "Legs",
-  "Jump Squats": "Legs", "Squats": "Legs", "Lunges": "Legs",
-  "Plank": "Core", "Russian Twist": "Core", "Leg Raises": "Core",
-  "Bicycle Crunches": "Core", "Mountain Climbers": "Core", "Hanging Knee Raises": "Core",
-  "Plank Reaches": "Core", "Dead Bug": "Core",
-  "Burpees": "Full Body", "Jumping Jacks": "Full Body", "High Knees": "Full Body",
-  "Squat Thrusts": "Full Body", "Bear Crawl": "Full Body", "Tuck Jumps": "Full Body",
-  "Box Jumps": "Full Body",
-  "Sprints": "Cardio", "Sprint": "Cardio", "Jump Rope": "Cardio", "Battle Ropes": "Cardio",
-}
-
-function toDateId(d: Date) { return d.toISOString().split("T")[0] }
-
-function addDays(date: Date, days: number) {
-  const next = new Date(date)
-  next.setDate(next.getDate() + days)
-  return next
-}
-
-function getWeekId(d: Date) {
-  const date = new Date(d)
-  const day = date.getDay()
-  const monday = new Date(date.setDate(date.getDate() - day + (day === 0 ? -6 : 1)))
-  monday.setHours(0, 0, 0, 0)
-  return toDateId(monday)
-}
-
-function calculateLongestStreak(logs: WorkoutLog[]) {
-  const timestamps = Array.from(
-    new Set(logs.map((log) => { const d = new Date(log.completedAt); d.setHours(0,0,0,0); return d.getTime() }))
-  ).sort((a, b) => a - b)
-
-  let best = 0, current = 0, previous: number | null = null
-  const oneDay = 86400000
-  timestamps.forEach((ts) => {
-    current = previous !== null && ts - previous === oneDay ? current + 1 : 1
-    best = Math.max(best, current)
-    previous = ts
-  })
-  return best
-}
-
 function calculateBmi(h: string, w: string) {
   const height = Number(h), weight = Number(w)
   if (!height || !weight) return null
@@ -180,7 +118,7 @@ function getBmiStatus(bmi: number | null) {
 function getTopMuscles(logs: WorkoutLog[]) {
   const counts: Record<string, number> = {}
   logs.forEach((log) => log.exercises.forEach((ex) => {
-    const g = muscleMap[ex.name] || "Other"
+    const g = getMuscleGroup(ex.name)
     counts[g] = (counts[g] || 0) + 1
   }))
   const total = Object.values(counts).reduce((s, v) => s + v, 0)

@@ -7,6 +7,9 @@ import { AnimatePresence, motion } from "framer-motion"
 import { Building2, Dumbbell, Home } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
 import { SkeletonCard } from "@/components/Skeleton"
+import { stagger, fadeUp } from "@/lib/animations"
+import { getMuscleGroup } from "@/lib/exerciseData"
+import { toDateId, getWeekId, calculateLongestStreak } from "@/lib/dateUtils"
 
 const ACCENT = "#6bbfb8"
 
@@ -31,42 +34,6 @@ const sectionLabelStyle = {
   marginBottom: "10px",
   marginTop: "24px",
   textTransform: "uppercase" as const,
-}
-
-const stagger = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.07 } },
-}
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" as const } },
-}
-
-const EXERCISE_MUSCLE: Record<string, string> = {
-  "Push-ups": "Chest", "Diamond Push-ups": "Chest", "Wide Push-ups": "Chest",
-  "Incline Push-ups": "Chest", "Decline Push-ups": "Chest", "Bench Press": "Chest",
-  "Dumbbell Fly": "Chest", "Chest Dips": "Chest",
-  "Pull-ups": "Back", "Chin-ups": "Back", "Bent-over Row": "Back",
-  "Dumbbell Row": "Back", "Superman Hold": "Back", "Reverse Fly": "Back",
-  "Deadlift": "Back", "Lat Pulldown": "Back",
-  "Pike Push-ups": "Shoulders", "Lateral Raises": "Shoulders", "Front Raises": "Shoulders",
-  "Overhead Press": "Shoulders", "Arnold Press": "Shoulders", "Face Pull": "Shoulders",
-  "Shrugs": "Shoulders",
-  "Bicep Curls": "Arms", "Hammer Curls": "Arms", "Tricep Dips": "Arms",
-  "Tricep Extension": "Arms", "Close-grip Push-ups": "Arms", "Preacher Curl": "Arms",
-  "Concentration Curl": "Arms",
-  "Bodyweight Squats": "Legs", "Walking Lunges": "Legs", "Glute Bridges": "Legs",
-  "Wall Sit": "Legs", "Calf Raises": "Legs", "Bulgarian Split Squats": "Legs",
-  "Romanian Deadlift": "Legs", "Goblet Squats": "Legs", "Step-ups": "Legs",
-  "Jump Squats": "Legs", "Squats": "Legs", "Lunges": "Legs",
-  "Plank": "Core", "Russian Twist": "Core", "Leg Raises": "Core",
-  "Bicycle Crunches": "Core", "Mountain Climbers": "Core", "Hanging Knee Raises": "Core",
-  "Plank Reaches": "Core", "Dead Bug": "Core",
-  "Burpees": "Full Body", "Jumping Jacks": "Full Body", "High Knees": "Full Body",
-  "Squat Thrusts": "Full Body", "Bear Crawl": "Full Body", "Tuck Jumps": "Full Body",
-  "Box Jumps": "Full Body", "Curl to Press": "Arms",
-  "Sprints": "Cardio", "Sprint": "Cardio", "Jump Rope": "Cardio", "Battle Ropes": "Cardio",
 }
 
 type WorkoutEnvironment = "home_bodyweight" | "home_dumbbells" | "gym"
@@ -114,28 +81,10 @@ function getInitials(name?: string | null, email?: string | null) {
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
 }
 
-function getMuscleGroup(name: string) {
-  return EXERCISE_MUSCLE[name] || "Other"
-}
-
-function toDateId(date: Date) {
-  return date.toISOString().split("T")[0]
-}
-
-function getWeekId(d: Date) {
-  const date = new Date(d)
-  const day = date.getDay()
-  const diff = date.getDate() - day + (day === 0 ? -6 : 1)
-  const monday = new Date(date.setDate(diff))
-  monday.setHours(0, 0, 0, 0)
-  return toDateId(monday)
-}
-
 function calculateCurrentStreak(logs: WorkoutLog[]) {
   const uniqueDates = new Set(logs.map((log) => toDateId(new Date(log.completedAt))))
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-
   let streak = 0
   for (let i = 0; i < 365; i++) {
     const expected = new Date(today)
@@ -143,31 +92,7 @@ function calculateCurrentStreak(logs: WorkoutLog[]) {
     if (!uniqueDates.has(toDateId(expected))) break
     streak++
   }
-
   return streak
-}
-
-function calculateLongestStreak(logs: WorkoutLog[]) {
-  const timestamps = Array.from(
-    new Set(logs.map((log) => {
-      const date = new Date(log.completedAt)
-      date.setHours(0, 0, 0, 0)
-      return date.getTime()
-    }))
-  ).sort((a, b) => a - b)
-
-  let best = 0
-  let current = 0
-  let previous: number | null = null
-  const oneDay = 24 * 60 * 60 * 1000
-
-  timestamps.forEach((timestamp) => {
-    current = previous !== null && timestamp - previous === oneDay ? current + 1 : 1
-    best = Math.max(best, current)
-    previous = timestamp
-  })
-
-  return best
 }
 
 function getCurrentWeekCount(logs: WorkoutLog[]) {
