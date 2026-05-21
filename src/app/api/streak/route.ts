@@ -61,7 +61,7 @@ export async function GET(req: Request) {
   }
 
   const userId = session.user.id
-  const limited = rateLimitByUser(req, userId, rateLimitPresets.read, "streak:get")
+  const limited = await rateLimitByUser(req, userId, rateLimitPresets.read, "streak:get")
   if (limited) return limited
 
   const cached = cache.get(userId)

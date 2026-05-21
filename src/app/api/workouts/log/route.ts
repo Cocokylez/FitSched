@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.write, "legacy-workout-log:post");
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.write, "legacy-workout-log:post");
     if (limited) return limited;
 
     const body = await readJsonBody(req);
@@ -80,7 +80,7 @@ export async function GET(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.read, "legacy-workout-log:get");
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.read, "legacy-workout-log:get");
     if (limited) return limited;
 
     const { searchParams } = new URL(req.url);

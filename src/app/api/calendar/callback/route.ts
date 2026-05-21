@@ -12,7 +12,7 @@ export async function GET(req: Request) {
       const origin = new URL(req.url).origin;
       return NextResponse.redirect(`${origin}/login`);
     }
-    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.strictWrite, "calendar:callback");
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.strictWrite, "calendar:callback");
     if (limited) return limited;
 
     const { searchParams } = new URL(req.url);

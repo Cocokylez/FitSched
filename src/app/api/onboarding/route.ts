@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
-  const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.write, "onboarding:post")
+  const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.write, "onboarding:post")
   if (limited) return limited
 
   let body: any
@@ -70,7 +70,7 @@ export async function PATCH(req: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
-  const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.write, "onboarding:patch")
+  const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.write, "onboarding:patch")
   if (limited) return limited
 
   let body: any
@@ -110,7 +110,7 @@ export async function GET(req: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
-  const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.read, "onboarding:get")
+  const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.read, "onboarding:get")
   if (limited) return limited
 
   const user = await db.user.findUnique({

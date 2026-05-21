@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.expensive, "workouts-plan:post");
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.expensive, "workouts-plan:post");
     if (limited) return limited;
 
     const body = await readJsonBody(req, 12_000);
@@ -254,7 +254,7 @@ export async function GET(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.read, "workouts-plan:get");
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.read, "workouts-plan:get");
     if (limited) return limited;
 
     const plans = await db.workoutPlan.findMany({

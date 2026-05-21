@@ -41,7 +41,7 @@ export async function GET(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.read, "workout-log:get")
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.read, "workout-log:get")
     if (limited) return limited
 
     const { searchParams } = new URL(req.url)
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
     const userId = session.user.id
-    const limited = rateLimitByUser(req, userId, rateLimitPresets.strictWrite, "workout-log:post")
+    const limited = await rateLimitByUser(req, userId, rateLimitPresets.strictWrite, "workout-log:post")
     if (limited) return limited
 
     const body = await readJsonBody(req)
