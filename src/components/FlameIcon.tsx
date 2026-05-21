@@ -1,52 +1,10 @@
 "use client"
 
-import { useRef } from "react"
+import { playSound } from "@/lib/sound"
 
 type FlameIconProps = {
   size?:   number
   streak?: number
-}
-
-function playFirePop(ctxRef: React.MutableRefObject<AudioContext | null>) {
-  try {
-    if (!ctxRef.current || ctxRef.current.state === "closed") {
-      ctxRef.current = new AudioContext()
-    }
-    const ctx = ctxRef.current
-    if (ctx.state === "suspended") ctx.resume()
-    const t = ctx.currentTime
-
-    const osc = ctx.createOscillator()
-    const og  = ctx.createGain()
-    osc.type = "sine"
-    osc.frequency.setValueAtTime(180, t)
-    osc.frequency.exponentialRampToValueAtTime(32, t + 0.22)
-    og.gain.setValueAtTime(0, t)
-    og.gain.linearRampToValueAtTime(0.62, t + 0.006)
-    og.gain.exponentialRampToValueAtTime(0.001, t + 0.22)
-    osc.connect(og); og.connect(ctx.destination)
-    osc.start(t); osc.stop(t + 0.22)
-
-    const len1 = Math.floor(ctx.sampleRate * 0.09)
-    const buf1 = ctx.createBuffer(1, len1, ctx.sampleRate)
-    const d1   = buf1.getChannelData(0)
-    for (let i = 0; i < len1; i++) d1[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len1, 1.4)
-    const ns1 = ctx.createBufferSource(); ns1.buffer = buf1
-    const bp1 = ctx.createBiquadFilter(); bp1.type = "bandpass"; bp1.frequency.value = 1100; bp1.Q.value = 0.7
-    const ng1 = ctx.createGain(); ng1.gain.setValueAtTime(0.42, t); ng1.gain.exponentialRampToValueAtTime(0.001, t + 0.09)
-    ns1.connect(bp1); bp1.connect(ng1); ng1.connect(ctx.destination); ns1.start(t)
-
-    const len2 = Math.floor(ctx.sampleRate * 0.04)
-    const buf2 = ctx.createBuffer(1, len2, ctx.sampleRate)
-    const d2   = buf2.getChannelData(0)
-    for (let i = 0; i < len2; i++) d2[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len2, 2)
-    const ns2 = ctx.createBufferSource(); ns2.buffer = buf2
-    const hp2 = ctx.createBiquadFilter(); hp2.type = "highpass"; hp2.frequency.value = 3200
-    const ng2 = ctx.createGain(); ng2.gain.setValueAtTime(0.28, t + 0.035); ng2.gain.exponentialRampToValueAtTime(0.001, t + 0.075)
-    ns2.connect(hp2); hp2.connect(ng2); ng2.connect(ctx.destination); ns2.start(t + 0.035)
-  } catch {
-    // Web Audio unavailable — silent fail
-  }
 }
 
 function getFlameColors(streak: number) {
@@ -93,9 +51,8 @@ function getFlameColors(streak: number) {
 }
 
 export default function FlameIcon({ size = 120, streak = 0 }: FlameIconProps) {
-  const h        = Math.round(size * 1.12)
-  const c        = getFlameColors(streak)
-  const audioCtx = useRef<AudioContext | null>(null)
+  const h = Math.round(size * 1.12)
+  const c = getFlameColors(streak)
 
   const outerPath = "M60 112 C35 100 25 78 33 56 C39 39 52 30 57 12 C75 31 92 45 90 68 C89 90 77 105 60 112 Z"
   const midPath   = "M60 106 C45 96 39 82 43 66 C47 52 58 43 60 28 C73 43 80 55 79 71 C78 88 70 100 60 106 Z"
@@ -108,7 +65,7 @@ export default function FlameIcon({ size = 120, streak = 0 }: FlameIconProps) {
       viewBox="0 0 120 134"
       width={size}
       height={h}
-      onClick={() => playFirePop(audioCtx)}
+      onClick={() => playSound("pluck_001.ogg", 0.65)}
       style={{ display: "block", overflow: "visible", background: "transparent", cursor: "pointer" }}
       xmlns="http://www.w3.org/2000/svg"
     >
