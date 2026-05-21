@@ -7,6 +7,7 @@ import { motion } from "framer-motion"
 import { useLanguage } from "@/context/LanguageContext"
 import { AuthTopControls } from "@/components/AuthTopControls"
 import { AuthGoogleButton } from "@/components/AuthGoogleButton"
+import Link from "next/link"
 
 const fadeIn = {
   hidden: { opacity: 0, y: 10 },
@@ -18,6 +19,7 @@ export default function RegisterPage() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [agreed, setAgreed] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const { t } = useLanguage()
@@ -45,7 +47,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", position: "relative", padding: "0 16px 24px" }}>
+    <div style={{ minHeight: "100vh", background: ["radial-gradient(circle at 18% -8rem, rgba(107,191,184,0.18), transparent 28rem)", "radial-gradient(circle at 88% 65%, rgba(107,191,184,0.07), transparent 22rem)", "var(--bg)"].join(", "), display: "flex", flexDirection: "column", position: "relative", padding: "0 16px 24px" }}>
       <AuthTopControls />
 
       <motion.div
@@ -183,9 +185,37 @@ export default function RegisterPage() {
             </motion.div>
 
             <motion.div variants={fadeIn}>
+              <label style={{ display: "flex", alignItems: "flex-start", gap: "10px", marginBottom: "20px", cursor: "pointer" }}>
+                <div
+                  onClick={() => setAgreed(a => !a)}
+                  style={{
+                    width: 18, height: 18, borderRadius: 5, flexShrink: 0, marginTop: 1,
+                    background: agreed ? "var(--accent)" : "var(--surface-2)",
+                    border: `1.5px solid ${agreed ? "var(--accent)" : "var(--border)"}`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "all 0.15s",
+                    cursor: "pointer",
+                  }}
+                >
+                  {agreed && (
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                      <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </div>
+                <span style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.5" }}>
+                  I have read and agree to the{" "}
+                  <Link href="/terms" target="_blank" style={{ color: "var(--text)", fontWeight: 600, textDecoration: "none" }}>Terms of Service</Link>
+                  {" "}and{" "}
+                  <Link href="/privacy" target="_blank" style={{ color: "var(--text)", fontWeight: 600, textDecoration: "none" }}>Privacy Policy</Link>
+                </span>
+              </label>
+            </motion.div>
+
+            <motion.div variants={fadeIn}>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !agreed}
                 className="motion-lift"
                 style={{
                   width: "100%",
@@ -198,7 +228,7 @@ export default function RegisterPage() {
                   fontWeight: 700,
                   cursor: "pointer",
                   marginBottom: "20px",
-                  opacity: loading ? 0.5 : 1,
+                  opacity: loading || !agreed ? 0.5 : 1,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -231,10 +261,16 @@ export default function RegisterPage() {
 
           <motion.div variants={fadeIn}>
             <AuthGoogleButton label={t.continueGoogle} />
+            <p style={{ textAlign: "center", fontSize: "11px", color: "var(--text-muted)", margin: "10px 0 0", lineHeight: 1.5 }}>
+              By continuing with Google you agree to our{" "}
+              <Link href="/terms" target="_blank" style={{ color: "var(--text-muted)", textDecoration: "underline" }}>Terms</Link>
+              {" "}&amp;{" "}
+              <Link href="/privacy" target="_blank" style={{ color: "var(--text-muted)", textDecoration: "underline" }}>Privacy Policy</Link>
+            </p>
           </motion.div>
 
           <motion.div variants={fadeIn}>
-            <p style={{ textAlign: "center", fontSize: "12px", color: "var(--text-muted)", margin: 0 }}>
+            <p style={{ textAlign: "center", fontSize: "12px", color: "var(--text-muted)", margin: "16px 0 0" }}>
               {t.hasAccount}{" "}
               <span
                 style={{ color: "var(--text)", fontWeight: 700, cursor: "pointer" }}
