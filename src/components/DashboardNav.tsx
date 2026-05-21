@@ -230,35 +230,39 @@ export function DashboardNav() {
                     overflow: "visible",
                   }}
                 >
-                  {/* Tooltip — appears above icon on hover/touch */}
+                  {/* Tooltip — outer div centres it, inner motion handles animation */}
                   <AnimatePresence>
                     {hoveredIndex === index && (
-                      <motion.span
-                        initial={{ opacity: 0, y: 4, scale: 0.88 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 4, scale: 0.88 }}
-                        transition={{ duration: 0.15, ease: "easeOut" }}
-                        style={{
-                          position: "absolute",
-                          bottom: "calc(100% + 10px)",
-                          left: "50%",
-                          transform: "translateX(-50%)",
-                          whiteSpace: "nowrap",
-                          fontFamily: "var(--font-display)",
-                          fontSize: "11px",
-                          fontWeight: 800,
-                          color: "var(--text)",
-                          background: "var(--panel)",
-                          border: "1px solid var(--border)",
-                          borderRadius: "8px",
-                          padding: "4px 9px",
-                          boxShadow: "var(--shadow)",
-                          pointerEvents: "none",
-                          zIndex: 99,
-                        }}
-                      >
-                        {(t[item.id as keyof typeof t] as string) || item.label}
-                      </motion.span>
+                      <div style={{
+                        position: "absolute",
+                        bottom: "calc(100% + 10px)",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        pointerEvents: "none",
+                        zIndex: 99,
+                      }}>
+                        <motion.span
+                          initial={{ opacity: 0, y: 5, scale: 0.88 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 5, scale: 0.88 }}
+                          transition={{ duration: 0.14, ease: "easeOut" }}
+                          style={{
+                            display: "block",
+                            whiteSpace: "nowrap",
+                            fontFamily: "var(--font-display)",
+                            fontSize: "11px",
+                            fontWeight: 800,
+                            color: "var(--text)",
+                            background: "var(--panel)",
+                            border: "1px solid var(--border)",
+                            borderRadius: "8px",
+                            padding: "4px 9px",
+                            boxShadow: "var(--shadow)",
+                          }}
+                        >
+                          {(t[item.id as keyof typeof t] as string) || item.label}
+                        </motion.span>
+                      </div>
                     )}
                   </AnimatePresence>
 
