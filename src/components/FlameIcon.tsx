@@ -3,6 +3,7 @@ type FlameIconProps = {
 }
 
 export default function FlameIcon({ size = 120 }: FlameIconProps) {
+  const h = Math.round(size * 1.12)
   const outerPath = "M60 112 C35 100 25 78 33 56 C39 39 52 30 57 12 C75 31 92 45 90 68 C89 90 77 105 60 112 Z"
   const midPath   = "M60 106 C45 96 39 82 43 66 C47 52 58 43 60 28 C73 43 80 55 79 71 C78 88 70 100 60 106 Z"
   const innerPath = "M60 98 C52 91 50 81 53 72 C55 63 61 57 61 47 C70 58 73 67 72 78 C71 89 66 95 60 98 Z"
@@ -11,48 +12,54 @@ export default function FlameIcon({ size = 120 }: FlameIconProps) {
   return (
     <svg
       aria-hidden="true"
-      viewBox="0 0 120 120"
+      viewBox="0 0 120 134"
       width={size}
-      height={size}
+      height={h}
       style={{ display: "block", overflow: "visible", background: "transparent" }}
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>
-        {/* ── Glow blur for the halo + blurred backing layer ── */}
         <filter id="fi-soft-glow" x="-60%" y="-60%" width="220%" height="220%">
           <feGaussianBlur stdDeviation="9" />
         </filter>
-
-        {/* ── Subtle inner-core brightness ── */}
         <filter id="fi-core-glow" x="-30%" y="-30%" width="160%" height="160%">
           <feGaussianBlur stdDeviation="3.5" result="blur" />
           <feComposite in="SourceGraphic" in2="blur" operator="over" />
         </filter>
-
-        {/* ── Outer flame: warm amber-to-deep-orange radial ── */}
+        <filter id="fi-ember-glow" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <radialGradient id="fi-base-glow" cx="50%" cy="95%" r="52%">
+          <stop offset="0%"   stopColor="rgba(255,125,18,0.78)" />
+          <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+        </radialGradient>
         <radialGradient id="fi-outer-grad" cx="50%" cy="82%" r="62%">
           <stop offset="0%"   stopColor="#ff8c1a" />
           <stop offset="55%"  stopColor="#c96418" />
           <stop offset="100%" stopColor="#7a3208" stopOpacity="0.85" />
         </radialGradient>
-
-        {/* ── Mid flame: bright orange ── */}
         <radialGradient id="fi-mid-grad" cx="50%" cy="76%" r="58%">
           <stop offset="0%"   stopColor="#ffb84d" />
           <stop offset="50%"  stopColor="#e8842a" />
           <stop offset="100%" stopColor="#b85220" />
         </radialGradient>
-
-        {/* ── Inner flame: warm yellow-white ── */}
         <radialGradient id="fi-inner-grad" cx="50%" cy="68%" r="52%">
           <stop offset="0%"   stopColor="#ffffff" />
           <stop offset="28%"  stopColor="#fff4b0" />
           <stop offset="100%" stopColor="#ffd84d" stopOpacity="0.82" />
         </radialGradient>
+        <linearGradient id="fi-log-a" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stopColor="#8c5222" />
+          <stop offset="100%" stopColor="#3c1e08" />
+        </linearGradient>
+        <linearGradient id="fi-log-b" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stopColor="#744018" />
+          <stop offset="100%" stopColor="#2e1606" />
+        </linearGradient>
       </defs>
 
       <style>{`
-        /* ─── Ambient halo at the base ─────────────────────────── */
         .fi-halo {
           animation: fiHaloPulse 2.2s ease-in-out infinite;
           transform-origin: 60px 108px;
@@ -61,8 +68,6 @@ export default function FlameIcon({ size = 120 }: FlameIconProps) {
           0%, 100% { opacity: 0.3;  transform: scaleX(1)    scaleY(1); }
           50%       { opacity: 0.52; transform: scaleX(1.12) scaleY(1.06); }
         }
-
-        /* ─── Blurred glow layer behind the flame ──────────────── */
         .fi-glow {
           animation: fiGlowPulse 1.95s ease-in-out infinite;
           transform-origin: 60px 94px;
@@ -71,8 +76,6 @@ export default function FlameIcon({ size = 120 }: FlameIconProps) {
           0%, 100% { opacity: 0.38; transform: scaleX(1.06) scaleY(0.97); }
           50%       { opacity: 0.6;  transform: scaleX(0.94) scaleY(1.05); }
         }
-
-        /* ─── Outer flame ───────────────────────────────────────── */
         .fi-outer {
           animation: fiOuterMorph 1.9s ease-in-out infinite;
           transform-origin: 60px 94px;
@@ -95,8 +98,6 @@ export default function FlameIcon({ size = 120 }: FlameIconProps) {
             transform: scaleX(0.97) translateY(0.6px) rotate(-0.6deg);
           }
         }
-
-        /* ─── Mid flame ─────────────────────────────────────────── */
         .fi-mid {
           animation: fiMidMorph 1.38s ease-in-out -0.24s infinite;
           transform-origin: 60px 94px;
@@ -115,8 +116,6 @@ export default function FlameIcon({ size = 120 }: FlameIconProps) {
             transform: translateX(-1.8px) scaleY(1.04);
           }
         }
-
-        /* ─── Inner flame ───────────────────────────────────────── */
         .fi-inner {
           animation: fiInnerMorph 1.08s ease-in-out -0.5s infinite;
           transform-origin: 60px 92px;
@@ -135,8 +134,6 @@ export default function FlameIcon({ size = 120 }: FlameIconProps) {
             transform: translateY(-1.8px) scaleX(1.1);
           }
         }
-
-        /* ─── Bright white-hot core ─────────────────────────────── */
         .fi-core {
           animation: fiCorePulse 0.9s ease-in-out -0.14s infinite;
           transform-origin: 60px 88px;
@@ -145,8 +142,6 @@ export default function FlameIcon({ size = 120 }: FlameIconProps) {
           0%, 100% { opacity: 0.88; transform: scaleY(1)    scaleX(1); }
           50%       { opacity: 1;    transform: scaleY(1.08) scaleX(0.92); }
         }
-
-        /* ─── Embers ────────────────────────────────────────────── */
         .fi-ember {
           opacity: 0;
           animation: fiEmberRise 2.5s ease-out infinite;
@@ -157,22 +152,46 @@ export default function FlameIcon({ size = 120 }: FlameIconProps) {
         .fi-ed { animation-delay: -0.42s;  }
         .fi-ee { animation-delay: -1.86s;  }
         .fi-ef { animation-delay: -1.08s;  }
-
         @keyframes fiEmberRise {
-          0% {
-            opacity: 0;
-            transform: translateY(6px) translateX(0px) scale(0.35);
-          }
-          10% { opacity: 1; }
-          75% { opacity: 0.48; }
-          100% {
-            opacity: 0;
-            transform: translateY(-50px) translateX(var(--fi-ex, 0px)) scale(0.1);
-          }
+          0%   { opacity: 0;    transform: translateY(6px)  translateX(0px) scale(0.35); }
+          10%  { opacity: 1; }
+          75%  { opacity: 0.48; }
+          100% { opacity: 0;    transform: translateY(-50px) translateX(var(--fi-ex, 0px)) scale(0.1); }
+        }
+        .fi-ember-dot {
+          animation: fiEmberDot 1.1s ease-in-out infinite;
+        }
+        .fi-ed-a { animation-delay: 0s;    transform-origin: 46px 116px; }
+        .fi-ed-b { animation-delay: 0.22s; transform-origin: 60px 118px; }
+        .fi-ed-c { animation-delay: 0.44s; transform-origin: 74px 115px; }
+        @keyframes fiEmberDot {
+          0%, 100% { opacity: 0.65; r: 3;   }
+          50%       { opacity: 1;    r: 4.2; }
         }
       `}</style>
 
-      {/* Ambient halo at the base — wide soft ellipse */}
+      {/* Ground glow */}
+      <ellipse cx="60" cy="128" rx="48" ry="12" fill="url(#fi-base-glow)" opacity="0.9" />
+
+      {/* Log A */}
+      <rect x="22" y="111" width="64" height="12" rx="6"
+        fill="url(#fi-log-a)"
+        transform="rotate(-25 54 117)"
+      />
+      {/* Log B */}
+      <rect x="34" y="111" width="64" height="12" rx="6"
+        fill="url(#fi-log-b)"
+        transform="rotate(25 66 117)"
+      />
+      {/* Cross shadow */}
+      <ellipse cx="60" cy="118" rx="18" ry="5" fill="rgba(0,0,0,0.32)" opacity="0.5" />
+
+      {/* Live ember dots */}
+      <circle className="fi-ember-dot fi-ed-a" cx="46" cy="116" r="3"   fill="#ff9820" filter="url(#fi-ember-glow)" />
+      <circle className="fi-ember-dot fi-ed-b" cx="60" cy="118" r="3.5" fill="#ffcc38" filter="url(#fi-ember-glow)" />
+      <circle className="fi-ember-dot fi-ed-c" cx="74" cy="115" r="2.8" fill="#ff7818" filter="url(#fi-ember-glow)" />
+
+      {/* Ambient halo */}
       <ellipse
         className="fi-halo"
         cx="60" cy="108" rx="26" ry="7"
@@ -180,7 +199,7 @@ export default function FlameIcon({ size = 120 }: FlameIconProps) {
         filter="url(#fi-soft-glow)"
       />
 
-      {/* Blurred backing glow — gives depth behind the flame */}
+      {/* Blurred backing glow */}
       <path
         className="fi-glow"
         d={outerPath}
@@ -198,10 +217,10 @@ export default function FlameIcon({ size = 120 }: FlameIconProps) {
       {/* Inner flame */}
       <path className="fi-inner" d={innerPath} fill="url(#fi-inner-grad)" filter="url(#fi-core-glow)" />
 
-      {/* Bright white-hot core */}
+      {/* White-hot core */}
       <path className="fi-core" d={corePath} fill="#ffffff" opacity="0.9" filter="url(#fi-core-glow)" />
 
-      {/* 6 embers — varied sizes, colours, and x-drift */}
+      {/* Rising embers */}
       <circle className="fi-ember fi-ea" cx="45" cy="62" r="2.4" fill="#fff4b0"
         style={{ "--fi-ex": "-10px" } as React.CSSProperties} />
       <circle className="fi-ember fi-eb" cx="75" cy="57" r="1.9" fill="#e8842a"
