@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState, useCallback, useRef } from "react"
 import { useSession } from "next-auth/react"
@@ -188,7 +188,7 @@ export default function SchedulePage() {
   }, [])
 
   useEffect(() => {
-    if (status === "unauthenticated") { router.push("/login"); return }
+    if (status === "unauthenticated") { router.push("/register"); return }
     if (status !== "authenticated") return
 
     const load = async () => {

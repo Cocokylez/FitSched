@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
@@ -205,7 +205,7 @@ export default function WorkoutPage() {
   const dayNames = [t.days.sun, t.days.mon, t.days.tue, t.days.wed, t.days.thu, t.days.fri, t.days.sat]
 
   useEffect(() => {
-    if (status === "unauthenticated") router.push("/login")
+    if (status === "unauthenticated") router.push("/register")
   }, [status, router])
 
   useEffect(() => {
