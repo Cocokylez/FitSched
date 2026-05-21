@@ -4,8 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
-import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip } from "recharts"
-import { Building2, ChevronDown, ChevronRight, Dumbbell, Home } from "lucide-react"
+import { Building2, Dumbbell, Home } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
 import { SkeletonCard } from "@/components/Skeleton"
 
@@ -176,27 +175,6 @@ function getCurrentWeekCount(logs: WorkoutLog[]) {
   return logs.filter((log) => getWeekId(new Date(log.completedAt)) === thisWeek).length
 }
 
-function buildWeeklyData(logs: WorkoutLog[], workoutsPerWeek: number) {
-  const now = new Date()
-  const logsByWeek: Record<string, number> = {}
-
-  logs.forEach((log) => {
-    const weekId = getWeekId(new Date(log.completedAt))
-    logsByWeek[weekId] = (logsByWeek[weekId] || 0) + 1
-  })
-
-  return Array.from({ length: 8 }, (_, index) => {
-    const date = new Date(now)
-    date.setDate(now.getDate() - (7 - index) * 7)
-    const id = getWeekId(date)
-
-    return {
-      week: id,
-      actual: logsByWeek[id] || 0,
-      planned: workoutsPerWeek,
-    }
-  })
-}
 
 function AnimatedNumber({ value, suffix = "" }: { value: number; suffix?: string }) {
   const [display, setDisplay] = useState(0)
@@ -230,11 +208,6 @@ function formatFitTokenAmount(value: number) {
   })
 }
 
-function formatTokenReason(reason: string, workoutName: string) {
-  if (reason === "streak_bonus") return "Streak bonus"
-  if (reason === "workout_complete") return `${workoutName} workout`
-  return reason.replace(/_/g, " ")
-}
 
 export default function SettingsPage() {
   const { data: session, status } = useSession()
@@ -249,7 +222,6 @@ export default function SettingsPage() {
   const [workoutsPerWeek, setWorkoutsPerWeek] = useState(3)
   const [workoutEnvironment, setWorkoutEnvironment] = useState<WorkoutEnvironment>("gym")
   const [savingWorkoutEnvironment, setSavingWorkoutEnvironment] = useState(false)
-  const [expandedLog, setExpandedLog] = useState<string | null>(null)
   const [fitTokens, setFitTokens] = useState<FitTokenData>({
     balance: 0,
     transactions: [],
@@ -389,34 +361,6 @@ export default function SettingsPage() {
     return { totalWorkouts, totalExercisesDone, currentWeek, currentStreak, longestStreak }
   }, [logs])
 
-  const weeklyData = useMemo(
-    () => buildWeeklyData(logs, workoutsPerWeek),
-    [logs, workoutsPerWeek]
-  )
-
-  const topMuscles = useMemo(() => {
-    const counts: Record<string, number> = {}
-
-    logs.forEach((log) => {
-      const groups = new Set((log.exercises || []).map((exercise) => getMuscleGroup(exercise.name)))
-      groups.forEach((group) => {
-        counts[group] = (counts[group] || 0) + 1
-      })
-    })
-
-    const total = Object.values(counts).reduce((sum, count) => sum + count, 0)
-
-    return Object.entries(counts)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 3)
-      .map(([group, count]) => ({
-        group,
-        count,
-        pct: total > 0 ? Math.round((count / total) * 100) : 0,
-      }))
-  }, [logs])
-
-  const recentLogs = logs.slice(0, 10)
   const currentWeekPct = workoutsPerWeek > 0
     ? Math.min(100, Math.round((stats.currentWeek / workoutsPerWeek) * 100))
     : 0
@@ -565,161 +509,6 @@ export default function SettingsPage() {
                 ))}
               </div>
             </motion.div>
-
-            <motion.div variants={fadeUp}>
-              <div style={sectionLabelStyle}>FitToken Earnings</div>
-              <div style={{ ...cardStyle, padding: "6px 0", overflow: "hidden" }}>
-                {fitTokens.transactions.length > 0 ? (
-                  fitTokens.transactions.map((transaction, index) => (
-                    <div
-                      key={transaction.id}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: "14px",
-                        padding: "12px 16px",
-                        borderBottom: index < fitTokens.transactions.length - 1 ? "1px solid var(--border)" : "none",
-                      }}
-                    >
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: "13px", fontWeight: 650, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {formatTokenReason(transaction.reason, transaction.workoutName)}
-                        </div>
-                        <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "3px" }}>
-                          {new Date(transaction.createdAt).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <div style={{ color: ACCENT, fontSize: "13px", fontWeight: 800, flexShrink: 0 }}>
-                        +{formatFitTokenAmount(transaction.amount)}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div style={{ padding: "18px 16px", color: "var(--text-muted)", fontSize: "13px", textAlign: "center" }}>
-                    Complete a workout to earn your first FitToken.
-                  </div>
-                )}
-              </div>
-            </motion.div>
-
-            <motion.div variants={fadeUp}>
-              <div style={sectionLabelStyle}>Last 8 Weeks</div>
-              <div style={{ ...cardStyle, padding: "14px 12px 8px" }}>
-                <ResponsiveContainer width="100%" height={126}>
-                  <BarChart data={weeklyData} margin={{ top: 8, right: 6, bottom: 0, left: 6 }}>
-                    <Tooltip
-                      cursor={{ fill: "rgba(255,255,255,0.04)" }}
-                      formatter={(value) => [`${value} workouts`, "Completed"]}
-                      labelFormatter={() => "Weekly activity"}
-                      contentStyle={{
-                        background: "var(--surface)",
-                        border: "1px solid var(--border)",
-                        borderRadius: "10px",
-                        color: "var(--text)",
-                        fontSize: "12px",
-                      }}
-                    />
-                    <Bar dataKey="actual" radius={[6, 6, 0, 0]} maxBarSize={24}>
-                      {weeklyData.map((entry) => (
-                        <Cell
-                          key={entry.week}
-                          fill={entry.actual >= entry.planned ? ACCENT : "var(--border)"}
-                          opacity={entry.actual > 0 || entry.actual >= entry.planned ? 1 : 0.55}
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </motion.div>
-
-            <motion.div variants={fadeUp}>
-              <div style={sectionLabelStyle}>Most Trained</div>
-              {topMuscles.length > 0 ? (
-                topMuscles.map((muscle, index) => (
-                  <div key={muscle.group} style={{ ...cardStyle, padding: "14px 16px", marginBottom: "8px" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "9px" }}>
-                      <div style={{ fontSize: "13px", fontWeight: 650, color: "var(--text)" }}>{muscle.group}</div>
-                      <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>{muscle.pct}%</div>
-                    </div>
-                    <div style={{ width: "100%", height: 7, background: "var(--surface-2)", borderRadius: 999, overflow: "hidden" }}>
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${muscle.pct}%` }}
-                        transition={{ duration: 0.75, delay: index * 0.08, ease: "easeOut" }}
-                        style={{ height: "100%", background: ACCENT, borderRadius: 999 }}
-                      />
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div style={{ ...cardStyle, textAlign: "center", padding: "22px" }}>
-                  <div style={{ color: "var(--text-muted)", fontSize: "13px" }}>{t.noData}</div>
-                </div>
-              )}
-            </motion.div>
-
-            <motion.div variants={fadeUp}>
-              <div style={sectionLabelStyle}>{t.workoutHistory}</div>
-            </motion.div>
-
-            {recentLogs.length === 0 ? (
-              <motion.div variants={fadeUp}>
-                <div style={{ ...cardStyle, textAlign: "center", padding: "24px" }}>
-                  <div style={{ fontSize: "14px", color: "var(--text-muted)" }}>{t.noWorkouts}</div>
-                </div>
-              </motion.div>
-            ) : (
-              recentLogs.map((log) => {
-                const isExpanded = expandedLog === log.id
-                return (
-                  <motion.div key={log.id} variants={fadeUp}>
-                    <div
-                      onClick={() => setExpandedLog(isExpanded ? null : log.id)}
-                      style={{ ...cardStyle, cursor: "pointer", marginBottom: "8px", padding: "14px 16px" }}
-                    >
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: "14px", fontWeight: 650, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis" }}>
-                            {log.workoutName}
-                          </div>
-                          <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "3px" }}>
-                            {new Date(log.completedAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-                          <span style={{ background: "var(--surface-2)", borderRadius: "999px", padding: "4px 10px", fontSize: "11px", color: "var(--text-muted)" }}>
-                            {log.exercises.length} {t.exercises}
-                          </span>
-                          {isExpanded ? <ChevronDown size={16} color="var(--text-muted)" /> : <ChevronRight size={16} color="var(--text-muted)" />}
-                        </div>
-                      </div>
-                      <AnimatePresence>
-                        {isExpanded && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2, ease: "easeInOut" }}
-                            style={{ overflow: "hidden" }}
-                          >
-                            <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid var(--border)" }}>
-                              {(log.exercises || []).map((exercise, i) => (
-                                <div key={`${exercise.name}-${i}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", gap: "14px", fontSize: "13px" }}>
-                                  <span style={{ color: "var(--text)" }}>{exercise.name}</span>
-                                  <span style={{ color: "var(--text-muted)", flexShrink: 0 }}>{exercise.sets} x {exercise.reps}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </motion.div>
-                )
-              })
-            )}
 
             <motion.div variants={fadeUp}>
               <div style={sectionLabelStyle}>{t.calendar}</div>
