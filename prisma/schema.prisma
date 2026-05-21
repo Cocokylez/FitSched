@@ -356,14 +356,15 @@ model PasswordResetToken {
 }
 
 model HikeLog {
-  id          String   @id @default(cuid())
-  userId      String
-  name        String   @default("Hike")
-  distanceKm  Float
-  durationMin Int
-  elevationM  Int?
-  notes       String?
-  loggedAt    DateTime @default(now())
+  id            String   @id @default(cuid())
+  userId        String
+  name          String   @default("Hike")
+  distanceKm    Float
+  durationMin   Int
+  elevationM    Int?
+  locationName  String?
+  notes         String?
+  loggedAt      DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
