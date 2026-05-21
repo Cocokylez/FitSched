@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useEffect, useMemo, useState } from "react"
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
@@ -43,6 +43,19 @@ const fadeUp = {
 }
 
 const DAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"]
+
+const dayStagger = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.06 } },
+}
+
+const dayCellVariant = {
+  hidden: { opacity: 0, scale: 0.7, y: 8 },
+  visible: {
+    opacity: 1, scale: 1, y: 0,
+    transition: { type: "spring" as const, stiffness: 320, damping: 22 },
+  },
+}
 
 const muscleMap: Record<string, string> = {
   "Push-ups": "Chest", "Diamond Push-ups": "Chest", "Wide Push-ups": "Chest",
@@ -195,6 +208,37 @@ export default function ReportPage() {
   const bmiStatus = getBmiStatus(bmi)
   const longestStreak = useMemo(() => calculateLongestStreak(logs), [logs])
 
+  /* ── Count-up animation for the streak number ── */
+  const [displayStreak, setDisplayStreak] = useState(0)
+  const rafRef = useRef<number | null>(null)
+  useEffect(() => {
+    const target = streak?.streak ?? 0
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    if (target === 0) { setDisplayStreak(0); return }
+    const startTime = performance.now()
+    const tick = (now: number) => {
+      const p = Math.min((now - startTime) / 820, 1)
+      const eased = 1 - Math.pow(1 - p, 3)
+      setDisplayStreak(Math.round(target * eased))
+      if (p < 1) rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
+  }, [streak?.streak])
+
+  /* ── Ember particles (memoised so positions never regenerate) ── */
+  const embers = useMemo(() =>
+    Array.from({ length: 5 }, (_, i) => ({
+      id: i,
+      x: (i * 10) - 20,
+      targetY: -(36 + i * 12),
+      size: 2.2 + (i % 3) * 0.8,
+      delay: i * 0.26,
+      duration: 1.35 + (i % 3) * 0.3,
+      color: ["#fff4b0", "#e8842a", "#ffffff", "#ffb64d", "#c9a84c"][i],
+    })), []
+  )
+
   const [today, setToday] = useState<Date | null>(null)
   const [weekNumber, setWeekNumber] = useState<number | null>(null)
   useEffect(() => {
@@ -293,73 +337,173 @@ export default function ReportPage() {
                 border: "1px solid rgba(107,191,184,0.24)",
                 boxShadow: [
                   "inset 0 0 0 1px rgba(255,255,255,0.05)",
-                  "inset 0 1px 0 rgba(107,191,184,0.18)",
-                  "0 22px 52px rgba(0,0,0,0.44)",
+                  "inset 0 1px 0 rgba(107,191,184,0.2)",
+                  "0 24px 56px rgba(0,0,0,0.48)",
                 ].join(", "),
               }}
             >
               {/* Top refraction */}
-              <div style={{ position: "absolute", inset: "0 0 auto", height: 1, background: "linear-gradient(90deg, transparent, rgba(107,191,184,0.48), transparent)", pointerEvents: "none" }} />
-              {/* Ambient glow */}
-              <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 14% -14%, rgba(107,191,184,0.2), transparent 54%)", pointerEvents: "none" }} />
-              {/* Flame */}
-              <div style={{ position: "absolute", right: 16, top: 16, opacity: 0.7, filter: "saturate(1.1) brightness(1.05)", pointerEvents: "none" }}>
-                <FlameIcon size={54} />
+              <div style={{ position: "absolute", inset: "0 0 auto", height: 1, background: "linear-gradient(90deg, transparent, rgba(107,191,184,0.52), transparent)", pointerEvents: "none" }} />
+              {/* Ambient radial glow */}
+              <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 12% -10%, rgba(107,191,184,0.22), transparent 52%)", pointerEvents: "none" }} />
+
+              {/* Diagonal shimmer sweep — perpetual */}
+              <motion.div
+                style={{
+                  position: "absolute", inset: 0, pointerEvents: "none",
+                  background: "linear-gradient(108deg, transparent 25%, rgba(107,191,184,0.07) 50%, transparent 75%)",
+                }}
+                animate={{ x: ["-110%", "210%"] }}
+                transition={{ duration: 3.4, repeat: Infinity, repeatDelay: 5.5, ease: "easeInOut" }}
+              />
+
+              {/* Floating flame + rising embers */}
+              <div style={{ position: "absolute", right: 14, top: 12, pointerEvents: "none" }}>
+                <motion.div
+                  animate={{ y: [0, -6, 0] }}
+                  transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+                  style={{ opacity: 0.78, filter: "saturate(1.15) brightness(1.1)", transformOrigin: "50% 80%" }}
+                >
+                  <FlameIcon size={60} />
+                </motion.div>
+
+                {/* Ember particles */}
+                <div style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)" }}>
+                  {embers.map((ember) => (
+                    <motion.div
+                      key={ember.id}
+                      style={{
+                        position: "absolute",
+                        width: ember.size, height: ember.size,
+                        borderRadius: "50%",
+                        background: ember.color,
+                        boxShadow: `0 0 5px ${ember.color}`,
+                      }}
+                      animate={{
+                        x: [0, ember.x],
+                        y: [0, ember.targetY],
+                        opacity: [0, 0.85, 0],
+                        scale: [0.4, 1, 0.3],
+                      }}
+                      transition={{
+                        duration: ember.duration,
+                        delay: ember.delay,
+                        repeat: Infinity,
+                        repeatDelay: 0.3,
+                        ease: "easeOut",
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
 
-              {/* Numbers */}
+              {/* Streak number — counts up on load */}
               <div style={{ position: "relative", padding: "22px 22px 16px" }}>
-                <div className="label-text" style={{ fontSize: 10, color: "#6bbfb8", marginBottom: 8 }}>
+                <motion.div
+                  className="label-text"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1, duration: 0.28 }}
+                  style={{ fontSize: 10, color: "#6bbfb8", marginBottom: 8 }}
+                >
                   Current Streak
-                </div>
+                </motion.div>
+
                 <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                  <span className="number-text" style={{ fontSize: "clamp(46px, 13vw, 58px)", fontWeight: 900, lineHeight: 1, color: "#fff" }}>
-                    {streak?.streak ?? 0}
-                  </span>
-                  <span style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.42)" }}>
+                  <motion.span
+                    className="number-text"
+                    initial={{ opacity: 0, scale: 0.82 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.16, type: "spring", stiffness: 200, damping: 18 }}
+                    style={{ fontSize: "clamp(48px, 13vw, 62px)", fontWeight: 900, lineHeight: 1, color: "#fff" }}
+                  >
+                    {displayStreak}
+                  </motion.span>
+                  <motion.span
+                    initial={{ opacity: 0, x: -6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.36, duration: 0.24 }}
+                    style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.42)" }}
+                  >
                     {(streak?.streak ?? 0) === 1 ? "day" : "days"}
-                  </span>
+                  </motion.span>
                 </div>
-                <div style={{ marginTop: 8, fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.4)" }}>
+
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.52, duration: 0.3 }}
+                  style={{ marginTop: 8, fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.38)" }}
+                >
                   Personal best ·{" "}
                   <span style={{ color: "#6bbfb8", fontWeight: 900 }}>
                     {longestStreak} {longestStreak === 1 ? "day" : "days"}
                   </span>
-                </div>
+                </motion.div>
               </div>
 
-              {/* Week strip */}
+              {/* Week strip — staggered spring reveal */}
               <div style={{ borderTop: "1px solid rgba(107,191,184,0.16)", padding: "14px 22px 20px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 7 }}>
+                <motion.div
+                  variants={dayStagger}
+                  initial="hidden"
+                  animate="visible"
+                  style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 7 }}
+                >
                   {weekDays.map((day, i) => {
                     const dateId = toDateId(day)
                     const isToday = today ? dateId === toDateId(today) : false
                     const completed = completedDates.has(dateId)
                     return (
-                      <div key={dateId} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-                        <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase", color: isToday ? "#6bbfb8" : "rgba(255,255,255,0.28)" }}>
+                      <motion.div
+                        key={dateId}
+                        variants={dayCellVariant}
+                        style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}
+                      >
+                        <span style={{
+                          fontSize: 9, fontWeight: 900, letterSpacing: "0.08em",
+                          textTransform: "uppercase" as const,
+                          color: isToday ? "#6bbfb8" : "rgba(255,255,255,0.28)",
+                        }}>
                           {DAY_LETTERS[i]}
                         </span>
-                        <div style={{
-                          width: "100%", height: 34,
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          borderRadius: 9,
-                          background: isToday ? "#6bbfb8" : completed ? "rgba(107,191,184,0.16)" : "rgba(255,255,255,0.05)",
-                          border: isToday ? "none" : completed ? "1px solid rgba(107,191,184,0.32)" : "1px solid rgba(255,255,255,0.07)",
-                          boxShadow: isToday ? "0 0 12px rgba(107,191,184,0.36)" : "none",
-                        }}>
+
+                        {/* Day cell — today pulses continuously */}
+                        <motion.div
+                          animate={isToday ? {
+                            boxShadow: [
+                              "0 0 8px rgba(107,191,184,0.28)",
+                              "0 0 20px rgba(107,191,184,0.54)",
+                              "0 0 8px rgba(107,191,184,0.28)",
+                            ],
+                          } : {}}
+                          transition={isToday ? { duration: 2.2, repeat: Infinity, ease: "easeInOut" } : {}}
+                          style={{
+                            width: "100%", height: 36,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            borderRadius: 10,
+                            background: isToday ? "#6bbfb8" : completed ? "rgba(107,191,184,0.16)" : "rgba(255,255,255,0.05)",
+                            border: isToday ? "none" : completed ? "1px solid rgba(107,191,184,0.32)" : "1px solid rgba(255,255,255,0.07)",
+                          }}
+                        >
                           {isToday || completed ? (
-                            <Check size={12} strokeWidth={3} style={{ color: isToday ? "#0a1a18" : "#6bbfb8" }} />
+                            <motion.div
+                              initial={{ scale: 0, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              transition={{ delay: 0.3 + i * 0.06, type: "spring", stiffness: 350, damping: 18 }}
+                            >
+                              <Check size={12} strokeWidth={3} style={{ color: isToday ? "#0a1a18" : "#6bbfb8", display: "block" }} />
+                            </motion.div>
                           ) : (
                             <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.24)" }}>
                               {day.getDate()}
                             </span>
                           )}
-                        </div>
-                      </div>
+                        </motion.div>
+                      </motion.div>
                     )
                   })}
-                </div>
+                </motion.div>
               </div>
             </motion.section>
 
