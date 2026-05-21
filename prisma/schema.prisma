@@ -42,6 +42,7 @@ model User {
   fitTokenBalance     FitTokenBalance?
   tokenVersion        Int                    @default(0)
   passwordResetTokens PasswordResetToken[]
+  hikeLogs            HikeLog[]
 }
 
 model Account {
@@ -352,6 +353,23 @@ model PasswordResetToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model HikeLog {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String   @default("Hike")
+  distanceKm  Float
+  durationMin Int
+  elevationM  Int?
+  notes       String?
+  loggedAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([loggedAt])
+  @@index([userId, loggedAt])
 }
 
 model SecurityLog {
