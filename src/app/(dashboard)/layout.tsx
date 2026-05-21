@@ -17,7 +17,11 @@ export default async function DashboardLayout({
     select: { onboardingCompleted: true },
   });
 
-  if (!user?.onboardingCompleted) {
+  if (!user) {
+    redirect("/api/auth/force-signout");
+  }
+
+  if (!user.onboardingCompleted) {
     redirect("/onboarding");
   }
 
