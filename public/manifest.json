@@ -4,8 +4,8 @@
   "description": "AI-powered workout scheduler that fits your workout into your day automatically",
   "start_url": "/schedule",
   "display": "standalone",
-  "background_color": "#0f1117",
-  "theme_color": "#6366f1",
+  "background_color": "#111514",
+  "theme_color": "#6bbfb8",
   "orientation": "portrait",
   "icons": [
     {

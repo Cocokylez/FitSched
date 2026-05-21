@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import { useLanguage } from '@/context/LanguageContext'
 import { AuthTopControls } from '@/components/AuthTopControls'
 import { AuthGoogleButton } from '@/components/AuthGoogleButton'
+import Link from 'next/link'
 
 const fadeIn = {
   hidden: { opacity: 0, y: 10 },
@@ -159,10 +160,18 @@ export default function LoginPage() {
                 fontSize: '14px',
                 outline: 'none',
                 width: '100%',
-                marginBottom: '24px',
+                marginBottom: '12px',
                 boxSizing: 'border-box' as const,
               }}
             />
+          </motion.div>
+
+          <motion.div variants={fadeIn}>
+            <div style={{ textAlign: 'right', marginBottom: '20px' }}>
+              <Link href="/forgot-password" style={{ fontSize: '12px', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 600 }}>
+                Forgot password?
+              </Link>
+            </div>
           </motion.div>
 
           <motion.div variants={fadeIn}>
