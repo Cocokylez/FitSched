@@ -419,7 +419,7 @@ export default function ReportPage() {
               {/* Floating flame + embers */}
               <div style={{ position: "absolute", right: 14, top: 12, pointerEvents: "none" }}>
                 <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }} style={{ opacity: 0.78, filter: "saturate(1.15) brightness(1.1)", transformOrigin: "50% 80%" }}>
-                  <FlameIcon size={60} />
+                  <FlameIcon size={60} streak={streak?.streak ?? 0} />
                 </motion.div>
                 <div style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)" }}>
                   {embers.map((ember) => (

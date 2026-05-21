@@ -1,9 +1,55 @@
 type FlameIconProps = {
-  size?: number
+  size?:   number
+  streak?: number
 }
 
-export default function FlameIcon({ size = 120 }: FlameIconProps) {
-  const h = Math.round(size * 1.12)
+function getFlameColors(streak: number) {
+  if (streak >= 50) return {
+    outerG: ["#c0e8ff", "#9040f8", "#e0102a"] as const,
+    midG:   ["#ffffff", "#cc80ff", "#e81040"] as const,
+    innerG: ["#ffffff", "#e0b8ff", "#c060ff"] as const,
+    halo:   "#8040f8",
+    glow:   "#c82040",
+    baseGlowA: "rgba(200,32,64,0.78)", baseGlowB: "rgba(128,40,255,0.6)",
+    embers: ["#c0e8ff", "#e060ff", "#ff4060", "#ffffff", "#d880ff", "#c0e8ff"] as const,
+    dotA: "#e060ff", dotB: "#c0e8ff", dotC: "#ff4060",
+  }
+  if (streak >= 20) return {
+    outerG: ["#ffe0e0", "#ff2828", "#c80020"] as const,
+    midG:   ["#ffffff", "#ff9090", "#e01828"] as const,
+    innerG: ["#ffffff", "#ffb8b8", "#ff6060"] as const,
+    halo:   "#cc0018",
+    glow:   "#cc0018",
+    baseGlowA: "rgba(220,20,30,0.82)", baseGlowB: "rgba(180,0,20,0.5)",
+    embers: ["#ffc8c8", "#ff6060", "#ff9090", "#ffffff", "#ffb8b8", "#ffc8c8"] as const,
+    dotA: "#ff6060", dotB: "#ffc8c8", dotC: "#ff3030",
+  }
+  if (streak >= 10) return {
+    outerG: ["#e8f8ff", "#38bfff", "#0070d0"] as const,
+    midG:   ["#ffffff", "#88d4ff", "#1878f0"] as const,
+    innerG: ["#ffffff", "#c8eeff", "#60c8ff"] as const,
+    halo:   "#0068e8",
+    glow:   "#0068e8",
+    baseGlowA: "rgba(28,128,255,0.78)", baseGlowB: "rgba(0,80,200,0.5)",
+    embers: ["#c8f0ff", "#60c8ff", "#98d8ff", "#ffffff", "#c8eeff", "#c8f0ff"] as const,
+    dotA: "#60c8ff", dotB: "#c8f0ff", dotC: "#2080ff",
+  }
+  return {
+    outerG: ["#ff8c1a", "#c96418", "#7a3208"] as const,
+    midG:   ["#ffb84d", "#e8842a", "#b85220"] as const,
+    innerG: ["#ffffff", "#fff4b0", "#ffd84d"] as const,
+    halo:   "#ff7220",
+    glow:   "#ff6010",
+    baseGlowA: "rgba(255,125,18,0.78)", baseGlowB: "rgba(200,80,0,0.5)",
+    embers: ["#fff4b0", "#e8842a", "#ffdb6b", "#ffffff", "#ffb347", "#fff4b0"] as const,
+    dotA: "#ff9820", dotB: "#ffcc38", dotC: "#ff7818",
+  }
+}
+
+export default function FlameIcon({ size = 120, streak = 0 }: FlameIconProps) {
+  const h  = Math.round(size * 1.12)
+  const c  = getFlameColors(streak)
+
   const outerPath = "M60 112 C35 100 25 78 33 56 C39 39 52 30 57 12 C75 31 92 45 90 68 C89 90 77 105 60 112 Z"
   const midPath   = "M60 106 C45 96 39 82 43 66 C47 52 58 43 60 28 C73 43 80 55 79 71 C78 88 70 100 60 106 Z"
   const innerPath = "M60 98 C52 91 50 81 53 72 C55 63 61 57 61 47 C70 58 73 67 72 78 C71 89 66 95 60 98 Z"
@@ -31,23 +77,24 @@ export default function FlameIcon({ size = 120 }: FlameIconProps) {
           <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
         <radialGradient id="fi-base-glow" cx="50%" cy="95%" r="52%">
-          <stop offset="0%"   stopColor="rgba(255,125,18,0.78)" />
+          <stop offset="0%"   stopColor={c.baseGlowA} />
+          <stop offset="60%"  stopColor={c.baseGlowB} />
           <stop offset="100%" stopColor="rgba(0,0,0,0)" />
         </radialGradient>
         <radialGradient id="fi-outer-grad" cx="50%" cy="82%" r="62%">
-          <stop offset="0%"   stopColor="#ff8c1a" />
-          <stop offset="55%"  stopColor="#c96418" />
-          <stop offset="100%" stopColor="#7a3208" stopOpacity="0.85" />
+          <stop offset="0%"   stopColor={c.outerG[0]} />
+          <stop offset="55%"  stopColor={c.outerG[1]} />
+          <stop offset="100%" stopColor={c.outerG[2]} stopOpacity="0.85" />
         </radialGradient>
         <radialGradient id="fi-mid-grad" cx="50%" cy="76%" r="58%">
-          <stop offset="0%"   stopColor="#ffb84d" />
-          <stop offset="50%"  stopColor="#e8842a" />
-          <stop offset="100%" stopColor="#b85220" />
+          <stop offset="0%"   stopColor={c.midG[0]} />
+          <stop offset="50%"  stopColor={c.midG[1]} />
+          <stop offset="100%" stopColor={c.midG[2]} />
         </radialGradient>
         <radialGradient id="fi-inner-grad" cx="50%" cy="68%" r="52%">
-          <stop offset="0%"   stopColor="#ffffff" />
-          <stop offset="28%"  stopColor="#fff4b0" />
-          <stop offset="100%" stopColor="#ffd84d" stopOpacity="0.82" />
+          <stop offset="0%"   stopColor={c.innerG[0]} />
+          <stop offset="28%"  stopColor={c.innerG[1]} />
+          <stop offset="100%" stopColor={c.innerG[2]} stopOpacity="0.82" />
         </radialGradient>
         <linearGradient id="fi-log-a" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%"   stopColor="#8c5222" />
@@ -175,38 +222,25 @@ export default function FlameIcon({ size = 120 }: FlameIconProps) {
 
       {/* Log A */}
       <rect x="22" y="111" width="64" height="12" rx="6"
-        fill="url(#fi-log-a)"
-        transform="rotate(-25 54 117)"
-      />
+        fill="url(#fi-log-a)" transform="rotate(-25 54 117)" />
       {/* Log B */}
       <rect x="34" y="111" width="64" height="12" rx="6"
-        fill="url(#fi-log-b)"
-        transform="rotate(25 66 117)"
-      />
+        fill="url(#fi-log-b)" transform="rotate(25 66 117)" />
       {/* Cross shadow */}
       <ellipse cx="60" cy="118" rx="18" ry="5" fill="rgba(0,0,0,0.32)" opacity="0.5" />
 
       {/* Live ember dots */}
-      <circle className="fi-ember-dot fi-ed-a" cx="46" cy="116" r="3"   fill="#ff9820" filter="url(#fi-ember-glow)" />
-      <circle className="fi-ember-dot fi-ed-b" cx="60" cy="118" r="3.5" fill="#ffcc38" filter="url(#fi-ember-glow)" />
-      <circle className="fi-ember-dot fi-ed-c" cx="74" cy="115" r="2.8" fill="#ff7818" filter="url(#fi-ember-glow)" />
+      <circle className="fi-ember-dot fi-ed-a" cx="46" cy="116" r="3"   fill={c.dotA} filter="url(#fi-ember-glow)" />
+      <circle className="fi-ember-dot fi-ed-b" cx="60" cy="118" r="3.5" fill={c.dotB} filter="url(#fi-ember-glow)" />
+      <circle className="fi-ember-dot fi-ed-c" cx="74" cy="115" r="2.8" fill={c.dotC} filter="url(#fi-ember-glow)" />
 
       {/* Ambient halo */}
-      <ellipse
-        className="fi-halo"
-        cx="60" cy="108" rx="26" ry="7"
-        fill="#ff7220"
-        filter="url(#fi-soft-glow)"
-      />
+      <ellipse className="fi-halo" cx="60" cy="108" rx="26" ry="7"
+        fill={c.halo} filter="url(#fi-soft-glow)" />
 
       {/* Blurred backing glow */}
-      <path
-        className="fi-glow"
-        d={outerPath}
-        fill="#ff6010"
-        filter="url(#fi-soft-glow)"
-        opacity="0.48"
-      />
+      <path className="fi-glow" d={outerPath}
+        fill={c.glow} filter="url(#fi-soft-glow)" opacity="0.52" />
 
       {/* Outer flame */}
       <path className="fi-outer" d={outerPath} fill="url(#fi-outer-grad)" />
@@ -221,17 +255,17 @@ export default function FlameIcon({ size = 120 }: FlameIconProps) {
       <path className="fi-core" d={corePath} fill="#ffffff" opacity="0.9" filter="url(#fi-core-glow)" />
 
       {/* Rising embers */}
-      <circle className="fi-ember fi-ea" cx="45" cy="62" r="2.4" fill="#fff4b0"
+      <circle className="fi-ember fi-ea" cx="45" cy="62" r="2.4" fill={c.embers[0]}
         style={{ "--fi-ex": "-10px" } as React.CSSProperties} />
-      <circle className="fi-ember fi-eb" cx="75" cy="57" r="1.9" fill="#e8842a"
+      <circle className="fi-ember fi-eb" cx="75" cy="57" r="1.9" fill={c.embers[1]}
         style={{ "--fi-ex": "12px" } as React.CSSProperties} />
-      <circle className="fi-ember fi-ec" cx="59" cy="46" r="2.6" fill="#ffdb6b"
+      <circle className="fi-ember fi-ec" cx="59" cy="46" r="2.6" fill={c.embers[2]}
         style={{ "--fi-ex": "-4px" } as React.CSSProperties} />
-      <circle className="fi-ember fi-ed" cx="69" cy="54" r="1.6" fill="#ffffff"
+      <circle className="fi-ember fi-ed" cx="69" cy="54" r="1.6" fill={c.embers[3]}
         style={{ "--fi-ex": "7px" } as React.CSSProperties} />
-      <circle className="fi-ember fi-ee" cx="50" cy="50" r="2.1" fill="#ffb347"
+      <circle className="fi-ember fi-ee" cx="50" cy="50" r="2.1" fill={c.embers[4]}
         style={{ "--fi-ex": "-14px" } as React.CSSProperties} />
-      <circle className="fi-ember fi-ef" cx="64" cy="40" r="1.7" fill="#fff4b0"
+      <circle className="fi-ember fi-ef" cx="64" cy="40" r="1.7" fill={c.embers[5]}
         style={{ "--fi-ex": "5px" } as React.CSSProperties} />
     </svg>
   )
