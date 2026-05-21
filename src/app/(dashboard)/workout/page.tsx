@@ -11,30 +11,9 @@ import { SkeletonExerciseRow } from "@/components/Skeleton"
 import { ExerciseDemoPanel } from "@/components/ExerciseDemoPanel"
 import { getSmartExercisePlan, parseSetsReps, toWorkoutExercises } from "@/lib/workoutRecommendations"
 import { getFeedbackAdjustedExperienceLevel } from "@/lib/workoutFeedback"
-
-const stagger = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.07 } },
-}
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" as const } },
-}
-
-const scaleIn = {
-  hidden: { scale: 0.8, opacity: 0 },
-  visible: { scale: 1, opacity: 1, transition: { duration: 0.25, ease: "easeOut" as const } },
-}
-
-function formatLocalDate(date: Date) {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, "0")
-  const day = String(date.getDate()).padStart(2, "0")
-  return `${year}-${month}-${day}`
-}
-
-const MUSCLE_GROUPS = ["Rest", "Chest & Triceps", "Back & Biceps", "Legs", "Shoulders & Core", "Full Body", "Arms & Core"]
+import { stagger, fadeUp, scaleIn } from "@/lib/animations"
+import { MUSCLE_GROUPS } from "@/lib/exerciseData"
+import { formatLocalDate } from "@/lib/dateUtils"
 
 const DEFAULT_EXERCISES: Record<number, Array<[string, string]>> = {
   0: [],

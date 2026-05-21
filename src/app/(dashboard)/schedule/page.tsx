@@ -12,18 +12,9 @@ import { useLanguage } from "@/context/LanguageContext"
 import { useTheme } from "@/context/ThemeContext"
 import { getFeedbackAdjustedExperienceLevel } from "@/lib/workoutFeedback"
 import { getSmartExercisePlan, toWorkoutExercises } from "@/lib/workoutRecommendations"
-
-const stagger = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.07 } },
-}
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" as const } },
-}
-
-const MUSCLE_GROUPS = ["Rest", "Chest & Triceps", "Back & Biceps", "Legs", "Shoulders & Core", "Full Body", "Arms & Core"]
+import { stagger, fadeUp } from "@/lib/animations"
+import { MUSCLE_GROUPS } from "@/lib/exerciseData"
+import { formatLocalDate } from "@/lib/dateUtils"
 
 const DAY_EXERCISES: Record<number, Array<{ name: string; sets: number; reps: number }>> = {
   1: [
@@ -90,13 +81,6 @@ const MOCK: Record<number, ScheduleBlock[]> = {
   4: [{ time: "8:00", label: "Data Structures", kind: "cls", duration: "90m" }, { time: "9:30", label: "Free", kind: "free", duration: "2h" }, { time: "11:30", label: "STS", kind: "cls", duration: "90m" }, { time: "13:00", label: "Free", kind: "free", duration: "2h" }],
   5: [{ time: "8:00", label: "Free", kind: "free", duration: "All morning" }, { time: "12:00", label: "Lunch", kind: "free", duration: "1h" }, { time: "13:00", label: "Free", kind: "free", duration: "All afternoon" }],
   6: [{ time: "9:00", label: "Free", kind: "free", duration: "All day" }, { time: "12:00", label: "Lunch", kind: "free", duration: "1h" }],
-}
-
-function formatLocalDate(date: Date) {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, "0")
-  const day = String(date.getDate()).padStart(2, "0")
-  return `${year}-${month}-${day}`
 }
 
 function formatManualTime(value: string) {
