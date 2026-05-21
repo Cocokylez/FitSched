@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useSession, signOut } from "next-auth/react"
@@ -228,7 +228,7 @@ export default function SettingsPage() {
   const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
-    if (status === "unauthenticated") router.push("/login")
+    if (status === "unauthenticated") router.push("/register")
   }, [status, router])
 
   const checkCalendar = useCallback(async () => {
@@ -353,7 +353,7 @@ export default function SettingsPage() {
     try {
       const res = await fetch("/api/account", { method: "DELETE" })
       if (res.ok) {
-        await signOut({ callbackUrl: "/login", redirect: true })
+        await signOut({ callbackUrl: "/register", redirect: true })
       }
     } catch {}
     setDeleting(false)
@@ -698,7 +698,7 @@ export default function SettingsPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: "easeOut" as const, delay: 0.25 }}
         >
-          <button onClick={async () => { await signOut({ callbackUrl: "/login", redirect: true }) }} style={{
+          <button onClick={async () => { await signOut({ callbackUrl: "/register", redirect: true }) }} style={{
             width: "100%",
             marginTop: "20px",
             background: "rgba(255,50,50,0.1)",

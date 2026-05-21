@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react"
 import { useSession } from "next-auth/react"
@@ -256,7 +256,7 @@ export default function ReportPage() {
   const [expandedLog, setExpandedLog] = useState<string | null>(null)
 
   useEffect(() => {
-    if (status === "unauthenticated") router.push("/login")
+    if (status === "unauthenticated") router.push("/register")
   }, [status, router])
 
   useEffect(() => {

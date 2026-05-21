@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import type { ReactNode } from "react"
 import { useEffect, useState } from "react"
@@ -90,7 +90,7 @@ export default function OnboardingPage() {
   })
 
   useEffect(() => {
-    if (status === "unauthenticated") router.push("/login")
+    if (status === "unauthenticated") router.push("/register")
   }, [status, router])
 
   useEffect(() => {

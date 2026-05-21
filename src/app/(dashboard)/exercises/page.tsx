@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
@@ -53,7 +53,7 @@ export default function ExercisesPage() {
   });
 
   useEffect(() => {
-    if (status === "unauthenticated") router.push("/login");
+    if (status === "unauthenticated") router.push("/register");
   }, [status, router]);
 
   const fetchExercises = useCallback(async () => {
