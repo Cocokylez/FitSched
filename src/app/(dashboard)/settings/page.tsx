@@ -222,10 +222,10 @@ export default function SettingsPage() {
   const [workoutsPerWeek, setWorkoutsPerWeek] = useState(3)
   const [workoutEnvironment, setWorkoutEnvironment] = useState<WorkoutEnvironment>("gym")
   const [savingWorkoutEnvironment, setSavingWorkoutEnvironment] = useState(false)
-  const [fitTokens, setFitTokens] = useState<FitTokenData>({
-    balance: 0,
-    transactions: [],
-  })
+  const [fitTokens, setFitTokens] = useState<FitTokenData>({ balance: 0, transactions: [] })
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState("")
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login")
@@ -345,6 +345,18 @@ export default function SettingsPage() {
         })
       } catch {}
     }
+  }
+
+  const deleteAccount = async () => {
+    if (deleteConfirm !== "DELETE") return
+    setDeleting(true)
+    try {
+      const res = await fetch("/api/account", { method: "DELETE" })
+      if (res.ok) {
+        await signOut({ callbackUrl: "/login", redirect: true })
+      }
+    } catch {}
+    setDeleting(false)
   }
 
   const profileName = session?.user?.name || t.user
@@ -709,11 +721,118 @@ export default function SettingsPage() {
               {t.signOut}
             </motion.span>
           </button>
-          <div style={{ textAlign: "center", fontSize: "11px", color: "var(--text-muted)", marginTop: "16px" }}>
+          <button
+            onClick={() => { setShowDeleteModal(true); setDeleteConfirm("") }}
+            style={{
+              width: "100%",
+              marginTop: "10px",
+              background: "transparent",
+              border: "none",
+              color: "var(--text-muted)",
+              fontSize: "13px",
+              fontWeight: 500,
+              cursor: "pointer",
+              padding: "10px",
+              textDecoration: "underline",
+              textDecorationColor: "var(--border)",
+            }}
+          >
+            Delete account
+          </button>
+
+          <div style={{ textAlign: "center", fontSize: "11px", color: "var(--text-muted)", marginTop: "8px" }}>
             {t.fitSched} v1.0.0
           </div>
         </motion.div>
       )}
+
+      {/* Delete account confirmation modal */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "fixed", inset: 0, zIndex: 100,
+              background: "rgba(0,0,0,0.72)",
+              display: "flex", alignItems: "flex-end", justifyContent: "center",
+              padding: "0 16px 32px",
+            }}
+            onClick={(e) => { if (e.target === e.currentTarget) setShowDeleteModal(false) }}
+          >
+            <motion.div
+              initial={{ y: 60, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 60, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 340, damping: 32 }}
+              style={{
+                width: "100%", maxWidth: 480,
+                background: "var(--panel)",
+                border: "1px solid var(--border)",
+                borderRadius: "24px",
+                padding: "28px 24px 32px",
+                boxShadow: "0 24px 80px rgba(0,0,0,0.5)",
+              }}
+            >
+              <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(220,50,50,0.12)", border: "1px solid rgba(220,50,50,0.25)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d96060" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                </svg>
+              </div>
+
+              <div className="display-text" style={{ fontSize: "19px", fontWeight: 800, color: "var(--text)", marginBottom: 6 }}>Delete your account?</div>
+              <p style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.55, marginBottom: 20 }}>
+                This permanently deletes your profile, workout history, streak, and FitTokens. There is no undo.
+              </p>
+
+              <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 8 }}>
+                Type <span style={{ color: "#d96060", fontFamily: "monospace" }}>DELETE</span> to confirm
+              </div>
+              <input
+                autoFocus
+                value={deleteConfirm}
+                onChange={e => setDeleteConfirm(e.target.value)}
+                placeholder="DELETE"
+                style={{
+                  width: "100%", boxSizing: "border-box",
+                  background: "var(--surface-2)",
+                  border: `1px solid ${deleteConfirm === "DELETE" ? "rgba(220,50,50,0.6)" : "var(--border)"}`,
+                  borderRadius: 12, padding: "13px 14px",
+                  color: "var(--text)", fontSize: 14, outline: "none",
+                  marginBottom: 20, fontFamily: "monospace",
+                  transition: "border-color 0.2s",
+                }}
+              />
+
+              <div style={{ display: "flex", gap: 10 }}>
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  style={{
+                    flex: 1, padding: "13px", borderRadius: 14, fontSize: 14, fontWeight: 600,
+                    background: "var(--surface-2)", border: "1px solid var(--border)",
+                    color: "var(--text)", cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={deleteAccount}
+                  disabled={deleteConfirm !== "DELETE" || deleting}
+                  style={{
+                    flex: 1, padding: "13px", borderRadius: 14, fontSize: 14, fontWeight: 700,
+                    background: deleteConfirm === "DELETE" ? "rgba(220,50,50,0.88)" : "rgba(220,50,50,0.25)",
+                    border: "none", color: "#fff", cursor: deleteConfirm === "DELETE" ? "pointer" : "default",
+                    transition: "background 0.2s", opacity: deleting ? 0.6 : 1,
+                  }}
+                >
+                  {deleting ? "Deleting…" : "Delete account"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
