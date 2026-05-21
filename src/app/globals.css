@@ -376,6 +376,97 @@ textarea::placeholder {
   background: linear-gradient(180deg, rgba(255,255,255,0.8), transparent, rgba(255,255,255,0.3));
 }
 
+.ios-inset-grouped {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 24px;
+  background:
+    linear-gradient(160deg, rgba(255,255,255,0.052) 0%, transparent 50%),
+    var(--panel);
+  box-shadow:
+    0 1px 0 0 rgba(255,255,255,0.06) inset,
+    0 20px 48px rgba(0,0,0,0.28),
+    0 1px 2px rgba(0,0,0,0.18);
+  transform: translateZ(0);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.ios-inset-grouped::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+[data-theme='light'] .ios-inset-grouped {
+  border-color: rgba(17, 24, 22, 0.09);
+  background:
+    linear-gradient(160deg, rgba(255,255,255,0.7) 0%, transparent 50%),
+    var(--panel);
+  box-shadow:
+    0 1px 0 0 rgba(255,255,255,0.8) inset,
+    0 12px 32px rgba(22,32,30,0.08),
+    0 1px 2px rgba(22,32,30,0.06);
+}
+
+.dashboard-shell-bg {
+  background:
+    radial-gradient(circle at 18% -10%, rgba(107, 191, 184, 0.13), transparent 28rem),
+    radial-gradient(circle at 100% 18%, rgba(107, 191, 184, 0.055), transparent 22rem),
+    var(--bg);
+}
+
+.app-topbar {
+  position: sticky;
+  top: 12px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 64px;
+  margin: 12px 12px 0;
+  padding: 14px 16px 14px 20px;
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.035), transparent),
+    color-mix(in srgb, var(--panel) 94%, transparent);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.icon-button {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.quiet-card {
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.026), transparent 46%),
+    var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.day-pill {
+  border-radius: 20px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
 @media (pointer: coarse), (max-width: 768px) {
   body::before {
     display: none;
