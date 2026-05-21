@@ -12,8 +12,8 @@ export async function GET(req: Request) {
   try {
     const session = await auth();
     const limited = session?.user?.id
-      ? rateLimitByUser(req, session.user.id, rateLimitPresets.read, "exercises:get")
-      : rateLimitByIp(req, rateLimitPresets.unauthenticated, "exercises:get:unauth");
+      ? await rateLimitByUser(req, session.user.id, rateLimitPresets.read, "exercises:get")
+      : await rateLimitByIp(req, rateLimitPresets.unauthenticated, "exercises:get:unauth");
     if (limited) return limited;
 
     const { searchParams } = new URL(req.url);
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.write, "exercises:post");
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.write, "exercises:post");
     if (limited) return limited;
 
     const body = await readJsonBody(req);
@@ -114,7 +114,7 @@ export async function DELETE(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.write, "exercises:delete");
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.write, "exercises:delete");
     if (limited) return limited;
 
     const { searchParams } = new URL(req.url);

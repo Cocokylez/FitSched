@@ -9,7 +9,7 @@ export async function GET(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.strictWrite, "calendar:connect");
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.strictWrite, "calendar:connect");
     if (limited) return limited;
 
     if (!process.env.GOOGLE_CALENDAR_CLIENT_ID || !process.env.GOOGLE_CALENDAR_CLIENT_SECRET) {

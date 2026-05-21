@@ -25,7 +25,7 @@ export async function GET(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.read, "tokens:get")
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.read, "tokens:get")
     if (limited) return limited
 
     const [balance, transactions] = await Promise.all([

@@ -76,7 +76,6 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      allowDangerousEmailAccountLinking: true,
     })
   )
 }
@@ -100,10 +99,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return session
     },
-    async jwt({ token, user }: any) {
+    async jwt({ token, user, trigger }: any) {
       if (user) {
         token.sub = user.id
+        token.tokenVersion = (user as any).tokenVersion ?? 0
       }
+
+      // On every refresh (not initial sign-in), verify tokenVersion still matches DB.
+      // Incrementing User.tokenVersion instantly invalidates all existing JWTs.
+      if (trigger !== "signIn" && trigger !== "signUp" && token.sub) {
+        const dbUser = await db.user.findUnique({
+          where: { id: token.sub },
+          select: { tokenVersion: true },
+        })
+        if (!dbUser || dbUser.tokenVersion !== token.tokenVersion) {
+          return null // Forces the session to be treated as unauthenticated
+        }
+      }
+
       return token
     },
   },

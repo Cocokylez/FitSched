@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.strictWrite, "push:send");
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.strictWrite, "push:send");
     if (limited) return limited;
 
     const requestBody = await readJsonBody(req, 8_000);

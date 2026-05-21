@@ -23,7 +23,7 @@ export async function GET(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.read, "workout-schedule:get")
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.read, "workout-schedule:get")
     if (limited) return limited
 
     const { searchParams } = new URL(req.url)
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.write, "workout-schedule:post")
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.write, "workout-schedule:post")
     if (limited) return limited
 
     const body = await readJsonBody(req)
@@ -124,7 +124,7 @@ export async function PATCH(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.write, "workout-schedule:patch")
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.write, "workout-schedule:patch")
     if (limited) return limited
 
     const body = await readJsonBody(req)
@@ -182,7 +182,7 @@ export async function DELETE(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.write, "workout-schedule:delete")
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.write, "workout-schedule:delete")
     if (limited) return limited
 
     const { searchParams } = new URL(req.url)

@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.strictWrite, "calendar:sync");
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.strictWrite, "calendar:sync");
     if (limited) return limited;
 
     if (!process.env.GOOGLE_CALENDAR_CLIENT_ID || !process.env.GOOGLE_CALENDAR_CLIENT_SECRET) {
@@ -124,7 +124,7 @@ export async function DELETE(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.strictWrite, "calendar:disconnect");
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.strictWrite, "calendar:disconnect");
     if (limited) return limited;
 
     await db.calendarConnection.deleteMany({
@@ -146,7 +146,7 @@ export async function GET(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.read, "calendar:get");
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.read, "calendar:get");
     if (limited) return limited;
 
     const { searchParams } = new URL(req.url);

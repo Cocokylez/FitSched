@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const limited = rateLimitByUser(req, session.user.id, rateLimitPresets.write, "push:subscribe");
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.write, "push:subscribe");
     if (limited) return limited;
 
     const subscription = await readJsonBody(req, 16_000);
