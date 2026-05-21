@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { BarChart3, Dumbbell, Footprints, User } from 'lucide-react'
@@ -53,6 +53,17 @@ export function DashboardNav() {
   const currentIndex = navItems.findIndex((item) => pathname.startsWith(item.href))
   const [travelIndex, setTravelIndex] = useState(Math.max(currentIndex, 0))
   const activeIndex = currentIndex >= 0 ? travelIndex : -1
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handlePointerEnter = useCallback((index: number) => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current)
+    setHoveredIndex(index)
+  }, [])
+
+  const handlePointerLeave = useCallback(() => {
+    hoverTimer.current = setTimeout(() => setHoveredIndex(null), 120)
+  }, [])
 
   useEffect(() => {
     if (currentIndex >= 0) setTravelIndex(currentIndex)
@@ -195,8 +206,11 @@ export function DashboardNav() {
                     lockedVisibleUntil.current = Date.now() + 700
                     setVisible(true)
                     setTravelIndex(index)
+                    setHoveredIndex(null)
                     router.push(item.href)
                   }}
+                  onPointerEnter={() => handlePointerEnter(index)}
+                  onPointerLeave={handlePointerLeave}
                   whileTap={{ scale: 0.96 }}
                   animate={{ y: isActive ? -1 : 0 }}
                   style={{
@@ -206,7 +220,6 @@ export function DashboardNav() {
                     flexDirection: "column",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: "3px",
                     background: "transparent",
                     border: "none",
                     cursor: "pointer",
@@ -214,10 +227,41 @@ export function DashboardNav() {
                     minHeight: 54,
                     padding: "7px 8px",
                     borderRadius: "22px",
-                    color: isActive ? "var(--text)" : "var(--text-muted)",
-                    overflow: "hidden",
+                    overflow: "visible",
                   }}
                 >
+                  {/* Tooltip — appears above icon on hover/touch */}
+                  <AnimatePresence>
+                    {hoveredIndex === index && (
+                      <motion.span
+                        initial={{ opacity: 0, y: 4, scale: 0.88 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 4, scale: 0.88 }}
+                        transition={{ duration: 0.15, ease: "easeOut" }}
+                        style={{
+                          position: "absolute",
+                          bottom: "calc(100% + 10px)",
+                          left: "50%",
+                          transform: "translateX(-50%)",
+                          whiteSpace: "nowrap",
+                          fontFamily: "var(--font-display)",
+                          fontSize: "11px",
+                          fontWeight: 800,
+                          color: "var(--text)",
+                          background: "var(--panel)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "8px",
+                          padding: "4px 9px",
+                          boxShadow: "var(--shadow)",
+                          pointerEvents: "none",
+                          zIndex: 99,
+                        }}
+                      >
+                        {(t[item.id as keyof typeof t] as string) || item.label}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+
                   <motion.span
                     animate={{ scale: isActive ? 1.08 : 1 }}
                     transition={{ type: "spring", stiffness: 380, damping: 26 }}
@@ -225,17 +269,6 @@ export function DashboardNav() {
                   >
                     {item.icon}
                   </motion.span>
-                  <span style={{
-                    position: "relative",
-                    fontFamily: "var(--font-display)",
-                    fontSize: "10px",
-                    fontWeight: 800,
-                    lineHeight: 1,
-                    letterSpacing: "0",
-                    color: isActive ? "var(--text)" : "var(--text-muted)",
-                  }}>
-                    {t[item.id as keyof typeof t] as string}
-                  </span>
                 </motion.button>
               )
             })}
