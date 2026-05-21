@@ -277,22 +277,12 @@ export default function ReportPage() {
     }
   }
 
-  /*
-   * Layout notes:
-   * - No min-h-dvh: the scroll container (main.dashboard-main) already owns
-   *   the viewport height. Adding min-h-dvh here interferes with padding math.
-   * - pt-14 (56px): gives clear breathing room below any status bar on mobile.
-   * - pb-[180px]: 94px nav clearance + 86px extra. Unambiguous on all devices.
-   * - gap-8 (32px): enough visual separation between every section.
-   * - All cards use p-6 (24px) consistently — no text touches an edge.
-   */
   return (
-    <div className="w-full px-5 pt-14 pb-[180px] sm:px-6">
+    <div style={{ padding: "22px 16px 140px", minHeight: "100vh", background: "transparent" }}>
       <motion.div
         variants={stagger}
         initial="hidden"
         animate="visible"
-        className="mx-auto w-full max-w-[540px]"
       >
 
         {/* ── Page header ──────────────────────────────────── */}
