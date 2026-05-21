@@ -41,6 +41,7 @@ model User {
   fitTokens           FitToken[]
   fitTokenBalance     FitTokenBalance?
   tokenVersion        Int                    @default(0)
+  passwordResetTokens PasswordResetToken[]
 }
 
 model Account {
@@ -338,6 +339,19 @@ model StreakMilestone {
 
   @@index([userId])
   @@unique([userId, milestone])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model SecurityLog {
