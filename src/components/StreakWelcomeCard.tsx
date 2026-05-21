@@ -124,105 +124,244 @@ function FreezeHalo({ active }: { active: boolean }) {
 
 function FireBurst({ broken, frozen }: { broken: boolean; frozen?: boolean }) {
   const shouldReduceMotion = useReducedMotion()
+  const fcx = 100, baseY = 182
+
+  const rays = useMemo(() => Array.from({ length: 12 }, (_, i) => {
+    const deg = i * 30
+    const rad = (deg * Math.PI) / 180
+    const len = 34 + (i % 3) * 14
+    return {
+      id: i,
+      x2: fcx + Math.cos(rad) * len,
+      y2: baseY + Math.sin(rad) * len,
+      delay: 0.04 + i * 0.022,
+      width: i % 2 === 0 ? 2.6 : 1.4,
+      color: i % 3 === 0
+        ? "rgba(255, 215, 55, 0.92)"
+        : i % 3 === 1
+        ? "rgba(255, 145, 35, 0.82)"
+        : "rgba(255, 95, 18, 0.72)",
+    }
+  }), [])
+
+  const sparks = useMemo(() => Array.from({ length: 8 }, (_, i) => {
+    const deg = i * 45 + 12
+    const rad = (deg * Math.PI) / 180
+    const dist = 46 + (i % 3) * 14
+    return {
+      id: i,
+      ex: Math.cos(rad) * dist,
+      ey: Math.sin(rad) * dist,
+      size: 3.5 + (i % 2) * 2.5,
+      delay: 0.1 + i * 0.048,
+      color: i % 3 === 0 ? "#fff4a0" : i % 3 === 1 ? "#ffb347" : "#ff6c1a",
+    }
+  }), [])
 
   return (
-    <div style={{ position: "relative", width: 172, height: 176, margin: "0 auto 14px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ position: "relative", width: 200, height: 210, margin: "0 auto 14px", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <motion.svg
-        viewBox="0 0 160 180"
-        width="160"
-        height="180"
+        viewBox="0 0 200 240"
+        width="200"
+        height="210"
         aria-hidden="true"
-        initial={{ scale: 0.48, opacity: 0, y: 22 }}
+        style={{ overflow: "visible" }}
+        initial={{ scale: 0.46, opacity: 0, y: 20 }}
         animate={broken
-          ? { scale: [0.48, 1.1, 0.8], opacity: [0, 1, 0.46], y: [22, 0, 0], rotate: [0, -5, 4] }
-          : { scale: shouldReduceMotion ? 1 : [0.48, 1.16, 1], opacity: 1, y: 0, rotate: shouldReduceMotion ? 0 : [0, -1.5, 1.5, 0] }}
+          ? { scale: [0.46, 1.08, 0.82], opacity: [0, 1, 0.48], y: [20, 0, 0] }
+          : { scale: shouldReduceMotion ? 1 : [0.46, 1.22, 0.96, 1], opacity: 1, y: 0 }}
         transition={broken
           ? { duration: 1.15, ease: "easeOut" }
-          : { duration: shouldReduceMotion ? 0.25 : 1.35, ease: [0.16, 1, 0.3, 1] }}
+          : { duration: shouldReduceMotion ? 0.22 : 0.72, ease: [0.16, 1, 0.3, 1] }}
       >
         <defs>
-          <radialGradient id="streakGlow" cx="50%" cy="58%" r="48%">
-            <stop offset="0%" stopColor={broken ? "rgba(225, 232, 235, 0.42)" : "rgba(255, 185, 73, 0.62)"} />
-            <stop offset="52%" stopColor={broken ? "rgba(170, 180, 184, 0.18)" : "rgba(255, 93, 42, 0.24)"} />
-            <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
+          <radialGradient id="cfBaseGlow" cx="50%" cy="95%" r="52%">
+            <stop offset="0%" stopColor={broken ? "rgba(155,165,170,0.65)" : "rgba(255,128,18,0.8)"} />
+            <stop offset="100%" stopColor="rgba(0,0,0,0)" />
           </radialGradient>
-          <linearGradient id="outerFlame" x1="75" y1="24" x2="83" y2="160" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor={broken ? "#d3d8da" : "#ffdf63"} />
-            <stop offset="34%" stopColor={broken ? "#aeb8bb" : "#ff8a2f"} />
-            <stop offset="72%" stopColor={broken ? "#6f7a7d" : "#ff3f25"} />
-            <stop offset="100%" stopColor={broken ? "#485155" : "#b6171a"} />
+          <linearGradient id="cfLogA" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={broken ? "#585e62" : "#8c5422"} />
+            <stop offset="100%" stopColor={broken ? "#363c40" : "#3c1e08"} />
           </linearGradient>
-          <linearGradient id="innerFlame" x1="82" y1="64" x2="82" y2="149" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor={broken ? "#f0f2f2" : "#fff7a6"} />
-            <stop offset="58%" stopColor={broken ? "#bcc4c6" : "#ffd24f"} />
-            <stop offset="100%" stopColor={broken ? "#828d90" : "#ff7a1f"} />
+          <linearGradient id="cfLogB" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={broken ? "#4e5458" : "#764218"} />
+            <stop offset="100%" stopColor={broken ? "#2e3438" : "#2e1606"} />
           </linearGradient>
-          <filter id="flameSoftGlow" x="-35%" y="-35%" width="170%" height="170%">
-            <feGaussianBlur stdDeviation="5.5" result="blur" />
-            <feColorMatrix
-              in="blur"
-              type="matrix"
-              values={broken
-                ? "0.55 0 0 0 0.55 0 0.62 0 0 0.62 0 0 0.7 0 0.7 0 0 0 0.48 0"
-                : "1 0 0 0 1 0 0.45 0 0 0.32 0 0 0.1 0 0 0 0 0 0.72 0"}
-            />
-            <feMerge>
-              <feMergeNode />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
+          <linearGradient id="cfOuterFlame" x1={fcx} y1="44" x2={fcx} y2="178" gradientUnits="userSpaceOnUse">
+            <stop offset="0%"   stopColor={broken ? "#c5cdd0" : "#ffe25a"} />
+            <stop offset="36%"  stopColor={broken ? "#8a9498" : "#ff7818"} />
+            <stop offset="78%"  stopColor={broken ? "#586266" : "#e02c0c"} />
+            <stop offset="100%" stopColor={broken ? "#3c4548" : "#7e1006"} />
+          </linearGradient>
+          <linearGradient id="cfMidFlame" x1={fcx} y1="78" x2={fcx} y2="176" gradientUnits="userSpaceOnUse">
+            <stop offset="0%"   stopColor={broken ? "#e5eaec" : "#fff8b8"} />
+            <stop offset="50%"  stopColor={broken ? "#aebcc0" : "#ffbe3a"} />
+            <stop offset="100%" stopColor={broken ? "#74828a" : "#ff661a"} />
+          </linearGradient>
+          <filter id="cfBlur" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="8" />
+          </filter>
+          <filter id="cfEmberGlow" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="4" result="b" />
+            <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
         </defs>
 
-        <ellipse cx="80" cy="105" rx="62" ry="66" fill="url(#streakGlow)" opacity={broken ? 0.45 : 0.85} />
+        {/* Ground ambient glow */}
+        <ellipse cx={fcx} cy="222" rx="64" ry="18" fill="url(#cfBaseGlow)" opacity={broken ? 0.38 : 0.92} />
 
-        <motion.g
-          style={{ transformOrigin: "80px 142px" }}
-          animate={broken || shouldReduceMotion ? { scaleX: 1, scaleY: 1 } : { scaleX: [1, 0.94, 1.06, 1], scaleY: [1, 1.05, 0.97, 1] }}
-          transition={{ duration: 1.05, repeat: broken || shouldReduceMotion ? 0 : Infinity, ease: "easeInOut" }}
-          filter="url(#flameSoftGlow)"
-        >
-          <path
-            d="M80 166c-31.5 0-57-22.8-57-55.7 0-22.8 14.1-42.7 30.7-59.1 12.5-12.3 20.6-24.5 19.4-39.2 19.9 9.1 33.1 25.4 36.3 45.3 7-4.5 11.4-11.4 12.9-20.3 15.9 16.2 20.7 34.8 17.4 52.8C134.4 129.5 112.6 166 80 166Z"
-            fill="url(#outerFlame)"
-            opacity={broken ? 0.58 : 1}
-          />
+        {/* Pop burst rays — one-shot on mount */}
+        {!broken && !shouldReduceMotion && rays.map((ray) => (
           <motion.path
-            d="M82 151c-18.6 0-33.3-13.3-33.3-32.4 0-12.5 8.3-24.3 18.3-33.7 7.3-6.9 12.7-16 11.1-27.6 14.2 8.5 22.2 20.7 22.7 34.1 5.3-2.1 9.8-6.5 12.5-12.6 8.1 11.4 10.1 24.1 6.7 36.1-5.3 18.6-19.2 36.1-38 36.1Z"
-            fill="url(#innerFlame)"
-            opacity={broken ? 0.5 : 0.96}
-            style={{ transformOrigin: "82px 145px" }}
-            animate={broken || shouldReduceMotion ? { scale: 1, y: 0 } : { scale: [1, 1.09, 0.98, 1.05], y: [0, -4, 1, -2] }}
-            transition={{ duration: 0.82, repeat: broken || shouldReduceMotion ? 0 : Infinity, ease: "easeInOut" }}
+            key={ray.id}
+            d={`M${fcx},${baseY} L${ray.x2},${ray.y2}`}
+            stroke={ray.color}
+            strokeWidth={ray.width}
+            strokeLinecap="round"
+            fill="none"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: [0, 1, 1, 0], opacity: [0, 0.92, 0.88, 0] }}
+            transition={{ duration: 0.72, delay: ray.delay, ease: "easeOut" }}
           />
-          <motion.path
-            d="M58 129c-9.3-12.1-7.1-28.2 6.2-41.5 1.9 9 7.8 14.1 15.7 20.6-13.4 3.6-20 10.8-21.9 20.9Z"
-            fill={broken ? "#a9b2b5" : "#ffd85b"}
-            opacity={broken ? 0.38 : 0.78}
-            animate={broken || shouldReduceMotion ? { opacity: 0.38 } : { opacity: [0.48, 0.92, 0.58] }}
-            transition={{ duration: 0.7, repeat: broken || shouldReduceMotion ? 0 : Infinity, ease: "easeInOut" }}
+        ))}
+
+        {/* Pop spark dots — one-shot on mount */}
+        {!broken && !shouldReduceMotion && sparks.map((sp) => (
+          <motion.circle
+            key={sp.id}
+            cx={fcx}
+            cy={baseY}
+            r={sp.size}
+            fill={sp.color}
+            initial={{ x: 0, y: 0, opacity: 0, scale: 0 }}
+            animate={{ x: sp.ex, y: sp.ey, opacity: [0, 1, 0.7, 0], scale: [0, 1.3, 0.5, 0] }}
+            transition={{ duration: 0.75, delay: sp.delay, ease: "easeOut" }}
           />
-          <motion.path
-            d="M103 132c8.6-13.9 6-30.1-6.5-41.1-0.8 9.3-6.1 15.7-14.1 22.9 12.1 2.8 18.2 9.7 20.6 18.2Z"
-            fill={broken ? "#8f999d" : "#ffb33e"}
-            opacity={broken ? 0.34 : 0.66}
-            animate={broken || shouldReduceMotion ? { opacity: 0.34 } : { opacity: [0.38, 0.78, 0.45] }}
-            transition={{ duration: 0.92, repeat: broken || shouldReduceMotion ? 0 : Infinity, ease: "easeInOut" }}
+        ))}
+
+        {/* Log A */}
+        <rect
+          x="42" y={baseY - 6} width="90" height="15" rx="7.5"
+          fill="url(#cfLogA)"
+          transform={`rotate(-26 ${fcx} ${baseY})`}
+          opacity={broken ? 0.62 : 1}
+        />
+        {/* Log B */}
+        <rect
+          x="68" y={baseY - 6} width="90" height="15" rx="7.5"
+          fill="url(#cfLogB)"
+          transform={`rotate(26 ${fcx} ${baseY})`}
+          opacity={broken ? 0.52 : 1}
+        />
+        {/* Log intersection shadow */}
+        <ellipse cx={fcx} cy={baseY + 4} rx="26" ry="6" fill="rgba(0,0,0,0.38)" opacity={broken ? 0.28 : 0.55} />
+
+        {/* Live ember dots at log intersection */}
+        {!broken && !shouldReduceMotion && (
+          <>
+            <motion.circle cx="90" cy={baseY - 3} r="3.8" fill="#ff9820"
+              filter="url(#cfEmberGlow)"
+              animate={{ opacity: [0.65, 1, 0.45], r: [3, 4.2, 2.6] }}
+              transition={{ duration: 0.78, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <motion.circle cx="106" cy={baseY - 1} r="3.0" fill="#ffcc38"
+              filter="url(#cfEmberGlow)"
+              animate={{ opacity: [0.48, 1, 0.58], r: [2.6, 3.6, 2.2] }}
+              transition={{ duration: 0.62, delay: 0.2, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <motion.circle cx="118" cy={baseY - 5} r="2.4" fill="#ff7818"
+              filter="url(#cfEmberGlow)"
+              animate={{ opacity: [0.55, 0.9, 0.38] }}
+              transition={{ duration: 0.9, delay: 0.4, repeat: Infinity, ease: "easeInOut" }}
+            />
+          </>
+        )}
+
+        {/* Backing glow blur layer */}
+        <motion.path
+          d={`M${fcx} 176 C68 163 48 130 56 94 C62 64 78 50 82 26 C104 50 126 70 122 102 C118 132 110 158 ${fcx} 176 Z`}
+          fill={broken ? "#6c7880" : "#ff4e0c"}
+          filter="url(#cfBlur)"
+          opacity={broken ? 0.26 : 0.52}
+          animate={broken ? {} : { opacity: [0.42, 0.62, 0.42] }}
+          transition={{ duration: 1.75, repeat: Infinity, ease: "easeInOut" }}
+        />
+
+        {/* Outer flame */}
+        <motion.path
+          d={`M${fcx} 176 C68 163 48 130 56 94 C62 64 78 50 82 26 C104 50 126 70 122 102 C118 132 110 158 ${fcx} 176 Z`}
+          fill="url(#cfOuterFlame)"
+          opacity={broken ? 0.58 : 1}
+          style={{ transformOrigin: `${fcx}px ${baseY}px` }}
+          animate={broken || shouldReduceMotion ? {} : {
+            scaleX: [1, 0.92, 1.08, 0.96, 1],
+            scaleY: [1, 1.05, 0.97, 1.04, 1],
+          }}
+          transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+        />
+
+        {/* Mid flame */}
+        <motion.path
+          d={`M${fcx} 168 C76 157 63 133 68 106 C72 82 84 68 87 46 C103 64 115 82 112 106 C109 128 102 154 ${fcx} 168 Z`}
+          fill="url(#cfMidFlame)"
+          opacity={broken ? 0.5 : 0.95}
+          style={{ transformOrigin: `${fcx}px ${baseY}px` }}
+          animate={broken || shouldReduceMotion ? {} : {
+            scaleX: [1, 1.1, 0.93, 1.05, 1],
+            y: [0, -6, 2, -3, 0],
+          }}
+          transition={{ duration: 1.12, repeat: Infinity, ease: "easeInOut", delay: 0.14 }}
+        />
+
+        {/* White-hot core */}
+        <motion.path
+          d={`M${fcx} 158 C88 149 84 134 87 120 C90 108 98 100 99 86 C109 100 112 114 110 127 C108 139 104 152 ${fcx} 158 Z`}
+          fill="#ffffff"
+          opacity={broken ? 0.18 : 0.88}
+          style={{ transformOrigin: `${fcx}px 140px` }}
+          animate={broken || shouldReduceMotion ? {} : {
+            opacity: [0.82, 1, 0.76, 0.96],
+            scaleY: [1, 1.08, 0.95, 1.05],
+          }}
+          transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut", delay: 0.22 }}
+        />
+
+        {/* Rising embers */}
+        {!broken && !shouldReduceMotion && [
+          { cx: 84, cy: 102, r: 2.2, dx: -9,  color: "#fff4b0", delay: 0 },
+          { cx: 108, cy: 84,  r: 1.8, dx:  8,  color: "#ffb347", delay: 0.68 },
+          { cx: 116, cy: 112, r: 2.5, dx:  12, color: "#ffe566", delay: 1.18 },
+          { cx: 90,  cy: 94,  r: 1.6, dx: -5,  color: "#ffffff", delay: 1.78 },
+          { cx: 110, cy: 100, r: 2.0, dx:  7,  color: "#ffcc40", delay: 0.4 },
+          { cx: 78,  cy: 118, r: 1.5, dx: -11, color: "#fff4b0", delay: 0.95 },
+        ].map((e, i) => (
+          <motion.circle
+            key={i}
+            r={e.r}
+            fill={e.color}
+            animate={{
+              cx: [e.cx, e.cx + e.dx],
+              cy: [e.cy, e.cy - 60],
+              opacity: [0, 1, 0.65, 0],
+              r: [e.r, e.r * 0.28],
+            }}
+            transition={{ duration: 2.2, delay: e.delay, repeat: Infinity, ease: "easeOut" }}
           />
-        </motion.g>
+        ))}
       </motion.svg>
 
       {frozen && <FreezeHalo active={frozen} />}
 
       {!broken && !shouldReduceMotion && (
         <motion.span
-          initial={{ scale: 0.75, opacity: 0 }}
-          animate={{ scale: [0.75, 1.2, 0.98], opacity: [0, 0.28, 0] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: "easeOut" }}
+          initial={{ scale: 0.7, opacity: 0 }}
+          animate={{ scale: [0.7, 1.3, 1.0], opacity: [0, 0.3, 0] }}
+          transition={{ duration: 2.1, repeat: Infinity, ease: "easeOut" }}
           style={{
             position: "absolute",
-            inset: 12,
+            inset: 8,
             borderRadius: "50%",
-            border: "1px solid rgba(255, 163, 59, 0.28)",
+            border: "1px solid rgba(255, 148, 36, 0.32)",
           }}
         />
       )}
