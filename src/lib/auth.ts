@@ -99,21 +99,28 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return session
     },
-    async jwt({ token, user, trigger }: any) {
+    async jwt({ token, user }: any) {
       if (user) {
+        // Initial sign-in — fetch tokenVersion from DB because OAuth user
+        // objects don't carry custom fields.
         token.sub = user.id
-        token.tokenVersion = (user as any).tokenVersion ?? 0
+        const fresh = await db.user.findUnique({
+          where: { id: user.id },
+          select: { tokenVersion: true },
+        })
+        token.tokenVersion = fresh?.tokenVersion ?? 0
+        return token
       }
 
-      // On every refresh (not initial sign-in), verify tokenVersion still matches DB.
-      // Incrementing User.tokenVersion instantly invalidates all existing JWTs.
-      if (trigger !== "signIn" && trigger !== "signUp" && token.sub) {
+      // Subsequent requests — verify tokenVersion still matches DB.
+      // Increment User.tokenVersion to instantly invalidate a user's JWTs.
+      if (token.sub) {
         const dbUser = await db.user.findUnique({
           where: { id: token.sub },
           select: { tokenVersion: true },
         })
         if (!dbUser || dbUser.tokenVersion !== token.tokenVersion) {
-          return null // Forces the session to be treated as unauthenticated
+          return null
         }
       }
 
