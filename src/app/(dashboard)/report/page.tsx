@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { Activity, Check, MoreHorizontal, PencilLine, Ruler, Save, Scale, ShieldCheck } from "lucide-react"
+import { Check, MoreHorizontal, PencilLine, Ruler, Save, Scale, ShieldCheck } from "lucide-react"
 import { SkeletonCard } from "@/components/Skeleton"
 import FlameIcon from "@/components/FlameIcon"
 
@@ -194,8 +194,6 @@ export default function ReportPage() {
   const bmi = calculateBmi(heightCm, weightKg) ?? profile?.bmi ?? null
   const bmiStatus = getBmiStatus(bmi)
   const longestStreak = useMemo(() => calculateLongestStreak(logs), [logs])
-  const topMuscles = useMemo(() => getTopMuscles(logs), [logs])
-  const totalExercises = logs.reduce((sum, log) => sum + log.exercises.length, 0)
 
   const [today, setToday] = useState<Date | null>(null)
   const [weekNumber, setWeekNumber] = useState<number | null>(null)
@@ -365,60 +363,7 @@ export default function ReportPage() {
               </div>
             </motion.section>
 
-            {/* ── 2. Stats triptych — one unified panel, no separate cards ── */}
-            <motion.section variants={fadeUp}>
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr 1fr",
-                borderRadius: 20,
-                border: "1px solid var(--border)",
-                background: "var(--panel)",
-                overflow: "hidden",
-                boxShadow: "var(--shadow)",
-              }}>
-                {[
-                  {
-                    label: "Weight",
-                    value: weightKg || "--",
-                    unit: weightKg ? "kg" : "",
-                  },
-                  {
-                    label: "Sessions",
-                    value: String(logs.length),
-                    unit: profile?.workoutsPerWeek ? `/ ${profile.workoutsPerWeek}` : "",
-                  },
-                  {
-                    label: "Exercises",
-                    value: String(totalExercises),
-                    unit: "",
-                  },
-                ].map((stat, i) => (
-                  <div
-                    key={stat.label}
-                    style={{
-                      padding: "16px 14px",
-                      borderLeft: i > 0 ? "1px solid var(--border)" : "none",
-                    }}
-                  >
-                    <div className="label-text" style={{ fontSize: 9, color: "var(--text-muted)", marginBottom: 7 }}>
-                      {stat.label}
-                    </div>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 3, flexWrap: "wrap" }}>
-                      <span className="number-text" style={{ fontSize: 26, fontWeight: 900, lineHeight: 1, color: "var(--text)" }}>
-                        {stat.value}
-                      </span>
-                      {stat.unit && (
-                        <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)" }}>
-                          {stat.unit}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </motion.section>
-
-            {/* ── 3. BMI + form ─────────────────────────────────── */}
+            {/* ── 2. BMI + form ─────────────────────────────────── */}
             <motion.section
               variants={fadeUp}
               className="ios-inset-grouped"
@@ -598,62 +543,6 @@ export default function ReportPage() {
                   </p>
                 )}
               </form>
-            </motion.section>
-
-            {/* ── 4. Most Trained — no card, just raw section ───── */}
-            <motion.section variants={fadeUp}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-                <span className="label-text" style={{ fontSize: 10, color: "#6bbfb8" }}>Most Trained</span>
-                <span style={{ fontSize: 11, color: "var(--text-muted)" }}>last 30 days</span>
-              </div>
-
-              {topMuscles.length > 0 ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                  {topMuscles.map((muscle, index) => (
-                    <div key={muscle.group}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                        <span style={{ fontSize: 15, fontWeight: 800, color: "var(--text)" }}>
-                          {muscle.group}
-                        </span>
-                        <span className="number-text" style={{ fontSize: 14, fontWeight: 900, color: "var(--accent-strong)" }}>
-                          {muscle.pct}%
-                        </span>
-                      </div>
-                      <div style={{ height: 8, borderRadius: 999, overflow: "hidden", background: "rgba(255,255,255,0.07)" }}>
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${muscle.pct}%` }}
-                          transition={{ duration: 0.75, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                          style={{ height: "100%", borderRadius: 999, background: "linear-gradient(90deg, #3d9a93, #6bbfb8)" }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{
-                  display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
-                  padding: "36px 20px",
-                  borderRadius: 20,
-                  border: "1px solid var(--border)",
-                  background: "var(--surface-2)",
-                  textAlign: "center",
-                }}>
-                  <div style={{
-                    width: 50, height: 50,
-                    display: "grid", placeItems: "center",
-                    borderRadius: 15,
-                    border: "1px solid var(--border)",
-                    background: "var(--panel)",
-                    color: "var(--text-muted)",
-                  }}>
-                    <Activity size={22} strokeWidth={1.6} />
-                  </div>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", lineHeight: 1.5, maxWidth: 220 }}>
-                    Complete a workout to see your muscle patterns here.
-                  </p>
-                </div>
-              )}
             </motion.section>
 
           </div>
