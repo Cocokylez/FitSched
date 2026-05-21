@@ -122,41 +122,83 @@ function FreezeHalo({ active }: { active: boolean }) {
   )
 }
 
-function FireBurst({ broken, frozen }: { broken: boolean; frozen?: boolean }) {
+function getFirePalette(streak: number, broken: boolean) {
+  if (broken) return {
+    outer:  ["#c5cdd0", "#8a9498", "#586266", "#3c4548"] as const,
+    mid:    ["#e5eaec", "#aebcc0", "#74828a"] as const,
+    glow: "#6c7880", halo: "rgba(108,120,128,0.35)",
+    embers: ["#dce4e8", "#b0bcc0", "#90a0a8"] as const,
+    rays:   ["rgba(180,190,200,0.8)", "rgba(140,155,165,0.7)", "rgba(110,125,135,0.6)"] as const,
+    sparks: ["#dce4e8", "#b0bcc0", "#90a0a8"] as const,
+    extra:  null as string | null,
+  }
+  if (streak >= 50) return {
+    outer:  ["#c0e8ff", "#9040f8", "#e0102a", "#6a0010"] as const,
+    mid:    ["#ffffff", "#cc80ff", "#e81040"] as const,
+    glow: "#c82040", halo: "rgba(180,40,255,0.58)",
+    embers: ["#c0e8ff", "#e060ff", "#ff4060"] as const,
+    rays:   ["rgba(100,180,255,0.92)", "rgba(160,60,255,0.85)", "rgba(220,20,50,0.78)"] as const,
+    sparks: ["#c0e8ff", "#d880ff", "#ff4060"] as const,
+    extra:  "#2060ff" as string | null,
+  }
+  if (streak >= 20) return {
+    outer:  ["#ffe0e0", "#ff2828", "#c80020", "#6a0010"] as const,
+    mid:    ["#ffffff", "#ff9090", "#e01828"] as const,
+    glow: "#cc0018", halo: "rgba(220,20,30,0.55)",
+    embers: ["#ffc8c8", "#ff6060", "#ff9090"] as const,
+    rays:   ["rgba(255,130,130,0.92)", "rgba(220,30,30,0.82)", "rgba(160,10,20,0.72)"] as const,
+    sparks: ["#ffc8c8", "#ff5555", "#cc1020"] as const,
+    extra:  null as string | null,
+  }
+  if (streak >= 10) return {
+    outer:  ["#e8f8ff", "#38bfff", "#0070d0", "#002866"] as const,
+    mid:    ["#ffffff", "#88d4ff", "#1878f0"] as const,
+    glow: "#0068e8", halo: "rgba(28,128,255,0.52)",
+    embers: ["#c8f0ff", "#60c8ff", "#98d8ff"] as const,
+    rays:   ["rgba(100,200,255,0.92)", "rgba(40,140,255,0.82)", "rgba(20,80,220,0.72)"] as const,
+    sparks: ["#c8f0ff", "#60c8ff", "#2080ff"] as const,
+    extra:  null as string | null,
+  }
+  return {
+    outer:  ["#ffe25a", "#ff7818", "#e02c0c", "#7e1006"] as const,
+    mid:    ["#fff8b8", "#ffbe3a", "#ff661a"] as const,
+    glow: "#ff4e0c", halo: "rgba(255,120,18,0.50)",
+    embers: ["#fff4b0", "#ffb347", "#ffe566"] as const,
+    rays:   ["rgba(255,215,55,0.92)", "rgba(255,145,35,0.82)", "rgba(255,95,18,0.72)"] as const,
+    sparks: ["#fff4a0", "#ffb347", "#ff6c1a"] as const,
+    extra:  null as string | null,
+  }
+}
+
+function FireBurst({ broken, frozen, streak = 0 }: { broken: boolean; frozen?: boolean; streak?: number }) {
   const shouldReduceMotion = useReducedMotion()
   const fcx = 100, baseY = 182
+  const p = getFirePalette(streak, broken)
 
-  const rays = useMemo(() => Array.from({ length: 12 }, (_, i) => {
-    const deg = i * 30
-    const rad = (deg * Math.PI) / 180
+  const rayPositions = useMemo(() => Array.from({ length: 12 }, (_, i) => {
+    const rad = (i * 30 * Math.PI) / 180
     const len = 34 + (i % 3) * 14
-    return {
-      id: i,
-      x2: fcx + Math.cos(rad) * len,
-      y2: baseY + Math.sin(rad) * len,
-      delay: 0.04 + i * 0.022,
-      width: i % 2 === 0 ? 2.6 : 1.4,
-      color: i % 3 === 0
-        ? "rgba(255, 215, 55, 0.92)"
-        : i % 3 === 1
-        ? "rgba(255, 145, 35, 0.82)"
-        : "rgba(255, 95, 18, 0.72)",
-    }
+    return { id: i, x2: fcx + Math.cos(rad) * len, y2: baseY + Math.sin(rad) * len, delay: 0.04 + i * 0.022, width: i % 2 === 0 ? 2.6 : 1.4 }
   }), [])
 
-  const sparks = useMemo(() => Array.from({ length: 8 }, (_, i) => {
-    const deg = i * 45 + 12
-    const rad = (deg * Math.PI) / 180
+  const sparkPositions = useMemo(() => Array.from({ length: 8 }, (_, i) => {
+    const rad = ((i * 45 + 12) * Math.PI) / 180
     const dist = 46 + (i % 3) * 14
-    return {
-      id: i,
-      ex: Math.cos(rad) * dist,
-      ey: Math.sin(rad) * dist,
-      size: 3.5 + (i % 2) * 2.5,
-      delay: 0.1 + i * 0.048,
-      color: i % 3 === 0 ? "#fff4a0" : i % 3 === 1 ? "#ffb347" : "#ff6c1a",
-    }
+    return { id: i, ex: Math.cos(rad) * dist, ey: Math.sin(rad) * dist, size: 3.5 + (i % 2) * 2.5, delay: 0.1 + i * 0.048 }
   }), [])
+
+  const flamePath = `M${fcx} 176 C68 163 48 130 56 94 C62 64 78 50 82 26 C104 50 126 70 122 102 C118 132 110 158 ${fcx} 176 Z`
+  const midPath   = `M${fcx} 168 C76 157 63 133 68 106 C72 82 84 68 87 46 C103 64 115 82 112 106 C109 128 102 154 ${fcx} 168 Z`
+  const corePath  = `M${fcx} 158 C88 149 84 134 87 120 C90 108 98 100 99 86 C109 100 112 114 110 127 C108 139 104 152 ${fcx} 158 Z`
+
+  const emberData = [
+    { cx: 84,  cy: 102, r: 2.2, dx: -9,  delay: 0 },
+    { cx: 108, cy: 84,  r: 1.8, dx:  8,  delay: 0.68 },
+    { cx: 116, cy: 112, r: 2.5, dx:  12, delay: 1.18 },
+    { cx: 90,  cy: 94,  r: 1.6, dx: -5,  delay: 1.78 },
+    { cx: 110, cy: 100, r: 2.0, dx:  7,  delay: 0.4 },
+    { cx: 78,  cy: 118, r: 1.5, dx: -11, delay: 0.95 },
+  ]
 
   return (
     <div style={{ position: "relative", width: 200, height: 210, margin: "0 auto 14px", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -175,31 +217,30 @@ function FireBurst({ broken, frozen }: { broken: boolean; frozen?: boolean }) {
           : { duration: shouldReduceMotion ? 0.22 : 0.72, ease: [0.16, 1, 0.3, 1] }}
       >
         <defs>
-          <radialGradient id="cfBaseGlow" cx="50%" cy="95%" r="52%">
-            <stop offset="0%" stopColor={broken ? "rgba(155,165,170,0.65)" : "rgba(255,128,18,0.8)"} />
-            <stop offset="100%" stopColor="rgba(0,0,0,0)" />
-          </radialGradient>
           <linearGradient id="cfLogA" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={broken ? "#585e62" : "#8c5422"} />
+            <stop offset="0%"   stopColor={broken ? "#585e62" : "#8c5422"} />
             <stop offset="100%" stopColor={broken ? "#363c40" : "#3c1e08"} />
           </linearGradient>
           <linearGradient id="cfLogB" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={broken ? "#4e5458" : "#764218"} />
+            <stop offset="0%"   stopColor={broken ? "#4e5458" : "#764218"} />
             <stop offset="100%" stopColor={broken ? "#2e3438" : "#2e1606"} />
           </linearGradient>
           <linearGradient id="cfOuterFlame" x1={fcx} y1="44" x2={fcx} y2="178" gradientUnits="userSpaceOnUse">
-            <stop offset="0%"   stopColor={broken ? "#c5cdd0" : "#ffe25a"} />
-            <stop offset="36%"  stopColor={broken ? "#8a9498" : "#ff7818"} />
-            <stop offset="78%"  stopColor={broken ? "#586266" : "#e02c0c"} />
-            <stop offset="100%" stopColor={broken ? "#3c4548" : "#7e1006"} />
+            <stop offset="0%"   stopColor={p.outer[0]} />
+            <stop offset="36%"  stopColor={p.outer[1]} />
+            <stop offset="78%"  stopColor={p.outer[2]} />
+            <stop offset="100%" stopColor={p.outer[3]} />
           </linearGradient>
           <linearGradient id="cfMidFlame" x1={fcx} y1="78" x2={fcx} y2="176" gradientUnits="userSpaceOnUse">
-            <stop offset="0%"   stopColor={broken ? "#e5eaec" : "#fff8b8"} />
-            <stop offset="50%"  stopColor={broken ? "#aebcc0" : "#ffbe3a"} />
-            <stop offset="100%" stopColor={broken ? "#74828a" : "#ff661a"} />
+            <stop offset="0%"   stopColor={p.mid[0]} />
+            <stop offset="50%"  stopColor={p.mid[1]} />
+            <stop offset="100%" stopColor={p.mid[2]} />
           </linearGradient>
-          <filter id="cfBlur" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="8" />
+          <filter id="cfBlur" x="-55%" y="-55%" width="210%" height="210%">
+            <feGaussianBlur stdDeviation="11" />
+          </filter>
+          <filter id="cfBlurWide" x="-70%" y="-70%" width="240%" height="240%">
+            <feGaussianBlur stdDeviation="18" />
           </filter>
           <filter id="cfEmberGlow" x="-60%" y="-60%" width="220%" height="220%">
             <feGaussianBlur stdDeviation="4" result="b" />
@@ -207,15 +248,12 @@ function FireBurst({ broken, frozen }: { broken: boolean; frozen?: boolean }) {
           </filter>
         </defs>
 
-        {/* Ground ambient glow */}
-        <ellipse cx={fcx} cy="222" rx="64" ry="18" fill="url(#cfBaseGlow)" opacity={broken ? 0.38 : 0.92} />
-
         {/* Pop burst rays — one-shot on mount */}
-        {!broken && !shouldReduceMotion && rays.map((ray) => (
+        {!broken && !shouldReduceMotion && rayPositions.map((ray) => (
           <motion.path
             key={ray.id}
             d={`M${fcx},${baseY} L${ray.x2},${ray.y2}`}
-            stroke={ray.color}
+            stroke={p.rays[ray.id % 3]}
             strokeWidth={ray.width}
             strokeLinecap="round"
             fill="none"
@@ -226,13 +264,11 @@ function FireBurst({ broken, frozen }: { broken: boolean; frozen?: boolean }) {
         ))}
 
         {/* Pop spark dots — one-shot on mount */}
-        {!broken && !shouldReduceMotion && sparks.map((sp) => (
+        {!broken && !shouldReduceMotion && sparkPositions.map((sp) => (
           <motion.circle
             key={sp.id}
-            cx={fcx}
-            cy={baseY}
-            r={sp.size}
-            fill={sp.color}
+            cx={fcx} cy={baseY} r={sp.size}
+            fill={p.sparks[sp.id % 3]}
             initial={{ x: 0, y: 0, opacity: 0, scale: 0 }}
             animate={{ x: sp.ex, y: sp.ey, opacity: [0, 1, 0.7, 0], scale: [0, 1.3, 0.5, 0] }}
             transition={{ duration: 0.75, delay: sp.delay, ease: "easeOut" }}
@@ -240,36 +276,28 @@ function FireBurst({ broken, frozen }: { broken: boolean; frozen?: boolean }) {
         ))}
 
         {/* Log A */}
-        <rect
-          x="42" y={baseY - 6} width="90" height="15" rx="7.5"
-          fill="url(#cfLogA)"
-          transform={`rotate(-26 ${fcx} ${baseY})`}
-          opacity={broken ? 0.62 : 1}
-        />
+        <rect x="42" y={baseY - 6} width="90" height="15" rx="7.5"
+          fill="url(#cfLogA)" transform={`rotate(-26 ${fcx} ${baseY})`} opacity={broken ? 0.62 : 1} />
         {/* Log B */}
-        <rect
-          x="68" y={baseY - 6} width="90" height="15" rx="7.5"
-          fill="url(#cfLogB)"
-          transform={`rotate(26 ${fcx} ${baseY})`}
-          opacity={broken ? 0.52 : 1}
-        />
-        {/* Log intersection shadow */}
+        <rect x="68" y={baseY - 6} width="90" height="15" rx="7.5"
+          fill="url(#cfLogB)" transform={`rotate(26 ${fcx} ${baseY})`} opacity={broken ? 0.52 : 1} />
+        {/* Log shadow */}
         <ellipse cx={fcx} cy={baseY + 4} rx="26" ry="6" fill="rgba(0,0,0,0.38)" opacity={broken ? 0.28 : 0.55} />
 
-        {/* Live ember dots at log intersection */}
+        {/* Ember dots at log intersection */}
         {!broken && !shouldReduceMotion && (
           <>
-            <motion.circle cx="90" cy={baseY - 3} r="3.8" fill="#ff9820"
+            <motion.circle cx="90" cy={baseY - 3} r="3.8" fill={p.embers[0]}
               filter="url(#cfEmberGlow)"
               animate={{ opacity: [0.65, 1, 0.45], r: [3, 4.2, 2.6] }}
               transition={{ duration: 0.78, repeat: Infinity, ease: "easeInOut" }}
             />
-            <motion.circle cx="106" cy={baseY - 1} r="3.0" fill="#ffcc38"
+            <motion.circle cx="106" cy={baseY - 1} r="3.0" fill={p.embers[1]}
               filter="url(#cfEmberGlow)"
               animate={{ opacity: [0.48, 1, 0.58], r: [2.6, 3.6, 2.2] }}
               transition={{ duration: 0.62, delay: 0.2, repeat: Infinity, ease: "easeInOut" }}
             />
-            <motion.circle cx="118" cy={baseY - 5} r="2.4" fill="#ff7818"
+            <motion.circle cx="118" cy={baseY - 5} r="2.4" fill={p.embers[2]}
               filter="url(#cfEmberGlow)"
               animate={{ opacity: [0.55, 0.9, 0.38] }}
               transition={{ duration: 0.9, delay: 0.4, repeat: Infinity, ease: "easeInOut" }}
@@ -277,74 +305,65 @@ function FireBurst({ broken, frozen }: { broken: boolean; frozen?: boolean }) {
           </>
         )}
 
-        {/* Backing glow blur layer */}
-        <motion.path
-          d={`M${fcx} 176 C68 163 48 130 56 94 C62 64 78 50 82 26 C104 50 126 70 122 102 C118 132 110 158 ${fcx} 176 Z`}
-          fill={broken ? "#6c7880" : "#ff4e0c"}
+        {/* Wide ambient halo glow at flame body */}
+        {!broken && (
+          <motion.ellipse
+            cx={fcx} cy={baseY - 55} rx="55" ry="70"
+            fill={p.glow}
+            filter="url(#cfBlurWide)"
+            animate={{ opacity: [0.42, 0.64, 0.42] }}
+            transition={{ duration: 1.9, repeat: Infinity, ease: "easeInOut" }}
+          />
+        )}
+
+        {/* Radiant 50+: extra blue glow at flame tip */}
+        {!broken && p.extra && (
+          <motion.ellipse
+            cx={fcx} cy={baseY - 110} rx="32" ry="50"
+            fill={p.extra}
+            filter="url(#cfBlur)"
+            animate={{ opacity: [0.3, 0.52, 0.3] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.55 }}
+          />
+        )}
+
+        {/* Backing glow blur */}
+        <motion.path d={flamePath}
+          fill={p.glow}
           filter="url(#cfBlur)"
-          opacity={broken ? 0.26 : 0.52}
-          animate={broken ? {} : { opacity: [0.42, 0.62, 0.42] }}
+          opacity={broken ? 0.26 : 0.72}
+          animate={broken ? {} : { opacity: [0.58, 0.82, 0.58] }}
           transition={{ duration: 1.75, repeat: Infinity, ease: "easeInOut" }}
         />
 
         {/* Outer flame */}
-        <motion.path
-          d={`M${fcx} 176 C68 163 48 130 56 94 C62 64 78 50 82 26 C104 50 126 70 122 102 C118 132 110 158 ${fcx} 176 Z`}
-          fill="url(#cfOuterFlame)"
+        <motion.path d={flamePath} fill="url(#cfOuterFlame)"
           opacity={broken ? 0.58 : 1}
           style={{ transformOrigin: `${fcx}px ${baseY}px` }}
-          animate={broken || shouldReduceMotion ? {} : {
-            scaleX: [1, 0.92, 1.08, 0.96, 1],
-            scaleY: [1, 1.05, 0.97, 1.04, 1],
-          }}
+          animate={broken || shouldReduceMotion ? {} : { scaleX: [1, 0.92, 1.08, 0.96, 1], scaleY: [1, 1.05, 0.97, 1.04, 1] }}
           transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
         />
 
         {/* Mid flame */}
-        <motion.path
-          d={`M${fcx} 168 C76 157 63 133 68 106 C72 82 84 68 87 46 C103 64 115 82 112 106 C109 128 102 154 ${fcx} 168 Z`}
-          fill="url(#cfMidFlame)"
+        <motion.path d={midPath} fill="url(#cfMidFlame)"
           opacity={broken ? 0.5 : 0.95}
           style={{ transformOrigin: `${fcx}px ${baseY}px` }}
-          animate={broken || shouldReduceMotion ? {} : {
-            scaleX: [1, 1.1, 0.93, 1.05, 1],
-            y: [0, -6, 2, -3, 0],
-          }}
+          animate={broken || shouldReduceMotion ? {} : { scaleX: [1, 1.1, 0.93, 1.05, 1], y: [0, -6, 2, -3, 0] }}
           transition={{ duration: 1.12, repeat: Infinity, ease: "easeInOut", delay: 0.14 }}
         />
 
         {/* White-hot core */}
-        <motion.path
-          d={`M${fcx} 158 C88 149 84 134 87 120 C90 108 98 100 99 86 C109 100 112 114 110 127 C108 139 104 152 ${fcx} 158 Z`}
-          fill="#ffffff"
-          opacity={broken ? 0.18 : 0.88}
+        <motion.path d={corePath} fill="#ffffff"
+          opacity={broken ? 0.18 : 0.9}
           style={{ transformOrigin: `${fcx}px 140px` }}
-          animate={broken || shouldReduceMotion ? {} : {
-            opacity: [0.82, 1, 0.76, 0.96],
-            scaleY: [1, 1.08, 0.95, 1.05],
-          }}
+          animate={broken || shouldReduceMotion ? {} : { opacity: [0.84, 1, 0.78, 0.98], scaleY: [1, 1.08, 0.95, 1.05] }}
           transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut", delay: 0.22 }}
         />
 
         {/* Rising embers */}
-        {!broken && !shouldReduceMotion && [
-          { cx: 84, cy: 102, r: 2.2, dx: -9,  color: "#fff4b0", delay: 0 },
-          { cx: 108, cy: 84,  r: 1.8, dx:  8,  color: "#ffb347", delay: 0.68 },
-          { cx: 116, cy: 112, r: 2.5, dx:  12, color: "#ffe566", delay: 1.18 },
-          { cx: 90,  cy: 94,  r: 1.6, dx: -5,  color: "#ffffff", delay: 1.78 },
-          { cx: 110, cy: 100, r: 2.0, dx:  7,  color: "#ffcc40", delay: 0.4 },
-          { cx: 78,  cy: 118, r: 1.5, dx: -11, color: "#fff4b0", delay: 0.95 },
-        ].map((e, i) => (
-          <motion.circle
-            key={i}
-            r={e.r}
-            fill={e.color}
-            animate={{
-              cx: [e.cx, e.cx + e.dx],
-              cy: [e.cy, e.cy - 60],
-              opacity: [0, 1, 0.65, 0],
-              r: [e.r, e.r * 0.28],
-            }}
+        {!broken && !shouldReduceMotion && emberData.map((e, i) => (
+          <motion.circle key={i} r={e.r} fill={p.embers[i % 3]}
+            animate={{ cx: [e.cx, e.cx + e.dx], cy: [e.cy, e.cy - 60], opacity: [0, 1, 0.65, 0], r: [e.r, e.r * 0.28] }}
             transition={{ duration: 2.2, delay: e.delay, repeat: Infinity, ease: "easeOut" }}
           />
         ))}
@@ -352,55 +371,22 @@ function FireBurst({ broken, frozen }: { broken: boolean; frozen?: boolean }) {
 
       {frozen && <FreezeHalo active={frozen} />}
 
-      {!broken && !shouldReduceMotion && (
-        <motion.span
-          initial={{ scale: 0.7, opacity: 0 }}
-          animate={{ scale: [0.7, 1.3, 1.0], opacity: [0, 0.3, 0] }}
-          transition={{ duration: 2.1, repeat: Infinity, ease: "easeOut" }}
-          style={{
-            position: "absolute",
-            inset: 8,
-            borderRadius: "50%",
-            border: "1px solid rgba(255, 148, 36, 0.32)",
-          }}
-        />
-      )}
-
       {broken && !shouldReduceMotion && (
         <>
           {[0, 1, 2, 3].map((line) => (
-            <motion.span
-              key={line}
+            <motion.span key={line}
               initial={{ opacity: 0, x: -34, scaleX: 0.25 }}
               animate={{ opacity: [0, 0.78, 0], x: 102, scaleX: [0.25, 1.18, 0.52] }}
               transition={{ duration: 1.05, delay: 0.2 + line * 0.11, ease: "easeOut" }}
-              style={{
-                position: "absolute",
-                top: 32 + line * 16,
-                left: -18,
-                width: 42,
-                height: 3,
-                borderRadius: 999,
-                background: "rgba(220, 235, 240, 0.62)",
-                transformOrigin: "left center",
-              }}
+              style={{ position: "absolute", top: 32 + line * 16, left: -18, width: 42, height: 3, borderRadius: 999, background: "rgba(220, 235, 240, 0.62)", transformOrigin: "left center" }}
             />
           ))}
           {[0, 1, 2].map((dot) => (
-            <motion.span
-              key={`smoke-${dot}`}
+            <motion.span key={`smoke-${dot}`}
               initial={{ opacity: 0, y: 8, scale: 0.7 }}
               animate={{ opacity: [0, 0.48, 0], y: -44 - dot * 7, scale: [0.7, 1.35, 1.7] }}
               transition={{ duration: 1.45, delay: 0.68 + dot * 0.16, ease: "easeOut" }}
-              style={{
-                position: "absolute",
-                left: 54 + dot * 8,
-                top: 17,
-                width: 11 + dot * 3,
-                height: 11 + dot * 3,
-                borderRadius: "50%",
-                background: "rgba(220, 235, 240, 0.25)",
-              }}
+              style={{ position: "absolute", left: 54 + dot * 8, top: 17, width: 11 + dot * 3, height: 11 + dot * 3, borderRadius: "50%", background: "rgba(220, 235, 240, 0.25)" }}
             />
           ))}
         </>
@@ -521,7 +507,7 @@ export function StreakWelcomeCard({
               <X size={16} strokeWidth={2.4} />
             </button>
 
-            <FireBurst broken={missedStreak && !freezeActive} frozen={freezeActive} />
+            <FireBurst broken={missedStreak && !freezeActive} frozen={freezeActive} streak={displayStreak} />
 
             <motion.div
               initial={{ opacity: 0, y: 10 }}
