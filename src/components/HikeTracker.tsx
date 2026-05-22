@@ -126,6 +126,14 @@ export function HikeTracker({ onFinish, onClose }: Props) {
   }
 
   function onError(err: GeolocationPositionError) {
+    // Clear the stale watchId so startWatching() can create a new one.
+    // watchPosition() returns a watchId immediately even when it later
+    // calls the error callback, so we must clear it here or "Try again"
+    // silently skips due to the `watchRef.current !== null` guard.
+    if (watchRef.current !== null) {
+      navigator.geolocation.clearWatch(watchRef.current)
+      watchRef.current = null
+    }
     setError(
       err.code === 1
         ? "Location blocked. Tap the lock icon in your browser's address bar → Site permissions → Location → Allow. Then tap \"Try again\"."
