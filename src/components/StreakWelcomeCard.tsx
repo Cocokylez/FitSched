@@ -431,12 +431,13 @@ export function StreakWelcomeCard({
     setFreezeUsed(false)
     setFreezing(false)
     setOpen(true)
+    playSound("pluck_001.ogg", 0.92)
     playSound("confirmation_001.ogg", 0.58)
   }, [displayStreak, hasActiveStreak, showMoment])
 
   useEffect(() => {
     if (!open || !hasActiveStreak) return
-    const stop = playSoundLoop("fire_crackle.wav", 0.35)
+    const stop = playSoundLoop("fire_crackle.wav", 0.55)
     fireStopRef.current = stop
     return () => { stop(); fireStopRef.current = null }
   }, [open, hasActiveStreak])
