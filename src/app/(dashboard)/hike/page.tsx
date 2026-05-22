@@ -71,8 +71,9 @@ export default function HikePage() {
   // Mode
   const [mode, setMode] = useState<Mode>("idle")
 
-  // GPS tracker overlay
-  const [showTracker, setShowTracker] = useState(false)
+  // GPS tracker overlay + cinematic transition
+  const [showTracker, setShowTracker]   = useState(false)
+  const [overlayVisible, setOverlayVisible] = useState(false)
 
   // Plan mode
   const planStepRef  = useRef<PlanStep>("start")
@@ -112,11 +113,11 @@ export default function HikePage() {
   useEffect(() => {
     if (!globeReady || !globeRef.current) return
     const controls = globeRef.current.controls()
-    controls.autoRotate      = mode === "idle" && !showTracker && !showSave
+    controls.autoRotate      = mode === "idle" && !showTracker && !showSave && !overlayVisible
     controls.autoRotateSpeed = 0.4
     controls.enableZoom      = mode === "planning"
     controls.enablePan       = false
-  }, [mode, globeReady, showTracker, showSave])
+  }, [mode, globeReady, showTracker, showSave, overlayVisible])
 
   // ── Hide nav bar for entire hike page ────────────────────────────────────────
 
@@ -191,20 +192,44 @@ export default function HikePage() {
 
   function beginHikeFromPlan() {
     resetPlan(); backToIdle()
-    setShowTracker(true)
+    enterTrackingMode()
   }
 
-  // ── HikeTracker callbacks ─────────────────────────────────────────────────────
+  // ── Cinematic transitions ─────────────────────────────────────────────────────
 
-  function handleTrackerFinish(result: TrackerResult) {
-    pendingResultRef.current = result
-    setShowTracker(false)
-    setShowSave(true)
-    playSound("confirmation_001.ogg", 0.65)
+  function enterTrackingMode() {
+    // 1. Globe zooms in fast
+    if (globeRef.current) globeRef.current.pointOfView({ altitude: 0.002 }, 900)
+    // 2. Fade black overlay in mid-zoom
+    setTimeout(() => setOverlayVisible(true), 420)
+    // 3. Mount street map under overlay
+    setTimeout(() => setShowTracker(true), 780)
+    // 4. Fade overlay out to reveal street map
+    setTimeout(() => setOverlayVisible(false), 1000)
   }
 
   function handleTrackerClose() {
-    setShowTracker(false)
+    // 1. Fade overlay in to hide street map
+    setOverlayVisible(true)
+    // 2. Unmount tracker, zoom globe back out
+    setTimeout(() => {
+      setShowTracker(false)
+      if (globeRef.current) globeRef.current.pointOfView({ altitude: 2.5 }, 1400)
+    }, 360)
+    // 3. Fade overlay out to reveal globe zooming out
+    setTimeout(() => setOverlayVisible(false), 560)
+  }
+
+  function handleTrackerFinish(result: TrackerResult) {
+    playSound("confirmation_001.ogg", 0.65)
+    pendingResultRef.current = result
+    // Quick fade to swap tracker → save form
+    setOverlayVisible(true)
+    setTimeout(() => {
+      setShowTracker(false)
+      setShowSave(true)
+      setOverlayVisible(false)
+    }, 300)
   }
 
   // ── Save hike ─────────────────────────────────────────────────────────────────
@@ -380,7 +405,7 @@ export default function HikePage() {
             }}
           >
             <motion.button
-              onClick={() => setShowTracker(true)}
+              onClick={enterTrackingMode}
               whileTap={{ scale: 0.95 }}
               style={{
                 flex: 1, maxWidth: 200, border: "none", borderRadius: 20,
@@ -537,15 +562,23 @@ export default function HikePage() {
       </AnimatePresence>
 
       {/* ── HikeTracker overlay (street-level Leaflet map) ──────────────── */}
-      <AnimatePresence>
-        {showTracker && (
-          <HikeTracker
-            onFinish={handleTrackerFinish}
-            onClose={handleTrackerClose}
-            disableNavEvent
-          />
-        )}
-      </AnimatePresence>
+      {showTracker && (
+        <HikeTracker
+          onFinish={handleTrackerFinish}
+          onClose={handleTrackerClose}
+          disableNavEvent
+        />
+      )}
+
+      {/* ── Cinematic transition overlay ────────────────────────────────── */}
+      <motion.div
+        animate={{ opacity: overlayVisible ? 1 : 0 }}
+        transition={{ duration: 0.32, ease: "easeInOut" }}
+        style={{
+          position: "absolute", inset: 0, zIndex: 310,
+          background: "#000", pointerEvents: "none",
+        }}
+      />
 
       {/* ── Save hike modal ─────────────────────────────────────────────── */}
       <AnimatePresence>
