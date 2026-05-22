@@ -4,7 +4,7 @@ import "leaflet/dist/leaflet.css"
 import type L from "leaflet"
 import { useEffect, useRef, useState } from "react"
 import { motion } from "framer-motion"
-import { CheckCircle, Pause, Play, X } from "lucide-react"
+import { CheckCircle, Navigation, Pause, Play, X } from "lucide-react"
 import { playSound } from "@/lib/sound"
 
 const ACCENT = "#6bbfb8"
@@ -68,19 +68,105 @@ export function HikeTracker({ onFinish, onClose }: Props) {
   const pausedMsRef    = useRef(0)
   const pauseStartRef  = useRef(0)
 
-  const [status, setStatus]     = useState<"acquiring" | "tracking" | "paused">("acquiring")
+  // "idle"     — waiting for user to tap Enable GPS (no permission requested yet)
+  // "acquiring" — permission granted, waiting for first fix
+  // "tracking"  — live tracking active
+  // "paused"    — tracking paused
+  const [status, setStatus]     = useState<"idle" | "acquiring" | "tracking" | "paused">("idle")
   const [distKm, setDistKm]     = useState(0)
   const [elapsed, setElapsed]   = useState(0)
   const [accuracy, setAccuracy] = useState<number | null>(null)
   const [error, setError]       = useState<string | null>(null)
 
-  // Initialise Leaflet map (dynamic import keeps L off the SSR path)
+  // GPS callback — shared by getCurrentPosition and watchPosition
+  function onPosition(pos: GeolocationPosition) {
+    const { latitude: lat, longitude: lng, altitude: alt, accuracy: acc } = pos.coords
+    setAccuracy(acc)
+    setError(null)
+
+    // First valid fix — centre map and start the clock
+    if (!startedRef.current) {
+      startedRef.current   = true
+      startTimeRef.current = Date.now()
+      setStatus("tracking")
+      mapRef.current?.setView([lat, lng], 16)
+
+      timerRef.current = setInterval(() => {
+        if (pausedRef.current) return
+        const s = Math.floor((Date.now() - startTimeRef.current - pausedMsRef.current) / 1000)
+        setElapsed(s)
+        setDistKm(Math.round(distanceRef.current * 1000) / 1000)
+      }, 1000)
+    }
+
+    if (pausedRef.current) return
+
+    // Build waypoint; skip GPS jitter < 3 m
+    const wp: Waypoint = { lat, lng, alt, ts: Date.now() }
+    const prev = waypointsRef.current
+
+    if (prev.length > 0) {
+      const last = prev[prev.length - 1]
+      const d = haversine(last.lat, last.lng, lat, lng)
+      if (d < 0.003) return   // < 3 m → noise, skip
+      distanceRef.current += d
+      if (alt !== null && last.alt !== null && alt > last.alt) {
+        elevGainRef.current += alt - last.alt
+      }
+    }
+
+    waypointsRef.current = [...prev, wp]
+
+    // Update Leaflet map
+    const lls = waypointsRef.current.map(w => [w.lat, w.lng] as [number, number])
+    polyRef.current?.setLatLngs(lls)
+    dotRef.current?.setLatLng([lat, lng])
+    mapRef.current?.panTo([lat, lng], { animate: true, duration: 0.8 })
+  }
+
+  function onError(err: GeolocationPositionError) {
+    setError(
+      err.code === 1
+        ? "Location access denied. Open your browser settings and allow location for this site."
+        : err.code === 2
+        ? "GPS signal not found — move outdoors and try again."
+        : "Location request timed out — try again."
+    )
+    setStatus("idle")
+  }
+
+  // Called on button tap — MUST be inside a click handler to trigger
+  // the OS permission prompt reliably on iOS Safari and Android Chrome.
+  function enableGPS() {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported on this device.")
+      return
+    }
+    setError(null)
+    setStatus("acquiring")
+
+    // getCurrentPosition fires the OS prompt immediately (user gesture → prompt).
+    // On success we start watchPosition for continuous updates.
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        onPosition(pos)
+        watchRef.current = navigator.geolocation.watchPosition(onPosition, onError, {
+          enableHighAccuracy: true,
+          timeout: 30000,
+          maximumAge: 0,
+        })
+      },
+      onError,
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    )
+  }
+
+  // Initialise Leaflet map only (no GPS call here)
   useEffect(() => {
     if (!mapDivRef.current) return
     let map: L.Map, poly: L.Polyline, dot: L.CircleMarker
 
     import("leaflet").then(({ default: Lf }) => {
-      // Suppress the missing-icon warning that webpack bundlers trigger
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (Lf.Icon.Default.prototype as any)._getIconUrl
 
@@ -96,82 +182,17 @@ export function HikeTracker({ onFinish, onClose }: Props) {
         radius: 10, fillColor: ACCENT, color: "#fff", weight: 3, fillOpacity: 1,
       }).addTo(map)
 
-      // Default view until GPS kicks in
-      map.setView([0, 0], 2)
+      map.setView([20, 0], 2) // world view until GPS kicks in
 
       mapRef.current  = map
       polyRef.current = poly
       dotRef.current  = dot
     })
 
-    return () => { map?.remove() }
-  }, [])
-
-  // GPS watchPosition
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      setError("Geolocation is not supported on this device.")
-      return
-    }
-
-    watchRef.current = navigator.geolocation.watchPosition(
-      (pos) => {
-        const { latitude: lat, longitude: lng, altitude: alt, accuracy: acc } = pos.coords
-        setAccuracy(acc)
-        setError(null)
-
-        // First valid fix — centre map and start the clock
-        if (!startedRef.current) {
-          startedRef.current = true
-          startTimeRef.current = Date.now()
-          setStatus("tracking")
-          mapRef.current?.setView([lat, lng], 16)
-
-          timerRef.current = setInterval(() => {
-            if (pausedRef.current) return
-            const s = Math.floor((Date.now() - startTimeRef.current - pausedMsRef.current) / 1000)
-            setElapsed(s)
-            setDistKm(Math.round(distanceRef.current * 1000) / 1000)
-          }, 1000)
-        }
-
-        if (pausedRef.current) return
-
-        // Build waypoint; skip GPS jitter < 3 m
-        const wp: Waypoint = { lat, lng, alt, ts: Date.now() }
-        const prev = waypointsRef.current
-
-        if (prev.length > 0) {
-          const last = prev[prev.length - 1]
-          const d = haversine(last.lat, last.lng, lat, lng)
-          if (d < 0.003) return   // < 3 m → noise, skip
-          distanceRef.current += d
-          if (alt !== null && last.alt !== null && alt > last.alt) {
-            elevGainRef.current += alt - last.alt
-          }
-        }
-
-        waypointsRef.current = [...prev, wp]
-
-        // Update Leaflet map
-        const lls = waypointsRef.current.map(w => [w.lat, w.lng] as [number, number])
-        polyRef.current?.setLatLngs(lls)
-        dotRef.current?.setLatLng([lat, lng])
-        mapRef.current?.panTo([lat, lng], { animate: true, duration: 0.8 })
-      },
-      (err) => {
-        setError(
-          err.code === 1
-            ? "Location access denied. Enable GPS in your browser settings."
-            : "Unable to get GPS signal — move to an open area."
-        )
-      },
-      { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
-    )
-
     return () => {
       if (watchRef.current !== null) navigator.geolocation.clearWatch(watchRef.current)
       if (timerRef.current) clearInterval(timerRef.current)
+      map?.remove()
     }
   }, [])
 
@@ -199,7 +220,8 @@ export function HikeTracker({ onFinish, onClose }: Props) {
     })
   }
 
-  const canFinish = status !== "acquiring" && distanceRef.current >= 0.01
+  const canPause  = status === "tracking" || status === "paused"
+  const canFinish = (status === "tracking" || status === "paused") && distanceRef.current >= 0.01
 
   return (
     <motion.div
@@ -232,8 +254,9 @@ export function HikeTracker({ onFinish, onClose }: Props) {
             }}
           />
           <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)" }}>
-            {status === "acquiring" ? "Acquiring GPS…"
-              : status === "paused" ? "Paused"
+            {status === "idle"      ? "Ready"
+              : status === "acquiring" ? "Acquiring GPS…"
+              : status === "paused"    ? "Paused"
               : "Tracking"}
           </span>
           {accuracy !== null && (
@@ -252,8 +275,45 @@ export function HikeTracker({ onFinish, onClose }: Props) {
 
       {/* ── Map ─────────────────────────────────────────────── */}
       <div ref={mapDivRef} style={{ flex: 1, minHeight: 0, position: "relative" }}>
-        {/* Acquiring overlay */}
-        {status === "acquiring" && !error && (
+        {/* Idle overlay — "Enable GPS" button triggers OS permission prompt */}
+        {status === "idle" && !error && (
+          <div style={{
+            position: "absolute", inset: 0, zIndex: 999,
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)",
+            gap: 16, padding: 32,
+          }}>
+            <div style={{
+              width: 64, height: 64, borderRadius: "50%",
+              background: "rgba(107,191,184,0.18)", border: `2px solid ${ACCENT}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <Navigation size={28} strokeWidth={2} color={ACCENT} />
+            </div>
+            <div style={{ textAlign: "center", gap: 6, display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <span style={{ color: "#fff", fontWeight: 900, fontSize: 17 }}>Enable GPS</span>
+              <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 13, lineHeight: 1.5, maxWidth: 260 }}>
+                Tap below — your browser will ask permission to use your location.
+              </span>
+            </div>
+            <motion.button
+              onClick={enableGPS}
+              whileTap={{ scale: 0.96 }}
+              style={{
+                border: "none", borderRadius: 16, padding: "14px 32px",
+                background: ACCENT, color: "#0d1f1e",
+                fontWeight: 900, fontSize: 15, fontFamily: "inherit",
+                cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
+              }}
+            >
+              <Navigation size={16} strokeWidth={2.5} />
+              Allow location
+            </motion.button>
+          </div>
+        )}
+
+        {/* Acquiring overlay — waiting for first fix after permission granted */}
+        {status === "acquiring" && (
           <div style={{
             position: "absolute", inset: 0, zIndex: 999,
             display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -271,16 +331,27 @@ export function HikeTracker({ onFinish, onClose }: Props) {
           </div>
         )}
 
-        {/* Error overlay */}
+        {/* Error overlay — permission denied or signal lost */}
         {error && (
           <div style={{
             position: "absolute", inset: 0, zIndex: 999,
             display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-            background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)", padding: 28, gap: 10,
+            background: "rgba(0,0,0,0.62)", backdropFilter: "blur(6px)", padding: 28, gap: 16,
           }}>
-            <span style={{ color: "#f87171", fontWeight: 800, fontSize: 14, textAlign: "center", lineHeight: 1.5 }}>
+            <span style={{ color: "#f87171", fontWeight: 800, fontSize: 14, textAlign: "center", lineHeight: 1.55 }}>
               {error}
             </span>
+            <motion.button
+              onClick={enableGPS}
+              whileTap={{ scale: 0.96 }}
+              style={{
+                border: `1px solid ${ACCENT}`, borderRadius: 14, padding: "11px 24px",
+                background: "transparent", color: ACCENT,
+                fontWeight: 800, fontSize: 14, fontFamily: "inherit", cursor: "pointer",
+              }}
+            >
+              Try again
+            </motion.button>
           </div>
         )}
       </div>
@@ -327,21 +398,21 @@ export function HikeTracker({ onFinish, onClose }: Props) {
         background: "var(--panel)", borderTop: "1px solid var(--border)", flexShrink: 0,
       }}>
         <motion.button
-          onClick={status !== "acquiring" ? togglePause : undefined}
-          whileTap={status !== "acquiring" ? { scale: 0.95 } : {}}
+          onClick={canPause ? togglePause : undefined}
+          whileTap={canPause ? { scale: 0.95 } : {}}
           style={{
             flex: 1, border: "1px solid var(--border)", borderRadius: 16, padding: "14px",
             background: "var(--surface)", color: "var(--text)",
-            cursor: status !== "acquiring" ? "pointer" : "default",
+            cursor: canPause ? "pointer" : "default",
             fontWeight: 900, fontSize: 14, fontFamily: "inherit",
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            opacity: status === "acquiring" ? 0.38 : 1,
+            opacity: canPause ? 1 : 0.38,
             transition: "opacity 0.18s",
           }}
         >
           {status === "paused"
-            ? <><Play    size={16} strokeWidth={2.5} /> Resume</>
-            : <><Pause   size={16} strokeWidth={2.5} /> Pause</>}
+            ? <><Play  size={16} strokeWidth={2.5} /> Resume</>
+            : <><Pause size={16} strokeWidth={2.5} /> Pause</>}
         </motion.button>
 
         <motion.button
