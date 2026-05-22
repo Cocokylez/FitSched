@@ -456,76 +456,166 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
         </button>
       </div>
 
-      {/* ── Map ─────────────────────────────────────────────────────────── */}
+      {/* ── Map (full height) ───────────────────────────────────────────── */}
       <div ref={mapDivRef} style={{ flex: 1, minHeight: 0, position: "relative" }}>
 
-        {/* TRACK MODE overlays */}
-        {mode === "track" && (
-          <>
-            {trackStatus === "idle" && !error && (
-              <div style={{
-                position: "absolute", inset: 0, zIndex: 999,
-                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)", gap: 16, padding: 32,
-              }}>
-                <div style={{
-                  width: 64, height: 64, borderRadius: "50%",
-                  background: "rgba(107,191,184,0.18)", border: `2px solid ${ACCENT}`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <Navigation size={28} strokeWidth={2} color={ACCENT} />
-                </div>
-                <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                  <span style={{ color: "#fff", fontWeight: 900, fontSize: 17 }}>Enable GPS</span>
-                  <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 13, lineHeight: 1.5, maxWidth: 260 }}>
-                    Your browser will ask permission to use your location.
-                  </span>
-                </div>
-                <motion.button
-                  onClick={enableGPS}
-                  whileTap={{ scale: 0.96 }}
-                  style={{
-                    border: "none", borderRadius: 16, padding: "14px 32px",
-                    background: ACCENT, color: "#0d1f1e",
-                    fontWeight: 900, fontSize: 15, fontFamily: "inherit",
-                    cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
-                  }}
-                >
-                  <Navigation size={16} strokeWidth={2.5} />
-                  Allow location
-                </motion.button>
-              </div>
-            )}
-
-            {trackStatus === "acquiring" && (
-              <div style={{
-                position: "absolute", inset: 0, zIndex: 999,
-                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                background: "rgba(0,0,0,0.42)", backdropFilter: "blur(6px)", gap: 14, padding: 24,
-              }}>
-                <motion.div
-                  animate={{ scale: [1, 1.25, 1], opacity: [0.5, 1, 0.5] }}
-                  transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-                  style={{ width: 52, height: 52, borderRadius: "50%", border: `3px solid ${ACCENT}` }}
-                />
-                <span style={{ color: "#fff", fontWeight: 800, fontSize: 15 }}>Acquiring GPS signal…</span>
-                <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 12, textAlign: "center" }}>
-                  Move outdoors for the best accuracy
-                </span>
-              </div>
-            )}
-          </>
+        {/* TRACK: enable GPS prompt */}
+        {mode === "track" && trackStatus === "idle" && !error && (
+          <div style={{
+            position: "absolute", inset: 0, zIndex: 999,
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            background: "rgba(0,0,0,0.52)", backdropFilter: "blur(8px)", gap: 16, padding: 32,
+          }}>
+            <div style={{
+              width: 64, height: 64, borderRadius: "50%",
+              background: "rgba(107,191,184,0.18)", border: `2px solid ${ACCENT}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <Navigation size={28} strokeWidth={2} color={ACCENT} />
+            </div>
+            <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+              <span style={{ color: "#fff", fontWeight: 900, fontSize: 17 }}>Enable GPS</span>
+              <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, lineHeight: 1.5, maxWidth: 260 }}>
+                Your browser will ask for location permission.
+              </span>
+            </div>
+            <motion.button
+              onClick={enableGPS} whileTap={{ scale: 0.96 }}
+              style={{
+                border: "none", borderRadius: 16, padding: "14px 32px",
+                background: ACCENT, color: "#0d1f1e",
+                fontWeight: 900, fontSize: 15, fontFamily: "inherit",
+                cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
+              }}
+            >
+              <Navigation size={16} strokeWidth={2.5} />
+              Allow location
+            </motion.button>
+          </div>
         )}
 
-        {/* PLAN MODE instruction pill */}
-        {mode === "plan" && planStep !== "ready" && planStep !== "loading" && (
+        {/* TRACK: acquiring */}
+        {mode === "track" && trackStatus === "acquiring" && (
           <div style={{
-            position: "absolute", top: 12, left: "50%", transform: "translateX(-50%)",
-            zIndex: 999, pointerEvents: "none",
+            position: "absolute", inset: 0, zIndex: 999,
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            background: "rgba(0,0,0,0.38)", backdropFilter: "blur(6px)", gap: 14,
           }}>
             <motion.div
-              key={planStep}
-              initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+              animate={{ scale: [1, 1.25, 1], opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+              style={{ width: 52, height: 52, borderRadius: "50%", border: `3px solid ${ACCENT}` }}
+            />
+            <span style={{ color: "#fff", fontWeight: 800, fontSize: 15 }}>Acquiring GPS…</span>
+          </div>
+        )}
+
+        {/* TRACK: floating timer pill */}
+        <AnimatePresence>
+          {mode === "track" && (trackStatus === "tracking" || trackStatus === "paused") && (
+            <motion.div
+              initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
+              transition={{ type: "spring", stiffness: 340, damping: 28 }}
+              style={{
+                position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)",
+                zIndex: 999, pointerEvents: "none",
+                display: "flex", alignItems: "center", gap: 10,
+                background: "rgba(10,20,18,0.72)", backdropFilter: "blur(14px)",
+                borderRadius: 999, padding: "9px 20px",
+                border: "1px solid rgba(107,191,184,0.22)",
+                boxShadow: "0 4px 24px rgba(0,0,0,0.28)",
+              }}
+            >
+              {/* status dot */}
+              <motion.span
+                animate={trackStatus === "tracking" ? { opacity: [1, 0.25, 1] } : { opacity: 1 }}
+                transition={{ duration: 1.3, repeat: Infinity, ease: "easeInOut" }}
+                style={{
+                  width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
+                  background: trackStatus === "paused" ? "#facc15" : GREEN,
+                }}
+              />
+              {/* timer */}
+              <span style={{
+                fontSize: 22, fontWeight: 900, color: "#fff",
+                fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em",
+              }}>
+                {formatTime(elapsed)}
+              </span>
+              {/* divider */}
+              <span style={{ width: 1, height: 16, background: "rgba(255,255,255,0.15)", flexShrink: 0 }} />
+              {/* distance */}
+              <span style={{ fontSize: 14, fontWeight: 800, color: ACCENT, fontVariantNumeric: "tabular-nums" }}>
+                {distKm.toFixed(2)}<span style={{ fontSize: 11, fontWeight: 600, opacity: 0.7, marginLeft: 2 }}>km</span>
+              </span>
+              {/* divider */}
+              <span style={{ width: 1, height: 16, background: "rgba(255,255,255,0.15)", flexShrink: 0 }} />
+              {/* pace */}
+              <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.55)", fontVariantNumeric: "tabular-nums" }}>
+                {formatPace(distKm, elapsed)}<span style={{ fontSize: 10, marginLeft: 2 }}>/km</span>
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* TRACK: floating controls */}
+        <AnimatePresence>
+          {mode === "track" && (trackStatus === "tracking" || trackStatus === "paused") && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 28 }}
+              style={{
+                position: "absolute", bottom: 0, left: 0, right: 0,
+                zIndex: 999, display: "flex", gap: 10,
+                padding: "14px 18px",
+                paddingBottom: "max(18px, env(safe-area-inset-bottom))",
+              }}
+            >
+              <motion.button
+                onClick={canPause ? togglePause : undefined}
+                whileTap={canPause ? { scale: 0.95 } : {}}
+                style={{
+                  flex: 1,
+                  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 18, padding: "15px",
+                  background: "rgba(10,20,18,0.68)", backdropFilter: "blur(14px)",
+                  color: "#fff", cursor: canPause ? "pointer" : "default",
+                  fontWeight: 900, fontSize: 14, fontFamily: "inherit",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  opacity: canPause ? 1 : 0.38,
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+                }}
+              >
+                {trackStatus === "paused"
+                  ? <><Play  size={16} strokeWidth={2.5} /> Resume</>
+                  : <><Pause size={16} strokeWidth={2.5} /> Pause</>}
+              </motion.button>
+
+              <motion.button
+                onClick={canFinish ? finish : undefined}
+                whileTap={canFinish ? { scale: 0.95 } : {}}
+                style={{
+                  flex: 2, border: "none", borderRadius: 18, padding: "15px",
+                  background: canFinish ? ACCENT : "rgba(107,191,184,0.18)",
+                  color: canFinish ? "#0d1f1e" : "rgba(107,191,184,0.4)",
+                  cursor: canFinish ? "pointer" : "default",
+                  fontWeight: 900, fontSize: 14, fontFamily: "inherit",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  transition: "background 0.2s, color 0.2s",
+                  boxShadow: canFinish ? "0 0 28px rgba(107,191,184,0.35)" : "none",
+                }}
+              >
+                <CheckCircle size={16} strokeWidth={2.5} />
+                Finish hike
+              </motion.button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* PLAN: instruction pill */}
+        {mode === "plan" && planStep !== "ready" && planStep !== "loading" && (
+          <div style={{ position: "absolute", top: 12, left: "50%", transform: "translateX(-50%)", zIndex: 999, pointerEvents: "none" }}>
+            <motion.div
+              key={planStep} initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
               style={{
                 background: "rgba(0,0,0,0.72)", backdropFilter: "blur(8px)",
                 borderRadius: 999, padding: "9px 18px",
@@ -539,27 +629,61 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
           </div>
         )}
 
-        {/* PLAN MODE loading pill */}
+        {/* PLAN: loading */}
         {mode === "plan" && planStep === "loading" && (
-          <div style={{
-            position: "absolute", top: 12, left: "50%", transform: "translateX(-50%)",
-            zIndex: 999, pointerEvents: "none",
-          }}>
+          <div style={{ position: "absolute", top: 12, left: "50%", transform: "translateX(-50%)", zIndex: 999, pointerEvents: "none" }}>
             <motion.div
-              animate={{ opacity: [0.6, 1, 0.6] }}
-              transition={{ duration: 1, repeat: Infinity }}
-              style={{
-                background: "rgba(0,0,0,0.72)", backdropFilter: "blur(8px)",
-                borderRadius: 999, padding: "9px 18px",
-                display: "flex", alignItems: "center", gap: 8,
-              }}
+              animate={{ opacity: [0.6, 1, 0.6] }} transition={{ duration: 1, repeat: Infinity }}
+              style={{ background: "rgba(0,0,0,0.72)", backdropFilter: "blur(8px)", borderRadius: 999, padding: "9px 18px", display: "flex", alignItems: "center", gap: 8 }}
             >
               <span style={{ color: BLUE, fontWeight: 700, fontSize: 13 }}>Finding route…</span>
             </motion.div>
           </div>
         )}
 
-        {/* Error overlay (both modes) */}
+        {/* PLAN: route info floating panel */}
+        <AnimatePresence>
+          {mode === "plan" && planStep === "ready" && routeInfo && (
+            <motion.div
+              initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 28 }}
+              style={{
+                position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 999,
+                background: "rgba(10,20,18,0.82)", backdropFilter: "blur(18px)",
+                borderTop: "1px solid rgba(107,191,184,0.18)",
+                padding: "16px 18px",
+                paddingBottom: "max(18px, env(safe-area-inset-bottom))",
+                display: "flex", flexDirection: "column", gap: 12,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+                <div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{fmtRouteDist(routeInfo.distM)}</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", marginTop: 3 }}>Distance</div>
+                </div>
+                <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.1)" }} />
+                <div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{fmtRouteTime(routeInfo.durSec)}</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", marginTop: 3 }}>Walking time</div>
+                </div>
+                <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ width: 18, height: 3, background: BLUE, borderRadius: 2 }} />
+                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>Route</span>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <motion.button onClick={resetPlan} whileTap={{ scale: 0.95 }} style={{ flex: 1, border: "1px solid rgba(255,255,255,0.15)", borderRadius: 14, padding: "12px", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.8)", fontWeight: 800, fontSize: 13, fontFamily: "inherit", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  <RotateCcw size={14} strokeWidth={2.5} /> Reset
+                </motion.button>
+                <motion.button onClick={() => { setMode("track"); enableGPS() }} whileTap={{ scale: 0.95 }} style={{ flex: 2, border: "none", borderRadius: 14, padding: "12px", background: ACCENT, color: "#0d1f1e", fontWeight: 900, fontSize: 13, fontFamily: "inherit", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: "0 0 20px rgba(107,191,184,0.3)" }}>
+                  <Navigation size={14} strokeWidth={2.5} /> Begin hike
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Error overlay */}
         <AnimatePresence>
           {error && (
             <motion.div
@@ -574,13 +698,9 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
                 {error}
               </span>
               <motion.button
-                onClick={() => { setError(null); mode === "track" ? enableGPS() : undefined }}
+                onClick={() => { setError(null); if (mode === "track") enableGPS() }}
                 whileTap={{ scale: 0.96 }}
-                style={{
-                  border: `1px solid ${ACCENT}`, borderRadius: 14, padding: "11px 24px",
-                  background: "transparent", color: ACCENT,
-                  fontWeight: 800, fontSize: 14, fontFamily: "inherit", cursor: "pointer",
-                }}
+                style={{ border: `1px solid ${ACCENT}`, borderRadius: 14, padding: "11px 24px", background: "transparent", color: ACCENT, fontWeight: 800, fontSize: 14, fontFamily: "inherit", cursor: "pointer" }}
               >
                 {mode === "track" ? "Try again" : "Dismiss"}
               </motion.button>
@@ -588,146 +708,6 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
           )}
         </AnimatePresence>
       </div>
-
-      {/* ── PLAN MODE: route info panel ──────────────────────────────────── */}
-      <AnimatePresence>
-        {mode === "plan" && planStep === "ready" && routeInfo && (
-          <motion.div
-            initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 28 }}
-            style={{
-              background: "var(--panel)", borderTop: "1px solid var(--border)",
-              padding: "14px 18px", flexShrink: 0, display: "flex", flexDirection: "column", gap: 12,
-            }}
-          >
-            {/* Route stats */}
-            <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-              <div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: "var(--text)", lineHeight: 1 }}>
-                  {fmtRouteDist(routeInfo.distM)}
-                </div>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-muted)", textTransform: "uppercase", marginTop: 3 }}>
-                  Distance
-                </div>
-              </div>
-              <div style={{ width: 1, height: 32, background: "var(--border)" }} />
-              <div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: "var(--text)", lineHeight: 1 }}>
-                  {fmtRouteTime(routeInfo.durSec)}
-                </div>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-muted)", textTransform: "uppercase", marginTop: 3 }}>
-                  Walking time
-                </div>
-              </div>
-              <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
-                <div style={{ width: 20, height: 3, background: BLUE, borderRadius: 2, borderStyle: "dashed" }} />
-                <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>Planned</span>
-              </div>
-            </div>
-
-            {/* Action buttons */}
-            <div style={{ display: "flex", gap: 10 }}>
-              <motion.button
-                onClick={resetPlan}
-                whileTap={{ scale: 0.95 }}
-                style={{
-                  flex: 1, border: "1px solid var(--border)", borderRadius: 14,
-                  padding: "12px", background: "var(--surface)", color: "var(--text)",
-                  fontWeight: 800, fontSize: 13, fontFamily: "inherit", cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                }}
-              >
-                <RotateCcw size={14} strokeWidth={2.5} />
-                Reset
-              </motion.button>
-              <motion.button
-                onClick={() => { setMode("track"); enableGPS() }}
-                whileTap={{ scale: 0.95 }}
-                style={{
-                  flex: 2, border: "none", borderRadius: 14,
-                  padding: "12px", background: ACCENT, color: "#0d1f1e",
-                  fontWeight: 900, fontSize: 13, fontFamily: "inherit", cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                }}
-              >
-                <Navigation size={14} strokeWidth={2.5} />
-                Begin hike
-              </motion.button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── TRACK MODE: live stats bar ───────────────────────────────────── */}
-      {mode === "track" && (
-        <div style={{
-          display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
-          background: "var(--panel)", borderTop: "1px solid var(--border)", flexShrink: 0,
-        }}>
-          {([
-            { label: "Distance", value: distKm.toFixed(2), unit: "km" },
-            { label: "Time",     value: formatTime(elapsed),          unit: "" },
-            { label: "Pace",     value: formatPace(distKm, elapsed),  unit: "/km" },
-          ] as const).map(({ label, value, unit }, i) => (
-            <div key={label} style={{
-              padding: "15px 8px", textAlign: "center",
-              borderRight: i < 2 ? "1px solid var(--border)" : "none",
-            }}>
-              <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>
-                {value}
-                {unit && <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginLeft: 2 }}>{unit}</span>}
-              </div>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.11em", color: "var(--text-muted)", textTransform: "uppercase", marginTop: 4 }}>
-                {label}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ── TRACK MODE: controls ─────────────────────────────────────────── */}
-      {mode === "track" && (
-        <div style={{
-          display: "flex", gap: 10, padding: "12px 18px",
-          paddingBottom: "max(16px, env(safe-area-inset-bottom))",
-          background: "var(--panel)", borderTop: "1px solid var(--border)", flexShrink: 0,
-        }}>
-          <motion.button
-            onClick={canPause ? togglePause : undefined}
-            whileTap={canPause ? { scale: 0.95 } : {}}
-            style={{
-              flex: 1, border: "1px solid var(--border)", borderRadius: 16, padding: "14px",
-              background: "var(--surface)", color: "var(--text)",
-              cursor: canPause ? "pointer" : "default",
-              fontWeight: 900, fontSize: 14, fontFamily: "inherit",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              opacity: canPause ? 1 : 0.38, transition: "opacity 0.18s",
-            }}
-          >
-            {trackStatus === "paused"
-              ? <><Play  size={16} strokeWidth={2.5} /> Resume</>
-              : <><Pause size={16} strokeWidth={2.5} /> Pause</>}
-          </motion.button>
-
-          <motion.button
-            onClick={canFinish ? finish : undefined}
-            whileTap={canFinish ? { scale: 0.95 } : {}}
-            style={{
-              flex: 2, border: "none", borderRadius: 16, padding: "14px",
-              background: canFinish ? ACCENT : "var(--surface)",
-              color: canFinish ? "#0d1f1e" : "var(--text-muted)",
-              cursor: canFinish ? "pointer" : "default",
-              fontWeight: 900, fontSize: 14, fontFamily: "inherit",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              opacity: canFinish ? 1 : 0.38,
-              transition: "background 0.2s, color 0.2s, opacity 0.18s",
-            }}
-          >
-            <CheckCircle size={16} strokeWidth={2.5} />
-            Finish hike
-          </motion.button>
-        </div>
-      )}
     </motion.div>
   )
 }

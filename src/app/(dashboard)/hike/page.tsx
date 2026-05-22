@@ -393,7 +393,7 @@ export default function HikePage() {
 
       {/* ── IDLE: two main buttons ──────────────────────────────────────── */}
       <AnimatePresence>
-        {mode === "idle" && !showTracker && !showSave && !showLogs && (
+        {mode === "idle" && (!showTracker || overlayVisible) && !showSave && !showLogs && (
           <motion.div
             initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 24 }}
             style={{
