@@ -7,8 +7,8 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip } from "recharts"
 import {
   BarChart2, Check, ChevronDown, ChevronRight, Dumbbell,
-  History, MoreHorizontal, PencilLine, Ruler, Save, Scale,
-  ShieldCheck, Wallet,
+  Footprints, History, MoreHorizontal, PencilLine, Ruler, Save, Scale,
+  ShieldCheck, TrendingUp, Wallet,
 } from "lucide-react"
 import { SkeletonCard } from "@/components/Skeleton"
 import FlameIcon from "@/components/FlameIcon"
@@ -51,6 +51,16 @@ type FitTokenData = {
     createdAt: string
     workoutName: string
   }>
+}
+
+type HikeLog = {
+  id: string
+  name: string
+  distanceKm: number
+  durationMin: number
+  elevationM: number | null
+  locationName: string | null
+  loggedAt: string
 }
 
 // ─── Animation variants ───────────────────────────────────────────────────────
@@ -143,6 +153,12 @@ function buildWeeklyData(logs: WorkoutLog[], workoutsPerWeek: number) {
   })
 }
 
+function fmtHikeDuration(min: number): string {
+  const h = Math.floor(min / 60), m = min % 60
+  if (h === 0) return `${m}m`
+  return m === 0 ? `${h}h` : `${h}h ${m}m`
+}
+
 function formatFitTokenAmount(value: number) {
   return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
@@ -180,6 +196,7 @@ export default function ReportPage() {
   const router = useRouter()
 
   const [logs, setLogs] = useState<WorkoutLog[]>([])
+  const [hikeLogs, setHikeLogs] = useState<HikeLog[]>([])
   const [profile, setProfile] = useState<ProfileData | null>(null)
   const [streak, setStreak] = useState<StreakData | null>(null)
   const [fitTokens, setFitTokens] = useState<FitTokenData>({ balance: 0, transactions: [] })
@@ -202,11 +219,12 @@ export default function ReportPage() {
     const load = async () => {
       setLoading(true)
       try {
-        const [profileRes, logRes, streakRes, tokenRes] = await Promise.all([
+        const [profileRes, logRes, streakRes, tokenRes, hikeRes] = await Promise.all([
           fetch("/api/onboarding"),
           fetch("/api/workout-log"),
           fetch("/api/streak"),
           fetch("/api/tokens"),
+          fetch("/api/hike"),
         ])
         if (profileRes.ok) {
           const p = (await profileRes.json()) as ProfileData
@@ -220,6 +238,7 @@ export default function ReportPage() {
         if (logRes.ok) setLogs(await logRes.json())
         if (streakRes.ok) setStreak(await streakRes.json())
         if (tokenRes.ok) setFitTokens(await tokenRes.json())
+        if (hikeRes.ok) setHikeLogs(await hikeRes.json())
       } catch {
         setMessage("Could not load report data.")
       } finally {
@@ -235,6 +254,14 @@ export default function ReportPage() {
   const topMuscles = useMemo(() => getTopMuscles(logs), [logs])
   const weeklyData = useMemo(() => buildWeeklyData(logs, workoutsPerWeek), [logs, workoutsPerWeek])
   const recentLogs = logs.slice(0, 10)
+
+  const hikeStats = useMemo(() => {
+    const totalKm    = hikeLogs.reduce((s, h) => s + h.distanceKm, 0)
+    const totalElev  = hikeLogs.reduce((s, h) => s + (h.elevationM ?? 0), 0)
+    const longestKm  = hikeLogs.reduce((best, h) => h.distanceKm > best ? h.distanceKm : best, 0)
+    const totalMin   = hikeLogs.reduce((s, h) => s + h.durationMin, 0)
+    return { count: hikeLogs.length, totalKm, totalElev, longestKm, totalMin }
+  }, [hikeLogs])
 
   /* Count-up for streak number */
   const [displayStreak, setDisplayStreak] = useState(0)
@@ -566,7 +593,63 @@ export default function ReportPage() {
               )}
             </motion.section>
 
-            {/* ── 6. Workout History ───────────────────────────────── */}
+            {/* ── 6. Hike Activity ─────────────────────────────────── */}
+            <motion.section variants={fadeUp}>
+              <SectionHeader icon={Footprints} label="Hike Activity" right={hikeStats.count > 0 ? `${hikeStats.count} hike${hikeStats.count !== 1 ? "s" : ""}` : undefined} />
+              {hikeStats.count === 0 ? (
+                <div style={{ ...cardStyle, textAlign: "center", padding: "28px 20px", marginBottom: 0 }}>
+                  <p style={{ fontSize: 13, color: "var(--text-muted)" }}>No hikes logged yet. Use the Hike tab to track your first adventure.</p>
+                </div>
+              ) : (
+                <>
+                  {/* Stat grid */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                    {([
+                      { label: "Total Distance", value: `${hikeStats.totalKm.toFixed(1)} km`, Icon: Ruler },
+                      { label: "Total Time",     value: fmtHikeDuration(hikeStats.totalMin), Icon: History },
+                      { label: "Elevation",      value: hikeStats.totalElev > 0 ? `↑${hikeStats.totalElev.toLocaleString()} m` : "—", Icon: TrendingUp },
+                      { label: "Longest Hike",   value: `${hikeStats.longestKm.toFixed(1)} km`, Icon: Footprints },
+                    ] as const).map(({ label, value, Icon }) => (
+                      <div key={label} style={{ ...cardStyle, marginBottom: 0, padding: "15px 16px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 7 }}>
+                          <Icon size={12} strokeWidth={2} style={{ color: ACCENT }} />
+                          <span style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: "var(--text-muted)" }}>{label}</span>
+                        </div>
+                        <div className="number-text" style={{ fontSize: 20, fontWeight: 900, color: "var(--text)", lineHeight: 1 }}>{value}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Recent hike cards */}
+                  {hikeLogs.slice(0, 5).map(log => (
+                    <div key={log.id} style={{ ...cardStyle, padding: "13px 16px" }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {log.name}
+                          </div>
+                          {log.locationName && (
+                            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {log.locationName}
+                            </div>
+                          )}
+                        </div>
+                        <span style={{ fontSize: 11, color: "var(--text-muted)", flexShrink: 0, marginTop: 2 }}>
+                          {new Date(log.loggedAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap" as const, gap: "4px 12px", marginTop: 9 }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: ACCENT }}>{log.distanceKm} km</span>
+                        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{fmtHikeDuration(log.durationMin)}</span>
+                        {log.elevationM ? <span style={{ fontSize: 12, color: "var(--text-muted)" }}>↑{log.elevationM} m</span> : null}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+            </motion.section>
+
+            {/* ── 7. Workout History ───────────────────────────────── */}
             <motion.section variants={fadeUp}>
               <SectionHeader icon={History} label="Workout History" />
               {recentLogs.length === 0 ? (
