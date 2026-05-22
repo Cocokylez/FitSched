@@ -198,14 +198,33 @@ export default function HikePage() {
   // ── Cinematic transitions ─────────────────────────────────────────────────────
 
   function enterTrackingMode() {
-    // 1. Globe zooms in fast
-    if (globeRef.current) globeRef.current.pointOfView({ altitude: 0.002 }, 900)
-    // 2. Fade black overlay in mid-zoom
-    setTimeout(() => setOverlayVisible(true), 420)
-    // 3. Mount street map under overlay
-    setTimeout(() => setShowTracker(true), 780)
-    // 4. Fade overlay out to reveal street map
-    setTimeout(() => setOverlayVisible(false), 1000)
+    // Start zooming in immediately (no perceived delay)
+    if (globeRef.current) globeRef.current.pointOfView({ altitude: 0.002 }, 1100)
+
+    // Race GPS against a 400ms window — if it wins, redirect the zoom to the real location
+    if (navigator.geolocation) {
+      const overlayTimer = setTimeout(() => setOverlayVisible(true), 450)
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          // Got real coords — steer the globe there before the overlay covers it
+          if (globeRef.current) {
+            globeRef.current.pointOfView(
+              { lat: pos.coords.latitude, lng: pos.coords.longitude, altitude: 0.002 },
+              900
+            )
+          }
+          clearTimeout(overlayTimer)
+          setTimeout(() => setOverlayVisible(true), 380)
+        },
+        () => {}, // fallback: keep original zoom-to-nowhere
+        { enableHighAccuracy: false, timeout: 400, maximumAge: 60000 }
+      )
+    } else {
+      setTimeout(() => setOverlayVisible(true), 450)
+    }
+
+    setTimeout(() => setShowTracker(true), 820)
+    setTimeout(() => setOverlayVisible(false), 1040)
   }
 
   function handleTrackerClose() {

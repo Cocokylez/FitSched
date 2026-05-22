@@ -86,9 +86,15 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
   const pauseStartRef  = useRef(0)
 
   // Plan mode refs (read inside Leaflet click handler)
-  const modeRef        = useRef<"track" | "plan">("track")
-  const planStepRef    = useRef<"start" | "end">("start")
-  const planStartRef   = useRef<{ lat: number; lng: number } | null>(null)
+  const modeRef           = useRef<"track" | "plan">("track")
+  const planStepRef       = useRef<"start" | "end">("start")
+  const planStartRef      = useRef<{ lat: number; lng: number } | null>(null)
+
+  // Stable ref to onClose so Leaflet zoom handler always calls the latest version
+  const onCloseRef        = useRef(onClose)
+  onCloseRef.current      = onClose
+  // Set to true once GPS tracking starts — enables zoom-out-to-globe
+  const zoomBackRef       = useRef(false)
 
   // ── React state ─────────────────────────────────────────────────────────────
   const [mode, setModeState]     = useState<"track" | "plan">("track")
@@ -122,6 +128,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
     if (!startedRef.current) {
       startedRef.current   = true
       startTimeRef.current = Date.now()
+      zoomBackRef.current  = true
       setTrackStatus("tracking")
       mapRef.current?.setView([lat, lng], 16)
 
@@ -287,6 +294,14 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
       trackPolyRef.current = trackPoly
       planPolyRef.current  = planPoly
       dotRef.current       = dot
+
+      // Zoom out past level 10 while tracking → go back to globe
+      map.on("zoomend", () => {
+        if (zoomBackRef.current && map.getZoom() <= 10) {
+          zoomBackRef.current = false
+          onCloseRef.current()
+        }
+      })
 
       // Map click — only active in plan mode
       map.on("click", async (e: L.LeafletMouseEvent) => {
