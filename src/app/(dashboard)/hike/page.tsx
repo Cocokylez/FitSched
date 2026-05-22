@@ -4,9 +4,11 @@ import { useEffect, useMemo, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import {
   Activity, ArrowUpRight, ExternalLink, Footprints,
-  MapPin, Mountain, Plus, Timer, Trash2, TrendingUp, X,
+  MapPin, Mountain, Navigation, Pencil, Plus, Timer,
+  Trash2, TrendingUp, X,
 } from "lucide-react"
 import { SkeletonCard } from "@/components/Skeleton"
+import { HikeTracker, type TrackerResult } from "@/components/HikeTracker"
 import { stagger, fadeUp } from "@/lib/animations"
 import { playSound } from "@/lib/sound"
 
@@ -19,6 +21,7 @@ type HikeLog = {
   durationMin: number
   elevationM: number | null
   locationName: string | null
+  routePoints: unknown
   notes: string | null
   loggedAt: string
 }
@@ -32,10 +35,11 @@ function formatDuration(minutes: number): string {
 }
 
 function formatPace(distanceKm: number, durationMin: number): string {
-  const minPerKm = durationMin / distanceKm
-  const m = Math.floor(minPerKm)
-  const s = Math.round((minPerKm - m) * 60)
-  return `${m}:${String(s).padStart(2, "0")}/km`
+  if (distanceKm < 0.01) return "--:--"
+  const mPerKm = durationMin / distanceKm
+  const m = Math.floor(mPerKm)
+  const s = Math.round((mPerKm - m) * 60)
+  return `${m}:${String(s).padStart(2, "0")}`
 }
 
 function formatDate(dateStr: string): string {
@@ -44,8 +48,8 @@ function formatDate(dateStr: string): string {
   })
 }
 
-function mapsSearchUrl(query: string): string {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
+function mapsSearchUrl(q: string): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`
 }
 
 function todayStr(): string {
@@ -53,89 +57,63 @@ function todayStr(): string {
 }
 
 const labelStyle: React.CSSProperties = {
-  display: "block",
-  fontSize: 11,
-  fontWeight: 700,
-  letterSpacing: "0.09em",
-  color: "var(--text-muted)",
-  textTransform: "uppercase",
-  marginBottom: 6,
+  display: "block", fontSize: 11, fontWeight: 700,
+  letterSpacing: "0.09em", color: "var(--text-muted)",
+  textTransform: "uppercase", marginBottom: 6,
 }
 
 const inputStyle: React.CSSProperties = {
-  width: "100%",
-  boxSizing: "border-box",
-  background: "var(--surface)",
-  border: "1px solid var(--border)",
-  borderRadius: 12,
-  padding: "11px 14px",
-  color: "var(--text)",
-  fontSize: 14,
-  fontFamily: "inherit",
-  outline: "none",
+  width: "100%", boxSizing: "border-box",
+  background: "var(--surface)", border: "1px solid var(--border)",
+  borderRadius: 12, padding: "11px 14px",
+  color: "var(--text)", fontSize: 14, fontFamily: "inherit", outline: "none",
 }
 
 function MapThumbnail({ location }: { location: string }) {
   const [status, setStatus] = useState<"loading" | "ok" | "error">("loading")
   const src = `/api/hike/map?q=${encodeURIComponent(location)}`
-
   return (
-    <div style={{
-      width: "100%", height: 140, borderRadius: "14px 14px 0 0",
-      overflow: "hidden", background: "var(--surface)", position: "relative",
-    }}>
+    <div style={{ width: "100%", height: 140, borderRadius: "14px 14px 0 0", overflow: "hidden", background: "var(--surface)", position: "relative" }}>
       {status === "loading" && (
         <div style={{
           position: "absolute", inset: 0,
           background: "linear-gradient(90deg, var(--surface) 25%, var(--border) 50%, var(--surface) 75%)",
-          backgroundSize: "200% 100%",
-          animation: "shimmer 1.4s ease-in-out infinite",
+          backgroundSize: "200% 100%", animation: "shimmer 1.4s ease-in-out infinite",
         }} />
       )}
       {status !== "error" && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={src}
-          alt={`Map of ${location}`}
+          src={src} alt={`Map of ${location}`}
           onLoad={() => setStatus("ok")}
           onError={() => setStatus("error")}
-          style={{
-            width: "100%", height: "100%", objectFit: "cover",
-            display: status === "ok" ? "block" : "none",
-          }}
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: status === "ok" ? "block" : "none" }}
         />
       )}
       {status === "error" && (
-        <div style={{
-          position: "absolute", inset: 0, display: "flex",
-          alignItems: "center", justifyContent: "center",
-          flexDirection: "column", gap: 6,
-          color: "var(--text-muted)", fontSize: 12,
-        }}>
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 6, color: "var(--text-muted)", fontSize: 12 }}>
           <MapPin size={20} strokeWidth={1.5} />
           <span>{location}</span>
         </div>
       )}
-      {/* Gradient overlay at bottom for text legibility */}
       {status === "ok" && (
-        <div style={{
-          position: "absolute", bottom: 0, left: 0, right: 0, height: 48,
-          background: "linear-gradient(transparent, rgba(0,0,0,0.55))",
-          pointerEvents: "none",
-        }} />
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 48, background: "linear-gradient(transparent, rgba(0,0,0,0.55))", pointerEvents: "none" }} />
       )}
     </div>
   )
 }
 
 export default function HikePage() {
-  const [logs, setLogs]             = useState<HikeLog[]>([])
-  const [loading, setLoading]       = useState(true)
-  const [showForm, setShowForm]     = useState(false)
-  const [deleting, setDeleting]     = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
+  const [logs, setLogs]               = useState<HikeLog[]>([])
+  const [loading, setLoading]         = useState(true)
+  const [showTracker, setShowTracker] = useState(false)
+  const [showForm, setShowForm]       = useState(false)
+  const [deleting, setDeleting]       = useState<string | null>(null)
+  const [submitting, setSubmitting]   = useState(false)
+  // Tracker pre-fill — set after GPS session finishes
+  const [prefill, setPrefill]         = useState<TrackerResult | null>(null)
 
-  // form fields
+  // Form fields
   const [name, setName]               = useState("")
   const [locationName, setLocationName] = useState("")
   const [distanceKm, setDistanceKm]   = useState("")
@@ -165,6 +143,26 @@ export default function HikePage() {
     setElevationM("")
     setNotes("")
     setLoggedAt(todayStr())
+    setPrefill(null)
+  }
+
+  function openManualForm() {
+    resetForm()
+    setShowForm(true)
+  }
+
+  function handleTrackerFinish(result: TrackerResult) {
+    setShowTracker(false)
+    setPrefill(result)
+    // Pre-fill form with tracked values
+    setDistanceKm(String(result.distanceKm))
+    const h = Math.floor(result.durationMin / 60)
+    const m = result.durationMin % 60
+    setDurationH(h > 0 ? String(h) : "")
+    setDurationM(m > 0 ? String(m) : "0")
+    if (result.elevationM) setElevationM(String(result.elevationM))
+    setLoggedAt(todayStr())
+    setShowForm(true)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -182,6 +180,7 @@ export default function HikePage() {
           distanceKm: Number(distanceKm),
           durationMin: totalMin,
           elevationM: elevationM ? Number(elevationM) : null,
+          routePoints: prefill?.routePoints ?? null,
           notes,
           loggedAt: loggedAt ? new Date(loggedAt).toISOString() : new Date().toISOString(),
         }),
@@ -247,7 +246,7 @@ export default function HikePage() {
         <div style={{ maxWidth: 560, margin: "0 auto" }}>
           <motion.div variants={stagger} initial="hidden" animate="visible">
 
-            {/* ── Header ──────────────────────────────────────────────── */}
+            {/* ── Header ────────────────────────────────────── */}
             <motion.div variants={fadeUp} style={{ marginBottom: 22 }}>
               <div style={{
                 display: "inline-flex", alignItems: "center", gap: 8,
@@ -263,32 +262,29 @@ export default function HikePage() {
                 Trail log
               </h1>
               <p style={{ color: "var(--text-muted)", fontSize: 14, lineHeight: 1.55, margin: 0, maxWidth: 400 }}>
-                Track your hikes, distance, and elevation — with Google Maps previews for each trail.
+                Track live with GPS or log a completed hike manually.
               </p>
             </motion.div>
 
-            {/* ── Stats 2×2 ───────────────────────────────────────────── */}
+            {/* ── Stats 2×2 ─────────────────────────────────── */}
             <motion.div variants={fadeUp} style={{ marginBottom: 14 }}>
               {loading ? (
                 <SkeletonCard />
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  {[
+                  {([
                     { label: "Hikes",     value: stats.count,                          unit: "",   Icon: Footprints },
                     { label: "Distance",  value: stats.totalKm,                        unit: "km", Icon: Activity   },
                     { label: "Elevation", value: stats.totalElevation.toLocaleString(), unit: "m",  Icon: TrendingUp },
                     { label: "Best hike", value: stats.bestKm,                         unit: "km", Icon: Mountain   },
-                  ].map(({ label, value, unit, Icon }) => (
+                  ] as const).map(({ label, value, unit, Icon }) => (
                     <div key={label} style={{
                       background: "var(--panel)", border: "1px solid var(--border)",
                       borderRadius: 18, padding: "16px 18px",
                     }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
                         <Icon size={13} strokeWidth={2} color={ACCENT} />
-                        <span style={{
-                          fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
-                          color: "var(--text-muted)", textTransform: "uppercase",
-                        }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-muted)", textTransform: "uppercase" }}>
                           {label}
                         </span>
                       </div>
@@ -297,9 +293,7 @@ export default function HikePage() {
                           {value}
                         </span>
                         {unit && (
-                          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)" }}>
-                            {unit}
-                          </span>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)" }}>{unit}</span>
                         )}
                       </div>
                     </div>
@@ -308,25 +302,42 @@ export default function HikePage() {
               )}
             </motion.div>
 
-            {/* ── CTA ─────────────────────────────────────────────────── */}
-            <motion.div variants={fadeUp} style={{ marginBottom: 22 }}>
+            {/* ── CTA pair ──────────────────────────────────── */}
+            <motion.div variants={fadeUp} style={{ marginBottom: 22, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              {/* GPS track */}
               <motion.button
-                onClick={() => setShowForm(true)}
+                onClick={() => setShowTracker(true)}
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: "spring", stiffness: 380, damping: 22 }}
                 style={{
-                  width: "100%", border: "none", borderRadius: 18,
-                  padding: "15px 20px", background: ACCENT, color: "#0d1f1e",
-                  cursor: "pointer", display: "flex", alignItems: "center",
-                  justifyContent: "center", gap: 9, fontSize: 14, fontWeight: 900,
+                  border: "none", borderRadius: 18, padding: "16px 14px",
+                  background: ACCENT, color: "#0d1f1e", cursor: "pointer",
+                  display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6,
                 }}
               >
-                <Plus size={18} strokeWidth={2.5} />
-                Log a hike
+                <Navigation size={20} strokeWidth={2.2} />
+                <span style={{ fontSize: 13, fontWeight: 900, lineHeight: 1.1 }}>Track with GPS</span>
+                <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.65, lineHeight: 1.3 }}>Live distance & pace</span>
+              </motion.button>
+
+              {/* Manual log */}
+              <motion.button
+                onClick={openManualForm}
+                whileTap={{ scale: 0.97 }}
+                transition={{ type: "spring", stiffness: 380, damping: 22 }}
+                style={{
+                  border: "1px solid var(--border)", borderRadius: 18, padding: "16px 14px",
+                  background: "var(--panel)", color: "var(--text)", cursor: "pointer",
+                  display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6,
+                }}
+              >
+                <Pencil size={20} strokeWidth={2} />
+                <span style={{ fontSize: 13, fontWeight: 900, lineHeight: 1.1 }}>Log manually</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", lineHeight: 1.3 }}>Enter your own numbers</span>
               </motion.button>
             </motion.div>
 
-            {/* ── History ─────────────────────────────────────────────── */}
+            {/* ── History ───────────────────────────────────── */}
             <motion.div variants={fadeUp}>
               {loading ? (
                 <>
@@ -342,12 +353,8 @@ export default function HikePage() {
                   <div style={{ marginBottom: 14, display: "flex", justifyContent: "center" }}>
                     <Mountain size={40} strokeWidth={1.4} color={ACCENT} style={{ opacity: 0.65 }} />
                   </div>
-                  <div style={{ color: "var(--text)", fontWeight: 800, fontSize: 16, marginBottom: 7 }}>
-                    No hikes yet
-                  </div>
-                  <div style={{ color: "var(--text-muted)", fontSize: 13 }}>
-                    Hit the button above to log your first trail.
-                  </div>
+                  <div style={{ color: "var(--text)", fontWeight: 800, fontSize: 16, marginBottom: 7 }}>No hikes yet</div>
+                  <div style={{ color: "var(--text-muted)", fontSize: 13 }}>Hit one of the buttons above to start.</div>
                 </div>
               ) : (
                 <AnimatePresence mode="popLayout">
@@ -359,32 +366,35 @@ export default function HikePage() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, x: -24, transition: { duration: 0.2 } }}
-                        style={{
-                          background: "var(--panel)", border: "1px solid var(--border)",
-                          borderRadius: 18, overflow: "hidden",
-                        }}
+                        style={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 18, overflow: "hidden" }}
                       >
-                        {/* Map thumbnail — only if location was saved */}
-                        {log.locationName && (
-                          <MapThumbnail location={log.locationName} />
+                        {/* Map thumbnail (location-based) */}
+                        {!!log.locationName && <MapThumbnail location={log.locationName} />}
+
+                        {/* GPS route badge */}
+                        {!!log.routePoints && (
+                          <div style={{
+                            display: "flex", alignItems: "center", gap: 6,
+                            padding: "8px 14px 0", fontSize: 11, fontWeight: 700,
+                            color: ACCENT,
+                          }}>
+                            <Navigation size={11} strokeWidth={2.5} />
+                            GPS tracked
+                          </div>
                         )}
 
                         {/* Card body */}
-                        <div style={{ padding: "14px 16px" }}>
+                        <div style={{ padding: (!!log.routePoints || !!log.locationName) ? "10px 16px 14px" : "14px 16px" }}>
                           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-                            {/* Left: info */}
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
                                 <MapPin size={13} strokeWidth={2} color={ACCENT} style={{ flexShrink: 0 }} />
-                                <span style={{
-                                  fontSize: 14, fontWeight: 900, color: "var(--text)",
-                                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                                }}>
+                                <span style={{ fontSize: 14, fontWeight: 900, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                   {log.name}
                                 </span>
                               </div>
 
-                              {/* Location chip with Maps link */}
+                              {/* Location chip */}
                               {log.locationName && (
                                 <a
                                   href={mapsSearchUrl(log.locationName)}
@@ -404,41 +414,31 @@ export default function HikePage() {
                                 </a>
                               )}
 
-                              {/* Stats row */}
+                              {/* Stats */}
                               <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 12px" }}>
                                 <span style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}>
-                                  <Activity size={11} strokeWidth={2} />
-                                  {log.distanceKm} km
+                                  <Activity size={11} strokeWidth={2} />{log.distanceKm} km
                                 </span>
                                 <span style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}>
-                                  <Timer size={11} strokeWidth={2} />
-                                  {formatDuration(log.durationMin)}
+                                  <Timer size={11} strokeWidth={2} />{formatDuration(log.durationMin)}
                                 </span>
                                 <span style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}>
-                                  <ArrowUpRight size={11} strokeWidth={2} />
-                                  {formatPace(log.distanceKm, log.durationMin)}
+                                  <ArrowUpRight size={11} strokeWidth={2} />{formatPace(log.distanceKm, log.durationMin)}
                                 </span>
                                 {log.elevationM != null && log.elevationM > 0 && (
                                   <span style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}>
-                                    <TrendingUp size={11} strokeWidth={2} />
-                                    {log.elevationM.toLocaleString()} m
+                                    <TrendingUp size={11} strokeWidth={2} />{log.elevationM.toLocaleString()} m
                                   </span>
                                 )}
                               </div>
 
                               {log.notes && (
-                                <p style={{
-                                  margin: "8px 0 0", fontSize: 12, color: "var(--text-muted)",
-                                  lineHeight: 1.45,
-                                  display: "-webkit-box", WebkitLineClamp: 2,
-                                  WebkitBoxOrient: "vertical", overflow: "hidden",
-                                }}>
+                                <p style={{ margin: "8px 0 0", fontSize: 12, color: "var(--text-muted)", lineHeight: 1.45, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                                   {log.notes}
                                 </p>
                               )}
                             </div>
 
-                            {/* Right: date + delete */}
                             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10, flexShrink: 0 }}>
                               <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" }}>
                                 {formatDate(log.loggedAt)}
@@ -451,8 +451,7 @@ export default function HikePage() {
                                   background: "transparent", border: "1px solid var(--border)",
                                   borderRadius: 8, padding: "5px 7px", cursor: "pointer",
                                   color: "var(--text-muted)", display: "flex", alignItems: "center",
-                                  opacity: deleting === log.id ? 0.35 : 1,
-                                  transition: "opacity 0.15s",
+                                  opacity: deleting === log.id ? 0.35 : 1, transition: "opacity 0.15s",
                                 }}
                               >
                                 <Trash2 size={13} strokeWidth={2} />
@@ -470,14 +469,12 @@ export default function HikePage() {
           </motion.div>
         </div>
 
-        {/* ── Log hike modal (bottom sheet) ───────────────────────────── */}
+        {/* ── Log form (bottom sheet) ───────────────────────── */}
         <AnimatePresence>
           {showForm && (
             <motion.div
               key="hike-form-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={e => { if (e.target === e.currentTarget) setShowForm(false) }}
               style={{
                 position: "fixed", inset: 0, zIndex: 200,
@@ -488,9 +485,7 @@ export default function HikePage() {
             >
               <motion.div
                 key="hike-form-sheet"
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                exit={{ y: "100%" }}
+                initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
                 transition={{ type: "spring", stiffness: 290, damping: 30 }}
                 style={{
                   width: "100%", maxWidth: 560, margin: "0 auto",
@@ -499,167 +494,116 @@ export default function HikePage() {
                   maxHeight: "90dvh", overflowY: "auto",
                 }}
               >
-                {/* Sheet header */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-                  <div style={{ fontWeight: 900, fontSize: 17, color: "var(--text)" }}>Log a hike</div>
-                  <button
-                    onClick={() => setShowForm(false)}
-                    style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 4, display: "flex" }}
-                  >
+                {/* Header */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                  <div>
+                    <div style={{ fontWeight: 900, fontSize: 17, color: "var(--text)" }}>
+                      {prefill ? "Save tracked hike" : "Log a hike"}
+                    </div>
+                    {prefill && (
+                      <div style={{ fontSize: 11, color: ACCENT, fontWeight: 700, marginTop: 3, display: "flex", alignItems: "center", gap: 5 }}>
+                        <Navigation size={11} strokeWidth={2.5} />
+                        GPS session — {prefill.distanceKm} km · {prefill.durationMin} min
+                      </div>
+                    )}
+                  </div>
+                  <button onClick={() => setShowForm(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 4, display: "flex" }}>
                     <X size={20} strokeWidth={2} />
                   </button>
                 </div>
 
                 <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-                  {/* Trail name */}
                   <div>
                     <label style={labelStyle}>Trail name</label>
-                    <input
-                      value={name}
-                      onChange={e => setName(e.target.value)}
-                      placeholder="e.g. Bukit Timah Hill"
-                      style={inputStyle}
-                    />
+                    <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Bukit Timah Hill" style={inputStyle} />
                   </div>
 
-                  {/* Location / Google Maps */}
                   <div>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
                       <label style={{ ...labelStyle, marginBottom: 0 }}>Location</label>
                       {locationName.trim() && (
-                        <a
-                          href={mapsSearchUrl(locationName)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            display: "inline-flex", alignItems: "center", gap: 4,
-                            fontSize: 11, fontWeight: 700, color: ACCENT,
-                            textDecoration: "none", letterSpacing: "0.04em",
-                          }}
-                        >
+                        <a href={mapsSearchUrl(locationName)} target="_blank" rel="noopener noreferrer"
+                          style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: ACCENT, textDecoration: "none" }}>
                           <ExternalLink size={11} strokeWidth={2.5} />
                           View on Maps
                         </a>
                       )}
                     </div>
-                    <input
-                      value={locationName}
-                      onChange={e => setLocationName(e.target.value)}
-                      placeholder="e.g. Bukit Timah Nature Reserve, Singapore"
-                      style={inputStyle}
-                    />
+                    <input value={locationName} onChange={e => setLocationName(e.target.value)} placeholder="e.g. Bukit Timah Nature Reserve, Singapore" style={inputStyle} />
                     <div style={{ marginTop: 5, fontSize: 11, color: "var(--text-muted)" }}>
-                      A map preview will appear on the card when saved.
+                      A terrain map preview will appear on the card.
                     </div>
                   </div>
 
-                  {/* Distance */}
                   <div>
                     <label style={labelStyle}>
                       Distance (km) <span style={{ color: ACCENT }}>*</span>
+                      {prefill && <span style={{ color: "var(--text-muted)", fontWeight: 600, marginLeft: 6 }}>— GPS measured</span>}
                     </label>
-                    <input
-                      type="number"
-                      min="0.1"
-                      step="0.1"
-                      value={distanceKm}
-                      onChange={e => setDistanceKm(e.target.value)}
-                      placeholder="e.g. 4.5"
-                      required
-                      style={inputStyle}
-                    />
+                    <input type="number" min="0.1" step="0.1" value={distanceKm} onChange={e => setDistanceKm(e.target.value)} placeholder="e.g. 4.5" required style={inputStyle} />
                   </div>
 
-                  {/* Duration */}
                   <div>
                     <label style={labelStyle}>
                       Duration <span style={{ color: ACCENT }}>*</span>
+                      {prefill && <span style={{ color: "var(--text-muted)", fontWeight: 600, marginLeft: 6 }}>— GPS measured</span>}
                     </label>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        value={durationH}
-                        onChange={e => setDurationH(e.target.value)}
-                        placeholder="Hours"
-                        style={inputStyle}
-                      />
-                      <input
-                        type="number"
-                        min="0"
-                        max="59"
-                        step="1"
-                        value={durationM}
-                        onChange={e => setDurationM(e.target.value)}
-                        placeholder="Minutes"
-                        style={inputStyle}
-                      />
+                      <input type="number" min="0" step="1" value={durationH} onChange={e => setDurationH(e.target.value)} placeholder="Hours" style={inputStyle} />
+                      <input type="number" min="0" max="59" step="1" value={durationM} onChange={e => setDurationM(e.target.value)} placeholder="Minutes" style={inputStyle} />
                     </div>
                   </div>
 
-                  {/* Elevation gain */}
                   <div>
-                    <label style={labelStyle}>Elevation gain (m)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={elevationM}
-                      onChange={e => setElevationM(e.target.value)}
-                      placeholder="e.g. 420"
-                      style={inputStyle}
-                    />
+                    <label style={labelStyle}>
+                      Elevation gain (m)
+                      {prefill?.elevationM && <span style={{ color: "var(--text-muted)", fontWeight: 600, marginLeft: 6 }}>— GPS measured</span>}
+                    </label>
+                    <input type="number" min="0" step="1" value={elevationM} onChange={e => setElevationM(e.target.value)} placeholder="e.g. 420" style={inputStyle} />
                   </div>
 
-                  {/* Date */}
                   <div>
                     <label style={labelStyle}>Date</label>
-                    <input
-                      type="date"
-                      value={loggedAt}
-                      onChange={e => setLoggedAt(e.target.value)}
-                      style={inputStyle}
-                    />
+                    <input type="date" value={loggedAt} onChange={e => setLoggedAt(e.target.value)} style={inputStyle} />
                   </div>
 
-                  {/* Notes */}
                   <div>
                     <label style={labelStyle}>Notes</label>
-                    <textarea
-                      value={notes}
-                      onChange={e => setNotes(e.target.value)}
-                      placeholder="How was the trail? Any landmarks?"
-                      rows={3}
-                      style={{ ...inputStyle, resize: "none" }}
-                    />
+                    <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="How was the trail? Any highlights?" rows={3} style={{ ...inputStyle, resize: "none" }} />
                   </div>
 
                   <motion.button
                     type="submit"
                     disabled={!canSubmit || submitting}
                     whileTap={canSubmit && !submitting ? { scale: 0.97 } : {}}
-                    transition={{ type: "spring", stiffness: 380, damping: 22 }}
                     style={{
                       border: "none", borderRadius: 16, padding: "14px",
                       background: ACCENT, color: "#0d1f1e",
                       fontWeight: 900, fontSize: 14, fontFamily: "inherit",
                       cursor: canSubmit && !submitting ? "pointer" : "default",
                       opacity: canSubmit && !submitting ? 1 : 0.5,
-                      transition: "opacity 0.18s",
-                      marginTop: 4,
+                      transition: "opacity 0.18s", marginTop: 4,
                     }}
                   >
                     {submitting ? "Saving…" : "Save hike"}
                   </motion.button>
-
                 </form>
               </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
+
+      {/* ── GPS Tracker (full-screen) ─────────────────────────── */}
+      <AnimatePresence>
+        {showTracker && (
+          <HikeTracker
+            onFinish={handleTrackerFinish}
+            onClose={() => setShowTracker(false)}
+          />
+        )}
+      </AnimatePresence>
     </>
   )
 }

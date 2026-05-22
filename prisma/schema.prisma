@@ -363,6 +363,7 @@ model HikeLog {
   durationMin   Int
   elevationM    Int?
   locationName  String?
+  routePoints   Json?
   notes         String?
   loggedAt      DateTime @default(now())
 
