@@ -16,7 +16,7 @@ const GREEN  = "#4ade80"
 const RED    = "#f87171"
 const BLUE   = "#60a5fa"
 
-const GLOBE_IMG   = "//unpkg.com/three-globe/example/img/earth-night.jpg"
+const GLOBE_IMG   = "//unpkg.com/three-globe/example/img/earth-day.jpg"
 const GLOBE_BG    = "//unpkg.com/three-globe/example/img/night-sky.png"
 
 // ── Globe (no SSR) ────────────────────────────────────────────────────────────
@@ -177,7 +177,7 @@ export default function HikePage() {
 
       // Zoom globe to user location
       if (globeRef.current) {
-        globeRef.current.pointOfView({ lat, lng, altitude: 0.015 }, 2000)
+        globeRef.current.pointOfView({ lat, lng, altitude: 0.06 }, 1800)
       }
 
       timerRef.current = setInterval(() => {
@@ -270,6 +270,10 @@ export default function HikePage() {
   // ── Mode transitions ─────────────────────────────────────────────────────────
 
   function enterTracking() {
+    if (globeRef.current) {
+      const controls = globeRef.current.controls()
+      controls.autoRotate = false
+    }
     modeRef.current = "tracking"
     setMode("tracking")
     enableGPS()
@@ -501,31 +505,38 @@ export default function HikePage() {
 
       {/* ── Globe ──────────────────────────────────────────────────────── */}
       {winSize.w > 0 && (
-        <Globe
-          ref={globeRef}
-          width={winSize.w}
-          height={winSize.h}
-          backgroundColor="rgba(0,0,0,0)"
-          globeImageUrl={GLOBE_IMG}
-          backgroundImageUrl={GLOBE_BG}
-          atmosphereColor="rgba(107,191,184,0.4)"
-          atmosphereAltitude={0.18}
-          pointsData={allPoints}
-          pointColor="color"
-          pointRadius="size"
-          pointAltitude={0.005}
-          pointLabel="label"
-          arcsData={allArcs}
-          arcColor="color"
-          arcAltitude={0.003}
-          arcStroke={1.2}
-          arcDashLength={0.4}
-          arcDashGap={0.2}
-          arcDashAnimateTime={mode === "tracking" ? 1500 : 0}
-          onGlobeReady={() => setGlobeReady(true)}
-          onGlobeClick={handleGlobeClick}
-          enablePointerInteraction={mode === "planning" || mode === "idle"}
-        />
+        <div style={{
+          position: "absolute", top: "50%", left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: winSize.w, height: winSize.h,
+          overflow: "hidden",
+        }}>
+          <Globe
+            ref={globeRef}
+            width={winSize.w}
+            height={winSize.h}
+            backgroundColor="rgba(0,0,0,0)"
+            globeImageUrl={GLOBE_IMG}
+            backgroundImageUrl={GLOBE_BG}
+            atmosphereColor="rgba(147,210,255,0.45)"
+            atmosphereAltitude={0.2}
+            pointsData={allPoints}
+            pointColor="color"
+            pointRadius="size"
+            pointAltitude={0.005}
+            pointLabel="label"
+            arcsData={allArcs}
+            arcColor="color"
+            arcAltitude={0.003}
+            arcStroke={1.6}
+            arcDashLength={0.4}
+            arcDashGap={0.2}
+            arcDashAnimateTime={mode === "tracking" ? 1500 : 0}
+            onGlobeReady={() => setGlobeReady(true)}
+            onGlobeClick={handleGlobeClick}
+            enablePointerInteraction={mode === "planning" || mode === "idle"}
+          />
+        </div>
       )}
 
       {/* ── Hike history button (top-right) ────────────────────────────── */}
