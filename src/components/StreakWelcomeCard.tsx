@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { ArrowRight, Dumbbell, Snowflake, X } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
-import { playSound } from "@/lib/sound"
+import { playSound, playSoundLoop } from "@/lib/sound"
 
 type StreakWelcomeCardProps = {
   streak: number
@@ -410,6 +410,7 @@ export function StreakWelcomeCard({
   const [open, setOpen] = useState(false)
   const [freezeUsed, setFreezeUsed] = useState(false)
   const [freezing, setFreezing] = useState(false)
+  const fireStopRef = useRef<(() => void) | null>(null)
   const hasActiveStreak = streak > 0
   const showMoment = hasActiveStreak || streakBroken
   const missedStreak = streakBroken && !hasActiveStreak
@@ -433,11 +434,20 @@ export function StreakWelcomeCard({
     playSound("confirmation_001.ogg", 0.58)
   }, [displayStreak, hasActiveStreak, showMoment])
 
+  useEffect(() => {
+    if (!open || !hasActiveStreak) return
+    const stop = playSoundLoop("fire_crackle.wav", 0.35)
+    fireStopRef.current = stop
+    return () => { stop(); fireStopRef.current = null }
+  }, [open, hasActiveStreak])
+
   if (!showMoment) return null
 
-  const close = () => { playSound("close_001.ogg", 0.52); setOpen(false) }
+  const stopFire = () => { fireStopRef.current?.(); fireStopRef.current = null }
+  const close = () => { playSound("close_001.ogg", 0.52); stopFire(); setOpen(false) }
   const goWorkout = () => {
     playSound("confirmation_002.ogg", 0.68)
+    stopFire()
     setOpen(false)
     onGoWorkout()
   }
