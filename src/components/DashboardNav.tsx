@@ -44,13 +44,14 @@ const navItems = [
 export function DashboardNav() {
   const pathname = usePathname()
   const router = useRouter()
-  const [visible, setVisible] = useState(true)
+  const [visible, setVisible]       = useState(true)
+  const [trackerOpen, setTrackerOpen] = useState(false)
   const lastScrollY = useRef(0)
   const lockedVisibleUntil = useRef(0)
   const ticking = useRef(false)
   const { theme } = useTheme()
   const { t } = useLanguage()
-  const hideNav = pathname.startsWith("/exercise")
+  const hideNav = pathname.startsWith("/exercise") || trackerOpen
   const currentIndex = navItems.findIndex((item) => pathname.startsWith(item.href))
   const [travelIndex, setTravelIndex] = useState(Math.max(currentIndex, 0))
   const activeIndex = currentIndex >= 0 ? travelIndex : -1
@@ -138,6 +139,15 @@ export function DashboardNav() {
       window.removeEventListener("scroll", handleScroll)
     }
   }, [pathname, hideNav])
+
+  // Listen for hike tracker open/close
+  useEffect(() => {
+    const handler = (e: Event) => {
+      setTrackerOpen((e as CustomEvent<{ open: boolean }>).detail.open)
+    }
+    window.addEventListener("hike-tracker-change", handler)
+    return () => window.removeEventListener("hike-tracker-change", handler)
+  }, [])
 
   if (hideNav) return null
 
