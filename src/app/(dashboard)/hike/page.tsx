@@ -177,7 +177,7 @@ export default function HikePage() {
 
       // Zoom globe to user location
       if (globeRef.current) {
-        globeRef.current.pointOfView({ lat, lng, altitude: 0.06 }, 1800)
+        globeRef.current.pointOfView({ lat, lng, altitude: 0.008 }, 1800)
       }
 
       timerRef.current = setInterval(() => {
@@ -206,7 +206,7 @@ export default function HikePage() {
 
     // Smoothly follow position on globe
     if (globeRef.current) {
-      globeRef.current.pointOfView({ lat, lng }, 800)
+      globeRef.current.pointOfView({ lat, lng, altitude: 0.008 }, 800)
     }
   }, [])
 
