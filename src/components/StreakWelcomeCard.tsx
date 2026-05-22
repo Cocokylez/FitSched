@@ -437,7 +437,7 @@ export function StreakWelcomeCard({
 
   useEffect(() => {
     if (!open || !hasActiveStreak) return
-    const stop = playSoundLoop("fire_crackle.wav", 0.55)
+    const stop = playSoundLoop("fire_crackle.wav", 1.0)
     fireStopRef.current = stop
     return () => { stop(); fireStopRef.current = null }
   }, [open, hasActiveStreak])
