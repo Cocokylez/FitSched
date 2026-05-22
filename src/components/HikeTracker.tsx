@@ -57,6 +57,7 @@ export function HikeTracker({ onFinish, onClose }: Props) {
   const dotRef      = useRef<L.CircleMarker | null>(null)
   const watchRef    = useRef<number | null>(null)
   const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null)
+  const permRef     = useRef<PermissionStatus | null>(null)
 
   // Mutable refs — read in GPS callback without stale closure issues
   const waypointsRef   = useRef<Waypoint[]>([])
@@ -127,38 +128,62 @@ export function HikeTracker({ onFinish, onClose }: Props) {
   function onError(err: GeolocationPositionError) {
     setError(
       err.code === 1
-        ? "Location access denied. Open your browser settings and allow location for this site."
+        ? "Location blocked. Tap the lock icon in your browser's address bar → Site permissions → Location → Allow. Then tap \"Try again\"."
         : err.code === 2
         ? "GPS signal not found — move outdoors and try again."
-        : "Location request timed out — try again."
+        : "Location request timed out — move to an open area and try again."
     )
     setStatus("idle")
   }
 
-  // Called on button tap — MUST be inside a click handler to trigger
-  // the OS permission prompt reliably on iOS Safari and Android Chrome.
+  // Start watchPosition directly — use when permission is already granted.
+  function startWatching() {
+    if (watchRef.current !== null) return  // already watching
+    setError(null)
+    setStatus("acquiring")
+    watchRef.current = navigator.geolocation.watchPosition(onPosition, onError, {
+      enableHighAccuracy: true, timeout: 30000, maximumAge: 0,
+    })
+  }
+
+  // Called on button tap. Re-queries the live permission state first:
+  //   granted → start directly (handles "enabled in settings" case)
+  //   prompt/denied → call getCurrentPosition to trigger the OS prompt
   function enableGPS() {
     if (!navigator.geolocation) {
       setError("Geolocation is not supported on this device.")
       return
     }
-    setError(null)
-    setStatus("acquiring")
 
-    // getCurrentPosition fires the OS prompt immediately (user gesture → prompt).
-    // On success we start watchPosition for continuous updates.
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        onPosition(pos)
-        watchRef.current = navigator.geolocation.watchPosition(onPosition, onError, {
-          enableHighAccuracy: true,
-          timeout: 30000,
-          maximumAge: 0,
-        })
-      },
-      onError,
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-    )
+    const go = () => {
+      setError(null)
+      setStatus("acquiring")
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          onPosition(pos)
+          if (watchRef.current === null) {
+            watchRef.current = navigator.geolocation.watchPosition(onPosition, onError, {
+              enableHighAccuracy: true, timeout: 30000, maximumAge: 0,
+            })
+          }
+        },
+        onError,
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      )
+    }
+
+    if ("permissions" in navigator) {
+      navigator.permissions.query({ name: "geolocation" }).then(result => {
+        if (result.state === "granted") {
+          // Permission was enabled in settings — no prompt needed, go directly
+          startWatching()
+        } else {
+          go()
+        }
+      }).catch(go)
+    } else {
+      go()
+    }
   }
 
   // Initialise Leaflet map only (no GPS call here)
@@ -194,6 +219,51 @@ export function HikeTracker({ onFinish, onClose }: Props) {
       if (timerRef.current) clearInterval(timerRef.current)
       map?.remove()
     }
+  }, [])
+
+  // Query live permission state. Handles three cases:
+  //   granted → skip the idle screen, go straight to acquiring
+  //   denied  → show targeted error immediately (no spinner loop)
+  //   prompt  → show the "Allow location" button (default idle state)
+  //
+  // Also wires an onchange listener so if the user enables location in
+  // browser settings while this screen is open, tracking starts automatically.
+  useEffect(() => {
+    if (!navigator.geolocation || !("permissions" in navigator)) return
+
+    let perm: PermissionStatus
+
+    navigator.permissions.query({ name: "geolocation" }).then(result => {
+      perm = result
+      permRef.current = result
+
+      if (result.state === "granted") {
+        startWatching()
+      } else if (result.state === "denied") {
+        setError(
+          "Location is blocked for this site. Tap the lock icon in your browser's address bar → Site permissions → Location → Allow. Then tap \"Try again\"."
+        )
+      }
+
+      result.onchange = () => {
+        if (result.state === "granted" && !startedRef.current) {
+          setError(null)
+          startWatching()
+        } else if (result.state === "denied") {
+          setStatus("idle")
+          setError(
+            "Location is blocked for this site. Tap the lock icon in your browser's address bar → Site permissions → Location → Allow. Then tap \"Try again\"."
+          )
+        }
+      }
+    }).catch(() => {
+      // Permissions API unavailable — idle state with button is fine
+    })
+
+    return () => {
+      if (perm) perm.onchange = null
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function togglePause() {
