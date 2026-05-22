@@ -57,11 +57,12 @@ function fmtRouteTime(sec: number): string {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 type Props = {
-  onFinish: (result: TrackerResult) => void
-  onClose:  () => void
+  onFinish:        (result: TrackerResult) => void
+  onClose:         () => void
+  disableNavEvent?: boolean
 }
 
-export function HikeTracker({ onFinish, onClose }: Props) {
+export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
   // Leaflet refs
   const mapDivRef    = useRef<HTMLDivElement>(null)
   const mapRef       = useRef<L.Map | null>(null)
@@ -347,11 +348,12 @@ export function HikeTracker({ onFinish, onClose }: Props) {
   // ── Hide dashboard nav while tracker is open ─────────────────────────────────
 
   useEffect(() => {
+    if (disableNavEvent) return
     window.dispatchEvent(new CustomEvent("hike-tracker-change", { detail: { open: true } }))
     return () => {
       window.dispatchEvent(new CustomEvent("hike-tracker-change", { detail: { open: false } }))
     }
-  }, [])
+  }, [disableNavEvent])
 
   // ── Track mode controls ──────────────────────────────────────────────────────
 
