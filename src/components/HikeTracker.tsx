@@ -183,9 +183,11 @@ export function HikeTracker({ onFinish, onClose }: Props) {
     if ("permissions" in navigator) {
       navigator.permissions.query({ name: "geolocation" }).then(result => {
         if (result.state === "granted") {
-          // Permission was enabled in settings — no prompt needed, go directly
+          // Already allowed — skip the prompt entirely
           startWatching()
         } else {
+          // "prompt" or "denied" — always try getCurrentPosition so the
+          // browser can show the dialog. If genuinely denied, onError fires.
           go()
         }
       }).catch(go)
@@ -245,28 +247,21 @@ export function HikeTracker({ onFinish, onClose }: Props) {
       perm = result
       permRef.current = result
 
+      // Only act on "granted" — never pre-block on "denied" because some
+      // browsers report "denied" before the user has ever been prompted.
+      // The actual prompt/error is handled by getCurrentPosition() in enableGPS().
       if (result.state === "granted") {
         startWatching()
-      } else if (result.state === "denied") {
-        setError(
-          "Location is blocked for this site. Tap the lock icon in your browser's address bar → Site permissions → Location → Allow. Then tap \"Try again\"."
-        )
       }
 
+      // Live-listen: if the user flips the toggle in settings while open, auto-start.
       result.onchange = () => {
         if (result.state === "granted" && !startedRef.current) {
           setError(null)
           startWatching()
-        } else if (result.state === "denied") {
-          setStatus("idle")
-          setError(
-            "Location is blocked for this site. Tap the lock icon in your browser's address bar → Site permissions → Location → Allow. Then tap \"Try again\"."
-          )
         }
       }
-    }).catch(() => {
-      // Permissions API unavailable — idle state with button is fine
-    })
+    }).catch(() => {})
 
     return () => {
       if (perm) perm.onchange = null
