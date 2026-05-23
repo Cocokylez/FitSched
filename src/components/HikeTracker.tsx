@@ -106,6 +106,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
   const [following, setFollowing] = useState(true)
   const [error, setError]        = useState<string | null>(null)
   const [isStraightLine, setIsStraightLine] = useState(false)
+  const [showLegend, setShowLegend] = useState(false)
 
   function setMode(m: "track" | "plan") {
     modeRef.current = m
@@ -649,6 +650,76 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* PLAN: map legend toggle */}
+        {mode === "plan" && (
+          <div style={{ position: "absolute", bottom: 16, left: 12, zIndex: 999 }}>
+            <motion.button
+              onClick={() => setShowLegend(v => !v)}
+              whileTap={{ scale: 0.93 }}
+              style={{
+                background: "rgba(10,20,18,0.78)", backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255,255,255,0.14)", borderRadius: 999,
+                padding: "6px 12px", cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 6,
+                color: "rgba(255,255,255,0.7)", fontSize: 11, fontWeight: 700, fontFamily: "inherit",
+              }}
+            >
+              <span style={{ fontSize: 13 }}>🗺</span> Map legend
+            </motion.button>
+
+            <AnimatePresence>
+              {showLegend && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  style={{
+                    position: "absolute", bottom: "calc(100% + 8px)", left: 0,
+                    background: "rgba(10,20,18,0.92)", backdropFilter: "blur(18px)",
+                    border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14,
+                    padding: "12px 14px", minWidth: 220,
+                    display: "flex", flexDirection: "column", gap: 9,
+                  }}
+                >
+                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", marginBottom: 2 }}>
+                    OpenTopoMap legend
+                  </div>
+
+                  {[
+                    { line: { width: 2, color: "#8b5e3c", dash: "3 3" },    label: "Trail / footpath",   sub: "Routable" },
+                    { line: { width: 3, color: "#7a5230", dash: "6 3" },    label: "Dirt track",         sub: "Routable" },
+                    { line: { width: 2, color: "#c0875a", dash: "1 2" },    label: "Mountain path",      sub: "Routable" },
+                    { line: { width: 2, color: "#e07b6b", dash: "8 4" },    label: "Park / nature boundary", sub: "Not a trail" },
+                    { line: { width: 1, color: "#b5854a", dash: "none" },   label: "Contour line",       sub: "Elevation only" },
+                  ].map(({ line, label, sub }) => (
+                    <div key={label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <svg width="32" height="12" style={{ flexShrink: 0 }}>
+                        <line
+                          x1="0" y1="6" x2="32" y2="6"
+                          stroke={line.color}
+                          strokeWidth={line.width}
+                          strokeDasharray={line.dash === "none" ? undefined : line.dash}
+                        />
+                      </svg>
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", lineHeight: 1.2 }}>{label}</div>
+                        <div style={{ fontSize: 10, color: sub === "Not a trail" ? "#f87171" : sub === "Elevation only" ? "rgba(255,255,255,0.35)" : "#4ade80", fontWeight: 600 }}>
+                          {sub}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  <div style={{ marginTop: 2, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.08)", fontSize: 10, color: "rgba(255,255,255,0.3)", lineHeight: 1.5 }}>
+                    Tap two points to plan a route along routable lines.
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
 
         {/* PLAN: instruction pill */}
         {mode === "plan" && planStep !== "ready" && planStep !== "loading" && (
