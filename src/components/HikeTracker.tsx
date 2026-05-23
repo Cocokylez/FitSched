@@ -4,7 +4,7 @@ import "leaflet/dist/leaflet.css"
 import type L from "leaflet"
 import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { CheckCircle, Flag, MapPin, Navigation, Pause, Play, RotateCcw, X } from "lucide-react"
+import { CheckCircle, Flag, Locate, MapPin, Navigation, Pause, Play, RotateCcw, X } from "lucide-react"
 import { playSound } from "@/lib/sound"
 
 const ACCENT   = "#6bbfb8"
@@ -93,8 +93,8 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
   // Stable ref to onClose so Leaflet zoom handler always calls the latest version
   const onCloseRef        = useRef(onClose)
   onCloseRef.current      = onClose
-  // Set to true once GPS tracking starts — enables zoom-out-to-globe
-  const zoomBackRef       = useRef(false)
+  // Whether the map should auto-follow the GPS dot; disabled when user manually drags
+  const followRef         = useRef(true)
 
   // ── React state ─────────────────────────────────────────────────────────────
   const [mode, setModeState]     = useState<"track" | "plan">("track")
@@ -103,12 +103,17 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
   const [routeInfo, setRouteInfo] = useState<{ distM: number; durSec: number } | null>(null)
   const [distKm, setDistKm]      = useState(0)
   const [elapsed, setElapsed]    = useState(0)
+  const [following, setFollowing] = useState(true)
   const [error, setError]        = useState<string | null>(null)
   const [isStraightLine, setIsStraightLine] = useState(false)
 
   function setMode(m: "track" | "plan") {
     modeRef.current = m
     setModeState(m)
+    if (m === "track") {
+      followRef.current = true
+      setFollowing(true)
+    }
     if (m === "plan") {
       // Reset plan step when entering plan mode
       planStepRef.current  = "start"
@@ -127,7 +132,6 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
     if (!startedRef.current) {
       startedRef.current   = true
       startTimeRef.current = Date.now()
-      zoomBackRef.current  = true
       setTrackStatus("tracking")
       mapRef.current?.setView([lat, lng], 16)
 
@@ -159,7 +163,9 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
     const lls = waypointsRef.current.map(w => [w.lat, w.lng] as [number, number])
     trackPolyRef.current?.setLatLngs(lls)
     dotRef.current?.setLatLng([lat, lng])
-    mapRef.current?.panTo([lat, lng], { animate: true, duration: 0.8 })
+    if (followRef.current) {
+      mapRef.current?.panTo([lat, lng], { animate: true, duration: 0.8 })
+    }
   }
 
   function onError(err: GeolocationPositionError) {
@@ -310,12 +316,10 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
       planPolyRef.current  = planPoly
       dotRef.current       = dot
 
-      // Zoom out past level 10 while tracking → go back to globe
-      map.on("zoomend", () => {
-        if (zoomBackRef.current && map.getZoom() <= 10) {
-          zoomBackRef.current = false
-          onCloseRef.current()
-        }
+      // User manually dragging/zooming → stop auto-following GPS dot
+      map.on("dragstart", () => {
+        followRef.current = false
+        setFollowing(false)
       })
 
       // Map click — only active in plan mode
@@ -566,6 +570,31 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
                 {formatPace(distKm, elapsed)}<span style={{ fontSize: 10, marginLeft: 2 }}>/km</span>
               </span>
             </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* TRACK: recenter button — appears when user has panned away */}
+        <AnimatePresence>
+          {mode === "track" && (trackStatus === "tracking" || trackStatus === "paused") && !following && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
+              onClick={() => {
+                followRef.current = true
+                setFollowing(true)
+                const last = waypointsRef.current[waypointsRef.current.length - 1]
+                if (last) mapRef.current?.setView([last.lat, last.lng], 16, { animate: true })
+              }}
+              style={{
+                position: "absolute", bottom: 100, right: 16, zIndex: 999,
+                width: 44, height: 44, borderRadius: "50%",
+                background: "rgba(10,20,18,0.82)", backdropFilter: "blur(14px)",
+                border: `1.5px solid ${ACCENT}`, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: `0 0 16px rgba(107,191,184,0.3)`,
+              }}
+            >
+              <Locate size={18} color={ACCENT} strokeWidth={2.5} />
+            </motion.button>
           )}
         </AnimatePresence>
 
