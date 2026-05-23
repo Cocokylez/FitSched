@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip } from "recharts"
 import {
   BarChart2, Check, ChevronDown, ChevronRight, Dumbbell,
-  Footprints, History, MoreHorizontal, PencilLine, Ruler, Save, Scale,
+  Footprints, History, PencilLine, Ruler, Save, Scale,
   ShieldCheck, TrendingUp, Wallet,
 } from "lucide-react"
 import { SkeletonCard } from "@/components/Skeleton"
@@ -344,9 +344,6 @@ export default function ReportPage() {
               Report
             </h1>
           </div>
-          <button type="button" style={{ width: 36, height: 36, display: "grid", placeItems: "center", borderRadius: "50%", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text-muted)", cursor: "pointer" }}>
-            <MoreHorizontal size={16} strokeWidth={2} />
-          </button>
         </motion.header>
 
         {/* ── Skeletons ────────────────────────────────────────────── */}
