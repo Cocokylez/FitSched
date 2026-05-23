@@ -20,6 +20,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [guestLoading, setGuestLoading] = useState(false)
   const { t } = useLanguage()
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -50,6 +51,22 @@ export default function LoginPage() {
     } catch {}
 
     router.push('/schedule')
+  }
+
+  const handleGuestLogin = async () => {
+    setGuestLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/auth/guest', { method: 'POST' })
+      if (!res.ok) throw new Error()
+      const { email, password } = await res.json()
+      const result = await signIn('credentials', { email, password, redirect: false })
+      if (result?.error) throw new Error()
+      router.push('/schedule')
+    } catch {
+      setError('Could not start guest session. Please try again.')
+      setGuestLoading(false)
+    }
   }
 
   return (
@@ -208,6 +225,30 @@ export default function LoginPage() {
 
           <motion.div variants={fadeIn}>
             <AuthGoogleButton label={t.continueGoogle} />
+          </motion.div>
+
+          <motion.div variants={fadeIn}>
+            <button
+              type="button"
+              onClick={handleGuestLogin}
+              disabled={guestLoading}
+              style={{
+                width: '100%',
+                background: 'transparent',
+                border: '1px solid var(--border)',
+                borderRadius: '16px',
+                padding: '13px',
+                fontSize: '14px',
+                fontWeight: 600,
+                color: 'var(--text-muted)',
+                cursor: guestLoading ? 'default' : 'pointer',
+                marginTop: '10px',
+                opacity: guestLoading ? 0.55 : 1,
+                fontFamily: 'inherit',
+              }}
+            >
+              {guestLoading ? 'Starting guest session…' : 'Continue as Guest'}
+            </button>
           </motion.div>
 
           <motion.div variants={fadeIn}>
