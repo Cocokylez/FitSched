@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { awardFitTokensForWorkoutLogTx } from "@/lib/fitTokens"
 import { cleanText, clampInt, isDateId, rateLimitByUser, rateLimitPresets, readJsonBody, requestBodyErrorResponse, safeError, validateSameOrigin } from "@/lib/security"
+import { verifySessionToken } from "@/lib/sessionToken"
 import { Prisma } from "@prisma/client"
 import { NextResponse } from "next/server"
 
@@ -87,13 +88,33 @@ export async function POST(req: Request) {
 
     // Client-side verification score (0–1). Defaults to 1.0 when absent (desktop / old clients).
     const rawScore = body.verificationScore
-    const verificationScore =
+    let verificationScore =
       typeof rawScore === "number" && isFinite(rawScore) && rawScore >= 0 && rawScore <= 1
         ? rawScore
         : 1.0
 
     if (!isDateId(date) || !workoutName || !exercises?.length) {
       return safeError("Missing or invalid workout log fields")
+    }
+
+    // Server-side session validation — client cannot spoof elapsed time if token is present.
+    // Token is signed with HMAC so it can't be tampered. Missing token = no server-time check
+    // (desktop users / old clients fall through with their client score unchanged).
+    const rawToken = typeof body.sessionToken === "string" ? body.sessionToken : null
+    const sessionData = rawToken ? verifySessionToken(rawToken, userId) : null
+
+    if (sessionData) {
+      const serverElapsedSec = (Date.now() - sessionData.startedAt) / 1000
+      // Minimum expected time: 25s per set (one set + brief rest, conservative floor)
+      const minExpectedSec = exercises.reduce((sum, ex) => sum + ex.sets * 25, 0)
+
+      if (serverElapsedSec < 60) {
+        // Under 1 minute total — near-certain instant-complete cheat
+        verificationScore = Math.min(verificationScore, 0.1)
+      } else if (minExpectedSec > 0 && serverElapsedSec < minExpectedSec * 0.5) {
+        // Finished in less than half the minimum plausible time for this exercise set
+        verificationScore = Math.min(verificationScore, 0.3)
+      }
     }
 
     if (date !== getTodayDateId()) {

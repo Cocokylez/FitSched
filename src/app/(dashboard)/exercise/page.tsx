@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { useLanguage } from "@/context/LanguageContext"
@@ -68,6 +68,7 @@ export default function ExerciseSessionPage() {
   const [feedbackSaved, setFeedbackSaved] = useState(false)
   const [verifySettled, setVerifySettled] = useState(false)
   const { state: verifyState, challenge, start: startVerify, getResult } = useWorkoutVerification()
+  const sessionTokenRef = useRef<string | null>(null)
 
   useEffect(() => {
     let active = true
@@ -100,6 +101,21 @@ export default function ExerciseSessionPage() {
           }
         }
       } catch {}
+
+      // Record server-side start time — signed token prevents client from spoofing elapsed
+      if (active) {
+        try {
+          const sessionRes = await fetch("/api/workout-session/start", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ date: parsed.date }),
+          })
+          if (sessionRes.ok) {
+            const data = await sessionRes.json()
+            sessionTokenRef.current = data.sessionToken ?? null
+          }
+        } catch {}
+      }
 
       if (active) setCheckingLock(false)
     }
@@ -220,7 +236,11 @@ export default function ExerciseSessionPage() {
       const response = await fetch("/api/workout-log", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...workout, verificationScore }),
+        body: JSON.stringify({
+          ...workout,
+          verificationScore,
+          sessionToken: sessionTokenRef.current,
+        }),
       })
 
       if (response.ok) {
@@ -763,10 +783,10 @@ function BreathChallengeBanner({ challenge }: { challenge: ActiveChallenge }) {
       >
         <div>
           <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.14em", color: "rgba(255,255,255,0.65)", marginBottom: 3 }}>
-            VERIFICATION CHECK
+            {isHold ? `HOLD ${challenge.ping}/${challenge.totalPings}` : "VERIFICATION CHECK"}
           </div>
           <div style={{ fontSize: 17, fontWeight: 950, color: "#fff", letterSpacing: "-0.2px" }}>
-            {isHold ? "Hold your breath!" : "OK — breathe normally"}
+            {isHold ? "Hold your breath!" : challenge.ping < challenge.totalPings ? "Breathe... next hold coming" : "OK — breathe normally"}
           </div>
         </div>
 
