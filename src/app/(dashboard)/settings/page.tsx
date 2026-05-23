@@ -315,7 +315,7 @@ export default function SettingsPage() {
           divider
           label="Withdraw"
           onClick={() => router.push("/withdrawal")}
-          right={<div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ fontSize: 13, color: ACCENT, fontWeight: 700 }}>Available</span><Chevron /></div>}
+          right={<div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 700 }}>Coming soon</span><Chevron /></div>}
         />
       </SectionCard>
 

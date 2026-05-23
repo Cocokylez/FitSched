@@ -38,13 +38,7 @@ interface ScheduleBlock {
 }
 
 const MOCK: Record<number, ScheduleBlock[]> = {
-  0: [{ time: "9:00", label: "Free", kind: "free", duration: "3h" }, { time: "12:00", label: "Lunch", kind: "free", duration: "2h" }],
-  1: [{ time: "7:30", label: "Data Structures", kind: "cls", duration: "90m" }, { time: "9:00", label: "Free window", kind: "free", duration: "2h" }, { time: "11:00", label: "Calculus", kind: "cls", duration: "90m" }, { time: "15:00", label: "Free window", kind: "free", duration: "2.5h — best window" }],
-  2: [{ time: "8:00", label: "PE", kind: "cls", duration: "2h" }, { time: "10:00", label: "Free window", kind: "free", duration: "3h" }, { time: "13:00", label: "Programming", kind: "cls", duration: "90m" }, { time: "14:30", label: "Free window", kind: "free", duration: "2h" }],
-  3: [{ time: "7:30", label: "English", kind: "cls", duration: "90m" }, { time: "9:00", label: "Math", kind: "cls", duration: "90m" }, { time: "10:30", label: "Free window", kind: "free", duration: "90m" }, { time: "13:00", label: "CS Lab", kind: "cls", duration: "3h" }, { time: "16:00", label: "Free window", kind: "free", duration: "1.5h — best window" }],
-  4: [{ time: "8:00", label: "Data Structures", kind: "cls", duration: "90m" }, { time: "9:30", label: "Free window", kind: "free", duration: "2h" }, { time: "11:30", label: "STS", kind: "cls", duration: "90m" }, { time: "13:00", label: "Free window", kind: "free", duration: "2h" }],
-  5: [{ time: "8:00", label: "Free window", kind: "free", duration: "4h — best window" }, { time: "12:00", label: "Lunch", kind: "free", duration: "1h" }, { time: "13:00", label: "Free window", kind: "free", duration: "4h" }],
-  6: [{ time: "9:00", label: "Free window", kind: "free", duration: "All day" }],
+  0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [],
 }
 
 function parseDurationMins(duration: string): number {

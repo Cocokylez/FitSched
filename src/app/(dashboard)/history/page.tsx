@@ -21,7 +21,7 @@ import {
   Flame,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { SkeletonCard } from "@/components/LoadingScreen";
+import { SkeletonCard } from "@/components/Skeleton";
 import { useLanguage } from "@/context/LanguageContext";
 
 interface WorkoutLog {
@@ -70,6 +70,11 @@ export default function HistoryPage() {
   const avgRating =
     logs.filter((l) => l.rating).reduce((acc, l) => acc + (l.rating || 0), 0) /
     (logs.filter((l) => l.rating).length || 1);
+
+  const weekStart = new Date();
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  weekStart.setHours(0, 0, 0, 0);
+  const thisWeekCount = logs.filter((l) => new Date(l.date) >= weekStart).length;
 
   const chartData = logs
     .slice(0, 14)
@@ -146,7 +151,7 @@ export default function HistoryPage() {
                   { icon: Calendar, color: "brand", label: t.totalWorkouts, value: totalWorkouts },
                   { icon: Dumbbell, color: "green", label: t.totalSets, value: totalSets },
                   { icon: Flame, color: "orange", label: t.avgRating, value: avgRating.toFixed(1) },
-                  { icon: TrendingUp, color: "purple", label: t.thisWeek, value: "3" },
+                  { icon: TrendingUp, color: "purple", label: t.thisWeek, value: thisWeekCount },
                 ].map((stat, i) => (
                   <motion.div
                     key={i}
