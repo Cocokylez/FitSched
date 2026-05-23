@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { DashboardNav } from "@/components/DashboardNav";
 import { DashboardShell } from "@/components/DashboardShell";
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 
 export default async function DashboardLayout({
   children,
@@ -14,7 +15,7 @@ export default async function DashboardLayout({
 
   const user = await db.user.findUnique({
     where: { id: session.user.id },
-    select: { onboardingCompleted: true },
+    select: { onboardingCompleted: true, emailVerified: true, email: true },
   });
 
   if (!user) {
@@ -25,8 +26,14 @@ export default async function DashboardLayout({
     redirect("/onboarding");
   }
 
+  const showVerificationBanner =
+    !user.emailVerified &&
+    user.email &&
+    !user.email.endsWith("@fitsched.guest")
+
   return (
     <DashboardShell>
+      {showVerificationBanner && <EmailVerificationBanner />}
       <main className="dashboard-main flex-1 overflow-y-auto pb-[94px]" data-dashboard-scroll>
         {children}
       </main>
