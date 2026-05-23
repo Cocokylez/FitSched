@@ -85,6 +85,13 @@ export async function POST(req: Request) {
     const workoutName = cleanText(body.workoutName, 100)
     const exercises = normalizeCompletedExercises(body.exercises)
 
+    // Client-side verification score (0–1). Defaults to 1.0 when absent (desktop / old clients).
+    const rawScore = body.verificationScore
+    const verificationScore =
+      typeof rawScore === "number" && isFinite(rawScore) && rawScore >= 0 && rawScore <= 1
+        ? rawScore
+        : 1.0
+
     if (!isDateId(date) || !workoutName || !exercises?.length) {
       return safeError("Missing or invalid workout log fields")
     }
@@ -131,6 +138,7 @@ export async function POST(req: Request) {
         tx,
         userId,
         createdLog.id,
+        verificationScore,
       )
 
       return { log: createdLog, fitTokenReward: reward }
