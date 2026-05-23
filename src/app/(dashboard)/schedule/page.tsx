@@ -77,6 +77,34 @@ function formatManualTime(value: string) {
   return `${displayHour}:${minute} ${suffix}`
 }
 
+function getTimeGroup(time: string): "morning" | "afternoon" | "evening" | "unscheduled" {
+  if (!time) return "unscheduled"
+  const upper = time.toUpperCase()
+  let hour24: number
+  if (upper.includes("PM")) {
+    const h = parseInt(time)
+    if (isNaN(h)) return "unscheduled"
+    hour24 = h === 12 ? 12 : h + 12
+  } else if (upper.includes("AM")) {
+    const h = parseInt(time)
+    if (isNaN(h)) return "unscheduled"
+    hour24 = h === 12 ? 0 : h
+  } else {
+    hour24 = parseInt(time.split(":")[0])
+    if (isNaN(hour24)) return "unscheduled"
+  }
+  if (hour24 < 12) return "morning"
+  if (hour24 < 17) return "afternoon"
+  return "evening"
+}
+
+const KIND_ACCENT: Record<string, string> = {
+  cls: "rgba(99,161,255,0.75)",
+  free: "rgba(107,191,184,0.7)",
+  wrk: ACCENT,
+  rst: "rgba(255,255,255,0.14)",
+}
+
 export default function SchedulePage() {
   const { status } = useSession()
   const router = useRouter()
@@ -347,87 +375,101 @@ export default function SchedulePage() {
                 </motion.div>
               )}
 
-              {/* SC2 REST OF DAY */}
-              {restBlocks.length > 0 && (
-                <>
-                  <div className="label-text" style={{ fontSize: 10, color: "var(--text-muted)", marginBottom: 10 }}>REST OF DAY</div>
-                  <div className="ios-inset-grouped" style={{ overflow: "hidden" }}>
-                    {restBlocks.map((block, i) => {
-                      const isWorkout = block.kind === "wrk"
-                      const isFree = block.kind === "free"
-                      const isManual = block.source === "manual"
-                      const KIND_ACCENT: Record<string, string> = {
-                        cls: "rgba(99,161,255,0.75)",
-                        free: `rgba(107,191,184,0.7)`,
-                        wrk: ACCENT,
-                        rst: "rgba(255,255,255,0.12)",
-                      }
-                      const leftAccent = KIND_ACCENT[block.kind] || KIND_ACCENT.rst
-                      const canDelete = Boolean(block.id)
-                      const canEdit = Boolean(block.id && block.source === "manual")
-                      const deleteOpen = Boolean(block.id && openDeleteId === block.id)
-                      const durationMins = parseDurationMins(block.duration)
-                      const endTime = block.time && durationMins > 0 ? to12h(addMins(block.time, durationMins)) : null
-
+              {/* SCHEDULE — grouped by time of day, each block its own card */}
+              {restBlocks.length > 0 && (() => {
+                const TIME_GROUPS = [
+                  { key: "morning" as const,     label: "MORNING",   sub: "Before noon" },
+                  { key: "afternoon" as const,    label: "AFTERNOON", sub: "12 – 5 PM"   },
+                  { key: "evening" as const,      label: "EVENING",   sub: "After 5 PM"  },
+                  { key: "unscheduled" as const,  label: "SCHEDULE",  sub: ""            },
+                ]
+                return (
+                  <>
+                    {TIME_GROUPS.map(({ key, label, sub }) => {
+                      const groupBlocks = restBlocks.filter(b => getTimeGroup(b.time) === key)
+                      if (groupBlocks.length === 0) return null
                       return (
-                        <div key={block.id || `${block.label}-${i}`} style={{ position: "relative", borderTop: i > 0 ? "1px solid var(--border)" : "none", overflow: "hidden" }}>
-                          {canDelete && (
-                            <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: canEdit ? 162 : 82, display: "flex", gap: 6, padding: "10px 8px" }}>
-                              {canEdit && (
-                                <button type="button" onClick={() => editScheduleBlock(block)} style={{ flex: 1, border: "1px solid rgba(107,191,184,0.36)", background: "rgba(107,191,184,0.16)", color: ACCENT, borderRadius: 12, fontSize: 12, fontWeight: 900, cursor: "pointer", opacity: deleteOpen ? 1 : 0.7 }}>Edit</button>
-                              )}
-                              <button type="button" onClick={() => block.id && deleteScheduleBlock(block.id)} disabled={deletingId === block.id} style={{ flex: 1, border: "1px solid rgba(255,92,92,0.35)", background: "rgba(255,92,92,0.18)", color: "#ff6b6b", borderRadius: 12, fontSize: 12, fontWeight: 900, cursor: "pointer", opacity: deleteOpen ? 1 : 0.7 }}>
-                                {deletingId === block.id ? "…" : "Delete"}
-                              </button>
-                            </div>
-                          )}
-                          <motion.div
-                            drag={canDelete ? "x" : false}
-                            dragConstraints={{ left: -(canEdit ? 168 : 88), right: 0 }}
-                            dragElastic={0.08}
-                            onDragEnd={(_, info) => { if (!block.id) return; setOpenDeleteId(info.offset.x < -64 ? block.id : null) }}
-                            onPointerDown={() => handlePressStart(block.id)}
-                            onPointerUp={handlePressEnd}
-                            onPointerCancel={handlePressEnd}
-                            onPointerLeave={handlePressEnd}
-                            animate={{ x: deleteOpen ? -(canEdit ? 168 : 88) : 0 }}
-                            transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                            style={{ background: "var(--panel)", padding: "13px 16px", display: "flex", alignItems: "center", gap: 14, position: "relative", zIndex: 1, touchAction: canDelete ? "pan-y" : "auto", borderLeft: `3px solid ${leftAccent}` }}
-                          >
-                            {/* Time column */}
-                            <div style={{ minWidth: 44, textAlign: "right" }}>
-                              <div className="number-text" style={{ fontSize: 14, fontWeight: 800, color: "var(--text)" }}>{block.time}</div>
-                              {endTime && <div className="number-text" style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>{endTime}</div>}
-                            </div>
-
-                            {/* Label + kind */}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{block.label}</div>
-                              <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>
-                                {isWorkout ? (isManual ? "Manual" : "Workout") : isFree ? "Free" : "Class"}
-                              </div>
-                            </div>
-
-                            {/* Duration badge + start button */}
-                            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
-                              {block.duration && !block.duration.includes("best") && (
-                                <div style={{ background: isFree ? "rgba(107,191,184,0.15)" : "var(--surface-2)", border: isFree ? "1px solid rgba(107,191,184,0.3)" : "1px solid var(--border)", borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 800, color: isFree ? ACCENT : "var(--text-muted)" }}>
-                                  {block.duration.replace(" — best window", "").replace(" — best", "")}
+                        <div key={key} style={{ marginBottom: 18 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                            <div className="label-text" style={{ fontSize: 10, color: "var(--text-muted)" }}>{label}</div>
+                            {sub && <span style={{ fontSize: 10, color: "var(--text-muted)", opacity: 0.48, fontWeight: 600 }}>· {sub}</span>}
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                            {groupBlocks.map(block => {
+                              const isWorkout = block.kind === "wrk"
+                              const isFree = block.kind === "free"
+                              const isManual = block.source === "manual"
+                              const leftAccent = KIND_ACCENT[block.kind] || KIND_ACCENT.rst
+                              const canDelete = Boolean(block.id)
+                              const canEdit = Boolean(block.id && block.source === "manual")
+                              const deleteOpen = Boolean(block.id && openDeleteId === block.id)
+                              const durationMins = parseDurationMins(block.duration)
+                              const endTime = block.time && durationMins > 0 ? to12h(addMins(block.time, durationMins)) : null
+                              const SLIDE_W = canEdit ? 156 : 82
+                              return (
+                                <div
+                                  key={block.id || `${block.label}-${block.time}`}
+                                  style={{ position: "relative", borderRadius: 18, overflow: "hidden", boxShadow: "inset 0 0 0 1px var(--border), var(--shadow)" }}
+                                >
+                                  {/* Action tray — revealed when card slides left */}
+                                  {canDelete && (
+                                    <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: SLIDE_W, display: "flex", gap: 6, padding: "8px", alignItems: "stretch", background: "var(--panel)" }}>
+                                      {canEdit && (
+                                        <button type="button" onClick={() => editScheduleBlock(block)} style={{ flex: 1, border: "1px solid rgba(107,191,184,0.36)", background: "rgba(107,191,184,0.16)", color: ACCENT, borderRadius: 10, fontSize: 12, fontWeight: 900, cursor: "pointer" }}>Edit</button>
+                                      )}
+                                      <button type="button" onClick={() => block.id && deleteScheduleBlock(block.id)} disabled={deletingId === block.id} style={{ flex: 1, border: "1px solid rgba(255,92,92,0.35)", background: "rgba(255,92,92,0.18)", color: "#ff6b6b", borderRadius: 10, fontSize: 12, fontWeight: 900, cursor: "pointer" }}>
+                                        {deletingId === block.id ? "…" : "Delete"}
+                                      </button>
+                                    </div>
+                                  )}
+                                  {/* Draggable card surface */}
+                                  <motion.div
+                                    drag={canDelete ? "x" : false}
+                                    dragConstraints={{ left: -SLIDE_W, right: 0 }}
+                                    dragElastic={{ left: 0.06, right: 0.01 }}
+                                    onDragEnd={(_, info) => { if (!block.id) return; setOpenDeleteId(info.offset.x < -44 ? block.id : null) }}
+                                    onPointerDown={() => handlePressStart(block.id)}
+                                    onPointerUp={handlePressEnd}
+                                    onPointerCancel={handlePressEnd}
+                                    onPointerLeave={handlePressEnd}
+                                    animate={{ x: deleteOpen ? -SLIDE_W : 0 }}
+                                    transition={{ type: "spring", stiffness: 440, damping: 36 }}
+                                    onClick={() => { if (deleteOpen) setOpenDeleteId(null) }}
+                                    style={{ background: "var(--panel)", padding: "13px 16px", display: "flex", alignItems: "center", gap: 14, position: "relative", zIndex: 1, touchAction: canDelete ? "pan-y" : "auto", borderLeft: `3px solid ${leftAccent}` }}
+                                  >
+                                    <div style={{ minWidth: 44, textAlign: "right" }}>
+                                      <div className="number-text" style={{ fontSize: 14, fontWeight: 800, color: "var(--text)" }}>{block.time}</div>
+                                      {endTime && <div className="number-text" style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>{endTime}</div>}
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{block.label}</div>
+                                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>
+                                        {isWorkout ? (isManual ? "Manual" : "Workout") : isFree ? "Free window" : "Class"}
+                                      </div>
+                                    </div>
+                                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
+                                      {block.duration && !block.duration.includes("best") && (
+                                        <div style={{ background: isFree ? "rgba(107,191,184,0.15)" : "var(--surface-2)", border: isFree ? "1px solid rgba(107,191,184,0.3)" : "1px solid var(--border)", borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 800, color: isFree ? ACCENT : "var(--text-muted)" }}>
+                                          {block.duration.replace(" — best window", "").replace(" — best", "")}
+                                        </div>
+                                      )}
+                                      {isWorkout && (
+                                        <button type="button" onPointerDown={e => e.stopPropagation()} onClick={() => startExerciseFromSchedule(block)} disabled={!canStartExerciseToday} style={{ border: "none", background: canStartExerciseToday ? ACCENT : "var(--surface-2)", color: canStartExerciseToday ? "#0b1715" : "var(--text-muted)", borderRadius: 999, padding: "5px 12px", fontSize: 11, fontWeight: 800, cursor: canStartExerciseToday ? "pointer" : "default", opacity: canStartExerciseToday ? 1 : 0.6 }}>
+                                          {canStartExerciseToday ? "Start →" : "Today only"}
+                                        </button>
+                                      )}
+                                    </div>
+                                  </motion.div>
                                 </div>
-                              )}
-                              {isWorkout && (
-                                <button type="button" onPointerDown={e => e.stopPropagation()} onClick={() => startExerciseFromSchedule(block)} disabled={!canStartExerciseToday} style={{ border: "none", background: canStartExerciseToday ? ACCENT : "var(--surface-2)", color: canStartExerciseToday ? "#0b1715" : "var(--text-muted)", borderRadius: 999, padding: "5px 12px", fontSize: 11, fontWeight: 800, cursor: canStartExerciseToday ? "pointer" : "default", opacity: canStartExerciseToday ? 1 : 0.6 }}>
-                                  {canStartExerciseToday ? "Start →" : "Today only"}
-                                </button>
-                              )}
-                            </div>
-                          </motion.div>
+                              )
+                            })}
+                          </div>
                         </div>
                       )
                     })}
-                  </div>
-                </>
-              )}
+                  </>
+                )
+              })()}
 
               {!bestBlock && restBlocks.length === 0 && (
                 <div className="ios-inset-grouped" style={{ padding: "32px 24px", textAlign: "center" }}>
