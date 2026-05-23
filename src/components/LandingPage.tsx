@@ -1,12 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { useRef } from "react"
-import { motion, useInView } from "framer-motion"
+import { useRef, useState } from "react"
+import { motion, useInView, AnimatePresence } from "framer-motion"
 import {
   ArrowRight, Flame, Zap, Navigation, BarChart2,
-  Calendar, CheckCheck, Dumbbell,
+  Calendar, CheckCheck, Dumbbell, Globe2, ChevronDown,
 } from "lucide-react"
+import { useLanguage } from "@/context/LanguageContext"
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -434,7 +435,18 @@ function ProgressCard() {
 
 // ── Navbar ────────────────────────────────────────────────────────────────────
 
+const LANG_OPTIONS = [
+  { id: "EN" as const, label: "English" },
+  { id: "CN" as const, label: "中文" },
+  { id: "JP" as const, label: "日本語" },
+  { id: "VI" as const, label: "Tiếng Việt" },
+]
+
 function Navbar() {
+  const { language, changeLanguage, t } = useLanguage()
+  const [langOpen, setLangOpen] = useState(false)
+  const langRef = useRef<HTMLDivElement>(null)
+
   return (
     <motion.nav
       initial={{ opacity: 0, y: -16 }}
@@ -468,18 +480,81 @@ function Navbar() {
         }}>FitSched</span>
       </div>
 
-      <Link href="/register" style={{
-        display: "flex", alignItems: "center", gap: 6,
-        background: ACCENT, color: "#0d1f1e",
-        borderRadius: 999, padding: "8px 16px",
-        fontSize: 13, fontWeight: 800, textDecoration: "none",
-        fontFamily: "var(--font-display)",
-        boxShadow: "0 2px 10px rgba(107,191,184,0.28)",
-        transition: "filter 0.2s, transform 0.15s",
-      }}>
-        Get started
-        <ArrowRight size={14} strokeWidth={2.5} />
-      </Link>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        {/* Language picker */}
+        <div ref={langRef} style={{ position: "relative" }}>
+          <button
+            onClick={() => setLangOpen(v => !v)}
+            style={{
+              display: "flex", alignItems: "center", gap: 5,
+              background: ACCENT_DIM, border: `1px solid ${ACCENT_BD}`,
+              borderRadius: 999, padding: "7px 12px",
+              color: ACCENT, fontSize: 12, fontWeight: 800,
+              cursor: "pointer", fontFamily: "inherit",
+            }}
+          >
+            <Globe2 size={13} strokeWidth={2.2} />
+            {language}
+            <ChevronDown
+              size={12} strokeWidth={2.2}
+              style={{ transform: langOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.18s ease" }}
+            />
+          </button>
+
+          <AnimatePresence>
+            {langOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                transition={{ duration: 0.15 }}
+                style={{
+                  position: "absolute", top: 42, right: 0,
+                  width: 150,
+                  background: "rgba(15,25,22,0.96)", backdropFilter: "blur(18px)",
+                  border: `1px solid ${BORDER}`,
+                  borderRadius: 14, padding: 6,
+                  boxShadow: "0 16px 40px rgba(0,0,0,0.5)",
+                  zIndex: 50,
+                }}
+              >
+                {LANG_OPTIONS.map(item => {
+                  const active = item.id === language
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => { changeLanguage(item.id); setLangOpen(false) }}
+                      style={{
+                        width: "100%", background: active ? ACCENT_DIM : "transparent",
+                        border: "none", borderRadius: 10, padding: "9px 10px",
+                        color: active ? ACCENT : "rgba(255,255,255,0.65)",
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        fontSize: 12, fontWeight: active ? 800 : 600,
+                        cursor: "pointer", fontFamily: "inherit",
+                      }}
+                    >
+                      <span>{item.label}</span>
+                      <span style={{ opacity: 0.5, fontSize: 11 }}>{item.id}</span>
+                    </button>
+                  )
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <Link href="/register" style={{
+          display: "flex", alignItems: "center", gap: 6,
+          background: ACCENT, color: "#0d1f1e",
+          borderRadius: 999, padding: "8px 16px",
+          fontSize: 13, fontWeight: 800, textDecoration: "none",
+          fontFamily: "var(--font-display)",
+          boxShadow: "0 2px 10px rgba(107,191,184,0.28)",
+        }}>
+          {t.createAccount}
+          <ArrowRight size={14} strokeWidth={2.5} />
+        </Link>
+      </div>
     </motion.nav>
   )
 }
@@ -487,6 +562,7 @@ function Navbar() {
 // ── Hero ──────────────────────────────────────────────────────────────────────
 
 function Hero() {
+  const { t } = useLanguage()
   return (
     <section style={{
       minHeight: "100dvh",
@@ -532,8 +608,8 @@ function Hero() {
               margin: 0,
             }}
           >
-            Plan smarter.<br />
-            <span style={{ color: ACCENT }}>Train harder.</span>
+            {t.lpHeroLine1}<br />
+            <span style={{ color: ACCENT }}>{t.lpHeroLine2}</span>
           </motion.h1>
 
           <motion.p
@@ -545,9 +621,7 @@ function Hero() {
               color: "rgba(255,255,255,0.5)", maxWidth: 420, margin: 0,
             }}
           >
-            Build a full weekly workout plan around your exercises,
-            equipment, and schedule — then track every session,
-            streak, and hike.
+            {t.lpHeroBody}
           </motion.p>
 
           <motion.div
@@ -564,7 +638,7 @@ function Hero() {
               fontFamily: "var(--font-display)", letterSpacing: "-0.01em",
               boxShadow: "0 4px 20px rgba(107,191,184,0.32)",
             }}>
-              Get started
+              {t.createAccount}
               <ArrowRight size={16} strokeWidth={2.5} />
             </Link>
             <Link href="#features" style={{
@@ -573,7 +647,7 @@ function Hero() {
               fontSize: 14, fontWeight: 700, padding: "14px 4px",
               borderBottom: "1px solid rgba(255,255,255,0.14)",
             }}>
-              See how it works
+              {t.lpSeeHow}
             </Link>
           </motion.div>
 
@@ -583,11 +657,7 @@ function Hero() {
             transition={{ duration: 0.5, delay: 0.5 }}
             style={{ display: "flex", flexDirection: "column", gap: 8 }}
           >
-            {[
-              "Build a custom 7-day plan with 80+ exercises",
-              "Track every session, streak, and rest day",
-              "GPS hike tracking built in",
-            ].map((item, i) => (
+            {[t.lpCheck1, t.lpCheck2, t.lpCheck3].map((item, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 9 }}>
                 <CheckCheck size={14} color={ACCENT} strokeWidth={2.5} />
                 <span style={{ fontSize: 13, color: "rgba(255,255,255,0.46)", fontWeight: 600 }}>{item}</span>
@@ -709,6 +779,7 @@ function StatsRow() {
 // ── CTA block ─────────────────────────────────────────────────────────────────
 
 function CtaBlock() {
+  const { t } = useLanguage()
   return (
     <section style={{ padding: "0 20px 100px", maxWidth: 1140, margin: "0 auto" }}>
       <FadeIn>
@@ -737,13 +808,13 @@ function CtaBlock() {
               fontWeight: 900, lineHeight: 1.1, letterSpacing: "-0.03em",
               color: "rgba(255,255,255,0.94)", margin: "0 0 14px",
             }}>
-              Your first workout plan is two minutes away.
+              {t.lpCtaTitle}
             </h2>
             <p style={{
               fontSize: 15, color: "rgba(255,255,255,0.45)",
               fontWeight: 500, lineHeight: 1.6, margin: 0,
             }}>
-              No credit card. Just set up your plan and start training.
+              {t.lpCtaBody}
             </p>
           </div>
 
@@ -756,7 +827,7 @@ function CtaBlock() {
             boxShadow: "0 6px 24px rgba(107,191,184,0.3)",
             whiteSpace: "nowrap",
           }}>
-            Get started free
+            {t.lpGetStartedFree}
             <ArrowRight size={17} strokeWidth={2.5} />
           </Link>
         </div>
