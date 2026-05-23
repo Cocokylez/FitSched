@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Settings } from "lucide-react"
 import { toDateId, getWeekId, calculateLongestStreak } from "@/lib/dateUtils"
+import { useLanguage } from "@/context/LanguageContext"
 
 const ACCENT = "#6bbfb8"
 const RING_RADIUS = 46
@@ -83,6 +84,7 @@ function AnimatedNumber({ value, suffix = "" }: { value: number; suffix?: string
 export default function ProfilePage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { t } = useLanguage()
 
   const [displayName, setDisplayName] = useState("")
   const [nameValue, setNameValue] = useState("")
@@ -373,7 +375,7 @@ export default function ProfilePage() {
       {/* Stats */}
       <div style={{ padding: "0 16px" }}>
         <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.13em", color: "var(--text-muted)", marginBottom: 10 }}>
-          BY THE NUMBERS
+          {t.byTheNumbers}
         </div>
 
         <div style={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 20, overflow: "hidden", boxShadow: "var(--shadow)" }}>
@@ -386,10 +388,10 @@ export default function ProfilePage() {
             ))
           ) : (
             [
-              { label: "Workouts done", sub: "lifetime", value: stats.totalWorkouts, suffix: "" },
-              { label: "Exercises done", sub: "lifetime", value: stats.totalExercises, suffix: "" },
-              { label: "This week", sub: `${stats.thisWeek} of ${workoutsPerWeek} sessions`, value: stats.thisWeekPct, suffix: "%" },
-              { label: "Best streak", sub: "days", value: stats.bestStreak, suffix: "" },
+              { label: t.workoutsDone, sub: t.lifetimeLabel, value: stats.totalWorkouts, suffix: "" },
+              { label: t.exercisesDoneLabel, sub: t.lifetimeLabel, value: stats.totalExercises, suffix: "" },
+              { label: t.thisWeek, sub: `${stats.thisWeek} of ${workoutsPerWeek} sessions`, value: stats.thisWeekPct, suffix: "%" },
+              { label: t.bestStreakLabel, sub: t.daysLabel, value: stats.bestStreak, suffix: "" },
             ].map((row, i, arr) => (
               <div key={i} style={{ padding: "15px 20px", borderBottom: i < arr.length - 1 ? "1px solid var(--border)" : "none", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div>
