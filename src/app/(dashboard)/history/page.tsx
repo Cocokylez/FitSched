@@ -44,6 +44,7 @@ export default function HistoryPage() {
   const [logs, setLogs] = useState<WorkoutLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"overview" | "chart">("overview");
+  const [showAll, setShowAll] = useState(false);
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -98,7 +99,7 @@ export default function HistoryPage() {
       >
         <div>
           <h1 className="text-[28px] font-bold text-[var(--t1)] tracking-tight">
-            {t.progress}
+            {t.history}
           </h1>
           <p className="text-[14px] text-[var(--t3)] mt-0.5">
             {t.trackJourney}
@@ -178,7 +179,7 @@ export default function HistoryPage() {
               </div>
               <div className="ios-inset-grouped p-0 overflow-hidden">
                 <div className="divide-y divide-[var(--border)]">
-                  {logs.slice(0, 10).map((log, i) => (
+                  {(showAll ? logs : logs.slice(0, 10)).map((log, i) => (
                     <motion.div
                       key={log.id}
                       initial={{ opacity: 0, x: -8 }}
@@ -217,6 +218,14 @@ export default function HistoryPage() {
                   )}
                 </div>
               </div>
+              {logs.length > 10 && (
+                <button
+                  onClick={() => setShowAll((v) => !v)}
+                  className="w-full mt-2 py-3 text-[13px] font-semibold text-[var(--t3)] bg-transparent border border-[var(--border)] rounded-[12px]"
+                >
+                  {showAll ? `Show less` : `Show all ${logs.length} workouts`}
+                </button>
+              )}
             </>
           )}
         </>
