@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth"
 import { NextResponse } from "next/server"
+import { rateLimitByUser, rateLimitPresets } from "@/lib/security"
 
 // Valhalla returns encoded polyline6 — decode to [lat, lng] pairs
 function decodePolyline6(encoded: string): [number, number][] {
@@ -151,6 +152,9 @@ async function tryOverpassTrail(
 export async function GET(req: Request) {
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.expensive, "hike:route")
+  if (limited) return limited
 
   const { searchParams } = new URL(req.url)
   const slat = searchParams.get("slat")

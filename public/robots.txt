@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Allow: /privacy
+Allow: /terms
+
+Disallow: /api/
+Disallow: /schedule
+Disallow: /history
+Disallow: /progress
+Disallow: /profile
+Disallow: /settings
+Disallow: /workout
+Disallow: /exercise
+Disallow: /hike
+Disallow: /onboarding
+Disallow: /withdrawal
+Disallow: /report
+
+Sitemap: https://fitsched.vercel.app/sitemap.xml
