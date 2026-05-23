@@ -145,6 +145,7 @@ export default function SchedulePage() {
 
   // SC2: Day letter + today's full date display
   const DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"]
+  const DAY_ABBR = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
   const today = new Date()
   const todayDay = today.getDay()
   const selectedDate = weekDates[selectedDay]
@@ -324,54 +325,62 @@ export default function SchedulePage() {
       </div>
 
       <div data-dashboard-scroll style={{ flex: 1, overflowY: "auto", paddingBottom: 100 }}>
-        {/* SC2 Week strip — single letters + animated active pill */}
-        <div style={{ display: "flex", gap: 2, padding: "8px 16px 16px", justifyContent: "space-between" }}>
+        {/* Week strip — individual day cards */}
+        <div style={{ display: "flex", gap: 6, padding: "8px 16px 16px" }}>
           {weekDates.map((date, i) => {
             const isActive = i === selectedDay
             const isToday = i === todayDay
+            const dayKinds = (weekSummary[i] || []).filter(k => k !== "rst")
             return (
-              <motion.button key={i} onClick={() => setSelectedDay(i)} whileTap={{ scale: 0.88 }} style={{ flex: 1, border: "none", background: "transparent", cursor: "pointer", padding: "4px 2px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.05em", color: isActive ? ACCENT : "var(--text-muted)", transition: "color 0.22s" }}>{DAY_LETTERS[i]}</div>
-                <div style={{ width: 34, height: 34, borderRadius: "50%", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <motion.button
+                key={i}
+                onClick={() => setSelectedDay(i)}
+                whileTap={{ scale: 0.92 }}
+                style={{ flex: 1, border: "none", background: "transparent", cursor: "pointer", padding: 0, position: "relative" }}
+              >
+                <div style={{
+                  width: "100%", borderRadius: 12, padding: "7px 2px 6px",
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                  position: "relative", overflow: "hidden", boxSizing: "border-box",
+                  border: isToday && !isActive ? `1.5px solid ${ACCENT}` : "1.5px solid transparent",
+                  background: isActive ? "transparent" : isToday ? "transparent" : "var(--surface-2, rgba(255,255,255,0.06))",
+                }}>
                   {isActive && (
                     <motion.div
                       layoutId="schedule-week-pill"
                       style={{
-                        position: "absolute", inset: 0, borderRadius: "50%",
+                        position: "absolute", inset: 0, borderRadius: 10,
                         background: "linear-gradient(145deg, #7dd4cc 0%, #5aaea7 100%)",
-                        boxShadow: "0 4px 14px rgba(107,191,184,0.46), inset 0 1px 0 rgba(255,255,255,0.24)",
+                        boxShadow: "0 4px 14px rgba(107,191,184,0.4), inset 0 1px 0 rgba(255,255,255,0.22)",
                       }}
                       transition={{ type: "spring", stiffness: 420, damping: 34 }}
                     />
                   )}
-                  {isToday && !isActive && (
-                    <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: `1.5px solid ${ACCENT}` }} />
-                  )}
-                  <span style={{ position: "relative", zIndex: 1, fontSize: 15, fontWeight: 800, color: isActive ? "#0b1715" : isToday ? ACCENT : "var(--text)" }}>{date.getDate()}</span>
-                </div>
-                <div style={{ display: "flex", gap: 2, justifyContent: "center", minHeight: 5, marginTop: 3 }}>
-                  {(() => {
-                    const kinds = (weekSummary[i] || []).filter(k => k !== "rst")
-                    if (kinds.length === 0) {
-                      return isToday
-                        ? <div style={{ width: 4, height: 4, borderRadius: "50%", background: ACCENT }} />
-                        : null
-                    }
-                    return kinds.slice(0, 4).map((kind, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          width: 5,
-                          height: 3,
-                          borderRadius: 2,
-                          background: isActive
-                            ? "rgba(255,255,255,0.5)"
-                            : KIND_DOT[kind] || "var(--text-muted)",
-                          transition: "background 0.25s",
-                        }}
-                      />
-                    ))
-                  })()}
+                  <div style={{
+                    position: "relative", zIndex: 1,
+                    fontSize: 9, fontWeight: 800, letterSpacing: "0.06em",
+                    color: isActive ? "#0b1715" : isToday ? ACCENT : "var(--text-muted)",
+                    transition: "color 0.22s",
+                  }}>
+                    {DAY_ABBR[i]}
+                  </div>
+                  <div style={{
+                    position: "relative", zIndex: 1,
+                    fontSize: 17, fontWeight: 900, lineHeight: 1,
+                    color: isActive ? "#0b1715" : isToday ? ACCENT : "var(--text)",
+                    transition: "color 0.22s",
+                  }}>
+                    {date.getDate()}
+                  </div>
+                  <div style={{ display: "flex", gap: 2, justifyContent: "center", minHeight: 4, position: "relative", zIndex: 1, marginTop: 1 }}>
+                    {dayKinds.slice(0, 3).map((kind, idx) => (
+                      <div key={idx} style={{
+                        width: 4, height: 3, borderRadius: 2,
+                        background: isActive ? "rgba(11,23,21,0.35)" : KIND_DOT[kind] || "var(--text-muted)",
+                        transition: "background 0.25s",
+                      }} />
+                    ))}
+                  </div>
                 </div>
               </motion.button>
             )
