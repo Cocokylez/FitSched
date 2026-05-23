@@ -12,7 +12,7 @@ const APP_URL = "https://fitsched.vercel.app";
 
 export const metadata: Metadata = {
   title: {
-    default: "FitSched — AI Workout Scheduler",
+    default: "FitSched",
     template: "%s | FitSched",
   },
   description:
