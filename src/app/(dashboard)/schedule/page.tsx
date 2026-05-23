@@ -467,7 +467,7 @@ export default function SchedulePage() {
                                       <div style={{ flex: 1, minWidth: 0 }}>
                                         <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{block.label}</div>
                                         <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>
-                                          {isWorkout ? (isManual ? "Manual" : "Workout") : isFree ? "Free window" : "Class"}
+                                          {isWorkout ? (isManual ? t.manual : t.workout) : isFree ? t.freeWindow : t.classLabel}
                                         </div>
                                       </div>
                                       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
@@ -511,8 +511,8 @@ export default function SchedulePage() {
                   <div style={{ width: 44, height: 44, borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--text-muted)" }}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   </div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text)", marginBottom: 6 }}>Clear day</div>
-                  <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.55 }}>Nothing scheduled — tap + to add a block or enjoy the rest.</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text)", marginBottom: 6 }}>{t.clearDayTitle}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.55 }}>{t.clearDayHint}</div>
                 </div>
               )}
 
