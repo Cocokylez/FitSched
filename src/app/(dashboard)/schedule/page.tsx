@@ -439,7 +439,6 @@ export default function SchedulePage() {
                               const isWorkout = block.kind === "wrk"
                               const isFree = block.kind === "free"
                               const isManual = block.source === "manual"
-                              const leftAccent = KIND_ACCENT[block.kind] || KIND_ACCENT.rst
                               const canDelete = Boolean(block.id)
                               const canEdit = Boolean(block.id && block.source === "manual")
                               const deleteOpen = Boolean(block.id && openDeleteId === block.id)
@@ -449,20 +448,9 @@ export default function SchedulePage() {
                               return (
                                 <div
                                   key={block.id || `${block.label}-${block.time}`}
-                                  style={{ position: "relative", borderRadius: 18, overflow: "hidden", boxShadow: "inset 0 0 0 1px var(--border), var(--shadow)" }}
+                                  style={{ borderRadius: 18, overflow: "hidden", boxShadow: "inset 0 0 0 1px var(--border), var(--shadow)" }}
                                 >
-                                  {/* Action tray — revealed when card slides left */}
-                                  {canDelete && (
-                                    <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: SLIDE_W, display: "flex", gap: 6, padding: "8px", alignItems: "stretch", background: "var(--panel)" }}>
-                                      {canEdit && (
-                                        <button type="button" onClick={() => editScheduleBlock(block)} style={{ flex: 1, border: "1px solid rgba(107,191,184,0.36)", background: "rgba(107,191,184,0.16)", color: ACCENT, borderRadius: 10, fontSize: 12, fontWeight: 900, cursor: "pointer" }}>Edit</button>
-                                      )}
-                                      <button type="button" onClick={() => block.id && deleteScheduleBlock(block.id)} disabled={deletingId === block.id} style={{ flex: 1, border: "1px solid rgba(255,92,92,0.35)", background: "rgba(255,92,92,0.18)", color: "#ff6b6b", borderRadius: 10, fontSize: 12, fontWeight: 900, cursor: "pointer" }}>
-                                        {deletingId === block.id ? "…" : "Delete"}
-                                      </button>
-                                    </div>
-                                  )}
-                                  {/* Draggable card surface */}
+                                  {/* Sliding track: card face + action tray in a flex row wider than the container */}
                                   <motion.div
                                     drag={canDelete ? "x" : false}
                                     dragConstraints={{ left: -SLIDE_W, right: 0 }}
@@ -475,30 +463,44 @@ export default function SchedulePage() {
                                     animate={{ x: deleteOpen ? -SLIDE_W : 0 }}
                                     transition={{ type: "spring", stiffness: 440, damping: 36 }}
                                     onClick={() => { if (deleteOpen) setOpenDeleteId(null) }}
-                                    style={{ background: "var(--panel)", padding: "13px 16px", display: "flex", alignItems: "center", gap: 14, position: "relative", zIndex: 1, touchAction: canDelete ? "pan-y" : "auto", borderLeft: `3px solid ${leftAccent}` }}
+                                    style={{ display: "flex", minWidth: canDelete ? `calc(100% + ${SLIDE_W}px)` : "100%", touchAction: canDelete ? "pan-y" : "auto" }}
                                   >
-                                    <div style={{ minWidth: 44, textAlign: "right" }}>
-                                      <div className="number-text" style={{ fontSize: 14, fontWeight: 800, color: "var(--text)" }}>{block.time}</div>
-                                      {endTime && <div className="number-text" style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>{endTime}</div>}
-                                    </div>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                      <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{block.label}</div>
-                                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>
-                                        {isWorkout ? (isManual ? "Manual" : "Workout") : isFree ? "Free window" : "Class"}
+                                    {/* Card face — fills visible area */}
+                                    <div style={{ flexGrow: 1, flexShrink: 0, background: "var(--panel)", padding: "13px 16px", display: "flex", alignItems: "center", gap: 14, minWidth: 0, overflow: "hidden" }}>
+                                      <div style={{ minWidth: 44, textAlign: "right" }}>
+                                        <div className="number-text" style={{ fontSize: 14, fontWeight: 800, color: "var(--text)" }}>{block.time}</div>
+                                        {endTime && <div className="number-text" style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>{endTime}</div>}
+                                      </div>
+                                      <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{block.label}</div>
+                                        <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>
+                                          {isWorkout ? (isManual ? "Manual" : "Workout") : isFree ? "Free window" : "Class"}
+                                        </div>
+                                      </div>
+                                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
+                                        {block.duration && !block.duration.includes("best") && (
+                                          <div style={{ background: isFree ? "rgba(107,191,184,0.15)" : "var(--surface-2)", border: isFree ? "1px solid rgba(107,191,184,0.3)" : "1px solid var(--border)", borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 800, color: isFree ? ACCENT : "var(--text-muted)" }}>
+                                            {block.duration.replace(" — best window", "").replace(" — best", "")}
+                                          </div>
+                                        )}
+                                        {isWorkout && (
+                                          <button type="button" onPointerDown={e => e.stopPropagation()} onClick={() => startExerciseFromSchedule(block)} disabled={!canStartExerciseToday} style={{ border: "none", background: canStartExerciseToday ? ACCENT : "var(--surface-2)", color: canStartExerciseToday ? "#0b1715" : "var(--text-muted)", borderRadius: 999, padding: "5px 12px", fontSize: 11, fontWeight: 800, cursor: canStartExerciseToday ? "pointer" : "default", opacity: canStartExerciseToday ? 1 : 0.6 }}>
+                                            {canStartExerciseToday ? "Start →" : "Today only"}
+                                          </button>
+                                        )}
                                       </div>
                                     </div>
-                                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
-                                      {block.duration && !block.duration.includes("best") && (
-                                        <div style={{ background: isFree ? "rgba(107,191,184,0.15)" : "var(--surface-2)", border: isFree ? "1px solid rgba(107,191,184,0.3)" : "1px solid var(--border)", borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 800, color: isFree ? ACCENT : "var(--text-muted)" }}>
-                                          {block.duration.replace(" — best window", "").replace(" — best", "")}
-                                        </div>
-                                      )}
-                                      {isWorkout && (
-                                        <button type="button" onPointerDown={e => e.stopPropagation()} onClick={() => startExerciseFromSchedule(block)} disabled={!canStartExerciseToday} style={{ border: "none", background: canStartExerciseToday ? ACCENT : "var(--surface-2)", color: canStartExerciseToday ? "#0b1715" : "var(--text-muted)", borderRadius: 999, padding: "5px 12px", fontSize: 11, fontWeight: 800, cursor: canStartExerciseToday ? "pointer" : "default", opacity: canStartExerciseToday ? 1 : 0.6 }}>
-                                          {canStartExerciseToday ? "Start →" : "Today only"}
+                                    {/* Action tray — hidden off-screen until card slides left */}
+                                    {canDelete && (
+                                      <div style={{ flexShrink: 0, width: SLIDE_W, display: "flex", gap: 6, padding: "8px", alignItems: "stretch", background: "var(--panel)" }}>
+                                        {canEdit && (
+                                          <button type="button" onClick={() => editScheduleBlock(block)} style={{ flex: 1, border: "1px solid rgba(107,191,184,0.36)", background: "rgba(107,191,184,0.16)", color: ACCENT, borderRadius: 10, fontSize: 12, fontWeight: 900, cursor: "pointer" }}>Edit</button>
+                                        )}
+                                        <button type="button" onClick={() => block.id && deleteScheduleBlock(block.id)} disabled={deletingId === block.id} style={{ flex: 1, border: "1px solid rgba(255,92,92,0.35)", background: "rgba(255,92,92,0.18)", color: "#ff6b6b", borderRadius: 10, fontSize: 12, fontWeight: 900, cursor: "pointer" }}>
+                                          {deletingId === block.id ? "…" : "Delete"}
                                         </button>
-                                      )}
-                                    </div>
+                                      </div>
+                                    )}
                                   </motion.div>
                                 </div>
                               )
