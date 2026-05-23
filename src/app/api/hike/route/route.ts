@@ -26,82 +26,112 @@ function haversineM(lat1: number, lng1: number, lat2: number, lng2: number): num
 }
 
 // ── 3. Overpass trail trace ───────────────────────────────────────────────────
-// When routing engines can't find a path (disconnected OSM trails), query
-// Overpass for the actual OSM trail geometry in the area and trace it directly.
+// Queries OSM for trail ways, builds a mini routing graph, and BFS-finds
+// a path through connected way segments — handles disconnected mountain trails
+// that span multiple OSM ways.
 async function tryOverpassTrail(
   slat: number, slng: number,
   elat: number, elng: number
 ): Promise<object | null> {
-  const pad  = 0.02  // ~2 km padding each side
+  const pad  = 0.05  // ~5 km padding each side
   const bbox = [
     Math.min(slat, elat) - pad, Math.min(slng, elng) - pad,
     Math.max(slat, elat) + pad, Math.max(slng, elng) + pad,
   ].join(",")
 
+  // Broad tag coverage: named path types + sac_scale + trail_visibility tagged ways
   const query =
-    `[out:json][timeout:10];` +
-    `way[highway~"^(path|track|footway|steps)$"](${bbox});` +
+    `[out:json][timeout:25];` +
+    `(` +
+    `way[highway~"^(path|track|footway|steps|bridleway)$"](${bbox});` +
+    `way[sac_scale](${bbox});` +
+    `way[trail_visibility](${bbox});` +
+    `);` +
     `out geom;`
 
   const res = await fetch(
     `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`,
-    { signal: AbortSignal.timeout(10_000) }
+    { signal: AbortSignal.timeout(25_000) }
   )
   if (!res.ok) return null
 
   const data = await res.json()
-  if (!data.elements?.length) return null
+  const ways: Array<{ geometry: Array<{ lat: number; lon: number }> }> =
+    (data.elements ?? []).filter((e: any) => e.geometry?.length >= 2)
+  if (!ways.length) return null
 
-  // Find the way whose nodes come closest to BOTH the start and end points
-  let bestWay: any = null
-  let bestScore = Infinity
-  let bestStartIdx = 0
-  let bestEndIdx   = 0
-  const SNAP_LIMIT = 400  // metres — ignore ways more than 400m from either pin
+  // Build a mini routing graph from all trail way nodes.
+  // Node key = "lat5dp,lon5dp" — 5 decimal places ≈ 1 m resolution, so shared
+  // endpoints of adjacent OSM ways collapse to the same key automatically.
+  type GNode = { lat: number; lon: number; neighbors: Set<string> }
+  const graph = new Map<string, GNode>()
 
-  for (const way of data.elements) {
-    const nodes: Array<{ lat: number; lon: number }> = way.geometry
-    if (!nodes?.length) continue
+  const getOrAdd = (lat: number, lon: number): string => {
+    const k = `${lat.toFixed(5)},${lon.toFixed(5)}`
+    if (!graph.has(k)) graph.set(k, { lat, lon, neighbors: new Set() })
+    return k
+  }
 
-    let minS = Infinity, sIdx = 0
-    let minE = Infinity, eIdx = 0
-
-    nodes.forEach((n, i) => {
-      const dS = haversineM(slat, slng, n.lat, n.lon)
-      const dE = haversineM(elat, elng, n.lat, n.lon)
-      if (dS < minS) { minS = dS; sIdx = i }
-      if (dE < minE) { minE = dE; eIdx = i }
-    })
-
-    if (minS > SNAP_LIMIT || minE > SNAP_LIMIT) continue
-    const score = minS + minE
-    if (score < bestScore) {
-      bestScore = score; bestWay = way
-      bestStartIdx = sIdx; bestEndIdx = eIdx
+  for (const way of ways) {
+    const keys = way.geometry.map(n => getOrAdd(n.lat, n.lon))
+    for (let i = 0; i < keys.length - 1; i++) {
+      graph.get(keys[i])!.neighbors.add(keys[i + 1])
+      graph.get(keys[i + 1])!.neighbors.add(keys[i])
     }
   }
 
-  if (!bestWay) return null
+  // Snap start and end pins to the closest graph node (within SNAP_LIMIT)
+  const SNAP_LIMIT = 1500  // metres — generous for mountain trails
 
-  // Slice the way geometry between the two closest nodes
-  const nodes: Array<{ lat: number; lon: number }> = bestWay.geometry
-  const from = Math.min(bestStartIdx, bestEndIdx)
-  const to   = Math.max(bestStartIdx, bestEndIdx)
-  const seg  = nodes.slice(from, to + 1)
-  if (seg.length < 2) return null
+  let startKey = "", startDist = Infinity
+  let endKey   = "", endDist   = Infinity
 
-  // Preserve direction: if end is before start on the way, reverse
-  const coords = bestStartIdx <= bestEndIdx
-    ? seg.map(n => [n.lon, n.lat] as [number, number])
-    : seg.map(n => [n.lon, n.lat] as [number, number]).reverse()
-
-  // Measure trail distance
-  let distM = 0
-  for (let i = 1; i < seg.length; i++) {
-    distM += haversineM(seg[i - 1].lat, seg[i - 1].lon, seg[i].lat, seg[i].lon)
+  for (const [k, node] of graph) {
+    const dS = haversineM(slat, slng, node.lat, node.lon)
+    const dE = haversineM(elat, elng, node.lat, node.lon)
+    if (dS < startDist) { startDist = dS; startKey = k }
+    if (dE < endDist)   { endDist   = dE; endKey   = k }
   }
 
-  const durSec = (distM / 1000 / 3) * 3600  // 3 km/h for mountain hiking
+  if (startDist > SNAP_LIMIT || endDist > SNAP_LIMIT) return null
+  if (startKey === endKey) return null
+
+  // BFS through the graph to find a path from start pin to end pin
+  const parent = new Map<string, string>()
+  const queue: string[] = [startKey]
+  const visited = new Set<string>([startKey])
+
+  bfs: while (queue.length) {
+    const cur = queue.shift()!
+    for (const nb of graph.get(cur)!.neighbors) {
+      if (!visited.has(nb)) {
+        visited.add(nb)
+        parent.set(nb, cur)
+        if (nb === endKey) break bfs
+        queue.push(nb)
+      }
+    }
+  }
+
+  if (!visited.has(endKey)) return null  // no connected path
+
+  // Reconstruct path from parent map
+  const path: string[] = []
+  for (let cur = endKey; cur; cur = parent.get(cur) ?? "") path.unshift(cur)
+
+  const coords = path.map(k => {
+    const n = graph.get(k)!
+    return [n.lon, n.lat] as [number, number]
+  })
+
+  let distM = 0
+  for (let i = 1; i < path.length; i++) {
+    const a = graph.get(path[i - 1])!
+    const b = graph.get(path[i])!
+    distM += haversineM(a.lat, a.lon, b.lat, b.lon)
+  }
+
+  const durSec = (distM / 1000 / 3) * 3600  // 3 km/h hiking pace
 
   return {
     code: "Ok",
@@ -116,7 +146,7 @@ async function tryOverpassTrail(
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Proxy for hike route planning.
-// Waterfall: OSRM → Valhalla (trail-aware) → Overpass trail trace → 404
+// Waterfall: OSRM → Valhalla (trail-aware) → Overpass graph trace → 404
 // ─────────────────────────────────────────────────────────────────────────────
 export async function GET(req: Request) {
   const session = await auth()
@@ -134,6 +164,9 @@ export async function GET(req: Request) {
   const slatN = parseFloat(slat), slngN = parseFloat(slng)
   const elatN = parseFloat(elat), elngN = parseFloat(elng)
 
+  // Straight-line distance between the two pins — used to detect bad OSRM snaps
+  const straightM = haversineM(slatN, slngN, elatN, elngN)
+
   // ── 1. OSRM ────────────────────────────────────────────────────────────────
   try {
     const osrmUrl =
@@ -149,11 +182,13 @@ export async function GET(req: Request) {
     if (osrmRes.ok) {
       const data = await osrmRes.json()
       if (data.code === "Ok" && data.routes?.[0]) {
-        // If OSRM snapped either pin >150 m from where the user placed it,
-        // it pulled both onto the nearest road — ignore and try trail routing instead
         const wp = data.waypoints as Array<{ distance: number }> | undefined
-        const badSnap = wp && (wp[0]?.distance > 150 || wp[1]?.distance > 150)
-        if (!badSnap) {
+        // Reject if either pin was snapped >150 m from its placed position,
+        // or if the route is implausibly shorter than the straight-line distance
+        // (both indicate OSRM pulled pins onto a nearby road).
+        const badSnap   = wp && (wp[0]?.distance > 150 || wp[1]?.distance > 150)
+        const tooShort  = data.routes[0].distance < straightM * 0.6
+        if (!badSnap && !tooShort) {
           return NextResponse.json(data, {
             headers: { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" },
           })
@@ -179,7 +214,7 @@ export async function GET(req: Request) {
         costing_options: {
           pedestrian: {
             use_tracks: 1.0,
-            use_roads:  0.0,   // strongly avoid roads — take trails
+            use_roads:  0.0,
             use_hills:  0.8,
           },
         },
@@ -191,25 +226,29 @@ export async function GET(req: Request) {
       const data = await valhallaRes.json()
       const leg = data.trip?.legs?.[0]
       if (leg?.shape) {
-        const latlngs = decodePolyline6(leg.shape)
-        return NextResponse.json({
-          code: "Ok",
-          routes: [{
-            distance: data.trip.summary.length * 1000,
-            duration: data.trip.summary.time,
-            geometry: {
-              type: "LineString",
-              coordinates: latlngs.map(([lat, lng]) => [lng, lat]),
-            },
-          }],
-        }, {
-          headers: { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" },
-        })
+        const routeDistM = (data.trip.summary.length ?? 0) * 1000
+        // Same sanity check: reject if Valhalla also snapped to a road shortcut
+        if (routeDistM >= straightM * 0.6) {
+          const latlngs = decodePolyline6(leg.shape)
+          return NextResponse.json({
+            code: "Ok",
+            routes: [{
+              distance: routeDistM,
+              duration: data.trip.summary.time,
+              geometry: {
+                type: "LineString",
+                coordinates: latlngs.map(([lat, lng]) => [lng, lat]),
+              },
+            }],
+          }, {
+            headers: { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" },
+          })
+        }
       }
     }
   } catch { /* fall through */ }
 
-  // ── 3. Overpass trail trace — works on disconnected mountain paths ──────────
+  // ── 3. Overpass graph trace — works on disconnected mountain paths ──────────
   try {
     const osmRoute = await tryOverpassTrail(slatN, slngN, elatN, elngN)
     if (osmRoute) {
