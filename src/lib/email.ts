@@ -1,7 +1,7 @@
 import { Resend } from "resend"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
-const FROM = "FitSched <noreply@fitsched.app>"
+const FROM = "FitSched <onboarding@resend.dev>"
 const APP_URL = process.env.NEXTAUTH_URL || "https://fitsched.vercel.app"
 
 export async function sendVerificationEmail(email: string, token: string) {
