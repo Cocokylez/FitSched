@@ -14,75 +14,6 @@ type StreakWelcomeCardProps = {
 }
 
 
-function FreezeHalo({ active }: { active: boolean }) {
-  const shouldReduceMotion = useReducedMotion()
-  const shards = useMemo(() => {
-    return Array.from({ length: 12 }, (_, index) => ({
-      id: index,
-      rotate: index * 30,
-      distance: 66 + (index % 3) * 7,
-      size: 8 + (index % 4) * 2,
-      delay: 0.04 * index,
-    }))
-  }, [])
-
-  if (shouldReduceMotion) return null
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.72, rotate: -10 }}
-      animate={{
-        opacity: active ? [0, 1, 0.9] : [0, 0.75, 0.55],
-        scale: active ? [0.72, 1.08, 1] : [0.72, 0.98, 0.94],
-        rotate: active ? [12, -4, 0] : [-10, 2, -2],
-      }}
-      exit={{ opacity: 0, scale: 0.78, transition: { duration: 0.55, ease: "easeIn" } }}
-      transition={{ duration: active ? 1.05 : 0.78, ease: [0.16, 1, 0.3, 1] }}
-      style={{
-        position: "absolute",
-        inset: 0,
-        display: "grid",
-        placeItems: "center",
-        pointerEvents: "none",
-      }}
-    >
-      <motion.span
-        animate={{ scale: active ? [0.88, 1.08, 0.96] : [0.84, 0.98, 0.9], opacity: active ? [0.22, 0.54, 0.34] : [0.12, 0.3, 0.16] }}
-        transition={{ duration: 1.4, repeat: active ? Infinity : 0, ease: "easeInOut" }}
-        style={{
-          position: "absolute",
-          width: 154,
-          height: 154,
-          borderRadius: "50%",
-          border: "1px solid rgba(139, 226, 255, 0.38)",
-          boxShadow: "inset 0 0 30px rgba(139,226,255,0.14), 0 0 34px rgba(107,191,184,0.16)",
-        }}
-      />
-      {shards.map((shard) => (
-        <motion.span
-          key={shard.id}
-          initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
-          animate={{
-            opacity: active ? [0, 1, 0.72] : [0, 0.76, 0],
-            scale: active ? [0, 1.15, 0.92] : [0, 0.9, 0.4],
-            x: Math.cos((shard.rotate * Math.PI) / 180) * shard.distance,
-            y: Math.sin((shard.rotate * Math.PI) / 180) * shard.distance,
-            rotate: shard.rotate + 45,
-          }}
-          transition={{ duration: active ? 1.05 : 0.7, delay: shard.delay, ease: "easeOut" }}
-          style={{
-            position: "absolute",
-            width: shard.size,
-            height: shard.size * 2.2,
-            borderRadius: "999px 999px 2px 2px",
-            background: "linear-gradient(180deg, rgba(225,252,255,0.95), rgba(95,206,236,0.28))",
-            boxShadow: "0 0 16px rgba(139,226,255,0.34)",
-          }}
-        />
-      ))}
-    </motion.div>
-  )
-}
 
 function getFirePalette(streak: number, broken: boolean) {
   if (broken) return {
@@ -132,7 +63,7 @@ function getFirePalette(streak: number, broken: boolean) {
   }
 }
 
-function FireBurst({ broken, frozen, streak = 0, introPhase = false }: { broken: boolean; frozen?: boolean; streak?: number; introPhase?: boolean }) {
+function FireBurst({ broken, streak = 0, introPhase = false }: { broken: boolean; streak?: number; introPhase?: boolean }) {
   const shouldReduceMotion = useReducedMotion()
   const fcx = 100, baseY = 182
   const p = getFirePalette(streak, broken)
@@ -336,10 +267,6 @@ function FireBurst({ broken, frozen, streak = 0, introPhase = false }: { broken:
         ))}
       </motion.svg>
 
-      <AnimatePresence>
-        {(frozen || introPhase) && <FreezeHalo active={!!frozen || introPhase} />}
-      </AnimatePresence>
-
       {broken && !shouldReduceMotion && (
         <>
           {[0, 1, 2, 3].map((line) => (
@@ -493,7 +420,7 @@ export function StreakWelcomeCard({
               <X size={16} strokeWidth={2.4} />
             </button>
 
-            <FireBurst broken={missedStreak && !freezeActive} frozen={freezeActive} streak={displayStreak} introPhase={introPhase} />
+            <FireBurst broken={missedStreak && !freezeActive} streak={displayStreak} introPhase={introPhase} />
 
             <motion.div
               initial={{ opacity: 0, y: 10 }}
