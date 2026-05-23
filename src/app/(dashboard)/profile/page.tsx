@@ -318,14 +318,34 @@ export default function ProfilePage() {
           </motion.div>
         )}
 
-        <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 4 }}>{email}</div>
-        {joinDate && (
+        {email && !email.endsWith("@fitsched.guest") && (
+          <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 4 }}>{email}</div>
+        )}
+        {email.endsWith("@fitsched.guest") && (
+          <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4, display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ fontSize: 9, background: "rgba(107,191,184,0.18)", border: "1px solid rgba(107,191,184,0.3)", color: ACCENT, borderRadius: 999, padding: "2px 8px", fontWeight: 800, letterSpacing: "0.08em" }}>GUEST</span>
+            Progress is temporary
+          </div>
+        )}
+        {joinDate && !email.endsWith("@fitsched.guest") && (
           <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.13em", color: "var(--text-muted)" }}>
             JOINED {joinDate}
           </div>
         )}
 
+        {/* Guest sign-up prompt */}
+        {email.endsWith("@fitsched.guest") && (
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={async () => { await import("next-auth/react").then(m => m.signOut({ redirect: false })); router.push("/register") }}
+            style={{ marginTop: 14, border: "1px solid rgba(107,191,184,0.4)", background: "rgba(107,191,184,0.08)", borderRadius: 14, padding: "10px 20px", color: ACCENT, fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+          >
+            Create a free account to save your progress →
+          </motion.button>
+        )}
+
         {/* FitTokens + Withdraw */}
+        {!email.endsWith("@fitsched.guest") && (
         <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 7,
@@ -347,6 +367,7 @@ export default function ProfilePage() {
             Withdraw
           </button>
         </div>
+        )}
       </div>
 
       {/* Stats */}
