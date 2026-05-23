@@ -290,7 +290,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
       delete (Lf.Icon.Default.prototype as any)._getIconUrl
 
       map = Lf.map(mapDivRef.current!, { zoomControl: false, attributionControl: false })
-      Lf.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map)
+      Lf.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", { maxZoom: 17 }).addTo(map)
 
       // Planned route (blue dashed) — drawn before track poly so track sits on top
       const planPoly = Lf.polyline([], {
