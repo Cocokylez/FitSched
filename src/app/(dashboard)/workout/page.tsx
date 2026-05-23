@@ -8,10 +8,8 @@ import { useStore } from "@/store/useStore"
 import { useLanguage } from "@/context/LanguageContext"
 import { useTheme } from "@/context/ThemeContext"
 import { SkeletonExerciseRow } from "@/components/Skeleton"
-import { ExerciseDemoPanel } from "@/components/ExerciseDemoPanel"
 import { getSmartExercisePlan, parseSetsReps, toWorkoutExercises } from "@/lib/workoutRecommendations"
 import { getFeedbackAdjustedExperienceLevel } from "@/lib/workoutFeedback"
-import { stagger, fadeUp, scaleIn } from "@/lib/animations"
 import { MUSCLE_GROUPS } from "@/lib/exerciseData"
 import { formatLocalDate } from "@/lib/dateUtils"
 
@@ -162,6 +160,58 @@ function getMuscleGroupsForDay(day: number, workoutsPerWeek: number): { groups: 
   }
   const splits = [["CHEST"], ["BACK"], ["SHOULDERS"], ["ARMS"], ["LEGS", "CORE"]]
   return { groups: splits[workoutDayIndex], isRestDay: false }
+}
+
+const CATEGORY_COLORS: Record<string, { bg: string; color: string }> = {
+  WARM:     { bg: "rgba(246,211,101,0.18)", color: "#c8960a" },
+  CORE:     { bg: "rgba(107,191,184,0.18)", color: "#6bbfb8" },
+  LEGS:     { bg: "rgba(138,180,255,0.18)", color: "#5b8fff" },
+  PULL:     { bg: "rgba(160,100,255,0.18)", color: "#a064ff" },
+  PUSH:     { bg: "rgba(249,115,115,0.18)", color: "#e85555" },
+  CARDIO:   { bg: "rgba(255,165,50,0.18)",  color: "#e08010" },
+  SHOULDER: { bg: "rgba(107,191,184,0.14)", color: "#6bbfb8" },
+}
+
+function getCategory(name: string, index: number): string {
+  if (index === 0) return "WARM"
+  const n = name.toLowerCase()
+  if (n.includes("plank") || n.includes("crunch") || n.includes("twist") || n.includes("climb") || n.includes("leg raise") || n.includes("bicycle")) return "CORE"
+  if (n.includes("squat") || n.includes("lunge") || n.includes("glute") || n.includes("calf") || n.includes("jump") || n.includes("step")) return "LEGS"
+  if (n.includes("pull") || n.includes("row") || n.includes("curl") || n.includes("hammer") || n.includes("superman")) return "PULL"
+  if (n.includes("push") || n.includes("press") || n.includes("fly") || n.includes("dip") || n.includes("pike")) return "PUSH"
+  if (n.includes("burpee") || n.includes("sprint") || n.includes("high knee") || n.includes("rope") || n.includes("battle")) return "CARDIO"
+  if (n.includes("raise") || n.includes("shrug") || n.includes("face pull") || n.includes("lateral") || n.includes("front")) return "SHOULDER"
+  return "CORE"
+}
+
+function getExerciseDesc(name: string): string {
+  const n = name.toLowerCase()
+  if (n.includes("incline push")) return "Beginner-friendly push-up using an elevated surface."
+  if (n.includes("push-up") || n.includes("pushup")) return "A bodypress that trains chest, triceps, shoulders, and core."
+  if (n.includes("shoulder tap")) return "A push-up followed by alternating shoulder taps."
+  if (n.includes("diamond")) return "Close-grip push-up targeting triceps and inner chest."
+  if (n.includes("tricep dip")) return "Dip movement for tricep isolation and shoulder stability."
+  if (n.includes("pull-up") || n.includes("pullup")) return "Vertical pull targeting lats, biceps, and upper back."
+  if (n.includes("bicep curl") || n.includes("curl")) return "Isolation movement for bicep peak and arm strength."
+  if (n.includes("squat")) return "Compound lower-body movement for quads, glutes, and hips."
+  if (n.includes("lunge")) return "Unilateral leg exercise for balance and quad development."
+  if (n.includes("plank")) return "Isometric core hold building total trunk stability."
+  if (n.includes("burpee")) return "Full-body explosive movement combining squat, push-up, and jump."
+  if (n.includes("lateral raise")) return "Isolation movement for medial deltoid width."
+  if (n.includes("russian twist")) return "Rotational core movement targeting obliques."
+  if (n.includes("mountain climb")) return "Dynamic core exercise with cardio benefit."
+  return "Compound movement for strength and endurance."
+}
+
+function WaveformIcon() {
+  const bars = [4, 9, 15, 11, 7, 13, 9, 5, 11, 15, 8, 5]
+  return (
+    <svg viewBox="0 0 50 28" width="46" height="26" aria-hidden>
+      {bars.map((h, i) => (
+        <rect key={i} x={i * 4 + 1} y={(28 - h) / 2} width="3" height={h} rx="1.5" fill="currentColor" />
+      ))}
+    </svg>
+  )
 }
 
 export default function WorkoutPage() {
@@ -408,56 +458,30 @@ export default function WorkoutPage() {
   if (selectedDay === 0) {
     return (
       <div style={{ minHeight: "100vh", background: "transparent", display: "flex", flexDirection: "column" }}>
-        <div style={{
-          background: "var(--panel)",
-          padding: "16px 20px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          border: "1px solid var(--border)",
-          borderRadius: "24px",
-          margin: "12px 12px 0",
-          boxShadow: "var(--shadow)",
-        }}>
-          <div className="brand-wordmark" style={{ fontSize: "15px", fontWeight: 900, color: "var(--text)" }}>
-            <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-              {t.workout}
-            </motion.span>
-          </div>
-          <button onClick={toggleTheme} style={{
-            background: "var(--surface-2)", border: "1px solid var(--border)",
-            borderRadius: "50%", width: "32px", height: "32px",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer", color: "var(--text)",
-          }}>
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-              {theme === "dark" ? (
-                <><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></>
-              ) : (
-                <><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></>
-              )}
-            </svg>
+        <div style={{ padding: "16px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.14em", color: "var(--text-muted)" }}>WORKOUT</div>
+          <button onClick={toggleTheme} style={{ width: 36, height: 36, borderRadius: "50%", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">{theme === "dark" ? (<><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></>) : (<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>)}</svg>
           </button>
         </div>
-        <div data-dashboard-scroll style={{ padding: "20px", flex: 1, overflowY: "auto" }}>
-          <motion.div variants={stagger} initial="hidden" animate="visible">
-            <motion.div variants={fadeUp}>
-              <div style={{
-                background: "var(--panel)",
-                border: "1px solid var(--border)",
-                borderRadius: "22px",
-                padding: "32px 24px",
-                textAlign: "center",
-                boxShadow: "var(--shadow)",
-              }}>
-                <div style={{ fontSize: "24px", fontWeight: 800, color: "var(--text)", marginBottom: "8px" }}>{t.restDay}</div>
-                <p style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.5, marginBottom: "20px" }}>
-                  {t.restBody}
-                </p>
-
-              </div>
-            </motion.div>
-          </motion.div>
+        <div data-dashboard-scroll style={{ flex: 1, overflowY: "auto", padding: "0 16px", paddingBottom: 100 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0 20px" }}>
+            {weekDates.map((date, i) => {
+              const isActive = i === selectedDay
+              return (
+                <motion.button key={i} onClick={() => setSelectedDay(i)} whileTap={{ scale: 0.92 }} style={{ flex: 1, border: "none", background: "transparent", cursor: "pointer", padding: "4px 2px", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)" }}>{dayNames[i][0]}</div>
+                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: isActive ? "#6bbfb8" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: isActive ? "#0b1715" : "var(--text)" }}>{date.getDate()}</div>
+                  </div>
+                </motion.button>
+              )
+            })}
+          </div>
+          <div style={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 22, padding: "32px 24px", textAlign: "center", boxShadow: "var(--shadow)" }}>
+            <div style={{ fontSize: 24, fontWeight: 800, color: "var(--text)", marginBottom: 8 }}>{t.restDay}</div>
+            <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>{t.restBody}</p>
+          </div>
         </div>
       </div>
     )
@@ -495,257 +519,129 @@ export default function WorkoutPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "transparent", display: "flex", flexDirection: "column" }}>
-      <div style={{
-        background: "var(--panel)",
-        padding: "16px 20px",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        border: "1px solid var(--border)",
-        borderRadius: "24px",
-        margin: "12px 12px 0",
-        boxShadow: "var(--shadow)",
-      }}>
-        <div className="brand-wordmark" style={{ fontSize: "15px", fontWeight: 900, color: "var(--text)" }}>{t.workout}</div>
-        <button onClick={toggleTheme} style={{
-          background: "var(--surface-2)", border: "1px solid var(--border)",
-          borderRadius: "50%", width: "32px", height: "32px",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          cursor: "pointer", color: "var(--text)",
-        }}>
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-            {theme === "dark" ? (
-              <><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></>
-            ) : (
-              <><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></>
-            )}
-          </svg>
+      {/* W1 Header */}
+      <div style={{ padding: "16px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.14em", color: "var(--text-muted)" }}>WORKOUT</div>
+        <button onClick={toggleTheme} style={{ width: 36, height: 36, borderRadius: "50%", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">{theme === "dark" ? (<><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></>) : (<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>)}</svg>
         </button>
       </div>
 
-      <div data-dashboard-scroll style={{ padding: "20px", flex: 1, overflowY: "auto", paddingBottom: "32px" }}>
-        <motion.div variants={stagger} initial="hidden" animate="visible">
-          <motion.div variants={fadeUp}>
-            <div style={{ display: "flex", gap: "8px", overflowX: "auto", marginBottom: "20px", scrollbarWidth: "none" }}>
-              {weekDates.map((date, i) => {
-                const isToday = i === todayIdx
-                return (
-                    <motion.button
-                    key={i}
-                    onClick={() => setSelectedDay(i)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                    className="motion-lift"
-                    style={{
-                      background: i === selectedDay ? "var(--accent)" : "var(--panel)",
-                      border: i === selectedDay ? "1px solid var(--accent)" : "1px solid var(--border)",
-                      borderRadius: "18px",
-                      padding: "10px 14px",
-                      textAlign: "center",
-                      minWidth: "52px",
-                      cursor: "pointer",
-                      flexShrink: 0,
-                      boxShadow: i === selectedDay ? "0 12px 32px rgba(107, 191, 184, 0.18)" : "none",
-                    }}
-                  >
-                    <div style={{
-                      fontSize: "10px",
-                      color: i === selectedDay ? "rgba(10,18,17,0.72)" : "var(--text-muted)",
-                      fontWeight: 600,
-                      letterSpacing: "0.08em",
-                      marginBottom: "4px",
-                    }}>
-                      {dayNames[i]}
-                    </div>
-                    <div style={{
-                      fontSize: "18px",
-                      fontWeight: 800,
-                      color: i === selectedDay ? "#0b1715" : "var(--text)",
-                    }}>
-                      {date.getDate()}
-                    </div>
-                  </motion.button>
-                )
-              })}
-            </div>
-          </motion.div>
-
-          <motion.div variants={fadeUp}>
-            <div className="label-text" style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "12px" }}>
-              <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                {t.todaysPlan}
-              </motion.span>
-            </div>
-          </motion.div>
-
-          <motion.div variants={fadeUp}>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "var(--accent-soft)", border: "1px solid var(--border-strong)", borderRadius: "999px", padding: "6px 12px", fontSize: "11px", color: "var(--accent-strong)", marginBottom: "12px", fontWeight: 800 }}>
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M6.5 6.5h11"/><path d="M6.5 17.5h11"/><path d="M3 9.5h2v5H3z"/><path d="M19 9.5h2v5h-2z"/><path d="M5 12h14"/>
-              </svg>
-              {muscle}
-            </div>
-          </motion.div>
-
-          {workoutBlocked && (
-            <motion.div variants={fadeUp}>
-              <div style={{
-                background: "rgba(107, 191, 184, 0.12)",
-                border: "1px solid rgba(107, 191, 184, 0.32)",
-                borderRadius: "16px",
-                padding: "14px 16px",
-                marginBottom: "14px",
-                color: "var(--text)",
-              }}>
-                <div style={{ fontSize: "14px", fontWeight: 900, marginBottom: "4px" }}>
-                  {selectedDayBlocked ? t.todayWorkoutOnlyTitle : t.workoutLockedTitle}
+      <div data-dashboard-scroll style={{ flex: 1, overflowY: "auto", padding: "0 16px", paddingBottom: 140 }}>
+        {/* SC2 Day selector */}
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0 20px" }}>
+          {weekDates.map((date, i) => {
+            const isActive = i === selectedDay
+            return (
+              <motion.button key={i} onClick={() => setSelectedDay(i)} whileTap={{ scale: 0.92 }} style={{ flex: 1, border: "none", background: "transparent", cursor: "pointer", padding: "4px 2px", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)" }}>{dayNames[i][0]}</div>
+                <div style={{ width: 34, height: 34, borderRadius: "50%", background: isActive ? "#6bbfb8" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.18s" }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: isActive ? "#0b1715" : "var(--text)" }}>{date.getDate()}</div>
                 </div>
-                <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: 1.45 }}>
-                  {selectedDayBlocked ? t.todayWorkoutOnlyBody : t.workoutLockedBody}
-                </div>
-              </div>
-            </motion.div>
-          )}
+              </motion.button>
+            )
+          })}
+        </div>
 
-          {loading || computing ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              <div className="shine-surface" style={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: "22px", overflow: "hidden", marginBottom: "16px", boxShadow: "var(--shadow)" }}>
-                {[1,2,3,4,5].map(i => (
-                  <SkeletonExerciseRow key={i} />
-                ))}
+        {/* W1 Title block */}
+        <div style={{ marginBottom: 14 }}>
+          <div className="display-text" style={{ fontSize: 32, fontWeight: 950, color: "var(--text)", letterSpacing: "-0.5px", marginBottom: 4 }}>{muscle}</div>
+          <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
+            {computing ? "Computing…" : `${todayExercises.length} exercises · ${Math.round(todayExercises.length * 4)} min · medium`}
+          </div>
+        </div>
+
+        {/* FT motivation strip */}
+        <div style={{ background: "rgba(107,191,184,0.08)", border: "1px solid rgba(107,191,184,0.28)", borderRadius: 14, padding: "10px 14px", display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 700, color: "#6bbfb8", marginBottom: 14 }}>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Complete to earn FitTokens
+        </div>
+
+        {/* Blocked banner */}
+        {workoutBlocked && (
+          <div style={{ background: "rgba(107,191,184,0.1)", border: "1px solid rgba(107,191,184,0.28)", borderRadius: 14, padding: "12px 14px", marginBottom: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text)", marginBottom: 3 }}>{selectedDayBlocked ? t.todayWorkoutOnlyTitle : t.workoutLockedTitle}</div>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.4 }}>{selectedDayBlocked ? t.todayWorkoutOnlyBody : t.workoutLockedBody}</div>
+          </div>
+        )}
+
+        {/* W1 Exercise cards — plan view, no set buttons */}
+        {loading || computing ? (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {[1,2,3,4,5].map(i => (
+              <div key={i} style={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 20, overflow: "hidden" }}>
+                <SkeletonExerciseRow />
               </div>
-            </motion.div>
-          ) : (
-            <motion.div variants={fadeUp}>
-              <div style={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: "22px", overflow: "hidden", marginBottom: "16px", boxShadow: "var(--shadow)" }}>
-                {todayExercises.map((ex, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      padding: "14px 16px",
-                      borderBottom: i < todayExercises.length - 1 ? "1px solid var(--border)" : "none",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                      <motion.div variants={scaleIn} style={{
-                        background: "var(--surface-2)",
-                        borderRadius: "10px",
-                        width: "28px",
-                        height: "28px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "11px",
-                        fontWeight: 700,
-                        color: "var(--text-muted)",
-                        flexShrink: 0,
-                      }}>
-                        {String(i + 1).padStart(2, "0")}
-                      </motion.div>
-                      <div className="display-text" style={{ flex: 1, fontSize: "15px", fontWeight: 700, color: "var(--text)", letterSpacing: "-0.015em" }}>{ex[0]}</div>
-                      <div style={{
-                        background: "var(--surface-2)",
-                        borderRadius: "20px",
-                        padding: "4px 10px",
-                        fontSize: "11px",
-                        color: "var(--text-muted)",
-                        flexShrink: 0,
-                      }}>
-                        {ex[1]}
+            ))}
+          </motion.div>
+        ) : (
+          <div>
+            {todayExercises.map((ex, i) => {
+              const name = ex[0]
+              const setsReps = ex[1]
+              const category = getCategory(name, i)
+              const catStyle = CATEGORY_COLORS[category] || CATEGORY_COLORS.CORE
+              return (
+                <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05, duration: 0.24, ease: "easeOut" }} style={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 20, marginBottom: 10, overflow: "hidden", boxShadow: "var(--shadow)" }}>
+                  <div style={{ display: "flex" }}>
+                    <div style={{ width: 72, padding: "14px 0 14px 14px", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8, flexShrink: 0 }}>
+                      <div style={{ background: catStyle.bg, color: catStyle.color, borderRadius: 6, padding: "2px 6px", fontSize: 9, fontWeight: 900, letterSpacing: "0.1em" }}>{category}</div>
+                      <div style={{ color: "var(--text-muted)", opacity: 0.55, marginTop: 4 }}><WaveformIcon /></div>
+                      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-muted)", marginTop: 2 }}>POSE</div>
+                    </div>
+                    <div style={{ flex: 1, padding: "14px 14px 14px 8px", minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: "var(--text-muted)" }}>{String(i+1).padStart(2,"0")}</div>
+                        <div style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 800, color: "var(--text-muted)", flexShrink: 0 }}>{setsReps}</div>
                       </div>
+                      <div style={{ fontSize: 18, fontWeight: 950, color: "var(--text)", letterSpacing: "-0.2px", marginBottom: 5, lineHeight: 1.1 }}>{name}</div>
+                      <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.45 }}>{getExerciseDesc(name)}</div>
                     </div>
-                    <ExerciseDemoPanel exerciseName={ex[0]} compact />
                   </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
+                </motion.div>
+              )
+            })}
+          </div>
+        )}
+      </div>
 
-          <motion.div variants={fadeUp}>
-            <button className="motion-lift" onClick={async () => {
-              const selectedDate = weekDates[selectedDay]
-              if (!selectedDate) return
-              const dateStr = formatLocalDate(selectedDate)
-              const exercises = todayExercises.map(([name, reps]) => ({ name, ...parseSetsReps(reps) }))
-              const res = await fetch("/api/workout-schedule", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ date: dateStr, workoutName: muscle, exercises, source: "manual" }),
-              })
-              if (res.ok) {
-                setSaveSuccess(true)
-                setTimeout(() => setSaveSuccess(false), 2000)
-              }
-            }} style={{
-              width: "100%",
-              marginTop: "12px",
-              background: "var(--surface-2)",
-              color: "var(--text)",
-              border: "1px solid var(--border)",
-              borderRadius: "14px",
-              padding: "13px",
-              fontSize: "14px",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}>
+      {/* Fixed bottom CTA */}
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "8px 16px", paddingBottom: "max(14px, env(safe-area-inset-bottom))", background: "var(--bg)", borderTop: "1px solid var(--border)" }}>
+        {!workoutBlocked ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <button
+              onClick={async () => {
+                const selectedDate = weekDates[selectedDay]
+                if (!selectedDate) return
+                const dateStr = formatLocalDate(selectedDate)
+                const exercises = todayExercises.map(([name, reps]) => ({ name, ...parseSetsReps(reps) }))
+                const res = await fetch("/api/workout-schedule", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ date: dateStr, workoutName: muscle, exercises, source: "manual" }) })
+                if (res.ok) { setSaveSuccess(true); setTimeout(() => setSaveSuccess(false), 2000) }
+              }}
+              style={{ width: "100%", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", borderRadius: 14, padding: 12, fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+            >
               {saveSuccess ? t.savedToSchedule : t.saveToSchedule}
             </button>
-          </motion.div>
-
-
-
-          <motion.div variants={fadeUp}>
-            {!workoutBlocked ? (
-              <button
-                onClick={() => {
-                  const selectedDate = weekDates[selectedDay]
-                  if (!selectedDate) return
-                  const dateStr = formatLocalDate(selectedDate)
-                  sessionStorage.setItem("fitsched-active-workout", JSON.stringify({
-                    date: dateStr,
-                    workoutName: muscle,
-                    exercises: currentExercises.map(e => ({ ...e })),
-                  }))
-                  router.push("/exercise")
-                }}
-                className="motion-lift"
-                style={{
-                  width: "100%",
-                  marginTop: "8px",
-                  background: "#6bbfb8",
-                  color: "#ffffff",
-                  border: "none",
-                  borderRadius: "14px",
-                  padding: "13px",
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  boxShadow: "0 4px 16px rgba(107, 191, 184, 0.3)",
-                }}
-              >
-                {t.goExercise}
-              </button>
-            ) : (
-              <div style={{
-                width: "100%",
-                marginTop: "8px",
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                borderRadius: "14px",
-                padding: "13px",
-                fontSize: "14px",
-                color: "#65c97a",
-                fontWeight: 600,
-                textAlign: "center"
-              }}>
-                {selectedDayBlocked ? t.todayOnly : t.workoutCompleted}
-              </div>
-            )}
-          </motion.div>
+            <button
+              onClick={() => {
+                const selectedDate = weekDates[selectedDay]
+                if (!selectedDate) return
+                const dateStr = formatLocalDate(selectedDate)
+                sessionStorage.setItem("fitsched-active-workout", JSON.stringify({ date: dateStr, workoutName: muscle, exercises: currentExercises.map(e => ({ ...e })) }))
+                router.push("/exercise")
+              }}
+              style={{ width: "100%", border: "none", background: "#6bbfb8", color: "#0b1715", borderRadius: 14, padding: 13, fontSize: 14, fontWeight: 950, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 4px 16px rgba(107,191,184,0.3)" }}
+            >
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6.5 6.5h11"/><path d="M6.5 17.5h11"/><path d="M3 9.5h2v5H3z"/><path d="M19 9.5h2v5h-2z"/><path d="M5 12h14"/></svg>
+              {t.goExercise}
+            </button>
+          </div>
+        ) : (
+          <div style={{ width: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: 13, fontSize: 14, color: "#65c97a", fontWeight: 600, textAlign: "center" }}>
+            {selectedDayBlocked ? t.todayOnly : t.workoutCompleted}
+          </div>
+        )}
+      </div>
 
 
 
@@ -910,8 +806,6 @@ export default function WorkoutPage() {
               </motion.div>
             )}
           </AnimatePresence>
-        </motion.div>
-      </div>
     </div>
   )
 }
