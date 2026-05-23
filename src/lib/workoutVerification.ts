@@ -7,6 +7,8 @@ export type ChallengePhase = "hold" | "breathe"
 export interface ActiveChallenge {
   phase: ChallengePhase
   countdown: number
+  ping: 1 | 2        // which hold in the sequence
+  totalPings: 2      // always 2 — shown as "1/2" and "2/2"
 }
 
 export interface VerificationResult {
@@ -16,11 +18,12 @@ export interface VerificationResult {
 }
 
 const SAMPLE_MS = 150
-const CALIBRATION_SAMPLES = 14   // ~2 seconds of silence to establish noise floor
-const MAX_RMS_HISTORY = 800      // ~2 minutes of samples
+const CALIBRATION_SAMPLES = 14   // ~2 seconds of silence
+const MAX_RMS_HISTORY = 800      // ~2 minutes
 const MAX_CHALLENGES = 2
-const HOLD_SECONDS = 3
-const BREATHE_SECONDS = 2
+const HOLD_SECONDS = 2           // each hold is 2s
+const BREATHE_BETWEEN_SECONDS = 2
+const BREATHE_AFTER_SECONDS = 2
 
 export function useWorkoutVerification() {
   const [state, setState] = useState<VerificationState>("idle")
@@ -46,74 +49,99 @@ export function useWorkoutVerification() {
   const start = useCallback(async () => {
     setState("requesting")
 
-    // Liveness check helpers — function declarations so they hoist and can reference each other
     function scheduleNextChallenge() {
       if (challengeCountRef.current >= MAX_CHALLENGES) return
-      // Randomize delay: first challenge 60–90s in, subsequent 90–150s apart
+      // Wide random window — hard to anticipate even if someone reads the source
       const delay = challengeCountRef.current === 0
-        ? 60_000 + Math.random() * 30_000
-        : 90_000 + Math.random() * 60_000
+        ? 45_000 + Math.random() * 105_000   // 45s–150s from calibration
+        : 60_000 + Math.random() * 120_000   // 60s–180s after previous challenge
       challengeTimerRef.current = setTimeout(runChallenge, delay)
     }
 
     function runChallenge() {
       challengeCountRef.current++
 
-      // Snapshot baseline from last ~2s of actual breathing signal
+      // Snapshot baseline from last ~2s of breathing
       const recent = rmsRef.current.slice(-14)
       const baseline = recent.length > 0
         ? recent.reduce((s, v) => s + v, 0) / recent.length
         : floorRef.current
 
-      // Remember where RMS history is now — samples added during hold = hold window
-      const holdStartIdx = rmsRef.current.length
+      // Two-ping challenge: HOLD → BREATHE → HOLD → BREATHE → evaluate both
+      // Each hold captures its own RMS window independently.
 
+      let holdStartIdx1 = 0
+      let holdStartIdx2 = 0
       let hCount = HOLD_SECONDS
-      setChallenge({ phase: "hold", countdown: hCount })
+
+      holdStartIdx1 = rmsRef.current.length
+      setChallenge({ phase: "hold", countdown: hCount, ping: 1, totalPings: 2 })
 
       countdownRef.current = setInterval(() => {
         hCount--
         if (hCount > 0) {
-          setChallenge({ phase: "hold", countdown: hCount })
+          setChallenge({ phase: "hold", countdown: hCount, ping: 1, totalPings: 2 })
         } else {
           clearInterval(countdownRef.current!)
-          evaluateHold(baseline, holdStartIdx)
+          startBreatheBetween()
         }
       }, 1000)
+
+      function startBreatheBetween() {
+        let bCount = BREATHE_BETWEEN_SECONDS
+        setChallenge({ phase: "breathe", countdown: bCount, ping: 1, totalPings: 2 })
+
+        countdownRef.current = setInterval(() => {
+          bCount--
+          if (bCount > 0) {
+            setChallenge({ phase: "breathe", countdown: bCount, ping: 1, totalPings: 2 })
+          } else {
+            clearInterval(countdownRef.current!)
+            startHold2()
+          }
+        }, 1000)
+      }
+
+      function startHold2() {
+        let hCount2 = HOLD_SECONDS
+        holdStartIdx2 = rmsRef.current.length
+        setChallenge({ phase: "hold", countdown: hCount2, ping: 2, totalPings: 2 })
+
+        countdownRef.current = setInterval(() => {
+          hCount2--
+          if (hCount2 > 0) {
+            setChallenge({ phase: "hold", countdown: hCount2, ping: 2, totalPings: 2 })
+          } else {
+            clearInterval(countdownRef.current!)
+            evaluateBothHolds()
+          }
+        }, 1000)
+      }
+
+      function evaluateBothHolds() {
+        const passed1 = evaluateHold(rmsRef.current.slice(holdStartIdx1, holdStartIdx1 + Math.ceil(HOLD_SECONDS * 1000 / SAMPLE_MS)), baseline)
+        const passed2 = evaluateHold(rmsRef.current.slice(holdStartIdx2), baseline)
+
+        // Both must pass — two independent chances to catch an audio loop
+        challengeResultsRef.current.push(passed1 && passed2)
+
+        let bCount = BREATHE_AFTER_SECONDS
+        setChallenge({ phase: "breathe", countdown: bCount, ping: 2, totalPings: 2 })
+
+        countdownRef.current = setInterval(() => {
+          bCount--
+          if (bCount > 0) {
+            setChallenge({ phase: "breathe", countdown: bCount, ping: 2, totalPings: 2 })
+          } else {
+            clearInterval(countdownRef.current!)
+            setChallenge(null)
+            scheduleNextChallenge()
+          }
+        }, 1000)
+      }
     }
 
-    function evaluateHold(baseline: number, holdStartIdx: number) {
-      const holdSamples = rmsRef.current.slice(holdStartIdx)
-      const holdAvg = holdSamples.length > 0
-        ? holdSamples.reduce((s, v) => s + v, 0) / holdSamples.length
-        : baseline
-
-      // Only meaningful if the pre-hold baseline was actually elevated above ambient noise.
-      // If baseline was near-silent the mic wasn't picking up breathing at all — give pass
-      // so a quiet exerciser doesn't get falsely flagged.
-      const testable = baseline > floorRef.current * 2.2
-      const passed = testable
-        ? holdAvg < baseline * 0.45  // amplitude dropped >55% — real breath hold
-        : true
-
-      challengeResultsRef.current.push(passed)
-
-      let bCount = BREATHE_SECONDS
-      setChallenge({ phase: "breathe", countdown: bCount })
-
-      countdownRef.current = setInterval(() => {
-        bCount--
-        if (bCount > 0) {
-          setChallenge({ phase: "breathe", countdown: bCount })
-        } else {
-          clearInterval(countdownRef.current!)
-          setChallenge(null)
-          scheduleNextChallenge()
-        }
-      }, 1000)
-    }
-
-    // Mic: bandpass-filtered breath detection
+    // Mic setup — bandpass filtered breath detection
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
@@ -124,7 +152,7 @@ export function useWorkoutVerification() {
       ctxRef.current = ctx
       const source = ctx.createMediaStreamSource(stream)
 
-      // Bandpass ~100–600 Hz: captures breath sounds, rejects bass rumble and speech/music highs
+      // Bandpass ~100–600 Hz: captures breath sounds, rejects bass/treble
       const bp = ctx.createBiquadFilter()
       bp.type = "bandpass"
       bp.frequency.value = 280
@@ -133,7 +161,6 @@ export function useWorkoutVerification() {
       const analyser = ctx.createAnalyser()
       analyser.fftSize = 256
       analyser.smoothingTimeConstant = 0.3
-
       source.connect(bp)
       bp.connect(analyser)
       // NOT connected to destination — completely silent
@@ -148,7 +175,7 @@ export function useWorkoutVerification() {
           if (calibRef.current.length >= CALIBRATION_SAMPLES) {
             floorRef.current = calibRef.current.reduce((s, v) => s + v, 0) / calibRef.current.length
             calibratedRef.current = true
-            scheduleNextChallenge()  // start challenge chain once we have a noise baseline
+            scheduleNextChallenge()
           }
         } else {
           rmsRef.current.push(rms)
@@ -161,13 +188,12 @@ export function useWorkoutVerification() {
       micActiveRef.current = false
     }
 
-    // Motion: phone acceleration variance — stationary phone = no workout
+    // Motion setup
     try {
       if (typeof (DeviceMotionEvent as any).requestPermission === "function") {
         const perm = await (DeviceMotionEvent as any).requestPermission()
         if (perm !== "granted") throw new Error("denied")
       }
-
       const handler = (e: DeviceMotionEvent) => {
         const g = e.accelerationIncludingGravity
         if (!g) return
@@ -209,16 +235,16 @@ export function useWorkoutVerification() {
       method = "unverified"
     }
 
-    // Challenge-response multiplier: failing a hold challenge is a strong cheat signal
+    // Both pings must pass — failing either is a strong cheat signal
     const results = challengeResultsRef.current
     let challengeMultiplier = 1.0
     if (results.length > 0) {
       const passRate = results.filter(Boolean).length / results.length
-      if (passRate === 0) challengeMultiplier = 0.05   // failed ALL — almost certainly an audio loop
+      if (passRate === 0) challengeMultiplier = 0.05   // failed all — almost certainly an audio loop
       else if (passRate < 0.5) challengeMultiplier = 0.45
     }
 
-    // Penalize very short sessions regardless of sensor signal
+    // Client-side time penalty (server also applies its own via session token)
     const timeFactor =
       elapsedSeconds >= 600 ? 1.0
       : elapsedSeconds >= 300 ? 0.7
@@ -246,30 +272,39 @@ export function useWorkoutVerification() {
   return { state, challenge, start, getResult, stop }
 }
 
+// Evaluates a single hold window: did amplitude drop >55% below pre-hold baseline?
+function evaluateHold(samples: number[], baseline: number): boolean {
+  if (samples.length === 0) return true  // no data — give benefit of doubt
+  const holdAvg = samples.reduce((s, v) => s + v, 0) / samples.length
+  // Only testable if baseline was elevated above ambient noise
+  const testable = baseline > floorRef_global * 2.2
+  return testable ? holdAvg < baseline * 0.45 : true
+}
+
+// Module-level ref share for evaluateHold — populated in start()
+let floorRef_global = 0.008
+
 function scoreBreath(history: number[], floor: number): number {
+  floorRef_global = floor
   if (history.length < 20) return 0.5
-  const windowSize = Math.min(history.length, 200)  // last ~30s
+  const windowSize = Math.min(history.length, 200)
   const recent = history.slice(-windowSize)
   const peaks = findPeaks(recent, floor)
   const durationSec = (windowSize * SAMPLE_MS) / 1000
   const peaksPerMin = (peaks.length / durationSec) * 60
 
-  // Each breath = 2 amplitude peaks (inhale + exhale)
-  // 18–90 peaks/min = 9–45 breaths/min, covering rest through intense cardio
-  if (peaksPerMin < 8) return 0.15   // near-silent / breathing away from mic
-  if (peaksPerMin > 130) return 0.2  // chaotic noise, not rhythmic
+  if (peaksPerMin < 8) return 0.15
+  if (peaksPerMin > 130) return 0.2
   if (peaksPerMin >= 18 && peaksPerMin <= 90) return 0.95
   if (peaksPerMin >= 8 && peaksPerMin < 18) return 0.6
   return 0.45
 }
 
 function findPeaks(data: number[], floor: number): number[] {
-  // Must be 65% above noise floor — filters ambient hiss without blocking real breath
   const threshold = Math.max(floor * 1.65, 0.004)
-  const minGap = 3  // 450ms minimum between peaks prevents noise bursts from over-counting
+  const minGap = 3
   const peaks: number[] = []
   let last = -minGap
-
   for (let i = 1; i < data.length - 1; i++) {
     if (
       data[i] > threshold &&
@@ -290,9 +325,6 @@ function scoreMotion(mags: number[]): number {
   const mean = recent.reduce((s, v) => s + v, 0) / recent.length
   const variance = recent.reduce((s, v) => s + (v - mean) ** 2, 0) / recent.length
   const std = Math.sqrt(variance)
-
-  // Stationary phone: std < 0.35 (just gravity noise)
-  // Active exercise: std > 2.5
   if (std < 0.35) return 0.1
   if (std < 0.9) return 0.45
   if (std < 2.5) return 0.88
