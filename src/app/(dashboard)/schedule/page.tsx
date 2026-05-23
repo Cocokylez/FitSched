@@ -105,6 +105,13 @@ const KIND_ACCENT: Record<string, string> = {
   rst: "rgba(255,255,255,0.14)",
 }
 
+const KIND_DOT: Record<string, string> = {
+  cls: "#63a1ff",
+  free: "#6bbfb8",
+  wrk: "#4ec9c0",
+  rst: "rgba(255,255,255,0.18)",
+}
+
 export default function SchedulePage() {
   const { status } = useSession()
   const router = useRouter()
@@ -130,6 +137,11 @@ export default function SchedulePage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [suggestedExercises, setSuggestedExercises] = useState<Array<{ name: string; sets: number; reps: number }>>([])
   const longPressTimer = useRef<number | null>(null)
+  const [weekSummary, setWeekSummary] = useState<Record<number, string[]>>(() => {
+    const s: Record<number, string[]> = {}
+    for (let i = 0; i < 7; i++) s[i] = (MOCK[i] || []).map(b => b.kind)
+    return s
+  })
 
   // SC2: Day letter + today's full date display
   const DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"]
@@ -225,6 +237,11 @@ export default function SchedulePage() {
 
   useEffect(() => { if (sp.get("connected") === "true") setCalendarConnected(true) }, [sp, setCalendarConnected])
   useEffect(() => { setOpenDeleteId(null) }, [selectedDay])
+  useEffect(() => {
+    if (schedule.length > 0) {
+      setWeekSummary(prev => ({ ...prev, [selectedDay]: schedule.map(b => b.kind) }))
+    }
+  }, [schedule, selectedDay])
 
   const bestIdx = selectedDay !== 0 ? schedule.findIndex(b => b.kind === "free" && b.duration.includes("best")) : -1
 
@@ -332,7 +349,30 @@ export default function SchedulePage() {
                   )}
                   <span style={{ position: "relative", zIndex: 1, fontSize: 15, fontWeight: 800, color: isActive ? "#0b1715" : isToday ? ACCENT : "var(--text)" }}>{date.getDate()}</span>
                 </div>
-                <div style={{ width: 4, height: 4, borderRadius: "50%", background: isToday ? ACCENT : "transparent", transition: "background 0.2s", marginTop: -1 }} />
+                <div style={{ display: "flex", gap: 2, justifyContent: "center", minHeight: 5, marginTop: 3 }}>
+                  {(() => {
+                    const kinds = (weekSummary[i] || []).filter(k => k !== "rst")
+                    if (kinds.length === 0) {
+                      return isToday
+                        ? <div style={{ width: 4, height: 4, borderRadius: "50%", background: ACCENT }} />
+                        : null
+                    }
+                    return kinds.slice(0, 4).map((kind, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          width: 5,
+                          height: 3,
+                          borderRadius: 2,
+                          background: isActive
+                            ? "rgba(255,255,255,0.5)"
+                            : KIND_DOT[kind] || "var(--text-muted)",
+                          transition: "background 0.25s",
+                        }}
+                      />
+                    ))
+                  })()}
+                </div>
               </motion.button>
             )
           })}
