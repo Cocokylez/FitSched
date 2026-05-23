@@ -76,6 +76,7 @@ function FreezeHalo({ active }: { active: boolean }) {
         scale: active ? [0.72, 1.08, 1] : [0.72, 0.98, 0.94],
         rotate: active ? [12, -4, 0] : [-10, 2, -2],
       }}
+      exit={{ opacity: 0, scale: 0.78, transition: { duration: 0.55, ease: "easeIn" } }}
       transition={{ duration: active ? 1.05 : 0.78, ease: [0.16, 1, 0.3, 1] }}
       style={{
         position: "absolute",
@@ -171,7 +172,7 @@ function getFirePalette(streak: number, broken: boolean) {
   }
 }
 
-function FireBurst({ broken, frozen, streak = 0 }: { broken: boolean; frozen?: boolean; streak?: number }) {
+function FireBurst({ broken, frozen, streak = 0, introPhase = false }: { broken: boolean; frozen?: boolean; streak?: number; introPhase?: boolean }) {
   const shouldReduceMotion = useReducedMotion()
   const fcx = 100, baseY = 182
   const p = getFirePalette(streak, broken)
@@ -220,7 +221,7 @@ function FireBurst({ broken, frozen, streak = 0 }: { broken: boolean; frozen?: b
           : { scale: shouldReduceMotion ? 1 : [0.46, 1.22, 0.96, 1], opacity: 1, y: 0 }}
         transition={broken
           ? { duration: 1.15, ease: "easeOut" }
-          : { duration: shouldReduceMotion ? 0.22 : 0.72, ease: [0.16, 1, 0.3, 1] }}
+          : { duration: shouldReduceMotion ? 0.22 : 0.72, delay: introPhase ? 1.0 : 0, ease: [0.16, 1, 0.3, 1] }}
       >
         <defs>
           <linearGradient id="cfLogA" x1="0" y1="0" x2="0" y2="1">
@@ -265,7 +266,7 @@ function FireBurst({ broken, frozen, streak = 0 }: { broken: boolean; frozen?: b
             fill="none"
             initial={{ pathLength: 0, opacity: 0 }}
             animate={{ pathLength: [0, 1, 1, 0], opacity: [0, 0.92, 0.88, 0] }}
-            transition={{ duration: 0.72, delay: ray.delay, ease: "easeOut" }}
+            transition={{ duration: 0.72, delay: (introPhase ? 1.0 : 0) + ray.delay, ease: "easeOut" }}
           />
         ))}
 
@@ -277,7 +278,7 @@ function FireBurst({ broken, frozen, streak = 0 }: { broken: boolean; frozen?: b
             fill={p.sparks[sp.id % 3]}
             initial={{ x: 0, y: 0, opacity: 0, scale: 0 }}
             animate={{ x: sp.ex, y: sp.ey, opacity: [0, 1, 0.7, 0], scale: [0, 1.3, 0.5, 0] }}
-            transition={{ duration: 0.75, delay: sp.delay, ease: "easeOut" }}
+            transition={{ duration: 0.75, delay: (introPhase ? 1.0 : 0) + sp.delay, ease: "easeOut" }}
           />
         ))}
 
@@ -375,7 +376,9 @@ function FireBurst({ broken, frozen, streak = 0 }: { broken: boolean; frozen?: b
         ))}
       </motion.svg>
 
-      {frozen && <FreezeHalo active={frozen} />}
+      <AnimatePresence>
+        {(frozen || introPhase) && <FreezeHalo active={!!frozen || introPhase} />}
+      </AnimatePresence>
 
       {broken && !shouldReduceMotion && (
         <>
@@ -410,6 +413,7 @@ export function StreakWelcomeCard({
   const [open, setOpen] = useState(false)
   const [freezeUsed, setFreezeUsed] = useState(false)
   const [freezing, setFreezing] = useState(false)
+  const [introPhase, setIntroPhase] = useState(false)
   const fireStopRef = useRef<(() => void) | null>(null)
   const hasActiveStreak = streak > 0
   const showMoment = hasActiveStreak || streakBroken
@@ -430,9 +434,11 @@ export function StreakWelcomeCard({
     window.sessionStorage.setItem(storageKey, "1")
     setFreezeUsed(false)
     setFreezing(false)
+    setIntroPhase(true)
     setOpen(true)
     playSound("pluck_001.ogg", 0.92)
     playSound("confirmation_001.ogg", 0.58)
+    window.setTimeout(() => setIntroPhase(false), 1200)
   }, [displayStreak, hasActiveStreak, showMoment])
 
   useEffect(() => {
@@ -527,7 +533,7 @@ export function StreakWelcomeCard({
               <X size={16} strokeWidth={2.4} />
             </button>
 
-            <FireBurst broken={missedStreak && !freezeActive} frozen={freezeActive} streak={displayStreak} />
+            <FireBurst broken={missedStreak && !freezeActive} frozen={freezeActive} streak={displayStreak} introPhase={introPhase} />
 
             <motion.div
               initial={{ opacity: 0, y: 10 }}
