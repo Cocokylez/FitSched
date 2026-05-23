@@ -105,6 +105,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
   const [elapsed, setElapsed]    = useState(0)
   const [accuracy, setAccuracy]  = useState<number | null>(null)
   const [error, setError]        = useState<string | null>(null)
+  const [isStraightLine, setIsStraightLine] = useState(false)
 
   function setMode(m: "track" | "plan") {
     modeRef.current = m
@@ -224,6 +225,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
     end:   { lat: number; lng: number }
   ) {
     setPlanStep("loading")
+    setIsStraightLine(false)
     try {
       const res = await fetch(
         `/api/hike/route?slat=${start.lat}&slng=${start.lng}&elat=${end.lat}&elng=${end.lng}`
@@ -245,8 +247,22 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
       setRouteInfo({ distM: route.distance, durSec: route.duration })
       setPlanStep("ready")
     } catch {
-      setError("Could not find a walking route between those points.")
-      setPlanStep("end")
+      // No trail data in OSM — fall back to straight-line between the two points
+      const distKmStraight = haversine(start.lat, start.lng, end.lat, end.lng)
+      const distM  = distKmStraight * 1000
+      const durSec = (distKmStraight / 4) * 3600 // estimate at 4 km/h hiking pace
+
+      if (planPolyRef.current && mapRef.current) {
+        planPolyRef.current.setLatLngs([
+          [start.lat, start.lng],
+          [end.lat,   end.lng],
+        ])
+        mapRef.current.fitBounds(planPolyRef.current.getBounds(), { padding: [60, 60] })
+      }
+
+      setIsStraightLine(true)
+      setRouteInfo({ distM, durSec })
+      setPlanStep("ready")
     }
   }
 
@@ -256,6 +272,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
     setPlanStep("start")
     setRouteInfo(null)
     setError(null)
+    setIsStraightLine(false)
 
     if (startPinRef.current) { startPinRef.current.remove(); startPinRef.current = null }
     if (endPinRef.current)   { endPinRef.current.remove();   endPinRef.current   = null }
@@ -651,6 +668,18 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
                 display: "flex", flexDirection: "column", gap: 12,
               }}
             >
+              {isStraightLine && (
+                <div style={{
+                  background: "rgba(250,204,21,0.12)", border: "1px solid rgba(250,204,21,0.25)",
+                  borderRadius: 10, padding: "8px 12px",
+                  display: "flex", alignItems: "center", gap: 8,
+                }}>
+                  <span style={{ fontSize: 14 }}>⚠️</span>
+                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontWeight: 600, lineHeight: 1.4 }}>
+                    No trail data found for this area — showing straight-line estimate
+                  </span>
+                </div>
+              )}
               <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
                 <div>
                   <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{fmtRouteDist(routeInfo.distM)}</div>
@@ -659,11 +688,11 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
                 <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.1)" }} />
                 <div>
                   <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{fmtRouteTime(routeInfo.durSec)}</div>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", marginTop: 3 }}>Walking time</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", marginTop: 3 }}>Est. walking time</div>
                 </div>
                 <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
-                  <div style={{ width: 18, height: 3, background: BLUE, borderRadius: 2 }} />
-                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>Route</span>
+                  <div style={{ width: 18, height: 3, background: BLUE, borderRadius: 2, opacity: isStraightLine ? 0.5 : 1 }} />
+                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>{isStraightLine ? "Straight" : "Route"}</span>
                 </div>
               </div>
               <div style={{ display: "flex", gap: 10 }}>
