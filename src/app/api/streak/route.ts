@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { sendPushToUser } from "@/lib/pushNotify"
 import { rateLimitByUser, rateLimitPresets } from "@/lib/security"
 import { NextResponse } from "next/server"
 
@@ -94,6 +95,11 @@ export async function GET(req: Request) {
           if (!existing) {
             await db.streakMilestone.create({ data: { userId, milestone: ms } })
             newMilestone = ms
+            sendPushToUser(userId, {
+              title: `🔥 ${ms}-day streak!`,
+              body: ms >= 30 ? "Incredible! One month of consistent training." : ms >= 14 ? "Two weeks strong! You're building a habit." : ms >= 7 ? "One week down. You're on a roll!" : "3 days in a row — the habit is forming!",
+              url: "/report",
+            }).catch(() => {})
           }
         } catch {
           // milestone write is best-effort — don't fail the streak read

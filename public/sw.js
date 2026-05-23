@@ -8,8 +8,9 @@ self.addEventListener("push", (event) => {
     badge: "/logo.png",
     tag: "fitsched-notification",
     renotify: true,
+    data: { url: data.url || "/schedule" },
     actions: [
-      { action: "view", title: "View", icon: "/logo.png" },
+      { action: "view", title: "View" },
       { action: "dismiss", title: "Dismiss" },
     ],
   };
@@ -22,20 +23,18 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  if (event.action === "view") {
-    event.waitUntil(
-      clients.matchAll({ type: "window" }).then((clientList) => {
-        for (const client of clientList) {
-          if (client.url.includes("/schedule") && "focus" in client) {
-            return client.focus();
-          }
-        }
-        if (clients.openWindow) {
-          return clients.openWindow("/schedule");
-        }
-      })
-    );
-  }
+  const url = event.notification.data?.url || "/schedule";
+
+  if (event.action === "dismiss") return;
+
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ("focus" in client) return client.focus();
+      }
+      if (clients.openWindow) return clients.openWindow(url);
+    })
+  );
 });
 
 self.addEventListener("install", (event) => {
