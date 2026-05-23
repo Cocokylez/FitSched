@@ -1,0 +1,82 @@
+import { auth } from "@/lib/auth"
+import { db } from "@/lib/db"
+import {
+  cleanText,
+  rateLimitByUser,
+  rateLimitPresets,
+  readJsonBody,
+  requestBodyErrorResponse,
+  safeError,
+  validateSameOrigin,
+} from "@/lib/security"
+import { NextResponse } from "next/server"
+
+export async function GET(req: Request) {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.read, "profile:get")
+    if (limited) return limited
+
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { name: true, image: true, email: true, createdAt: true },
+    })
+
+    return NextResponse.json(user)
+  } catch {
+    return NextResponse.json({ error: "Failed to fetch profile" }, { status: 500 })
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    const originError = validateSameOrigin(req)
+    if (originError) return originError
+
+    const session = await auth()
+    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.write, "profile:patch")
+    if (limited) return limited
+
+    const body = await readJsonBody(req)
+    const data: { name?: string; image?: string | null } = {}
+
+    if ("name" in body) {
+      const name = cleanText(body.name, 100)
+      if (name) data.name = name
+    }
+
+    if ("image" in body) {
+      const img = body.image
+      if (typeof img === "string") {
+        if (img === "") {
+          data.image = null
+        } else if (
+          img.startsWith("data:image/jpeg") ||
+          img.startsWith("data:image/png") ||
+          img.startsWith("data:image/webp")
+        ) {
+          if (img.length > 220_000) return safeError("Image too large — max ~150 KB")
+          data.image = img
+        }
+      }
+    }
+
+    if (Object.keys(data).length === 0) return safeError("Nothing to update")
+
+    const updated = await db.user.update({
+      where: { id: session.user.id },
+      data,
+      select: { name: true, image: true },
+    })
+
+    return NextResponse.json(updated)
+  } catch (error) {
+    const bodyError = requestBodyErrorResponse(error)
+    if (bodyError) return bodyError
+    return NextResponse.json({ error: "Failed to update profile" }, { status: 500 })
+  }
+}

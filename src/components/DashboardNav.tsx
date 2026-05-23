@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { BarChart3, Dumbbell, Footprints, User } from 'lucide-react'
+import { BarChart3, Dumbbell, Footprints, Settings } from 'lucide-react'
 import { useTheme } from "@/context/ThemeContext"
 import { useLanguage } from "@/context/LanguageContext"
 import { playSound } from "@/lib/sound"
@@ -35,9 +35,9 @@ const navItems = [
   },
   {
     id: "settings",
-    label: "Profile",
+    label: "Settings",
     href: "/settings",
-    icon: <User size={20} />,
+    icon: <Settings size={20} strokeWidth={1.8} />,
   },
 ]
 
