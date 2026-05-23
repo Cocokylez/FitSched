@@ -40,7 +40,7 @@ function Chevron() {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.13em", color: "var(--text-muted)", padding: "0 20px", marginTop: 26, marginBottom: 8 }}>
+    <div className="label-text" style={{ fontSize: 10, color: "var(--text-muted)", padding: "0 20px", marginTop: 26, marginBottom: 8 }}>
       {children}
     </div>
   )
@@ -48,7 +48,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function SectionCard({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ margin: "0 16px", background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 20, overflow: "hidden", boxShadow: "var(--shadow)" }}>
+    <div className="ios-inset-grouped" style={{ margin: "0 16px", overflow: "hidden" }}>
       {children}
     </div>
   )
@@ -278,7 +278,8 @@ export default function SettingsPage() {
           type="button"
           onClick={() => router.push("/profile")}
           whileTap={{ scale: 0.985 }}
-          style={{ width: "100%", border: "1px solid var(--border)", background: "var(--panel)", borderRadius: 20, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, cursor: "pointer", boxShadow: "var(--shadow)" }}
+          className="ios-inset-grouped"
+          style={{ width: "100%", padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }}
         >
           {/* Avatar */}
           <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>

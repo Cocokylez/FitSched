@@ -106,6 +106,7 @@ export default function SchedulePage() {
   // SC2: Day letter + today's full date display
   const DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"]
   const today = new Date()
+  const todayDay = today.getDay()
   const selectedDate = weekDates[selectedDay]
   const displayDate = selectedDate || today
   const monthName = displayDate.toLocaleDateString("en-US", { month: "long" })
@@ -282,12 +283,14 @@ export default function SchedulePage() {
         <div style={{ display: "flex", gap: 2, padding: "8px 16px 16px", justifyContent: "space-between" }}>
           {weekDates.map((date, i) => {
             const isActive = i === selectedDay
+            const isToday = i === todayDay
             return (
-              <motion.button key={i} onClick={() => setSelectedDay(i)} whileTap={{ scale: 0.92 }} style={{ flex: 1, border: "none", background: "transparent", cursor: "pointer", padding: "4px 2px", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.04em" }}>{DAY_LETTERS[i]}</div>
-                <div style={{ width: 34, height: 34, borderRadius: "50%", background: isActive ? ACCENT : "transparent", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.18s" }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: isActive ? "#0b1715" : "var(--text)" }}>{date.getDate()}</div>
+              <motion.button key={i} onClick={() => setSelectedDay(i)} whileTap={{ scale: 0.92 }} style={{ flex: 1, border: "none", background: "transparent", cursor: "pointer", padding: "4px 2px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: isActive ? "var(--text)" : "var(--text-muted)", letterSpacing: "0.04em", transition: "color 0.18s" }}>{DAY_LETTERS[i]}</div>
+                <div style={{ width: 34, height: 34, borderRadius: "50%", background: isActive ? ACCENT : "transparent", border: isToday && !isActive ? `1.5px solid ${ACCENT}` : "1.5px solid transparent", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.18s, border-color 0.18s" }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: isActive ? "#0b1715" : isToday ? ACCENT : "var(--text)" }}>{date.getDate()}</div>
                 </div>
+                <div style={{ width: 4, height: 4, borderRadius: "50%", background: isToday ? ACCENT : "transparent", transition: "background 0.18s", marginTop: -1 }} />
               </motion.button>
             )
           })}
@@ -305,11 +308,11 @@ export default function SchedulePage() {
             <>
               {/* SC2 Best window hero card */}
               {bestBlock && selectedDay !== 0 && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ background: "rgba(107,191,184,0.07)", border: `1px solid rgba(107,191,184,0.38)`, borderRadius: 22, padding: "16px 18px", marginBottom: 20, boxShadow: `0 0 0 1px rgba(107,191,184,0.10), 0 8px 28px rgba(107,191,184,0.10)` }}>
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ background: "linear-gradient(145deg, rgba(107,191,184,0.10), rgba(107,191,184,0.05))", border: `1px solid rgba(107,191,184,0.38)`, borderRadius: 22, padding: "16px 18px", marginBottom: 20, boxShadow: `inset 0 1px 0 rgba(107,191,184,0.18), 0 8px 32px rgba(107,191,184,0.12)` }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <svg viewBox="0 0 24 24" width="11" height="11" fill={ACCENT} stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                      <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.14em", color: ACCENT }}>BEST WINDOW</div>
+                      <div className="label-text" style={{ fontSize: 10, color: ACCENT }}>BEST WINDOW</div>
                     </div>
                     <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)" }}>
                       {bestBlock.time ? `${to12h(bestBlock.time)} – ${to12h(addMins(bestBlock.time, 25))}` : ""}
@@ -333,12 +336,19 @@ export default function SchedulePage() {
               {/* SC2 REST OF DAY */}
               {restBlocks.length > 0 && (
                 <>
-                  <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.13em", color: "var(--text-muted)", marginBottom: 10 }}>REST OF DAY</div>
-                  <div style={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 20, overflow: "hidden", boxShadow: "var(--shadow)" }}>
+                  <div className="label-text" style={{ fontSize: 10, color: "var(--text-muted)", marginBottom: 10 }}>REST OF DAY</div>
+                  <div className="ios-inset-grouped" style={{ overflow: "hidden" }}>
                     {restBlocks.map((block, i) => {
                       const isWorkout = block.kind === "wrk"
                       const isFree = block.kind === "free"
                       const isManual = block.source === "manual"
+                      const KIND_ACCENT: Record<string, string> = {
+                        cls: "rgba(99,161,255,0.75)",
+                        free: `rgba(107,191,184,0.7)`,
+                        wrk: ACCENT,
+                        rst: "rgba(255,255,255,0.12)",
+                      }
+                      const leftAccent = KIND_ACCENT[block.kind] || KIND_ACCENT.rst
                       const canDelete = Boolean(block.id)
                       const canEdit = Boolean(block.id && block.source === "manual")
                       const deleteOpen = Boolean(block.id && openDeleteId === block.id)
@@ -368,12 +378,12 @@ export default function SchedulePage() {
                             onPointerLeave={handlePressEnd}
                             animate={{ x: deleteOpen ? -(canEdit ? 168 : 88) : 0 }}
                             transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                            style={{ background: "var(--panel)", padding: "13px 16px", display: "flex", alignItems: "center", gap: 14, position: "relative", zIndex: 1, touchAction: canDelete ? "pan-y" : "auto" }}
+                            style={{ background: "var(--panel)", padding: "13px 16px", display: "flex", alignItems: "center", gap: 14, position: "relative", zIndex: 1, touchAction: canDelete ? "pan-y" : "auto", borderLeft: `3px solid ${leftAccent}` }}
                           >
                             {/* Time column */}
                             <div style={{ minWidth: 44, textAlign: "right" }}>
-                              <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>{block.time}</div>
-                              {endTime && <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{endTime}</div>}
+                              <div className="number-text" style={{ fontSize: 14, fontWeight: 800, color: "var(--text)" }}>{block.time}</div>
+                              {endTime && <div className="number-text" style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>{endTime}</div>}
                             </div>
 
                             {/* Label + kind */}
@@ -406,16 +416,22 @@ export default function SchedulePage() {
               )}
 
               {!bestBlock && restBlocks.length === 0 && (
-                <div style={{ background: "var(--panel)", border: "1px dashed var(--border)", borderRadius: 20, padding: 28, textAlign: "center" }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>Clear day</div>
-                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Nothing scheduled — add something or enjoy the rest.</div>
+                <div className="ios-inset-grouped" style={{ padding: "32px 24px", textAlign: "center" }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--text-muted)" }}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text)", marginBottom: 6 }}>Clear day</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.55 }}>Nothing scheduled — tap + to add a block or enjoy the rest.</div>
                 </div>
               )}
 
               {selectedDay === 0 && (
-                <div style={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 20, padding: 28, textAlign: "center" }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{t.restDay}</div>
-                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t.restBody}</div>
+                <div className="ios-inset-grouped" style={{ padding: "32px 24px", textAlign: "center" }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 14, background: "rgba(107,191,184,0.1)", border: `1px solid rgba(107,191,184,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke={ACCENT} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text)", marginBottom: 6 }}>{t.restDay}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.55 }}>{t.restBody}</div>
                 </div>
               )}
             </>
