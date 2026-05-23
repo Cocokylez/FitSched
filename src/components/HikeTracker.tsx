@@ -105,9 +105,10 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
   const [elapsed, setElapsed]    = useState(0)
   const [following, setFollowing] = useState(true)
   const [error, setError]        = useState<string | null>(null)
-  const [isStraightLine, setIsStraightLine] = useState(false)
-  const [isOsmTrace, setIsOsmTrace]         = useState(false)
-  const [showLegend, setShowLegend] = useState(false)
+  const [isStraightLine, setIsStraightLine]       = useState(false)
+  const [isOsmTrace, setIsOsmTrace]               = useState(false)
+  const [showLegend, setShowLegend]               = useState(false)
+  const [safetyAcknowledged, setSafetyAcknowledged] = useState(false)
 
   function setMode(m: "track" | "plan") {
     modeRef.current = m
@@ -281,6 +282,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
     setError(null)
     setIsStraightLine(false)
     setIsOsmTrace(false)
+    setSafetyAcknowledged(false)
 
     if (startPinRef.current) { startPinRef.current.remove(); startPinRef.current = null }
     if (endPinRef.current)   { endPinRef.current.remove();   endPinRef.current   = null }
@@ -769,15 +771,15 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
                 display: "flex", flexDirection: "column", gap: 12,
               }}
             >
-              {isStraightLine && (
+              {isStraightLine && safetyAcknowledged && (
                 <div style={{
-                  background: "rgba(250,204,21,0.12)", border: "1px solid rgba(250,204,21,0.25)",
+                  background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)",
                   borderRadius: 10, padding: "8px 12px",
                   display: "flex", alignItems: "center", gap: 8,
                 }}>
-                  <span style={{ fontSize: 14 }}>⚠️</span>
-                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontWeight: 600, lineHeight: 1.4 }}>
-                    No trail data found for this area — showing straight-line estimate
+                  <span style={{ fontSize: 13 }}>⚠️</span>
+                  <span style={{ fontSize: 11, color: "rgba(255,120,120,0.9)", fontWeight: 600, lineHeight: 1.4 }}>
+                    No trail data — straight-line only. Navigate with extreme care.
                   </span>
                 </div>
               )}
@@ -812,10 +814,71 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
                 <motion.button onClick={resetPlan} whileTap={{ scale: 0.95 }} style={{ flex: 1, border: "1px solid rgba(255,255,255,0.15)", borderRadius: 14, padding: "12px", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.8)", fontWeight: 800, fontSize: 13, fontFamily: "inherit", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                   <RotateCcw size={14} strokeWidth={2.5} /> Reset
                 </motion.button>
-                <motion.button onClick={() => { setMode("track"); enableGPS() }} whileTap={{ scale: 0.95 }} style={{ flex: 2, border: "none", borderRadius: 14, padding: "12px", background: ACCENT, color: "#0d1f1e", fontWeight: 900, fontSize: 13, fontFamily: "inherit", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: "0 0 20px rgba(107,191,184,0.3)" }}>
-                  <Navigation size={14} strokeWidth={2.5} /> Begin hike
+                <motion.button onClick={() => { setMode("track"); enableGPS() }} whileTap={{ scale: 0.95 }} style={{ flex: 2, border: isStraightLine ? "1px solid rgba(239,68,68,0.5)" : "none", borderRadius: 14, padding: "12px", background: isStraightLine ? "rgba(239,68,68,0.18)" : ACCENT, color: isStraightLine ? "#f87171" : "#0d1f1e", fontWeight: 900, fontSize: 13, fontFamily: "inherit", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: isStraightLine ? "none" : "0 0 20px rgba(107,191,184,0.3)" }}>
+                  <Navigation size={14} strokeWidth={2.5} /> {isStraightLine ? "Begin anyway" : "Begin hike"}
                 </motion.button>
               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Safety warning modal — shown when no trail data found */}
+        <AnimatePresence>
+          {isStraightLine && planStep === "ready" && !safetyAcknowledged && (
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              style={{
+                position: "absolute", inset: 0, zIndex: 1100,
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                background: "rgba(0,0,0,0.82)", backdropFilter: "blur(8px)", padding: 24,
+              }}
+            >
+              <motion.div
+                initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                style={{
+                  background: "#1a0a0a", border: "1px solid rgba(239,68,68,0.45)",
+                  borderRadius: 20, padding: "28px 24px", maxWidth: 340, width: "100%",
+                  display: "flex", flexDirection: "column", gap: 16,
+                  boxShadow: "0 0 40px rgba(239,68,68,0.18)",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ fontSize: 32, lineHeight: 1 }}>⛰️</div>
+                  <div>
+                    <div style={{ color: "#f87171", fontWeight: 900, fontSize: 16, lineHeight: 1.2 }}>No Trail Data Found</div>
+                    <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 3 }}>This area has no official trail records</div>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {[
+                    { icon: "🗺️", text: "The dotted line shown is a straight-line estimate only — it does not follow any real path." },
+                    { icon: "🧗", text: "Actual terrain may include cliffs, dense forest, rivers, or impassable slopes." },
+                    { icon: "📍", text: "Always use official trail maps or consult local guides before attempting unmarked routes." },
+                    { icon: "📞", text: "Tell someone your exact destination and expected return time before you go." },
+                  ].map(({ icon, text }) => (
+                    <div key={icon} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                      <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>{icon}</span>
+                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.55 }}>{text}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+                  <motion.button
+                    onClick={resetPlan} whileTap={{ scale: 0.95 }}
+                    style={{ flex: 1, border: "1px solid rgba(255,255,255,0.15)", borderRadius: 13, padding: "11px", background: "transparent", color: "rgba(255,255,255,0.6)", fontWeight: 700, fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}
+                  >
+                    Go back
+                  </motion.button>
+                  <motion.button
+                    onClick={() => setSafetyAcknowledged(true)} whileTap={{ scale: 0.95 }}
+                    style={{ flex: 2, border: "1px solid rgba(239,68,68,0.5)", borderRadius: 13, padding: "11px", background: "rgba(239,68,68,0.15)", color: "#f87171", fontWeight: 800, fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}
+                  >
+                    I understand the risks
+                  </motion.button>
+                </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
