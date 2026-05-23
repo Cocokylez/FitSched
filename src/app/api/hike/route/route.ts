@@ -149,9 +149,15 @@ export async function GET(req: Request) {
     if (osrmRes.ok) {
       const data = await osrmRes.json()
       if (data.code === "Ok" && data.routes?.[0]) {
-        return NextResponse.json(data, {
-          headers: { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" },
-        })
+        // If OSRM snapped either pin >150 m from where the user placed it,
+        // it pulled both onto the nearest road — ignore and try trail routing instead
+        const wp = data.waypoints as Array<{ distance: number }> | undefined
+        const badSnap = wp && (wp[0]?.distance > 150 || wp[1]?.distance > 150)
+        if (!badSnap) {
+          return NextResponse.json(data, {
+            headers: { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" },
+          })
+        }
       }
     }
   } catch { /* fall through */ }
