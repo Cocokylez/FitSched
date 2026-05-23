@@ -279,18 +279,32 @@ export default function SchedulePage() {
       </div>
 
       <div data-dashboard-scroll style={{ flex: 1, overflowY: "auto", paddingBottom: 100 }}>
-        {/* SC2 Week strip — single letters + circle for today */}
+        {/* SC2 Week strip — single letters + animated active pill */}
         <div style={{ display: "flex", gap: 2, padding: "8px 16px 16px", justifyContent: "space-between" }}>
           {weekDates.map((date, i) => {
             const isActive = i === selectedDay
             const isToday = i === todayDay
             return (
-              <motion.button key={i} onClick={() => setSelectedDay(i)} whileTap={{ scale: 0.92 }} style={{ flex: 1, border: "none", background: "transparent", cursor: "pointer", padding: "4px 2px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: isActive ? "var(--text)" : "var(--text-muted)", letterSpacing: "0.04em", transition: "color 0.18s" }}>{DAY_LETTERS[i]}</div>
-                <div style={{ width: 34, height: 34, borderRadius: "50%", background: isActive ? ACCENT : "transparent", border: isToday && !isActive ? `1.5px solid ${ACCENT}` : "1.5px solid transparent", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.18s, border-color 0.18s" }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: isActive ? "#0b1715" : isToday ? ACCENT : "var(--text)" }}>{date.getDate()}</div>
+              <motion.button key={i} onClick={() => setSelectedDay(i)} whileTap={{ scale: 0.88 }} style={{ flex: 1, border: "none", background: "transparent", cursor: "pointer", padding: "4px 2px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.05em", color: isActive ? ACCENT : "var(--text-muted)", transition: "color 0.22s" }}>{DAY_LETTERS[i]}</div>
+                <div style={{ width: 34, height: 34, borderRadius: "50%", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {isActive && (
+                    <motion.div
+                      layoutId="schedule-week-pill"
+                      style={{
+                        position: "absolute", inset: 0, borderRadius: "50%",
+                        background: "linear-gradient(145deg, #7dd4cc 0%, #5aaea7 100%)",
+                        boxShadow: "0 4px 14px rgba(107,191,184,0.46), inset 0 1px 0 rgba(255,255,255,0.24)",
+                      }}
+                      transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                    />
+                  )}
+                  {isToday && !isActive && (
+                    <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: `1.5px solid ${ACCENT}` }} />
+                  )}
+                  <span style={{ position: "relative", zIndex: 1, fontSize: 15, fontWeight: 800, color: isActive ? "#0b1715" : isToday ? ACCENT : "var(--text)" }}>{date.getDate()}</span>
                 </div>
-                <div style={{ width: 4, height: 4, borderRadius: "50%", background: isToday ? ACCENT : "transparent", transition: "background 0.18s", marginTop: -1 }} />
+                <div style={{ width: 4, height: 4, borderRadius: "50%", background: isToday ? ACCENT : "transparent", transition: "background 0.2s", marginTop: -1 }} />
               </motion.button>
             )
           })}
