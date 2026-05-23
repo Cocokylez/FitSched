@@ -16,7 +16,6 @@ const RED    = "#f87171"
 const BLUE   = "#60a5fa"
 
 const GLOBE_IMG = "//unpkg.com/three-globe/example/img/earth-day.jpg"
-const GLOBE_BG  = "//unpkg.com/three-globe/example/img/night-sky.png"
 
 // ── Globe (no SSR) ────────────────────────────────────────────────────────────
 
@@ -327,15 +326,15 @@ export default function HikePage() {
 
   const inp: React.CSSProperties = {
     width: "100%", boxSizing: "border-box",
-    background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
+    background: "var(--surface-2, rgba(128,128,128,0.08))", border: "1px solid var(--border)",
     borderRadius: 12, padding: "11px 14px",
-    color: "#fff", fontSize: 14, fontFamily: "inherit", outline: "none",
+    color: "var(--text)", fontSize: 14, fontFamily: "inherit", outline: "none",
   }
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "#000", overflow: "hidden", zIndex: 0 }}>
+    <div style={{ position: "fixed", inset: 0, background: "var(--bg)", overflow: "hidden", zIndex: 0 }}>
 
       {/* ── Globe ──────────────────────────────────────────────────────── */}
       {winSize.w > 0 && (
@@ -350,7 +349,6 @@ export default function HikePage() {
             height={winSize.h}
             backgroundColor="rgba(0,0,0,0)"
             globeImageUrl={GLOBE_IMG}
-            backgroundImageUrl={GLOBE_BG}
             atmosphereColor="rgba(147,210,255,0.45)"
             atmosphereAltitude={0.2}
             pointsData={planPoints}
@@ -379,8 +377,8 @@ export default function HikePage() {
           onClick={() => { setShowLogs(true); fetchLogs() }}
           style={{
             position: "absolute", top: 20, right: 18,
-            background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)",
-            borderRadius: 999, padding: "8px 14px", color: "#fff",
+            background: "var(--panel)", border: "1px solid var(--border)",
+            borderRadius: 999, padding: "8px 14px", color: "var(--text)",
             display: "flex", alignItems: "center", gap: 6,
             fontSize: 12, fontWeight: 700, cursor: "pointer",
             backdropFilter: "blur(12px)",
@@ -398,8 +396,8 @@ export default function HikePage() {
           onClick={backToIdle}
           style={{
             position: "absolute", top: 20, left: 18,
-            background: "rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.15)",
-            borderRadius: 999, padding: "8px 14px", color: "rgba(255,255,255,0.8)",
+            background: "var(--panel)", border: "1px solid var(--border)",
+            borderRadius: 999, padding: "8px 14px", color: "var(--text)",
             display: "flex", alignItems: "center", gap: 6,
             fontSize: 12, fontWeight: 700, cursor: "pointer",
             backdropFilter: "blur(12px)",
@@ -443,8 +441,8 @@ export default function HikePage() {
               onClick={enterPlanning}
               whileTap={{ scale: 0.95 }}
               style={{
-                flex: 1, maxWidth: 200, border: "1px solid rgba(255,255,255,0.2)", borderRadius: 20,
-                padding: "18px 20px", background: "rgba(255,255,255,0.08)", color: "#fff",
+                flex: 1, maxWidth: 200, border: "1px solid var(--border)", borderRadius: 20,
+                padding: "18px 20px", background: "var(--panel)", color: "var(--text)",
                 cursor: "pointer", display: "flex", flexDirection: "column",
                 alignItems: "flex-start", gap: 5, backdropFilter: "blur(16px)",
               }}
@@ -466,14 +464,14 @@ export default function HikePage() {
             style={{ position: "absolute", top: 64, left: "50%", transform: "translateX(-50%)", zIndex: 10, pointerEvents: "none" }}
           >
             <div style={{
-              background: "rgba(0,0,0,0.72)", backdropFilter: "blur(10px)",
+              background: "var(--panel)", backdropFilter: "blur(10px)",
               borderRadius: 999, padding: "10px 20px",
               display: "flex", alignItems: "center", gap: 9, whiteSpace: "nowrap",
-              border: "1px solid rgba(255,255,255,0.1)",
+              border: "1px solid var(--border)",
             }}>
               {planStep === "start"
-                ? <><MapPin size={15} color={GREEN} strokeWidth={2.5} /><span style={{ color: "#fff", fontWeight: 700, fontSize: 13 }}>Tap the globe to set your start point</span></>
-                : <><Flag   size={15} color={RED}   strokeWidth={2.5} /><span style={{ color: "#fff", fontWeight: 700, fontSize: 13 }}>Now tap to set your finish point</span></>}
+                ? <><MapPin size={15} color={GREEN} strokeWidth={2.5} /><span style={{ color: "var(--text)", fontWeight: 700, fontSize: 13 }}>Tap the globe to set your start point</span></>
+                : <><Flag   size={15} color={RED}   strokeWidth={2.5} /><span style={{ color: "var(--text)", fontWeight: 700, fontSize: 13 }}>Now tap to set your finish point</span></>}
             </div>
           </motion.div>
         )}
@@ -489,8 +487,8 @@ export default function HikePage() {
             <motion.div
               animate={{ opacity: [0.6, 1, 0.6] }} transition={{ duration: 1, repeat: Infinity }}
               style={{
-                background: "rgba(0,0,0,0.72)", backdropFilter: "blur(10px)",
-                borderRadius: 999, padding: "10px 20px", border: "1px solid rgba(255,255,255,0.1)",
+                background: "var(--panel)", backdropFilter: "blur(10px)",
+                borderRadius: 999, padding: "10px 20px", border: "1px solid var(--border)",
                 display: "flex", alignItems: "center", gap: 8,
               }}
             >
@@ -508,8 +506,8 @@ export default function HikePage() {
             style={{ position: "absolute", top: 64, left: "50%", transform: "translateX(-50%)", zIndex: 10, pointerEvents: "none" }}
           >
             <div style={{
-              background: "rgba(0,0,0,0.72)", backdropFilter: "blur(10px)",
-              borderRadius: 999, padding: "10px 20px", border: "1px solid rgba(255,255,255,0.1)",
+              background: "var(--panel)", backdropFilter: "blur(10px)",
+              borderRadius: 999, padding: "10px 20px", border: "1px solid var(--border)",
             }}>
               <span style={{ color: RED, fontWeight: 700, fontSize: 13 }}>{planError}</span>
             </div>
@@ -525,29 +523,29 @@ export default function HikePage() {
             transition={{ type: "spring", stiffness: 300, damping: 28 }}
             style={{
               position: "absolute", bottom: 0, left: 0, right: 0,
-              background: "rgba(0,0,0,0.78)", backdropFilter: "blur(20px)",
-              borderTop: "1px solid rgba(255,255,255,0.1)",
+              background: "var(--panel)", backdropFilter: "blur(20px)",
+              borderTop: "1px solid var(--border)",
               padding: "18px 18px",
               paddingBottom: "max(18px, env(safe-area-inset-bottom))",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 14 }}>
               <div>
-                <div style={{ fontSize: 24, fontWeight: 900, color: "#fff", lineHeight: 1 }}>
+                <div style={{ fontSize: 24, fontWeight: 900, color: "var(--text)", lineHeight: 1 }}>
                   {fmtDist(routeInfo.distM)}
                 </div>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(255,255,255,0.38)", textTransform: "uppercase", marginTop: 3 }}>Distance</div>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-muted)", textTransform: "uppercase", marginTop: 3 }}>Distance</div>
               </div>
-              <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.1)" }} />
+              <div style={{ width: 1, height: 32, background: "var(--border)" }} />
               <div>
-                <div style={{ fontSize: 24, fontWeight: 900, color: "#fff", lineHeight: 1 }}>
+                <div style={{ fontSize: 24, fontWeight: 900, color: "var(--text)", lineHeight: 1 }}>
                   {fmtWalkTime(routeInfo.durSec)}
                 </div>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(255,255,255,0.38)", textTransform: "uppercase", marginTop: 3 }}>Walking time</div>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-muted)", textTransform: "uppercase", marginTop: 3 }}>Walking time</div>
               </div>
               <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
                 <div style={{ width: 18, height: 3, background: BLUE, borderRadius: 2 }} />
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontWeight: 600 }}>Route</span>
+                <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>Route</span>
               </div>
             </div>
 
@@ -555,8 +553,8 @@ export default function HikePage() {
               <motion.button
                 onClick={resetPlan} whileTap={{ scale: 0.95 }}
                 style={{
-                  flex: 1, border: "1px solid rgba(255,255,255,0.15)", borderRadius: 16, padding: "13px",
-                  background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.8)",
+                  flex: 1, border: "1px solid var(--border)", borderRadius: 16, padding: "13px",
+                  background: "var(--surface-2, rgba(128,128,128,0.07))", color: "var(--text)",
                   fontWeight: 800, fontSize: 13, fontFamily: "inherit", cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                 }}
@@ -595,7 +593,7 @@ export default function HikePage() {
         transition={{ duration: 0.32, ease: "easeInOut" }}
         style={{
           position: "absolute", inset: 0, zIndex: 310,
-          background: "#000", pointerEvents: "none",
+          background: "var(--bg)", pointerEvents: "none",
         }}
       />
 
@@ -615,14 +613,14 @@ export default function HikePage() {
               transition={{ type: "spring", stiffness: 290, damping: 30 }}
               style={{
                 width: "100%", maxWidth: 560, margin: "0 auto",
-                background: "#111", border: "1px solid rgba(255,255,255,0.1)",
+                background: "var(--panel)", border: "1px solid var(--border)",
                 borderRadius: "24px 24px 0 0", padding: "24px 20px",
                 paddingBottom: "max(32px, env(safe-area-inset-bottom))",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
                 <div>
-                  <div style={{ fontWeight: 900, fontSize: 17, color: "#fff" }}>Save your hike</div>
+                  <div style={{ fontWeight: 900, fontSize: 17, color: "var(--text)" }}>Save your hike</div>
                   {pendingResultRef.current && (
                     <div style={{ fontSize: 12, color: ACCENT, marginTop: 3, fontWeight: 700 }}>
                       {pendingResultRef.current.distanceKm} km · {fmtDuration(pendingResultRef.current.durationMin)}
@@ -630,22 +628,22 @@ export default function HikePage() {
                     </div>
                   )}
                 </div>
-                <button onClick={discardHike} style={{ background: "transparent", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.5)", padding: 4, display: "flex" }}>
+                <button onClick={discardHike} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 4, display: "flex" }}>
                   <X size={20} strokeWidth={2} />
                 </button>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: "0.09em", color: "rgba(255,255,255,0.45)", textTransform: "uppercase", marginBottom: 6 }}>Trail name</label>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: "0.09em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 6 }}>Trail name</label>
                   <input value={saveName} onChange={e => setSaveName(e.target.value)} placeholder="e.g. Bukit Timah Hill" style={inp} />
                 </div>
                 <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: "0.09em", color: "rgba(255,255,255,0.45)", textTransform: "uppercase", marginBottom: 6 }}>Location</label>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: "0.09em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 6 }}>Location</label>
                   <input value={saveLoc} onChange={e => setSaveLoc(e.target.value)} placeholder="e.g. Bukit Timah Nature Reserve" style={inp} />
                 </div>
                 <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: "0.09em", color: "rgba(255,255,255,0.45)", textTransform: "uppercase", marginBottom: 6 }}>Notes</label>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: "0.09em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 6 }}>Notes</label>
                   <textarea value={saveNotes} onChange={e => setSaveNotes(e.target.value)} placeholder="How was it?" rows={2} style={{ ...inp, resize: "none" }} />
                 </div>
                 <motion.button
@@ -684,40 +682,40 @@ export default function HikePage() {
               transition={{ type: "spring", stiffness: 290, damping: 30 }}
               style={{
                 width: "100%", maxWidth: 560, margin: "0 auto",
-                background: "#111", border: "1px solid rgba(255,255,255,0.1)",
+                background: "var(--panel)", border: "1px solid var(--border)",
                 borderRadius: "24px 24px 0 0", padding: "20px 18px",
                 paddingBottom: "max(24px, env(safe-area-inset-bottom))",
                 maxHeight: "80dvh", overflowY: "auto",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-                <div style={{ fontWeight: 900, fontSize: 17, color: "#fff" }}>Hike logs</div>
-                <button onClick={() => setShowLogs(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.5)", padding: 4, display: "flex" }}>
+                <div style={{ fontWeight: 900, fontSize: 17, color: "var(--text)" }}>Hike logs</div>
+                <button onClick={() => setShowLogs(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 4, display: "flex" }}>
                   <X size={20} strokeWidth={2} />
                 </button>
               </div>
 
               {logsLoading ? (
-                <div style={{ textAlign: "center", color: "rgba(255,255,255,0.35)", padding: "32px 0", fontSize: 13 }}>Loading…</div>
+                <div style={{ textAlign: "center", color: "var(--text-muted)", padding: "32px 0", fontSize: 13 }}>Loading…</div>
               ) : logs.length === 0 ? (
-                <div style={{ textAlign: "center", color: "rgba(255,255,255,0.35)", padding: "32px 0", fontSize: 13 }}>No hikes logged yet.</div>
+                <div style={{ textAlign: "center", color: "var(--text-muted)", padding: "32px 0", fontSize: 13 }}>No hikes logged yet.</div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {logs.map(log => (
                     <div key={log.id} style={{
-                      background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
+                      background: "var(--surface-2, rgba(128,128,128,0.06))", border: "1px solid var(--border)",
                       borderRadius: 16, padding: "13px 15px",
                       display: "flex", alignItems: "center", gap: 12,
                     }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text)", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {log.name}
                         </div>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: "3px 10px" }}>
-                          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{log.distanceKm} km</span>
-                          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{fmtDuration(log.durationMin)}</span>
-                          {log.elevationM && <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>↑{log.elevationM}m</span>}
-                          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>{fmtDate(log.loggedAt)}</span>
+                          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{log.distanceKm} km</span>
+                          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{fmtDuration(log.durationMin)}</span>
+                          {log.elevationM && <span style={{ fontSize: 12, color: "var(--text-muted)" }}>↑{log.elevationM}m</span>}
+                          <span style={{ fontSize: 12, color: "var(--text-muted)", opacity: 0.6 }}>{fmtDate(log.loggedAt)}</span>
                         </div>
                       </div>
                       <motion.button
@@ -725,9 +723,9 @@ export default function HikePage() {
                         disabled={deletingId === log.id}
                         whileTap={{ scale: 0.88 }}
                         style={{
-                          background: "transparent", border: "1px solid rgba(255,255,255,0.12)",
+                          background: "transparent", border: "1px solid var(--border)",
                           borderRadius: 8, padding: "5px 7px", cursor: "pointer",
-                          color: "rgba(255,255,255,0.35)", display: "flex", flexShrink: 0,
+                          color: "var(--text-muted)", display: "flex", flexShrink: 0,
                           opacity: deletingId === log.id ? 0.3 : 1, transition: "opacity 0.15s",
                         }}
                       >
