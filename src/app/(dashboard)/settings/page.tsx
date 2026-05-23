@@ -293,7 +293,14 @@ export default function SettingsPage() {
           </div>
           <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
             <div style={{ fontSize: 16, fontWeight: 800, color: "var(--text)" }}>{profileName}</div>
-            <div style={{ fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{profileEmail}</div>
+            {profileEmail.endsWith("@fitsched.guest") ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
+                <span style={{ fontSize: 9, background: "rgba(107,191,184,0.18)", border: "1px solid rgba(107,191,184,0.3)", color: ACCENT, borderRadius: 999, padding: "2px 7px", fontWeight: 800, letterSpacing: "0.08em" }}>GUEST</span>
+                <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Temporary account</span>
+              </div>
+            ) : (
+              <div style={{ fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{profileEmail}</div>
+            )}
           </div>
           <Chevron />
         </motion.button>
@@ -315,7 +322,7 @@ export default function SettingsPage() {
           divider
           label="Withdraw"
           onClick={() => router.push("/withdrawal")}
-          right={<div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 700 }}>Coming soon</span><Chevron /></div>}
+          right={<Chevron />}
         />
       </SectionCard>
 
@@ -445,6 +452,24 @@ export default function SettingsPage() {
           right={<span style={{ fontSize: 13, color: "var(--text-muted)" }}>1.0.0</span>}
         />
       </SectionCard>
+
+      {/* Guest sign-up prompt */}
+      {profileEmail.endsWith("@fitsched.guest") && (
+        <div style={{ padding: "20px 16px 0" }}>
+          <div style={{ background: "rgba(107,191,184,0.08)", border: "1px solid rgba(107,191,184,0.25)", borderRadius: 16, padding: "16px 18px" }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text)", marginBottom: 4 }}>Your progress is temporary</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.55, marginBottom: 12 }}>
+              Guest accounts are not saved. Create a free account to keep your streak, workouts, and FitTokens.
+            </div>
+            <button
+              onClick={async () => { await signOut({ redirect: false }); router.push("/register") }}
+              style={{ width: "100%", background: ACCENT, border: "none", borderRadius: 12, padding: "11px", fontSize: 13, fontWeight: 800, color: "#0d1f1e", cursor: "pointer" }}
+            >
+              Create a free account
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Sign out + delete */}
       <div style={{ padding: "20px 16px 0" }}>
