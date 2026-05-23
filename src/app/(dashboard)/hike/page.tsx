@@ -1,9 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import dynamic from "next/dynamic"
+import { useEffect, useRef, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
-import { Flag, History, MapPin, Navigation, RotateCcw, Trash2, X } from "lucide-react"
+import { History, Trash2, X } from "lucide-react"
 import { HikeTracker } from "@/components/HikeTracker"
 import type { TrackerResult } from "@/components/HikeTracker"
 import { playSound } from "@/lib/sound"
@@ -11,21 +10,8 @@ import { playSound } from "@/lib/sound"
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const ACCENT = "#6bbfb8"
-const GREEN  = "#4ade80"
-const RED    = "#f87171"
-const BLUE   = "#60a5fa"
-
-const GLOBE_IMG = "//unpkg.com/three-globe/example/img/earth-day.jpg"
-
-// ── Globe (no SSR) ────────────────────────────────────────────────────────────
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const Globe = dynamic(() => import("react-globe.gl"), { ssr: false }) as any
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-
-type Mode     = "idle" | "planning"
-type PlanStep = "start" | "end" | "loading" | "ready"
 
 type HikeLog = {
   id: string
@@ -38,15 +24,6 @@ type HikeLog = {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function fmtDist(m: number): string {
-  return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m)} m`
-}
-
-function fmtWalkTime(sec: number): string {
-  const m = Math.round(sec / 60)
-  return m < 60 ? `~${m} min` : `~${Math.floor(m / 60)}h ${m % 60}m`
-}
 
 function fmtDate(s: string): string {
   return new Date(s).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
@@ -61,30 +38,10 @@ function fmtDuration(min: number): string {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function HikePage() {
-  // Globe
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const globeRef    = useRef<any>(null)
-  const [globeReady, setGlobeReady] = useState(false)
-  const [winSize, setWinSize]       = useState({ w: 0, h: 0 })
+  // Increment to remount/reset the tracker after saving or discarding
+  const [trackerKey, setTrackerKey] = useState(0)
 
-  // Mode
-  const [mode, setMode] = useState<Mode>("idle")
-
-  // GPS tracker overlay + cinematic transition
-  const [showTracker, setShowTracker]   = useState(false)
-  const [overlayVisible, setOverlayVisible] = useState(false)
-
-  // Plan mode
-  const planStepRef  = useRef<PlanStep>("start")
-  const planStartRef = useRef<{ lat: number; lng: number } | null>(null)
-  const [planStep, setPlanStep]   = useState<PlanStep>("start")
-  const [planStart, setPlanStart] = useState<{ lat: number; lng: number } | null>(null)
-  const [planEnd, setPlanEnd]     = useState<{ lat: number; lng: number } | null>(null)
-  const [planPath, setPlanPath]   = useState<[number, number][]>([])
-  const [routeInfo, setRouteInfo] = useState<{ distM: number; durSec: number } | null>(null)
-  const [planError, setPlanError] = useState<string | null>(null)
-
-  // Save form (after tracker finishes)
+  // Save form
   const [showSave, setShowSave]   = useState(false)
   const [saveName, setSaveName]   = useState("")
   const [saveLoc, setSaveLoc]     = useState("")
@@ -98,156 +55,19 @@ export default function HikePage() {
   const [logsLoading, setLogsLoading] = useState(false)
   const [deletingId, setDeletingId]   = useState<string | null>(null)
 
-  // ── Window size ──────────────────────────────────────────────────────────────
-
-  useEffect(() => {
-    const update = () => setWinSize({ w: window.innerWidth, h: window.innerHeight })
-    update()
-    window.addEventListener("resize", update)
-    return () => window.removeEventListener("resize", update)
-  }, [])
-
-  // ── Globe controls ────────────────────────────────────────────────────────────
-
-  useEffect(() => {
-    if (!globeReady || !globeRef.current) return
-    const controls = globeRef.current.controls()
-    controls.autoRotate      = mode === "idle" && !showTracker && !showSave && !overlayVisible
-    controls.autoRotateSpeed = 0.4
-    controls.enableZoom      = !showTracker
-    controls.enablePan       = false
-  }, [mode, globeReady, showTracker, showSave, overlayVisible])
-
-  // ── Hide nav bar for entire hike page ────────────────────────────────────────
+  // ── Hide nav bar ──────────────────────────────────────────────────────────────
 
   useEffect(() => {
     window.dispatchEvent(new CustomEvent("hike-tracker-change", { detail: { open: true } }))
     return () => { window.dispatchEvent(new CustomEvent("hike-tracker-change", { detail: { open: false } })) }
   }, [])
 
-  // ── Mode transitions ─────────────────────────────────────────────────────────
-
-  function enterPlanning() {
-    setMode("planning")
-    planStepRef.current  = "start"
-    planStartRef.current = null
-    setPlanStep("start"); setPlanStart(null); setPlanEnd(null)
-    setPlanPath([]); setRouteInfo(null); setPlanError(null)
-    if (globeRef.current) globeRef.current.pointOfView({ altitude: 2.5 }, 1000)
-  }
-
-  function backToIdle() {
-    setMode("idle")
-    if (globeRef.current) globeRef.current.pointOfView({ altitude: 2.5 }, 1000)
-  }
-
-  // ── Plan mode: globe click ────────────────────────────────────────────────────
-
-  const handleGlobeClick = useCallback(async ({ lat, lng }: { lat: number; lng: number }) => {
-    if (mode !== "planning") return
-
-    if (planStepRef.current === "start") {
-      planStartRef.current = { lat, lng }
-      planStepRef.current  = "end"
-      setPlanStart({ lat, lng }); setPlanStep("end")
-
-    } else if (planStepRef.current === "end") {
-      const start = planStartRef.current!
-      planStepRef.current = "loading"
-      setPlanEnd({ lat, lng }); setPlanStep("loading")
-
-      try {
-        const res = await fetch(
-          `/api/hike/route?slat=${start.lat}&slng=${start.lng}&elat=${lat}&elng=${lng}`
-        )
-        if (!res.ok) throw new Error()
-        const data = await res.json()
-        if (data.code !== "Ok" || !data.routes?.[0]) throw new Error()
-
-        const route  = data.routes[0]
-        const coords = (route.geometry.coordinates as [number, number][]).map(([lo, la]) => [la, lo] as [number, number])
-        setPlanPath(coords)
-        setRouteInfo({ distM: route.distance, durSec: route.duration })
-        setPlanStep("ready")
-
-        if (globeRef.current && coords.length > 0) {
-          const lats = coords.map(c => c[0]), lngs = coords.map(c => c[1])
-          const midLat = (Math.min(...lats) + Math.max(...lats)) / 2
-          const midLng = (Math.min(...lngs) + Math.max(...lngs)) / 2
-          globeRef.current.pointOfView({ lat: midLat, lng: midLng, altitude: 0.1 }, 1200)
-        }
-      } catch {
-        setPlanError("Couldn't find a walking route between those points.")
-        planStepRef.current = "end"; setPlanStep("end")
-      }
-    }
-  }, [mode])
-
-  function resetPlan() {
-    planStepRef.current = "start"; planStartRef.current = null
-    setPlanStep("start"); setPlanStart(null); setPlanEnd(null)
-    setPlanPath([]); setRouteInfo(null); setPlanError(null)
-  }
-
-  function beginHikeFromPlan() {
-    resetPlan(); backToIdle()
-    enterTrackingMode()
-  }
-
-  // ── Cinematic transitions ─────────────────────────────────────────────────────
-
-  function enterTrackingMode() {
-    if (globeRef.current) globeRef.current.pointOfView({ altitude: 0.002 }, 1000)
-
-    // Race GPS — if we get coords before overlay shows, steer the zoom there
-    if (navigator.geolocation) {
-      const overlayTimer = setTimeout(() => setOverlayVisible(true), 380)
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          if (globeRef.current) {
-            globeRef.current.pointOfView(
-              { lat: pos.coords.latitude, lng: pos.coords.longitude, altitude: 0.002 },
-              800
-            )
-          }
-          clearTimeout(overlayTimer)
-          setTimeout(() => setOverlayVisible(true), 300)
-        },
-        () => {},
-        { enableHighAccuracy: false, timeout: 380, maximumAge: 60000 }
-      )
-    } else {
-      setTimeout(() => setOverlayVisible(true), 380)
-    }
-
-    // Mount tracker early so Leaflet has time to initialise behind the overlay
-    setTimeout(() => setShowTracker(true), 650)
-    // Fade out only after map is ready (~600ms to initialise)
-    setTimeout(() => setOverlayVisible(false), 1260)
-  }
-
-  function handleTrackerClose() {
-    // 1. Fade overlay in to hide street map
-    setOverlayVisible(true)
-    // 2. Unmount tracker, zoom globe back out
-    setTimeout(() => {
-      setShowTracker(false)
-      if (globeRef.current) globeRef.current.pointOfView({ altitude: 2.5 }, 1400)
-    }, 360)
-    // 3. Fade overlay out to reveal globe zooming out
-    setTimeout(() => setOverlayVisible(false), 560)
-  }
+  // ── Tracker callbacks ─────────────────────────────────────────────────────────
 
   function handleTrackerFinish(result: TrackerResult) {
     playSound("confirmation_001.ogg", 0.65)
     pendingResultRef.current = result
-    // Quick fade to swap tracker → save form
-    setOverlayVisible(true)
-    setTimeout(() => {
-      setShowTracker(false)
-      setShowSave(true)
-      setOverlayVisible(false)
-    }, 300)
+    setShowSave(true)
   }
 
   // ── Save hike ─────────────────────────────────────────────────────────────────
@@ -276,6 +96,7 @@ export default function HikePage() {
         setShowSave(false)
         setSaveName(""); setSaveLoc(""); setSaveNotes("")
         pendingResultRef.current = null
+        setTrackerKey(k => k + 1)
       }
     } finally { setSaving(false) }
   }
@@ -283,6 +104,7 @@ export default function HikePage() {
   function discardHike() {
     setShowSave(false)
     pendingResultRef.current = null
+    setTrackerKey(k => k + 1)
   }
 
   // ── Logs ─────────────────────────────────────────────────────────────────────
@@ -304,24 +126,6 @@ export default function HikePage() {
     } finally { setDeletingId(null) }
   }
 
-  // ── Globe data ────────────────────────────────────────────────────────────────
-
-  const planPoints = useMemo(() => {
-    const pts = []
-    if (planStart) pts.push({ lat: planStart.lat, lng: planStart.lng, color: GREEN, size: 0.35, label: "Start"  })
-    if (planEnd)   pts.push({ lat: planEnd.lat,   lng: planEnd.lng,   color: RED,   size: 0.35, label: "Finish" })
-    return pts
-  }, [planStart, planEnd])
-
-  const planArcs = useMemo(() => {
-    if (planPath.length < 2) return []
-    return planPath.slice(0, -1).map((pt, i) => ({
-      startLat: pt[0], startLng: pt[1],
-      endLat: planPath[i + 1][0], endLng: planPath[i + 1][1],
-      color: BLUE,
-    }))
-  }, [planPath])
-
   // ── Input style ───────────────────────────────────────────────────────────────
 
   const inp: React.CSSProperties = {
@@ -334,49 +138,23 @@ export default function HikePage() {
   // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "var(--bg)", overflow: "hidden", zIndex: 0 }}>
+    <div style={{ position: "fixed", inset: 0, overflow: "hidden", zIndex: 0 }}>
 
-      {/* ── Globe ──────────────────────────────────────────────────────── */}
-      {winSize.w > 0 && (
-        <div style={{
-          position: "absolute", top: "50%", left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: winSize.w, height: winSize.h, overflow: "hidden",
-        }}>
-          <Globe
-            ref={globeRef}
-            width={winSize.w}
-            height={winSize.h}
-            backgroundColor="rgba(0,0,0,0)"
-            globeImageUrl={GLOBE_IMG}
-            atmosphereColor="rgba(147,210,255,0.45)"
-            atmosphereAltitude={0.2}
-            pointsData={planPoints}
-            pointColor="color"
-            pointRadius="size"
-            pointAltitude={0.005}
-            pointLabel="label"
-            arcsData={planArcs}
-            arcColor="color"
-            arcAltitude={0.003}
-            arcStroke={1.6}
-            arcDashLength={0.4}
-            arcDashGap={0.2}
-            arcDashAnimateTime={0}
-            onGlobeReady={() => setGlobeReady(true)}
-            onGlobeClick={handleGlobeClick}
-            enablePointerInteraction={mode === "planning"}
-          />
-        </div>
-      )}
+      {/* ── 2D tracker map (always visible) ────────────────────────────────── */}
+      <HikeTracker
+        key={trackerKey}
+        onFinish={handleTrackerFinish}
+        onClose={() => setTrackerKey(k => k + 1)}
+        disableNavEvent
+      />
 
-      {/* ── Logs button (idle only) ─────────────────────────────────────── */}
-      {mode === "idle" && !showTracker && !showSave && (
+      {/* ── Logs button ────────────────────────────────────────────────────── */}
+      {!showSave && !showLogs && (
         <motion.button
           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           onClick={() => { setShowLogs(true); fetchLogs() }}
           style={{
-            position: "absolute", top: 20, right: 18,
+            position: "absolute", top: 20, right: 18, zIndex: 20,
             background: "var(--panel)", border: "1px solid var(--border)",
             borderRadius: 999, padding: "8px 14px", color: "var(--text)",
             display: "flex", alignItems: "center", gap: 6,
@@ -389,215 +167,7 @@ export default function HikePage() {
         </motion.button>
       )}
 
-      {/* ── Back button (planning) ──────────────────────────────────────── */}
-      {mode === "planning" && (
-        <motion.button
-          initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
-          onClick={backToIdle}
-          style={{
-            position: "absolute", top: 20, left: 18,
-            background: "var(--panel)", border: "1px solid var(--border)",
-            borderRadius: 999, padding: "8px 14px", color: "var(--text)",
-            display: "flex", alignItems: "center", gap: 6,
-            fontSize: 12, fontWeight: 700, cursor: "pointer",
-            backdropFilter: "blur(12px)",
-          }}
-        >
-          <X size={14} strokeWidth={2} />
-          Back
-        </motion.button>
-      )}
-
-      {/* ── IDLE: two main buttons ──────────────────────────────────────── */}
-      <AnimatePresence>
-        {mode === "idle" && (!showTracker || overlayVisible) && !showSave && !showLogs && (
-          <motion.div
-            initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 24 }}
-            style={{
-              position: "absolute",
-              bottom: "max(36px, env(safe-area-inset-bottom))",
-              left: 0, right: 0,
-              display: "flex", justifyContent: "center",
-              gap: 12, padding: "0 24px",
-            }}
-          >
-            <motion.button
-              onClick={enterTrackingMode}
-              whileTap={{ scale: 0.95 }}
-              style={{
-                flex: 1, maxWidth: 200, border: "none", borderRadius: 20,
-                padding: "18px 20px", background: ACCENT, color: "#0d1f1e",
-                cursor: "pointer", display: "flex", flexDirection: "column",
-                alignItems: "flex-start", gap: 5,
-                boxShadow: `0 0 28px rgba(107,191,184,0.35)`,
-              }}
-            >
-              <Navigation size={22} strokeWidth={2.2} />
-              <span style={{ fontSize: 14, fontWeight: 900, lineHeight: 1.1 }}>Track with GPS</span>
-              <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.65 }}>Street-level map</span>
-            </motion.button>
-
-            <motion.button
-              onClick={enterPlanning}
-              whileTap={{ scale: 0.95 }}
-              style={{
-                flex: 1, maxWidth: 200, border: "1px solid var(--border)", borderRadius: 20,
-                padding: "18px 20px", background: "var(--panel)", color: "var(--text)",
-                cursor: "pointer", display: "flex", flexDirection: "column",
-                alignItems: "flex-start", gap: 5, backdropFilter: "blur(16px)",
-              }}
-            >
-              <MapPin size={22} strokeWidth={2.2} />
-              <span style={{ fontSize: 14, fontWeight: 900, lineHeight: 1.1 }}>Plan route</span>
-              <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.55 }}>Tap start → finish</span>
-            </motion.button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── PLANNING: instruction pill ──────────────────────────────────── */}
-      <AnimatePresence>
-        {mode === "planning" && planStep !== "ready" && planStep !== "loading" && (
-          <motion.div
-            key={planStep}
-            initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            style={{ position: "absolute", top: 64, left: "50%", transform: "translateX(-50%)", zIndex: 10, pointerEvents: "none" }}
-          >
-            <div style={{
-              background: "var(--panel)", backdropFilter: "blur(10px)",
-              borderRadius: 999, padding: "10px 20px",
-              display: "flex", alignItems: "center", gap: 9, whiteSpace: "nowrap",
-              border: "1px solid var(--border)",
-            }}>
-              {planStep === "start"
-                ? <><MapPin size={15} color={GREEN} strokeWidth={2.5} /><span style={{ color: "var(--text)", fontWeight: 700, fontSize: 13 }}>Tap the globe to set your start point</span></>
-                : <><Flag   size={15} color={RED}   strokeWidth={2.5} /><span style={{ color: "var(--text)", fontWeight: 700, fontSize: 13 }}>Now tap to set your finish point</span></>}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* PLANNING: loading */}
-      <AnimatePresence>
-        {mode === "planning" && planStep === "loading" && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: "absolute", top: 64, left: "50%", transform: "translateX(-50%)", zIndex: 10, pointerEvents: "none" }}
-          >
-            <motion.div
-              animate={{ opacity: [0.6, 1, 0.6] }} transition={{ duration: 1, repeat: Infinity }}
-              style={{
-                background: "var(--panel)", backdropFilter: "blur(10px)",
-                borderRadius: 999, padding: "10px 20px", border: "1px solid var(--border)",
-                display: "flex", alignItems: "center", gap: 8,
-              }}
-            >
-              <span style={{ color: BLUE, fontWeight: 700, fontSize: 13 }}>Finding route…</span>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* PLANNING: error */}
-      <AnimatePresence>
-        {mode === "planning" && planError && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: "absolute", top: 64, left: "50%", transform: "translateX(-50%)", zIndex: 10, pointerEvents: "none" }}
-          >
-            <div style={{
-              background: "var(--panel)", backdropFilter: "blur(10px)",
-              borderRadius: 999, padding: "10px 20px", border: "1px solid var(--border)",
-            }}>
-              <span style={{ color: RED, fontWeight: 700, fontSize: 13 }}>{planError}</span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── PLANNING: route info panel ──────────────────────────────────── */}
-      <AnimatePresence>
-        {mode === "planning" && planStep === "ready" && routeInfo && (
-          <motion.div
-            initial={{ y: 120, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 120, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 28 }}
-            style={{
-              position: "absolute", bottom: 0, left: 0, right: 0,
-              background: "var(--panel)", backdropFilter: "blur(20px)",
-              borderTop: "1px solid var(--border)",
-              padding: "18px 18px",
-              paddingBottom: "max(18px, env(safe-area-inset-bottom))",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 14 }}>
-              <div>
-                <div style={{ fontSize: 24, fontWeight: 900, color: "var(--text)", lineHeight: 1 }}>
-                  {fmtDist(routeInfo.distM)}
-                </div>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-muted)", textTransform: "uppercase", marginTop: 3 }}>Distance</div>
-              </div>
-              <div style={{ width: 1, height: 32, background: "var(--border)" }} />
-              <div>
-                <div style={{ fontSize: 24, fontWeight: 900, color: "var(--text)", lineHeight: 1 }}>
-                  {fmtWalkTime(routeInfo.durSec)}
-                </div>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-muted)", textTransform: "uppercase", marginTop: 3 }}>Walking time</div>
-              </div>
-              <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
-                <div style={{ width: 18, height: 3, background: BLUE, borderRadius: 2 }} />
-                <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>Route</span>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: 10 }}>
-              <motion.button
-                onClick={resetPlan} whileTap={{ scale: 0.95 }}
-                style={{
-                  flex: 1, border: "1px solid var(--border)", borderRadius: 16, padding: "13px",
-                  background: "var(--surface-2, rgba(128,128,128,0.07))", color: "var(--text)",
-                  fontWeight: 800, fontSize: 13, fontFamily: "inherit", cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                }}
-              >
-                <RotateCcw size={14} strokeWidth={2.5} /> Reset
-              </motion.button>
-              <motion.button
-                onClick={beginHikeFromPlan} whileTap={{ scale: 0.95 }}
-                style={{
-                  flex: 2, border: "none", borderRadius: 16, padding: "13px",
-                  background: ACCENT, color: "#0d1f1e",
-                  fontWeight: 900, fontSize: 13, fontFamily: "inherit", cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                  boxShadow: `0 0 20px rgba(107,191,184,0.3)`,
-                }}
-              >
-                <Navigation size={14} strokeWidth={2.5} /> Begin hike
-              </motion.button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── HikeTracker overlay (street-level Leaflet map) ──────────────── */}
-      {showTracker && (
-        <HikeTracker
-          onFinish={handleTrackerFinish}
-          onClose={handleTrackerClose}
-          disableNavEvent
-        />
-      )}
-
-      {/* ── Cinematic transition overlay ────────────────────────────────── */}
-      <motion.div
-        animate={{ opacity: overlayVisible ? 1 : 0 }}
-        transition={{ duration: 0.42, ease: "easeInOut" }}
-        style={{
-          position: "absolute", inset: 0, zIndex: 310,
-          background: "#000", pointerEvents: "none",
-        }}
-      />
-
-      {/* ── Save hike modal ─────────────────────────────────────────────── */}
+      {/* ── Save hike modal ─────────────────────────────────────────────────── */}
       <AnimatePresence>
         {showSave && (
           <motion.div
@@ -665,7 +235,7 @@ export default function HikePage() {
         )}
       </AnimatePresence>
 
-      {/* ── Logs modal ──────────────────────────────────────────────────── */}
+      {/* ── Logs modal ──────────────────────────────────────────────────────── */}
       <AnimatePresence>
         {showLogs && (
           <motion.div
