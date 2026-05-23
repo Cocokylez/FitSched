@@ -73,7 +73,8 @@ export default function PrivacyPage() {
             <Bullet><strong style={{ color: "var(--text)" }}>Vercel</strong> — hosts the app and edge functions.</Bullet>
             <Bullet><strong style={{ color: "var(--text)" }}>Google OAuth</strong> — optional sign-in. We only receive your name and email from Google.</Bullet>
             <Bullet><strong style={{ color: "var(--text)" }}>Upstash (Redis)</strong> — rate limiting counters; no personal data is stored here.</Bullet>
-            <Bullet><strong style={{ color: "var(--text)" }}>OpenStreetMap / OSRM</strong> — map tiles and walking route calculations for the Hike Tracker. Your coordinates are sent to these services to display the map and plan routes. See <a href="https://osmfoundation.org/wiki/Privacy_Policy" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 600 }}>OSM Privacy Policy</a>.</Bullet>
+            <Bullet><strong style={{ color: "var(--text)" }}>OpenTopoMap / OpenStreetMap</strong> — topographic map tiles displayed in the Hike Tracker. Your approximate map-view coordinates are sent to tile servers to render the map. See <a href="https://osmfoundation.org/wiki/Privacy_Policy" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 600 }}>OSM Privacy Policy</a>.</Bullet>
+            <Bullet><strong style={{ color: "var(--text)" }}>OSRM / Valhalla (openstreetmap.de)</strong> — open-source walking route engines used in Plan route mode. Your start and end coordinates are sent to calculate a path along mapped trails and roads. No account or persistent identifier is attached to these requests.</Bullet>
           </ul>
         </Section>
 

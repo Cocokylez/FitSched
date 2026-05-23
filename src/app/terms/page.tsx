@@ -43,6 +43,7 @@ export default function TermsPage() {
           <p>{APP_NAME} is a personal fitness scheduling tool that helps you plan workouts, track progress, earn FitTokens for consistency, and log outdoor hikes with GPS. It is not a medical service and does not provide medical advice.</p>
           <p>Always consult a qualified healthcare professional before starting a new exercise programme, especially if you have an injury or pre-existing condition.</p>
           <p>The Hike Tracker accesses your device location while active. You grant this permission explicitly through your browser or device. You can revoke it at any time in your device settings.</p>
+          <p>Route planning uses publicly available map data from OpenStreetMap, OSRM, and Valhalla. Not all lines visible on the map represent walkable trails — use the in-app map legend (available in Plan route mode) to identify routable paths. {APP_NAME} is not responsible for route accuracy on unmapped or restricted terrain.</p>
         </Section>
 
         <Section title="3. Your Account">
