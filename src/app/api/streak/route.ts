@@ -11,9 +11,6 @@ interface StreakData {
   newMilestone: number | null
 }
 
-const cache = new Map<string, { data: StreakData; expiresAt: number }>()
-const CACHE_TTL = 30_000
-
 function getLocalDateId(offsetDays = 0) {
   const timeZone = process.env.FITSCHED_TIME_ZONE || "Asia/Singapore"
   const date = new Date()
@@ -64,11 +61,6 @@ export async function GET(req: Request) {
   const limited = await rateLimitByUser(req, userId, rateLimitPresets.read, "streak:get")
   if (limited) return limited
 
-  const cached = cache.get(userId)
-  if (cached && cached.expiresAt > Date.now()) {
-    return NextResponse.json(cached.data)
-  }
-
   const logs = await db.workoutSessionLog.findMany({
     where: { userId },
     orderBy: { date: "desc" },
@@ -95,27 +87,26 @@ export async function GET(req: Request) {
   if (streak > 0) {
     for (const ms of MILESTONES) {
       if (streak >= ms) {
-        const existing = await db.streakMilestone.findUnique({
-          where: { userId_milestone: { userId, milestone: ms } },
-        })
-        if (!existing) {
-          await db.streakMilestone.create({
-            data: { userId, milestone: ms },
+        try {
+          const existing = await db.streakMilestone.findUnique({
+            where: { userId_milestone: { userId, milestone: ms } },
           })
-          newMilestone = ms
+          if (!existing) {
+            await db.streakMilestone.create({ data: { userId, milestone: ms } })
+            newMilestone = ms
+          }
+        } catch {
+          // milestone write is best-effort — don't fail the streak read
         }
       }
     }
   }
 
-  const result: StreakData = {
+  return NextResponse.json({
     streak,
     previousStreak,
     streakBroken,
     lastCompletedDate,
     newMilestone,
-  }
-  cache.set(userId, { data: result, expiresAt: Date.now() + CACHE_TTL })
-
-  return NextResponse.json(result)
+  } satisfies StreakData)
 }

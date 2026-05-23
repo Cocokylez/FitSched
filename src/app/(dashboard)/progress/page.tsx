@@ -146,13 +146,13 @@ export default function ProgressPage() {
             </div>
             <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text)", marginBottom: 8 }}>{t.noWorkouts}</div>
             <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.55, maxWidth: 260, margin: "0 auto 28px" }}>
-              Complete your first workout and your progress will appear here.
+              {t.completeFirstWorkout}
             </div>
             <button
               onClick={() => router.push("/schedule")}
               style={{ background: "var(--text)", color: "var(--bg)", border: "none", borderRadius: 999, padding: "12px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}
             >
-              Go to Schedule
+              {t.goToSchedule}
             </button>
           </motion.div>
         ) : (
