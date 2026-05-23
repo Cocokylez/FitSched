@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 
-const EFFECTIVE_DATE = "May 21, 2026"
+const EFFECTIVE_DATE = "May 23, 2026"
 const APP_NAME = "FitSched"
 const CONTACT_EMAIL = "support@fitsched.app"
 
@@ -30,7 +30,7 @@ export default function PrivacyPage() {
     }}>
       <div style={{ maxWidth: "640px", margin: "0 auto" }}>
         <div style={{ padding: "24px 0 32px", display: "flex", alignItems: "center", gap: "12px" }}>
-          <Link href="/register" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "50%", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", textDecoration: "none" }}>
+          <Link href="/" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "50%", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", textDecoration: "none" }}>
             <ArrowLeft size={16} strokeWidth={2} />
           </Link>
           <span style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-muted)", textTransform: "uppercase" }}>Privacy Policy</span>
@@ -47,6 +47,7 @@ export default function PrivacyPage() {
             <Bullet><strong style={{ color: "var(--text)" }}>Workout data</strong> — scheduled workouts, completed sessions, exercise logs, and streak history.</Bullet>
             <Bullet><strong style={{ color: "var(--text)" }}>FitToken history</strong> — token earnings tied to completed workouts.</Bullet>
             <Bullet><strong style={{ color: "var(--text)" }}>Calendar data</strong> — if you connect Google Calendar, we store your access token (encrypted) and read your calendar events solely to schedule workouts around your existing commitments.</Bullet>
+            <Bullet><strong style={{ color: "var(--text)" }}>Location data</strong> — if you use the Hike Tracker, GPS coordinates are recorded during your hike session and stored as route waypoints. Location is only accessed while the tracker is active and only with your permission.</Bullet>
             <Bullet><strong style={{ color: "var(--text)" }}>Security logs</strong> — anonymised events such as failed login attempts, for abuse prevention only.</Bullet>
           </ul>
         </Section>
@@ -72,6 +73,7 @@ export default function PrivacyPage() {
             <Bullet><strong style={{ color: "var(--text)" }}>Vercel</strong> — hosts the app and edge functions.</Bullet>
             <Bullet><strong style={{ color: "var(--text)" }}>Google OAuth</strong> — optional sign-in. We only receive your name and email from Google.</Bullet>
             <Bullet><strong style={{ color: "var(--text)" }}>Upstash (Redis)</strong> — rate limiting counters; no personal data is stored here.</Bullet>
+            <Bullet><strong style={{ color: "var(--text)" }}>OpenStreetMap / OSRM</strong> — map tiles and walking route calculations for the Hike Tracker. Your coordinates are sent to these services to display the map and plan routes. See <a href="https://osmfoundation.org/wiki/Privacy_Policy" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 600 }}>OSM Privacy Policy</a>.</Bullet>
           </ul>
         </Section>
 
