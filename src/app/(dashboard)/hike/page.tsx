@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { History, Trash2, X } from "lucide-react"
 import { HikeTracker } from "@/components/HikeTracker"
@@ -38,6 +39,7 @@ function fmtDuration(min: number): string {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function HikePage() {
+  const router = useRouter()
   // Increment to remount/reset the tracker after saving or discarding
   const [trackerKey, setTrackerKey] = useState(0)
 
@@ -144,7 +146,7 @@ export default function HikePage() {
       <HikeTracker
         key={trackerKey}
         onFinish={handleTrackerFinish}
-        onClose={() => setTrackerKey(k => k + 1)}
+        onClose={() => router.back()}
         disableNavEvent
       />
 
