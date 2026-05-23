@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 
-const EFFECTIVE_DATE = "May 21, 2026"
+const EFFECTIVE_DATE = "May 23, 2026"
 const APP_NAME = "FitSched"
 const CONTACT_EMAIL = "support@fitsched.app"
 
@@ -26,7 +26,7 @@ export default function TermsPage() {
     }}>
       <div style={{ maxWidth: "640px", margin: "0 auto" }}>
         <div style={{ padding: "24px 0 32px", display: "flex", alignItems: "center", gap: "12px" }}>
-          <Link href="/register" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "50%", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", textDecoration: "none" }}>
+          <Link href="/" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "50%", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", textDecoration: "none" }}>
             <ArrowLeft size={16} strokeWidth={2} />
           </Link>
           <span style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-muted)", textTransform: "uppercase" }}>Terms of Service</span>
@@ -40,8 +40,9 @@ export default function TermsPage() {
         </Section>
 
         <Section title="2. What FitSched Is">
-          <p>{APP_NAME} is a personal fitness scheduling tool that helps you plan workouts, track progress, and earn FitTokens for consistency. It is not a medical service and does not provide medical advice.</p>
+          <p>{APP_NAME} is a personal fitness scheduling tool that helps you plan workouts, track progress, earn FitTokens for consistency, and log outdoor hikes with GPS. It is not a medical service and does not provide medical advice.</p>
           <p>Always consult a qualified healthcare professional before starting a new exercise programme, especially if you have an injury or pre-existing condition.</p>
+          <p>The Hike Tracker accesses your device location while active. You grant this permission explicitly through your browser or device. You can revoke it at any time in your device settings.</p>
         </Section>
 
         <Section title="3. Your Account">
