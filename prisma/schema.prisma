@@ -41,8 +41,9 @@ model User {
   fitTokens           FitToken[]
   fitTokenBalance     FitTokenBalance?
   tokenVersion        Int                    @default(0)
-  passwordResetTokens PasswordResetToken[]
-  hikeLogs            HikeLog[]
+  passwordResetTokens      PasswordResetToken[]
+  emailVerificationTokens  EmailVerificationToken[]
+  hikeLogs                 HikeLog[]
 }
 
 model Account {
@@ -348,6 +349,18 @@ model PasswordResetToken {
   token     String   @unique
   expiresAt DateTime
   usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

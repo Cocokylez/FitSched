@@ -43,6 +43,8 @@ export default function RegisterPage() {
     if (result?.error) {
       setError("Email already registered or password too weak")
     } else {
+      // Fire-and-forget — don't block navigation if this fails
+      fetch("/api/auth/send-verification", { method: "POST" }).catch(() => {})
       router.push("/onboarding")
     }
   }
