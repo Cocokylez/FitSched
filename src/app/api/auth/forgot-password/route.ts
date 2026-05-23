@@ -19,11 +19,17 @@ export async function POST(req: Request) {
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase().slice(0, 254) : ""
   if (!email) return safeError("Email is required")
 
-  // Always return success to avoid email enumeration
-  const user = await db.user.findUnique({ where: { email }, select: { id: true, password: true } })
-  if (!user?.password) {
-    // No credentials account — silently succeed (user signed up with Google)
-    return NextResponse.json({ success: true })
+  const user = await db.user.findUnique({
+    where: { email },
+    select: { id: true, password: true, accounts: { select: { provider: true }, take: 1 } },
+  })
+
+  if (!user) return NextResponse.json({ success: true })
+
+  if (!user.password) {
+    // Google (or other OAuth) account — tell the client so it can show the right message
+    const provider = user.accounts[0]?.provider ?? "google"
+    return NextResponse.json({ googleAccount: true, provider })
   }
 
   const token = randomBytes(32).toString("hex")
