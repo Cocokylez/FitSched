@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ArrowRight, Dumbbell, Snowflake, X } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
+
 import { playSound, playSoundLoop } from "@/lib/sound"
 
 type StreakWelcomeCardProps = {
@@ -12,47 +13,6 @@ type StreakWelcomeCardProps = {
   onGoWorkout: () => void
 }
 
-const confettiColors = ["#6bbfb8", "#f6c85f", "#ff8a65", "#8fa8ff", "#ffffff"]
-
-function ConfettiAroundButton() {
-  const shouldReduceMotion = useReducedMotion()
-  const pieces = useMemo(() => {
-    return Array.from({ length: 34 }, (_, index) => ({
-      id: index,
-      x: ((index * 59) % 330) - 165,
-      y: -24 - ((index * 41) % 118),
-      rotate: ((index * 67) % 360) - 180,
-      color: confettiColors[index % confettiColors.length],
-      width: 5 + (index % 3) * 2,
-      height: 8 + (index % 4) * 2,
-      delay: 0.65 + (index % 8) * 0.035,
-    }))
-  }, [])
-
-  if (shouldReduceMotion) return null
-
-  return (
-    <div style={{ position: "absolute", left: 0, right: 0, bottom: 70, height: 170, pointerEvents: "none", overflow: "visible" }}>
-      {pieces.map((piece) => (
-        <motion.span
-          key={piece.id}
-          initial={{ opacity: 0, x: 0, y: 22, rotate: 0, scale: 0.72 }}
-          animate={{ opacity: [0, 1, 1, 0], x: piece.x, y: piece.y, rotate: piece.rotate, scale: [0.72, 1, 0.9] }}
-          transition={{ duration: 1.65, delay: piece.delay, ease: "easeOut" }}
-          style={{
-            position: "absolute",
-            left: "50%",
-            bottom: 0,
-            width: piece.width,
-            height: piece.height,
-            borderRadius: piece.id % 2 === 0 ? "999px" : "2px",
-            background: piece.color,
-          }}
-        />
-      ))}
-    </div>
-  )
-}
 
 function FreezeHalo({ active }: { active: boolean }) {
   const shouldReduceMotion = useReducedMotion()
@@ -556,8 +516,6 @@ export function StreakWelcomeCard({
                     : "Start fresh today and build the next one."}
               </div>
             </motion.div>
-
-            {(hasActiveStreak || freezeUsed) && <ConfettiAroundButton />}
 
             <motion.button
               type="button"
