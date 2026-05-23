@@ -414,25 +414,11 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
     >
       {/* ── Top bar ─────────────────────────────────────────────────────── */}
       <div style={{
-        display: "flex", alignItems: "center", gap: 10,
-        padding: "12px 16px", flexShrink: 0,
+        display: "flex", alignItems: "center",
+        padding: "10px 12px", flexShrink: 0,
         background: "var(--panel)", borderBottom: "1px solid var(--border)",
       }}>
-        {/* Status dot */}
-        <motion.span
-          animate={trackStatus === "tracking" ? { opacity: [1, 0.3, 1] } : {}}
-          transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-          style={{
-            display: "inline-block", width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
-            background:
-              mode === "plan"               ? BLUE
-              : trackStatus === "tracking"  ? GREEN
-              : trackStatus === "paused"    ? "#facc15"
-              : ACCENT,
-          }}
-        />
-
-        {/* Mode toggle */}
+        {/* Mode toggle — centered */}
         <div style={{
           flex: 1, display: "flex",
           background: "var(--surface)", borderRadius: 10, padding: 3, gap: 2,
@@ -457,15 +443,10 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
           ))}
         </div>
 
-        {/* Accuracy + close */}
-        {accuracy !== null && mode === "track" && (
-          <span style={{ fontSize: 11, color: "var(--text-muted)", opacity: 0.55, flexShrink: 0 }}>
-            ±{Math.round(accuracy)} m
-          </span>
-        )}
+        {/* Close */}
         <button
           onClick={onClose}
-          style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 4, display: "flex", flexShrink: 0 }}
+          style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 4, display: "flex", flexShrink: 0, marginLeft: 8 }}
         >
           <X size={20} strokeWidth={2} />
         </button>
@@ -587,29 +568,10 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
               }}
             >
               <motion.button
-                onClick={canPause ? togglePause : undefined}
-                whileTap={canPause ? { scale: 0.95 } : {}}
-                style={{
-                  flex: 1,
-                  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 18, padding: "15px",
-                  background: "rgba(10,20,18,0.68)", backdropFilter: "blur(14px)",
-                  color: "#fff", cursor: canPause ? "pointer" : "default",
-                  fontWeight: 900, fontSize: 14, fontFamily: "inherit",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  opacity: canPause ? 1 : 0.38,
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
-                }}
-              >
-                {trackStatus === "paused"
-                  ? <><Play  size={16} strokeWidth={2.5} /> Resume</>
-                  : <><Pause size={16} strokeWidth={2.5} /> Pause</>}
-              </motion.button>
-
-              <motion.button
                 onClick={canFinish ? finish : undefined}
                 whileTap={canFinish ? { scale: 0.95 } : {}}
                 style={{
-                  flex: 2, border: "none", borderRadius: 18, padding: "15px",
+                  flex: 1, border: "none", borderRadius: 18, padding: "15px",
                   background: canFinish ? ACCENT : "rgba(107,191,184,0.18)",
                   color: canFinish ? "#0d1f1e" : "rgba(107,191,184,0.4)",
                   cursor: canFinish ? "pointer" : "default",
@@ -621,6 +583,24 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
               >
                 <CheckCircle size={16} strokeWidth={2.5} />
                 Finish hike
+              </motion.button>
+
+              <motion.button
+                onClick={canPause ? togglePause : undefined}
+                whileTap={canPause ? { scale: 0.88 } : {}}
+                style={{
+                  width: 52, height: 52, flexShrink: 0,
+                  border: "1px solid rgba(255,255,255,0.18)", borderRadius: "50%", padding: 0,
+                  background: "rgba(10,20,18,0.68)", backdropFilter: "blur(14px)",
+                  color: "#fff", cursor: canPause ? "pointer" : "default",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  opacity: canPause ? 1 : 0.38,
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+                }}
+              >
+                {trackStatus === "paused"
+                  ? <Play  size={18} strokeWidth={2.5} />
+                  : <Pause size={18} strokeWidth={2.5} />}
               </motion.button>
             </motion.div>
           )}
