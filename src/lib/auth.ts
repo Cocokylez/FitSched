@@ -93,6 +93,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     maxAge: 30 * 24 * 60 * 60,
   },
   callbacks: {
+    async signIn({ user, account }: any) {
+      // Google guarantees the email is verified — stamp it on every sign-in
+      // so existing accounts created before this check also get updated.
+      if (account?.provider === "google" && user?.id) {
+        const existing = await db.user.findUnique({
+          where: { id: user.id },
+          select: { emailVerified: true },
+        })
+        if (!existing?.emailVerified) {
+          await db.user.update({
+            where: { id: user.id },
+            data: { emailVerified: new Date() },
+          })
+        }
+      }
+      return true
+    },
     async session({ session, token }: any) {
       if (token && session.user) {
         session.user.id = token.sub
