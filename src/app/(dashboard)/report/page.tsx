@@ -182,7 +182,7 @@ function SectionHeader({
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, marginTop: 20 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
         <Icon size={13} strokeWidth={2} style={{ color: ACCENT }} />
-        <span className="label-text" style={{ fontSize: 10, color: ACCENT }}>{label}</span>
+        <span className="label-text" style={{ fontSize: 10, color: ACCENT, letterSpacing: "0.12em" }}>{label}</span>
       </div>
       {right && <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{right}</span>}
     </div>
@@ -519,10 +519,10 @@ export default function ReportPage() {
                   {formatFitTokenAmount(fitTokens.balance)} FT
                 </span>
               } />
-              <div style={{ ...cardStyle, padding: "6px 0", marginBottom: 0 }}>
+              <div className="ios-inset-grouped" style={{ padding: "4px 0" }}>
                 {fitTokens.transactions.length > 0 ? (
                   fitTokens.transactions.slice(0, 8).map((tx, i) => (
-                    <div key={tx.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "12px 16px", borderBottom: i < Math.min(fitTokens.transactions.length, 8) - 1 ? "1px solid var(--border)" : "none" }}>
+                    <div key={tx.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "12px 20px", borderTop: i > 0 ? "1px solid var(--border)" : "none" }}>
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {formatTokenReason(tx.reason, tx.workoutName)}
@@ -531,13 +531,13 @@ export default function ReportPage() {
                           {new Date(tx.createdAt).toLocaleDateString()}
                         </div>
                       </div>
-                      <div style={{ color: ACCENT, fontSize: 13, fontWeight: 900, flexShrink: 0 }}>
+                      <div className="number-text" style={{ color: ACCENT, fontSize: 13, fontWeight: 900, flexShrink: 0 }}>
                         +{formatFitTokenAmount(tx.amount)}
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div style={{ padding: "18px 16px", textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
+                  <div style={{ padding: "20px 20px", textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
                     Complete a workout to earn your first FitToken.
                   </div>
                 )}
@@ -547,7 +547,7 @@ export default function ReportPage() {
             {/* ── 4. Last 8 Weeks ──────────────────────────────────── */}
             <motion.section variants={fadeUp}>
               <SectionHeader icon={BarChart2} label="Last 8 Weeks" />
-              <div style={{ ...cardStyle, padding: "14px 12px 8px", marginBottom: 0 }}>
+              <div className="ios-inset-grouped" style={{ padding: "14px 12px 8px" }}>
                 <ResponsiveContainer width="100%" height={120}>
                   <BarChart data={weeklyData} margin={{ top: 6, right: 4, bottom: 0, left: 4 }}>
                     <Tooltip
@@ -570,24 +570,26 @@ export default function ReportPage() {
             <motion.section variants={fadeUp}>
               <SectionHeader icon={Dumbbell} label="Most Trained" right="last 30 days" />
               {topMuscles.length > 0 ? (
-                topMuscles.map((muscle, index) => (
-                  <div key={muscle.group} style={{ ...cardStyle, padding: "14px 16px" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{muscle.group}</span>
-                      <span className="number-text" style={{ fontSize: 13, fontWeight: 900, color: ACCENT }}>{muscle.pct}%</span>
+                <div className="ios-inset-grouped" style={{ padding: "4px 0" }}>
+                  {topMuscles.map((muscle, index) => (
+                    <div key={muscle.group} style={{ padding: "14px 20px", borderTop: index > 0 ? "1px solid var(--border)" : "none" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{muscle.group}</span>
+                        <span className="number-text" style={{ fontSize: 13, fontWeight: 900, color: ACCENT }}>{muscle.pct}%</span>
+                      </div>
+                      <div style={{ height: 6, borderRadius: 999, overflow: "hidden", background: "var(--surface-2)" }}>
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${muscle.pct}%` }}
+                          transition={{ duration: 0.75, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                          style={{ height: "100%", borderRadius: 999, background: `linear-gradient(90deg, #3d9a93, ${ACCENT})` }}
+                        />
+                      </div>
                     </div>
-                    <div style={{ height: 7, borderRadius: 999, overflow: "hidden", background: "var(--surface-2)" }}>
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${muscle.pct}%` }}
-                        transition={{ duration: 0.75, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                        style={{ height: "100%", borderRadius: 999, background: `linear-gradient(90deg, #3d9a93, ${ACCENT})` }}
-                      />
-                    </div>
-                  </div>
-                ))
+                  ))}
+                </div>
               ) : (
-                <div style={{ ...cardStyle, textAlign: "center", padding: "28px 20px", marginBottom: 0 }}>
+                <div className="ios-inset-grouped" style={{ textAlign: "center", padding: "28px 20px" }}>
                   <p style={{ fontSize: 13, color: "var(--text-muted)" }}>Complete a workout to see your muscle patterns.</p>
                 </div>
               )}
@@ -653,50 +655,52 @@ export default function ReportPage() {
             <motion.section variants={fadeUp}>
               <SectionHeader icon={History} label="Workout History" />
               {recentLogs.length === 0 ? (
-                <div style={{ ...cardStyle, textAlign: "center", padding: "28px 20px", marginBottom: 0 }}>
+                <div className="ios-inset-grouped" style={{ textAlign: "center", padding: "28px 20px" }}>
                   <p style={{ fontSize: 13, color: "var(--text-muted)" }}>No workouts logged yet.</p>
                 </div>
               ) : (
-                recentLogs.map((log) => {
-                  const isExpanded = expandedLog === log.id
-                  return (
-                    <div key={log.id} onClick={() => setExpandedLog(isExpanded ? null : log.id)} style={{ ...cardStyle, cursor: "pointer" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {log.workoutName}
-                          </div>
-                          <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 3 }}>
-                            {new Date(log.completedAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                          <span style={{ background: "var(--surface-2)", borderRadius: 999, padding: "4px 10px", fontSize: 11, color: "var(--text-muted)" }}>
-                            {log.exercises.length} exercises
-                          </span>
-                          {isExpanded
-                            ? <ChevronDown size={15} strokeWidth={2} style={{ color: "var(--text-muted)" }} />
-                            : <ChevronRight size={15} strokeWidth={2} style={{ color: "var(--text-muted)" }} />
-                          }
-                        </div>
-                      </div>
-                      <AnimatePresence>
-                        {isExpanded && (
-                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2, ease: "easeInOut" }} style={{ overflow: "hidden" }}>
-                            <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
-                              {log.exercises.map((ex, i) => (
-                                <div key={`${ex.name}-${i}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", gap: 14, fontSize: 13 }}>
-                                  <span style={{ color: "var(--text)" }}>{ex.name}</span>
-                                  <span style={{ color: "var(--text-muted)", flexShrink: 0 }}>{ex.sets} × {ex.reps}</span>
-                                </div>
-                              ))}
+                <div className="ios-inset-grouped" style={{ padding: "4px 0" }}>
+                  {recentLogs.map((log, idx) => {
+                    const isExpanded = expandedLog === log.id
+                    return (
+                      <div key={log.id} onClick={() => setExpandedLog(isExpanded ? null : log.id)} style={{ padding: "14px 20px", borderTop: idx > 0 ? "1px solid var(--border)" : "none", cursor: "pointer" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {log.workoutName}
                             </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  )
-                })
+                            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 3 }}>
+                              {new Date(log.completedAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                            <span style={{ background: "var(--surface-2)", borderRadius: 999, padding: "4px 10px", fontSize: 11, color: "var(--text-muted)" }}>
+                              {log.exercises.length} ex
+                            </span>
+                            {isExpanded
+                              ? <ChevronDown size={15} strokeWidth={2} style={{ color: "var(--text-muted)" }} />
+                              : <ChevronRight size={15} strokeWidth={2} style={{ color: "var(--text-muted)" }} />
+                            }
+                          </div>
+                        </div>
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2, ease: "easeInOut" }} style={{ overflow: "hidden" }}>
+                              <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
+                                {log.exercises.map((ex, i) => (
+                                  <div key={`${ex.name}-${i}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", gap: 14, fontSize: 13 }}>
+                                    <span style={{ color: "var(--text)" }}>{ex.name}</span>
+                                    <span className="number-text" style={{ color: "var(--text-muted)", flexShrink: 0 }}>{ex.sets} × {ex.reps}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    )
+                  })}
+                </div>
               )}
             </motion.section>
 

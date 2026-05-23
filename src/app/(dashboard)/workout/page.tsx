@@ -203,16 +203,6 @@ function getExerciseDesc(name: string): string {
   return "Compound movement for strength and endurance."
 }
 
-function WaveformIcon() {
-  const bars = [4, 9, 15, 11, 7, 13, 9, 5, 11, 15, 8, 5]
-  return (
-    <svg viewBox="0 0 50 28" width="46" height="26" aria-hidden>
-      {bars.map((h, i) => (
-        <rect key={i} x={i * 4 + 1} y={(28 - h) / 2} width="3" height={h} rx="1.5" fill="currentColor" />
-      ))}
-    </svg>
-  )
-}
 
 export default function WorkoutPage() {
   const { status } = useSession()
@@ -220,6 +210,7 @@ export default function WorkoutPage() {
   const { selectedDay, setSelectedDay } = useStore()
   const [weekDates, setWeekDates] = useState<Date[]>([])
   const [todayIdx, setTodayIdx] = useState(-1)
+  const todayDay = todayIdx
   const [savedWorkout, setSavedWorkout] = useState<any>(null)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [completed, setCompleted] = useState(false)
@@ -468,19 +459,24 @@ export default function WorkoutPage() {
           <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0 20px" }}>
             {weekDates.map((date, i) => {
               const isActive = i === selectedDay
+              const isToday = i === todayDay
               return (
-                <motion.button key={i} onClick={() => setSelectedDay(i)} whileTap={{ scale: 0.92 }} style={{ flex: 1, border: "none", background: "transparent", cursor: "pointer", padding: "4px 2px", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)" }}>{dayNames[i][0]}</div>
-                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: isActive ? "#6bbfb8" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: isActive ? "#0b1715" : "var(--text)" }}>{date.getDate()}</div>
+                <motion.button key={i} onClick={() => setSelectedDay(i)} whileTap={{ scale: 0.92 }} style={{ flex: 1, border: "none", background: "transparent", cursor: "pointer", padding: "4px 2px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: isActive ? "var(--text)" : "var(--text-muted)", transition: "color 0.18s" }}>{dayNames[i][0]}</div>
+                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: isActive ? "#6bbfb8" : "transparent", border: isToday && !isActive ? "1.5px solid #6bbfb8" : "1.5px solid transparent", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.18s, border-color 0.18s" }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: isActive ? "#0b1715" : isToday ? "#6bbfb8" : "var(--text)" }}>{date.getDate()}</div>
                   </div>
+                  <div style={{ width: 4, height: 4, borderRadius: "50%", background: isToday ? "#6bbfb8" : "transparent", transition: "background 0.18s", marginTop: -1 }} />
                 </motion.button>
               )
             })}
           </div>
-          <div style={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 22, padding: "32px 24px", textAlign: "center", boxShadow: "var(--shadow)" }}>
-            <div style={{ fontSize: 24, fontWeight: 800, color: "var(--text)", marginBottom: 8 }}>{t.restDay}</div>
-            <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>{t.restBody}</p>
+          <div className="ios-inset-grouped" style={{ padding: "32px 24px", textAlign: "center" }}>
+            <div style={{ width: 44, height: 44, borderRadius: 14, background: "rgba(107,191,184,0.1)", border: "1px solid rgba(107,191,184,0.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#6bbfb8" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text)", marginBottom: 6 }}>{t.restDay}</div>
+            <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.55 }}>{t.restBody}</p>
           </div>
         </div>
       </div>
@@ -532,12 +528,14 @@ export default function WorkoutPage() {
         <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0 20px" }}>
           {weekDates.map((date, i) => {
             const isActive = i === selectedDay
+            const isToday = i === todayDay
             return (
-              <motion.button key={i} onClick={() => setSelectedDay(i)} whileTap={{ scale: 0.92 }} style={{ flex: 1, border: "none", background: "transparent", cursor: "pointer", padding: "4px 2px", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)" }}>{dayNames[i][0]}</div>
-                <div style={{ width: 34, height: 34, borderRadius: "50%", background: isActive ? "#6bbfb8" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.18s" }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: isActive ? "#0b1715" : "var(--text)" }}>{date.getDate()}</div>
+              <motion.button key={i} onClick={() => setSelectedDay(i)} whileTap={{ scale: 0.92 }} style={{ flex: 1, border: "none", background: "transparent", cursor: "pointer", padding: "4px 2px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: isActive ? "var(--text)" : "var(--text-muted)", transition: "color 0.18s" }}>{dayNames[i][0]}</div>
+                <div style={{ width: 34, height: 34, borderRadius: "50%", background: isActive ? "#6bbfb8" : "transparent", border: isToday && !isActive ? "1.5px solid #6bbfb8" : "1.5px solid transparent", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.18s, border-color 0.18s" }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: isActive ? "#0b1715" : isToday ? "#6bbfb8" : "var(--text)" }}>{date.getDate()}</div>
                 </div>
+                <div style={{ width: 4, height: 4, borderRadius: "50%", background: isToday ? "#6bbfb8" : "transparent", transition: "background 0.18s", marginTop: -1 }} />
               </motion.button>
             )
           })}
@@ -584,14 +582,14 @@ export default function WorkoutPage() {
               return (
                 <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05, duration: 0.24, ease: "easeOut" }} style={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 20, marginBottom: 10, overflow: "hidden", boxShadow: "var(--shadow)" }}>
                   <div style={{ display: "flex" }}>
-                    <div style={{ width: 72, padding: "14px 0 14px 14px", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8, flexShrink: 0 }}>
+                    <div style={{ width: 64, padding: "14px 0 14px 14px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "space-between", flexShrink: 0, gap: 8 }}>
                       <div style={{ background: catStyle.bg, color: catStyle.color, borderRadius: 6, padding: "2px 6px", fontSize: 9, fontWeight: 900, letterSpacing: "0.1em" }}>{category}</div>
-                      <div style={{ color: "var(--text-muted)", opacity: 0.55, marginTop: 4 }}><WaveformIcon /></div>
-                      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-muted)", marginTop: 2 }}>POSE</div>
+                      <div style={{ width: 34, height: 34, borderRadius: 10, background: catStyle.bg, border: `1px solid ${catStyle.color}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <span style={{ fontSize: 14, fontWeight: 900, color: catStyle.color }}>{i + 1}</span>
+                      </div>
                     </div>
                     <div style={{ flex: 1, padding: "14px 14px 14px 8px", minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
-                        <div style={{ fontSize: 11, fontWeight: 800, color: "var(--text-muted)" }}>{String(i+1).padStart(2,"0")}</div>
+                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "flex-end", gap: 8, marginBottom: 6 }}>
                         <div style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 800, color: "var(--text-muted)", flexShrink: 0 }}>{setsReps}</div>
                       </div>
                       <div style={{ fontSize: 18, fontWeight: 950, color: "var(--text)", letterSpacing: "-0.2px", marginBottom: 5, lineHeight: 1.1 }}>{name}</div>
