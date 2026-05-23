@@ -184,9 +184,9 @@ function PhoneMockup() {
             display: "flex", alignItems: "center", gap: 7,
           }}
         >
-          <Zap size={11} color={ACCENT} strokeWidth={2.5} />
+          <CheckCheck size={11} color={ACCENT} strokeWidth={2.5} />
           <span style={{ fontSize: 9.5, fontWeight: 800, color: ACCENT }}>
-            Gemini generated this plan
+            Plan ready
           </span>
         </motion.div>
       </div>
@@ -197,7 +197,7 @@ function PhoneMockup() {
 // ── Marquee strip ──────────────────────────────────────────────────────────────
 
 const MARQUEE_ITEMS = [
-  "AI Plan Generator", "Streak Tracking", "GPS Hike Tracking",
+  "Plan Generator", "Streak Tracking", "GPS Hike Tracking",
   "Exercise Library", "Progress Reports", "FitTokens",
   "Workout Plans", "80+ Exercises", "Google Calendar Sync",
   "Session History", "Rest Day Logic", "Habit Tracking",
@@ -260,7 +260,7 @@ function ScheduleCard() {
               <Zap size={15} color={ACCENT} strokeWidth={2.5} />
             </div>
             <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.09em", textTransform: "uppercase", color: ACCENT }}>
-              AI Plan Generator
+              Plan Generator
             </span>
           </div>
           <div style={{
@@ -532,8 +532,8 @@ function Hero() {
               margin: 0,
             }}
           >
-            Describe your goal.<br />
-            <span style={{ color: ACCENT }}>Get your plan.</span>
+            Plan smarter.<br />
+            <span style={{ color: ACCENT }}>Train harder.</span>
           </motion.h1>
 
           <motion.p
@@ -545,9 +545,9 @@ function Hero() {
               color: "rgba(255,255,255,0.5)", maxWidth: 420, margin: 0,
             }}
           >
-            Tell FitSched your goal and Gemini generates a full weekly
-            workout plan built around your exercises, equipment, and
-            schedule — then tracks every session, streak, and hike.
+            Build a full weekly workout plan around your exercises,
+            equipment, and schedule — then track every session,
+            streak, and hike.
           </motion.p>
 
           <motion.div
@@ -564,7 +564,7 @@ function Hero() {
               fontFamily: "var(--font-display)", letterSpacing: "-0.01em",
               boxShadow: "0 4px 20px rgba(107,191,184,0.32)",
             }}>
-              Build my plan
+              Get started
               <ArrowRight size={16} strokeWidth={2.5} />
             </Link>
             <Link href="#features" style={{
@@ -584,9 +584,9 @@ function Hero() {
             style={{ display: "flex", flexDirection: "column", gap: 8 }}
           >
             {[
-              "Full 7-day plan from a single text prompt",
-              "80+ exercises across gym, home, and bodyweight",
-              "GPS hike tracking + streak rewards built in",
+              "Build a custom 7-day plan with 80+ exercises",
+              "Track every session, streak, and rest day",
+              "GPS hike tracking built in",
             ].map((item, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 9 }}>
                 <CheckCheck size={14} color={ACCENT} strokeWidth={2.5} />
@@ -662,10 +662,10 @@ function Features() {
 // ── Stats row ─────────────────────────────────────────────────────────────────
 
 const STATS = [
-  { value: "80+",    label: "exercises in the library", icon: Dumbbell   },
-  { value: "Gemini", label: "powers the plan builder",  icon: Zap        },
-  { value: "GPS",    label: "hike & route tracking",    icon: Navigation },
-  { value: "7-day",  label: "average streak",           icon: Flame      },
+  { value: "80+",   label: "exercises in the library",  icon: Dumbbell   },
+  { value: "7-day", label: "custom workout plans",      icon: Calendar   },
+  { value: "GPS",   label: "hike & route tracking",     icon: Navigation },
+  { value: "14+",   label: "average streak days",       icon: Flame      },
 ]
 
 function StatsRow() {
@@ -737,13 +737,13 @@ function CtaBlock() {
               fontWeight: 900, lineHeight: 1.1, letterSpacing: "-0.03em",
               color: "rgba(255,255,255,0.94)", margin: "0 0 14px",
             }}>
-              Your first AI-generated workout plan is two minutes away.
+              Your first workout plan is two minutes away.
             </h2>
             <p style={{
               fontSize: 15, color: "rgba(255,255,255,0.45)",
               fontWeight: 500, lineHeight: 1.6, margin: 0,
             }}>
-              No credit card. Just describe your goal and Gemini handles the rest.
+              No credit card. Just set up your plan and start training.
             </p>
           </div>
 
@@ -791,7 +791,7 @@ function Footer() {
         }}>FitSched</span>
       </div>
       <span style={{ fontSize: 12, color: TEXT_MUTED, fontWeight: 600 }}>
-        AI-powered workout scheduling
+        Your fitness, scheduled.
       </span>
     </footer>
   )
