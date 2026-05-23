@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { useLanguage } from "@/context/LanguageContext"
 import { saveWorkoutFeedback, type SessionFeedback } from "@/lib/workoutFeedback"
 import { useWorkoutVerification, type ActiveChallenge } from "@/lib/workoutVerification"
+import { ExerciseDemoVisual } from "@/components/ExerciseDemoPanel"
 
 const ACCENT = "#6bbfb8"
 const CONFETTI = Array.from({ length: 42 }, (_, i) => ({ id: i, left: 8 + ((i * 17) % 84), delay: (i % 9) * 0.08, drift: ((i % 7) - 3) * 18, rotate: ((i * 47) % 220) - 110, color: [ACCENT, "#f6d365", "#f97373", "#8ab4ff", "#ffffff"][i % 5] }))
@@ -40,17 +41,6 @@ const CATEGORY_COLORS: Record<string, { bg: string; color: string }> = {
   PUSH:     { bg: "rgba(249,115,115,0.18)", color: "#e85555" },
   CARDIO:   { bg: "rgba(255,165,50,0.18)",  color: "#e08010" },
   SHOULDER: { bg: "rgba(107,191,184,0.14)", color: ACCENT },
-}
-
-function WaveformIcon() {
-  const bars = [4, 9, 15, 11, 7, 13, 9, 5, 11, 15, 8, 5]
-  return (
-    <svg viewBox="0 0 50 28" width="46" height="26" aria-hidden>
-      {bars.map((h, i) => (
-        <rect key={i} x={i * 4 + 1} y={(28 - h) / 2} width="3" height={h} rx="1.5" fill="currentColor" />
-      ))}
-    </svg>
-  )
 }
 
 function formatTime(s: number) {
@@ -248,15 +238,14 @@ export default function ExerciseSessionPage() {
               style={{ background: "var(--panel)", border: allSetsDone ? `1px solid rgba(107,191,184,0.38)` : "1px solid var(--border)", borderRadius: 20, marginBottom: 12, overflow: "hidden", boxShadow: allSetsDone ? "0 0 0 1px rgba(107,191,184,0.1)" : "var(--shadow)", transition: "border-color 0.2s" }}
             >
               <div style={{ display: "flex", gap: 0 }}>
-                {/* Left column — category + waveform */}
-                <div style={{ width: 72, padding: "14px 0 14px 14px", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8, flexShrink: 0 }}>
+                {/* Left column — category + exercise demo image */}
+                <div style={{ width: 90, padding: "12px 0 12px 12px", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8, flexShrink: 0 }}>
                   <div style={{ background: catStyle.bg, color: catStyle.color, borderRadius: 6, padding: "2px 6px", fontSize: 9, fontWeight: 900, letterSpacing: "0.1em" }}>
                     {category}
                   </div>
-                  <div style={{ color: "var(--text-muted)", opacity: 0.55, marginTop: 4 }}>
-                    <WaveformIcon />
+                  <div style={{ width: "100%", flex: 1 }}>
+                    <ExerciseDemoVisual exerciseName={ex.name} compact height={74} objectFit="cover" />
                   </div>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-muted)", marginTop: 2 }}>POSE</div>
                 </div>
 
                 {/* Right content */}
