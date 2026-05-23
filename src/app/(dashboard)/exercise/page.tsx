@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { useLanguage } from "@/context/LanguageContext"
 import { ExerciseDemoPanel, ExerciseDemoVisual } from "@/components/ExerciseDemoPanel"
 import { saveWorkoutFeedback, type SessionFeedback } from "@/lib/workoutFeedback"
+import { useWorkoutVerification, type ActiveChallenge } from "@/lib/workoutVerification"
 
 type ActiveExercise = {
   name: string
@@ -65,6 +66,8 @@ export default function ExerciseSessionPage() {
   const [savedWorkoutLogId, setSavedWorkoutLogId] = useState<string | null>(null)
   const [sessionFeedback, setSessionFeedback] = useState<SessionFeedback | null>(null)
   const [feedbackSaved, setFeedbackSaved] = useState(false)
+  const [verifySettled, setVerifySettled] = useState(false)
+  const { state: verifyState, challenge, start: startVerify, getResult } = useWorkoutVerification()
 
   useEffect(() => {
     let active = true
@@ -213,10 +216,11 @@ export default function ExerciseSessionPage() {
 
     setSaving(true)
     try {
+      const { score: verificationScore } = getResult(elapsed)
       const response = await fetch("/api/workout-log", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(workout),
+        body: JSON.stringify({ ...workout, verificationScore }),
       })
 
       if (response.ok) {
@@ -320,10 +324,67 @@ export default function ExerciseSessionPage() {
           >
             {t.back}
           </button>
-          <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 800, letterSpacing: "0.12em" }}>
-            {completedExerciseCount}/{workout.exercises.length} {t.exercisesDone}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 800, letterSpacing: "0.12em" }}>
+              {completedExerciseCount}/{workout.exercises.length} {t.exercisesDone}
+            </div>
+            {verifySettled && (
+              <div style={{
+                display: "flex", alignItems: "center", gap: 4,
+                padding: "3px 8px", borderRadius: 999, fontSize: 9, fontWeight: 900, letterSpacing: "0.1em",
+                background: verifyState === "active" ? "rgba(107,191,184,0.14)" : "rgba(255,255,255,0.06)",
+                border: verifyState === "active" ? "1px solid rgba(107,191,184,0.3)" : "1px solid var(--border)",
+                color: verifyState === "active" ? "#6bbfb8" : "var(--text-muted)",
+              }}>
+                <span style={{ width: 5, height: 5, borderRadius: "50%", background: verifyState === "active" ? "#6bbfb8" : "var(--text-muted)", flexShrink: 0 }} />
+                {verifyState === "active" ? "LIVE" : "UNVERIFIED"}
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Verification prompt — shown once until user enables or skips */}
+        {!verifySettled && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderRadius: 18,
+              padding: "14px 16px",
+              marginBottom: 12,
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text)", marginBottom: 2 }}>
+                Verify your workout
+              </div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.4 }}>
+                Enable mic to detect breathing and earn full FitTokens. Skip = 50% reward.
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 7, flexShrink: 0 }}>
+              <button
+                type="button"
+                onClick={() => setVerifySettled(true)}
+                style={{ border: "1px solid var(--border)", background: "transparent", color: "var(--text-muted)", borderRadius: 10, padding: "7px 11px", fontSize: 11, fontWeight: 800, cursor: "pointer" }}
+              >
+                Skip
+              </button>
+              <button
+                type="button"
+                onClick={() => { startVerify(); setVerifySettled(true) }}
+                style={{ border: "none", background: "#6bbfb8", color: "#fff", borderRadius: 10, padding: "7px 13px", fontSize: 11, fontWeight: 900, cursor: "pointer" }}
+              >
+                Enable
+              </button>
+            </div>
+          </motion.div>
+        )}
 
         {current && (
           <motion.div
@@ -414,6 +475,11 @@ export default function ExerciseSessionPage() {
           })}
         </div>
       </div>
+
+      {/* Breath-hold liveness challenge — fires randomly 1–2× per session */}
+      <AnimatePresence>
+        {challenge && <BreathChallengeBanner challenge={challenge} />}
+      </AnimatePresence>
 
       <AnimatePresence>
         {celebrating && (
@@ -652,5 +718,79 @@ export default function ExerciseSessionPage() {
       </AnimatePresence>
 
     </div>
+  )
+}
+
+function BreathChallengeBanner({ challenge }: { challenge: ActiveChallenge }) {
+  const isHold = challenge.phase === "hold"
+
+  return (
+    <motion.div
+      key={challenge.phase}
+      initial={{ opacity: 0, y: -24 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -24 }}
+      transition={{ type: "spring", stiffness: 320, damping: 22 }}
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 200,
+        padding: "12px 16px",
+        paddingTop: "max(12px, env(safe-area-inset-top))",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 560,
+          margin: "0 auto",
+          borderRadius: 20,
+          padding: "14px 18px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 16,
+          background: isHold
+            ? "rgba(249, 115, 115, 0.96)"
+            : "rgba(107, 191, 184, 0.96)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          boxShadow: isHold
+            ? "0 8px 32px rgba(249,115,115,0.35)"
+            : "0 8px 32px rgba(107,191,184,0.35)",
+        }}
+      >
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.14em", color: "rgba(255,255,255,0.65)", marginBottom: 3 }}>
+            VERIFICATION CHECK
+          </div>
+          <div style={{ fontSize: 17, fontWeight: 950, color: "#fff", letterSpacing: "-0.2px" }}>
+            {isHold ? "Hold your breath!" : "OK — breathe normally"}
+          </div>
+        </div>
+
+        {isHold ? (
+          <motion.div
+            key={challenge.countdown}
+            initial={{ scale: 1.3, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            style={{ fontSize: 40, fontWeight: 950, color: "#fff", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}
+          >
+            {challenge.countdown}
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.25)", display: "grid", placeItems: "center" }}
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </motion.div>
+        )}
+      </div>
+    </motion.div>
   )
 }

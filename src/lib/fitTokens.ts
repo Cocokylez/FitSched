@@ -57,6 +57,7 @@ export async function awardFitTokensForWorkoutLogTx(
   tx: Prisma.TransactionClient,
   userId: string,
   workoutLogId: string,
+  verificationScore = 1.0,
 ) {
   const workoutLog = await tx.workoutSessionLog.findFirst({
     where: { id: workoutLogId, userId },
@@ -89,30 +90,48 @@ export async function awardFitTokensForWorkoutLogTx(
 
   const streak = await calculateCurrentStreak(tx, userId)
   const streakBonus = calculateStreakBonus(streak)
-  const totalAward = BASE_WORKOUT_REWARD.plus(streakBonus).toDecimalPlaces(2)
+
+  // Verification multiplier: ≥0.55 → full, 0.25–0.55 → half, <0.25 → no tokens
+  const multiplier =
+    verificationScore >= 0.55 ? new Prisma.Decimal(1)
+    : verificationScore >= 0.25 ? new Prisma.Decimal(0.5)
+    : new Prisma.Decimal(0)
+
+  if (multiplier.equals(0)) {
+    const balance = await tx.fitTokenBalance.findUnique({ where: { userId } })
+    return {
+      awarded: false,
+      amount: 0,
+      balance: Number(balance?.amount || 0),
+      transactions: [] as TokenTransaction[],
+    }
+  }
+
+  const scaledBase = BASE_WORKOUT_REWARD.times(multiplier).toDecimalPlaces(2)
+  const scaledBonus = streakBonus.times(multiplier).toDecimalPlaces(2)
+  const totalAward = scaledBase.plus(scaledBonus).toDecimalPlaces(2)
 
   const transactions: TokenTransaction[] = [
-    { amount: BASE_WORKOUT_REWARD.toNumber(), reason: "workout_complete" },
+    { amount: scaledBase.toNumber(), reason: "workout_complete" },
   ]
 
   await tx.fitToken.create({
     data: {
       userId,
       workoutLogId,
-      amount: BASE_WORKOUT_REWARD,
+      amount: scaledBase,
       reason: "workout_complete",
     },
   })
 
-  if (streakBonus.greaterThan(0)) {
-    const roundedBonus = streakBonus.toDecimalPlaces(2)
-    transactions.push({ amount: roundedBonus.toNumber(), reason: "streak_bonus" })
+  if (scaledBonus.greaterThan(0)) {
+    transactions.push({ amount: scaledBonus.toNumber(), reason: "streak_bonus" })
 
     await tx.fitToken.create({
       data: {
         userId,
         workoutLogId,
-        amount: roundedBonus,
+        amount: scaledBonus,
         reason: "streak_bonus",
       },
     })
