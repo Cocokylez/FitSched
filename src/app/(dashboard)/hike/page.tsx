@@ -114,7 +114,7 @@ export default function HikePage() {
     const controls = globeRef.current.controls()
     controls.autoRotate      = mode === "idle" && !showTracker && !showSave && !overlayVisible
     controls.autoRotateSpeed = 0.4
-    controls.enableZoom      = mode === "planning"
+    controls.enableZoom      = !showTracker
     controls.enablePan       = false
   }, [mode, globeReady, showTracker, showSave, overlayVisible])
 
@@ -197,33 +197,33 @@ export default function HikePage() {
   // ── Cinematic transitions ─────────────────────────────────────────────────────
 
   function enterTrackingMode() {
-    // Start zooming in immediately (no perceived delay)
-    if (globeRef.current) globeRef.current.pointOfView({ altitude: 0.002 }, 1100)
+    if (globeRef.current) globeRef.current.pointOfView({ altitude: 0.002 }, 1000)
 
-    // Race GPS against a 400ms window — if it wins, redirect the zoom to the real location
+    // Race GPS — if we get coords before overlay shows, steer the zoom there
     if (navigator.geolocation) {
-      const overlayTimer = setTimeout(() => setOverlayVisible(true), 450)
+      const overlayTimer = setTimeout(() => setOverlayVisible(true), 380)
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          // Got real coords — steer the globe there before the overlay covers it
           if (globeRef.current) {
             globeRef.current.pointOfView(
               { lat: pos.coords.latitude, lng: pos.coords.longitude, altitude: 0.002 },
-              900
+              800
             )
           }
           clearTimeout(overlayTimer)
-          setTimeout(() => setOverlayVisible(true), 380)
+          setTimeout(() => setOverlayVisible(true), 300)
         },
-        () => {}, // fallback: keep original zoom-to-nowhere
-        { enableHighAccuracy: false, timeout: 400, maximumAge: 60000 }
+        () => {},
+        { enableHighAccuracy: false, timeout: 380, maximumAge: 60000 }
       )
     } else {
-      setTimeout(() => setOverlayVisible(true), 450)
+      setTimeout(() => setOverlayVisible(true), 380)
     }
 
-    setTimeout(() => setShowTracker(true), 820)
-    setTimeout(() => setOverlayVisible(false), 1040)
+    // Mount tracker early so Leaflet has time to initialise behind the overlay
+    setTimeout(() => setShowTracker(true), 650)
+    // Fade out only after map is ready (~600ms to initialise)
+    setTimeout(() => setOverlayVisible(false), 1260)
   }
 
   function handleTrackerClose() {
@@ -590,10 +590,10 @@ export default function HikePage() {
       {/* ── Cinematic transition overlay ────────────────────────────────── */}
       <motion.div
         animate={{ opacity: overlayVisible ? 1 : 0 }}
-        transition={{ duration: 0.32, ease: "easeInOut" }}
+        transition={{ duration: 0.42, ease: "easeInOut" }}
         style={{
           position: "absolute", inset: 0, zIndex: 310,
-          background: "var(--bg)", pointerEvents: "none",
+          background: "#000", pointerEvents: "none",
         }}
       />
 
