@@ -330,7 +330,6 @@ export default function SchedulePage() {
           {weekDates.map((date, i) => {
             const isActive = i === selectedDay
             const isToday = i === todayDay
-            const dayKinds = (weekSummary[i] || []).filter(k => k !== "rst")
             return (
               <motion.button
                 key={i}
@@ -371,15 +370,6 @@ export default function SchedulePage() {
                     transition: "color 0.22s",
                   }}>
                     {date.getDate()}
-                  </div>
-                  <div style={{ display: "flex", gap: 2, justifyContent: "center", minHeight: 4, position: "relative", zIndex: 1, marginTop: 1 }}>
-                    {dayKinds.slice(0, 3).map((kind, idx) => (
-                      <div key={idx} style={{
-                        width: 4, height: 3, borderRadius: 2,
-                        background: isActive ? "rgba(11,23,21,0.35)" : KIND_DOT[kind] || "var(--text-muted)",
-                        transition: "background 0.25s",
-                      }} />
-                    ))}
                   </div>
                 </div>
               </motion.button>
