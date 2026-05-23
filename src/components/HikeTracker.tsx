@@ -106,6 +106,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
   const [following, setFollowing] = useState(true)
   const [error, setError]        = useState<string | null>(null)
   const [isStraightLine, setIsStraightLine] = useState(false)
+  const [isOsmTrace, setIsOsmTrace]         = useState(false)
   const [showLegend, setShowLegend] = useState(false)
 
   function setMode(m: "track" | "plan") {
@@ -231,6 +232,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
   ) {
     setPlanStep("loading")
     setIsStraightLine(false)
+    setIsOsmTrace(false)
     try {
       const res = await fetch(
         `/api/hike/route?slat=${start.lat}&slng=${start.lng}&elat=${end.lat}&elng=${end.lng}`
@@ -243,12 +245,12 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
       const coords    = route.geometry.coordinates as [number, number][]
       const latlngs   = coords.map(([lng, lat]) => [lat, lng] as [number, number])
 
-      // Draw planned route as blue dashed line
       if (planPolyRef.current && mapRef.current) {
         planPolyRef.current.setLatLngs(latlngs)
         mapRef.current.fitBounds(planPolyRef.current.getBounds(), { padding: [40, 40] })
       }
 
+      if (data.source === "osm_trace") setIsOsmTrace(true)
       setRouteInfo({ distM: route.distance, durSec: route.duration })
       setPlanStep("ready")
     } catch {
@@ -278,6 +280,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
     setRouteInfo(null)
     setError(null)
     setIsStraightLine(false)
+    setIsOsmTrace(false)
 
     if (startPinRef.current) { startPinRef.current.remove(); startPinRef.current = null }
     if (endPinRef.current)   { endPinRef.current.remove();   endPinRef.current   = null }
@@ -775,6 +778,18 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
                   <span style={{ fontSize: 14 }}>⚠️</span>
                   <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontWeight: 600, lineHeight: 1.4 }}>
                     No trail data found for this area — showing straight-line estimate
+                  </span>
+                </div>
+              )}
+              {isOsmTrace && (
+                <div style={{
+                  background: "rgba(74,222,128,0.10)", border: "1px solid rgba(74,222,128,0.22)",
+                  borderRadius: 10, padding: "8px 12px",
+                  display: "flex", alignItems: "center", gap: 8,
+                }}>
+                  <span style={{ fontSize: 14 }}>🗺️</span>
+                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontWeight: 600, lineHeight: 1.4 }}>
+                    Traced from OSM trail data — turn-by-turn not available
                   </span>
                 </div>
               )}
