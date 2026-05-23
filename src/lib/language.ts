@@ -9,7 +9,7 @@ export const translations = {
     todaysPlan: "TODAY'S PLAN",
     setReminder: "Set reminder",
     workoutIn: "Workout in 15 minutes",
-    settings: "Profile",
+    settings: "Settings",
     syncNow: "Sync Now",
     disconnect: "Disconnect",
     signOut: "Sign Out",
