@@ -179,6 +179,11 @@ const translations = {
     lpCtaTitle: 'Your first workout plan is two minutes away.',
     lpCtaBody: 'No credit card. Just set up your plan and start training.',
     lpGetStartedFree: 'Get started free',
+    setsCount: 'sets',
+    showLess: 'Show less',
+    showAll: 'Show all {n} workouts',
+    completeFirstWorkout: 'Complete your first workout and your progress will appear here.',
+    goToSchedule: 'Go to Schedule',
   },
   CN: {
     yourDay: '你的一天',
@@ -355,6 +360,11 @@ const translations = {
     lpCtaTitle: '两分钟内生成你的第一份训练计划。',
     lpCtaBody: '无需信用卡。只需设置你的计划并开始训练。',
     lpGetStartedFree: '免费开始',
+    setsCount: '组',
+    showLess: '收起',
+    showAll: '显示全部 {n} 次训练',
+    completeFirstWorkout: '完成第一次训练后，你的进度将显示在这里。',
+    goToSchedule: '前往日程',
   },
   JP: {
     yourDay: '今日の予定',
@@ -531,6 +541,11 @@ const translations = {
     lpCtaTitle: '2分以内に最初のワークアウトプランを作成。',
     lpCtaBody: 'クレジットカード不要。プランを設定してトレーニング開始。',
     lpGetStartedFree: '無料で始める',
+    setsCount: 'セット',
+    showLess: '折りたたむ',
+    showAll: '全 {n} 件を表示',
+    completeFirstWorkout: '最初のワークアウトを完了すると、進捗がここに表示されます。',
+    goToSchedule: 'スケジュールへ',
   },
   VI: {
     yourDay: 'Ngày của bạn',
@@ -707,6 +722,11 @@ const translations = {
     lpCtaTitle: 'Kế hoạch tập luyện đầu tiên của bạn chỉ trong hai phút.',
     lpCtaBody: 'Không cần thẻ tín dụng. Chỉ cần thiết lập kế hoạch và bắt đầu tập luyện.',
     lpGetStartedFree: 'Bắt đầu miễn phí',
+    setsCount: 'hiệp',
+    showLess: 'Thu gọn',
+    showAll: 'Xem tất cả {n} buổi tập',
+    completeFirstWorkout: 'Hoàn thành buổi tập đầu tiên và tiến độ của bạn sẽ hiển thị ở đây.',
+    goToSchedule: 'Đến Lịch trình',
   }
 }
 

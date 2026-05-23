@@ -103,7 +103,6 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
   const [routeInfo, setRouteInfo] = useState<{ distM: number; durSec: number } | null>(null)
   const [distKm, setDistKm]      = useState(0)
   const [elapsed, setElapsed]    = useState(0)
-  const [accuracy, setAccuracy]  = useState<number | null>(null)
   const [error, setError]        = useState<string | null>(null)
   const [isStraightLine, setIsStraightLine] = useState(false)
 
@@ -122,8 +121,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
   // ── GPS callbacks ────────────────────────────────────────────────────────────
 
   function onPosition(pos: GeolocationPosition) {
-    const { latitude: lat, longitude: lng, altitude: alt, accuracy: acc } = pos.coords
-    setAccuracy(acc)
+    const { latitude: lat, longitude: lng, altitude: alt } = pos.coords
     setError(null)
 
     if (!startedRef.current) {

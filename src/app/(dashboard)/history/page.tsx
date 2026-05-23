@@ -68,12 +68,14 @@ export default function HistoryPage() {
 
   const totalWorkouts = logs.length;
   const totalSets = logs.reduce((acc, log) => acc + log.sets.length, 0);
-  const avgRating =
-    logs.filter((l) => l.rating).reduce((acc, l) => acc + (l.rating || 0), 0) /
-    (logs.filter((l) => l.rating).length || 1);
+  const ratedLogs = logs.filter((l) => l.rating);
+  const avgRating = ratedLogs.length > 0
+    ? ratedLogs.reduce((acc, l) => acc + (l.rating || 0), 0) / ratedLogs.length
+    : null;
 
   const weekStart = new Date();
-  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  const dow = weekStart.getDay();
+  weekStart.setDate(weekStart.getDate() - (dow === 0 ? 6 : dow - 1));
   weekStart.setHours(0, 0, 0, 0);
   const thisWeekCount = logs.filter((l) => new Date(l.date) >= weekStart).length;
 
@@ -151,7 +153,7 @@ export default function HistoryPage() {
                 {[
                   { icon: Calendar, color: "brand", label: t.totalWorkouts, value: totalWorkouts },
                   { icon: Dumbbell, color: "green", label: t.totalSets, value: totalSets },
-                  { icon: Flame, color: "orange", label: t.avgRating, value: avgRating.toFixed(1) },
+                  { icon: Flame, color: "orange", label: t.avgRating, value: avgRating !== null ? avgRating.toFixed(1) : "--" },
                   { icon: TrendingUp, color: "purple", label: t.thisWeek, value: thisWeekCount },
                 ].map((stat, i) => (
                   <motion.div
@@ -200,7 +202,7 @@ export default function HistoryPage() {
                       </div>
                       <div className="text-right">
                         <div className="text-[14px] font-semibold text-[var(--t1)]">
-                          {log.sets.length} sets
+                          {log.sets.length} {t.setsCount}
                         </div>
                         {log.duration && (
                           <div className="text-[12px] text-[var(--t3)]">
@@ -223,7 +225,7 @@ export default function HistoryPage() {
                   onClick={() => setShowAll((v) => !v)}
                   className="w-full mt-2 py-3 text-[13px] font-semibold text-[var(--t3)] bg-transparent border border-[var(--border)] rounded-[12px]"
                 >
-                  {showAll ? `Show less` : `Show all ${logs.length} workouts`}
+                  {showAll ? t.showLess : t.showAll.replace('{n}', String(logs.length))}
                 </button>
               )}
             </>

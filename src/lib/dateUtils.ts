@@ -11,9 +11,9 @@ export function addDays(date: Date, days: number): Date {
 export function getWeekId(d: Date): string {
   const date = new Date(d)
   const day = date.getDay()
-  const monday = new Date(date.setDate(date.getDate() - day + (day === 0 ? -6 : 1)))
-  monday.setHours(0, 0, 0, 0)
-  return toDateId(monday)
+  date.setDate(date.getDate() - (day === 0 ? 6 : day - 1))
+  date.setHours(0, 0, 0, 0)
+  return formatLocalDate(date)  // local date string avoids UTC offset shifting the day
 }
 
 export function formatLocalDate(date: Date): string {

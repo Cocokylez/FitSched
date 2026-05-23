@@ -6,20 +6,12 @@ import { verifySessionToken } from "@/lib/sessionToken"
 import { Prisma } from "@prisma/client"
 import { NextResponse } from "next/server"
 
-function getTodayDateId() {
-  const timeZone = process.env.FITSCHED_TIME_ZONE || "Asia/Singapore"
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(new Date())
-
-  const year = parts.find((part) => part.type === "year")?.value
-  const month = parts.find((part) => part.type === "month")?.value
-  const day = parts.find((part) => part.type === "day")?.value
-
-  return `${year}-${month}-${day}`
+// Accept any date that could legitimately be "today" in any timezone (UTC-12 to UTC+14).
+// The client sends its local YYYY-MM-DD date; we verify it's within ±38h of server UTC
+// so users outside Asia/Singapore can still earn tokens without being able to backdate old workouts.
+function isValidTodayDate(clientDate: string): boolean {
+  const clientNoon = new Date(`${clientDate}T12:00:00Z`).getTime()
+  return Math.abs(Date.now() - clientNoon) < 38 * 60 * 60 * 1000
 }
 
 function isSerializableConflict(error: unknown) {
@@ -117,7 +109,7 @@ export async function POST(req: Request) {
       }
     }
 
-    if (date !== getTodayDateId()) {
+    if (!isValidTodayDate(date)) {
       return NextResponse.json(
         { error: "Only today's workout can earn FitTokens", todayOnly: true },
         { status: 403 }
