@@ -9,6 +9,7 @@ import { toDateId, getWeekId, calculateLongestStreak } from "@/lib/dateUtils"
 import { useLanguage } from "@/context/LanguageContext"
 import { ACHIEVEMENT_DEFS, TIER_COLORS } from "@/lib/achievements"
 import { ACCENT } from "@/lib/theme"
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 
 type Achievement = {
   type: string
@@ -113,6 +114,7 @@ export default function ProfilePage() {
   const [weightKg, setWeightKg] = useState<number | null>(null)
   const [bmi, setBmi] = useState<number | null>(null)
   const [hikeTotals, setHikeTotals] = useState<{ count: number; km: number } | null>(null)
+  const [weightHistory, setWeightHistory] = useState<Array<{ weightKg: number; loggedAt: string }>>([])
 
   const photoInputRef = useRef<HTMLInputElement>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
@@ -176,6 +178,10 @@ export default function ProfilePage() {
               km: Math.round(hikes.reduce((s: number, h: any) => s + h.distanceKm, 0) * 10) / 10,
             })
           }
+        }).catch(() => {})
+        // Weight history (best-effort)
+        fetch("/api/weight").then(r => r.ok ? r.json() : []).then((wl: any[]) => {
+          if (wl.length > 0) setWeightHistory(wl)
         }).catch(() => {})
       } catch {}
       setLoading(false)
@@ -488,6 +494,78 @@ export default function ProfilePage() {
           })()}
         </div>
       )}
+
+      {/* Weight trend chart */}
+      {weightHistory.length >= 2 && (() => {
+        const recent = weightHistory.slice(-30)
+        const latest = recent[recent.length - 1]
+        const first = recent[0]
+        const change = Math.round((latest.weightKg - first.weightKg) * 10) / 10
+        const chartData = recent.map((e) => ({
+          date: (() => { const d = new Date(e.loggedAt); return `${d.getMonth() + 1}/${d.getDate()}` })(),
+          kg: e.weightKg,
+        }))
+        const weights = recent.map(e => e.weightKg)
+        const minW = Math.min(...weights)
+        const maxW = Math.max(...weights)
+        const domain: [number, number] = [Math.floor(minW - 1), Math.ceil(maxW + 1)]
+        return (
+          <div style={{ padding: "20px 16px 0" }}>
+            <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.13em", color: "var(--text-muted)", marginBottom: 10 }}>
+              WEIGHT TREND
+            </div>
+            <div style={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 20, padding: "16px 18px 12px", boxShadow: "var(--shadow)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
+                    <span style={{ fontSize: 30, fontWeight: 950, color: "var(--text)", letterSpacing: "-0.5px", fontVariantNumeric: "tabular-nums" }}>{latest.weightKg}</span>
+                    <span style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 700 }}>kg</span>
+                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 700, marginTop: 2, color: change === 0 ? "var(--text-muted)" : change < 0 ? "#4ade80" : "#f87171" }}>
+                    {change === 0 ? "No change" : `${change > 0 ? "+" : ""}${change} kg`}
+                    <span style={{ color: "var(--text-muted)", fontWeight: 600 }}> since first entry</span>
+                  </div>
+                </div>
+                <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, textAlign: "right" }}>
+                  {recent.length} entries
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={100}>
+                <AreaChart data={chartData} margin={{ top: 4, right: 2, bottom: 0, left: -28 }}>
+                  <defs>
+                    <linearGradient id="wGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={ACCENT} stopOpacity={0.28} />
+                      <stop offset="95%" stopColor={ACCENT} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 9, fill: "var(--text-muted)" }}
+                    axisLine={false}
+                    tickLine={false}
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis domain={domain} hide />
+                  <Tooltip
+                    contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                    labelStyle={{ color: "var(--text)" }}
+                    formatter={(v: number) => [`${v} kg`, "Weight"]}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="kg"
+                    stroke={ACCENT}
+                    strokeWidth={2}
+                    fill="url(#wGrad)"
+                    dot={false}
+                    activeDot={{ r: 4, fill: ACCENT, strokeWidth: 0 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Quick links */}
       <div style={{ padding: "20px 16px 0" }}>
