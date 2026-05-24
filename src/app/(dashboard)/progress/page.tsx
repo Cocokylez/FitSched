@@ -11,6 +11,7 @@ import { ChevronDown, ChevronRight } from "lucide-react"
 import { stagger, fadeUp } from "@/lib/animations"
 import { getMuscleGroup } from "@/lib/exerciseData"
 import { getWeekId } from "@/lib/dateUtils"
+import { ActivityHeatmap } from "@/components/ActivityHeatmap"
 
 const cardStyle = {
   background: "var(--surface)",
@@ -169,6 +170,13 @@ export default function ProgressPage() {
                     <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>{stat.label}</div>
                   </div>
                 ))}
+              </div>
+            </motion.div>
+
+            <motion.div variants={fadeUp}>
+              <div style={sectionLabelStyle}>ACTIVITY</div>
+              <div style={cardStyle}>
+                <ActivityHeatmap logs={logs} weeks={16} />
               </div>
             </motion.div>
 
