@@ -60,6 +60,8 @@ export default function ProgressPage() {
   const [expandedLog, setExpandedLog] = useState<string | null>(null)
   const [repeatingId, setRepeatingId] = useState<string | null>(null)
   const [repeatedId, setRepeatedId] = useState<string | null>(null)
+  const [historySearch, setHistorySearch] = useState("")
+  const [showAllHistory, setShowAllHistory] = useState(false)
 
   const handleRepeat = async (log: WorkoutLog) => {
     if (repeatingId) return
@@ -150,7 +152,10 @@ export default function ProgressPage() {
     .sort(([, a], [, b]) => b - a)
     .slice(0, 3)
 
-  const recentLogs = logs.slice(0, 10)
+  const filteredLogs = historySearch.trim()
+    ? logs.filter(l => l.workoutName.toLowerCase().includes(historySearch.toLowerCase()))
+    : logs
+  const recentLogs = showAllHistory || historySearch.trim() ? filteredLogs : filteredLogs.slice(0, 10)
 
   return (
     <div style={{ padding: "20px 16px 24px", minHeight: "100vh", background: "var(--bg)" }}>
@@ -267,7 +272,31 @@ export default function ProgressPage() {
             )}
 
             <motion.div variants={fadeUp}>
-              <div style={sectionLabelStyle}>{t.workoutHistory}</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", ...sectionLabelStyle }}>
+                <span>{t.workoutHistory}</span>
+                <span style={{ fontWeight: 600, letterSpacing: 0 }}>{filteredLogs.length} total</span>
+              </div>
+              <div style={{ position: "relative", marginBottom: 10 }}>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search workouts…"
+                  value={historySearch}
+                  onChange={e => setHistorySearch(e.target.value)}
+                  style={{
+                    width: "100%", boxSizing: "border-box",
+                    background: "var(--surface)", border: "1px solid var(--border)",
+                    borderRadius: 12, padding: "9px 12px 9px 30px",
+                    fontSize: 13, color: "var(--text)", outline: "none",
+                    fontFamily: "inherit",
+                  }}
+                />
+                {historySearch && (
+                  <button onClick={() => setHistorySearch("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 15, lineHeight: 1, padding: 0 }}>×</button>
+                )}
+              </div>
             </motion.div>
 
             {recentLogs.length === 0 ? (
@@ -362,6 +391,29 @@ export default function ProgressPage() {
                   </motion.div>
                 )
               })
+            )}
+
+            {/* Show all / show less toggle */}
+            {!historySearch.trim() && filteredLogs.length > 10 && (
+              <motion.div variants={fadeUp}>
+                <button
+                  onClick={() => setShowAllHistory(v => !v)}
+                  style={{
+                    width: "100%", border: "1px solid var(--border)", background: "var(--surface)",
+                    borderRadius: 12, padding: "11px 0", fontSize: 13, fontWeight: 700,
+                    color: "var(--text-muted)", cursor: "pointer", marginTop: 2,
+                  }}
+                >
+                  {showAllHistory ? `Show less` : `Show all ${filteredLogs.length} workouts`}
+                </button>
+              </motion.div>
+            )}
+            {historySearch.trim() && filteredLogs.length === 0 && (
+              <motion.div variants={fadeUp}>
+                <div style={{ textAlign: "center", padding: "24px 0", fontSize: 13, color: "var(--text-muted)" }}>
+                  No workouts matching "{historySearch}"
+                </div>
+              </motion.div>
             )}
           </>
         )}

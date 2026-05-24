@@ -10,6 +10,19 @@ import { ExerciseDemoVisual } from "@/components/ExerciseDemoPanel"
 import { ACCENT } from "@/lib/theme"
 import { getCategory, CATEGORY_COLORS } from "@/lib/exerciseUtils"
 import { estimateCalories } from "@/lib/calorieEstimate"
+import { getMuscleGroup } from "@/lib/exerciseData"
+
+// Alternatives pool keyed by muscle group (display name)
+const SWAP_POOL: Record<string, string[]> = {
+  Chest:     ["Push-ups", "Wide Push-ups", "Incline Push-ups", "Decline Push-ups", "Diamond Push-ups", "Close-grip Push-ups"],
+  Back:      ["Pull-ups", "Superman Hold", "Reverse Fly", "Bent-over Row", "Dumbbell Row", "Chin-ups"],
+  Legs:      ["Bodyweight Squats", "Walking Lunges", "Glute Bridges", "Wall Sit", "Calf Raises", "Step-ups", "Jump Squats"],
+  Shoulders: ["Pike Push-ups", "Lateral Raises", "Front Raises", "Overhead Press", "Face Pull", "Shrugs"],
+  Arms:      ["Bicep Curls", "Hammer Curls", "Tricep Dips", "Tricep Extension", "Close-grip Push-ups", "Concentration Curl"],
+  Core:      ["Plank", "Russian Twist", "Leg Raises", "Bicycle Crunches", "Mountain Climbers", "Dead Bug", "Plank Reaches"],
+  "Full Body": ["Burpees", "Jumping Jacks", "High Knees", "Bear Crawl", "Squat Thrusts"],
+  Cardio:    ["Jump Rope", "Sprints", "High Knees", "Mountain Climbers", "Burpees"],
+}
 
 const CONFETTI = Array.from({ length: 42 }, (_, i) => ({ id: i, left: 8 + ((i * 17) % 84), delay: (i % 9) * 0.08, drift: ((i % 7) - 3) * 18, rotate: ((i * 47) % 220) - 110, color: [ACCENT, "#f6d365", "#f97373", "#8ab4ff", "#ffffff"][i % 5] }))
 const FEEDBACK_OPTIONS: Array<{ value: SessionFeedback; label: string; detail: string }> = [
@@ -62,6 +75,7 @@ export default function ExerciseSessionPage() {
   const [restDuration, setRestDuration] = useState(60)
   const [workoutNote, setWorkoutNote] = useState("")
   const [noteSaved, setNoteSaved] = useState(false)
+  const [swapIdx, setSwapIdx] = useState<number | null>(null)
 
   useEffect(() => {
     let active = true
@@ -140,6 +154,20 @@ export default function ExerciseSessionPage() {
       })
       setNoteSaved(true)
     } catch {}
+  }
+
+  const swapExercise = (idx: number, newName: string) => {
+    if (!workout) return
+    const updated = workout.exercises.map((ex, i) =>
+      i === idx ? { ...ex, name: newName } : ex
+    )
+    const updatedWorkout = { ...workout, exercises: updated }
+    setWorkout(updatedWorkout)
+    // Reset completed sets for that exercise
+    setCompletedSets(prev => { const n = { ...prev }; delete n[idx]; return n })
+    // Persist back to sessionStorage
+    try { sessionStorage.setItem("fitsched-active-workout", JSON.stringify(updatedWorkout)) } catch {}
+    setSwapIdx(null)
   }
 
   const finishWorkout = async () => {
@@ -290,8 +318,8 @@ export default function ExerciseSessionPage() {
                     {getExerciseDesc(ex.name)}
                   </div>
 
-                  {/* W1 Set buttons */}
-                  <div style={{ display: "flex", gap: 6 }}>
+                  {/* W1 Set buttons + swap */}
+                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                     {Array.from({ length: ex.sets }, (_, setIdx) => {
                       const setDone = setIdx < done
                       const isCurrent = setIdx === done
@@ -325,6 +353,19 @@ export default function ExerciseSessionPage() {
                         </motion.button>
                       )
                     })}
+                    {/* Swap button */}
+                    {!allSetsDone && (
+                      <button
+                        type="button"
+                        onClick={() => setSwapIdx(i)}
+                        style={{ flexShrink: 0, width: 32, height: 32, border: "1px solid var(--border)", background: "var(--surface-2)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-muted)" }}
+                        title="Swap exercise"
+                      >
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -363,6 +404,52 @@ export default function ExerciseSessionPage() {
           {saving ? t.saving : allDone ? t.finishWorkout : `${doneSets} / ${totalSets} sets done`}
         </button>
       </div>
+
+      {/* Exercise swap sheet */}
+      <AnimatePresence>
+        {swapIdx !== null && workout && (() => {
+          const ex = workout.exercises[swapIdx]
+          const group = getMuscleGroup(ex.name)
+          const pool = (SWAP_POOL[group] ?? SWAP_POOL["Full Body"] ?? []).filter(n => n !== ex.name)
+          return (
+            <motion.div
+              key="swap-sheet"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSwapIdx(null)}
+              style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+            >
+              <motion.div
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", stiffness: 340, damping: 32 }}
+                onClick={e => e.stopPropagation()}
+                style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "var(--panel)", borderRadius: "20px 20px 0 0", padding: "20px 16px max(24px, calc(env(safe-area-inset-bottom) + 16px))", maxHeight: "60vh", overflowY: "auto" }}
+              >
+                <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--border)", margin: "0 auto 18px" }} />
+                <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.12em", color: "var(--text-muted)", marginBottom: 12 }}>
+                  SWAP · {ex.name.toUpperCase()}
+                </div>
+                {pool.length === 0 ? (
+                  <div style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", padding: "16px 0" }}>No alternatives available</div>
+                ) : pool.map(name => (
+                  <motion.button
+                    key={name}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => swapExercise(swapIdx, name)}
+                    style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "13px 16px", marginBottom: 8, cursor: "pointer", textAlign: "left" }}
+                  >
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{name}</span>
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  </motion.button>
+                ))}
+              </motion.div>
+            </motion.div>
+          )
+        })()}
+      </AnimatePresence>
 
       {/* Rest timer overlay */}
       <AnimatePresence>
