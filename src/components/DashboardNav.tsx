@@ -22,8 +22,8 @@ const navItems = [
     icon: <Dumbbell size={20} />,
   },
   {
-    id: "report",
-    label: "Report",
+    id: "progress",
+    label: "Progress",
     href: "/report",
     icon: <BarChart3 size={20} />,
   },
