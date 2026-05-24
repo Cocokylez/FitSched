@@ -204,7 +204,7 @@ export default function HikePage() {
 
       {/* ── Logs button ────────────────────────────────────────────────────── */}
       {!showSave && !showLogs && (
-        <div style={{ position: "absolute", top: 20, right: 18, zIndex: 20, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+        <div style={{ position: "fixed", top: 20, right: 18, zIndex: 400, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
           <motion.button
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             onClick={() => { setShowLogs(true); fetchLogs() }}
@@ -264,8 +264,8 @@ export default function HikePage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             style={{
-              position: "absolute", bottom: 32, left: "50%", transform: "translateX(-50%)",
-              zIndex: 50, display: "flex", alignItems: "center", gap: 9,
+              position: "fixed", bottom: 32, left: "50%", transform: "translateX(-50%)",
+              zIndex: 500, display: "flex", alignItems: "center", gap: 9,
               background: "rgba(10,20,18,0.88)", backdropFilter: "blur(16px)",
               border: "1px solid rgba(250,204,21,0.35)",
               borderRadius: 999, padding: "11px 18px",
@@ -286,7 +286,7 @@ export default function HikePage() {
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             style={{
-              position: "absolute", inset: 0, zIndex: 20,
+              position: "fixed", inset: 0, zIndex: 500,
               background: "rgba(0,0,0,0.8)", backdropFilter: "blur(14px)",
               display: "flex", alignItems: "flex-end",
             }}
@@ -355,7 +355,7 @@ export default function HikePage() {
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={e => { if (e.target === e.currentTarget) setShowLogs(false) }}
             style={{
-              position: "absolute", inset: 0, zIndex: 20,
+              position: "fixed", inset: 0, zIndex: 500,
               background: "rgba(0,0,0,0.75)", backdropFilter: "blur(12px)",
               display: "flex", alignItems: "flex-end",
             }}
