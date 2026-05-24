@@ -309,7 +309,6 @@ textarea::placeholder {
 .dashboard-main {
   position: relative;
   z-index: 1;
-  padding-inline: clamp(0px, 2.2vw, 30px);
 }
 
 .dashboard-main > div {
