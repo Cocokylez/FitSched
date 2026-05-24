@@ -40,6 +40,13 @@ function formatTime(s: number) {
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`
 }
 
+function daysAgoLabel(iso: string): string {
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24))
+  if (days === 0) return "today"
+  if (days === 1) return "yesterday"
+  return `${days}d ago`
+}
+
 function playBeep() {
   try {
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
@@ -78,6 +85,7 @@ export default function ExerciseSessionPage() {
   const [noteSaved, setNoteSaved] = useState(false)
   const [swapIdx, setSwapIdx] = useState<number | null>(null)
   const [newAchievements, setNewAchievements] = useState<string[]>([])
+  const [exerciseHistory, setExerciseHistory] = useState<Record<string, { sets: number; reps: number; completedAt: string }>>({})
 
   useEffect(() => {
     let active = true
@@ -91,6 +99,24 @@ export default function ExerciseSessionPage() {
       try {
         const response = await fetch(`/api/workout-log?date=${encodeURIComponent(parsed.date)}`)
         if (response.ok) { const logs = await response.json(); if (active && Array.isArray(logs) && logs.length > 0) { setLockReason("completed"); setLocked(true); sessionStorage.removeItem("fitsched-active-workout") } }
+      } catch {}
+      // Load exercise history for "last time" hints
+      try {
+        const histRes = await fetch("/api/workout-log")
+        if (histRes.ok && active) {
+          const allLogs = await histRes.json()
+          const hist: Record<string, { sets: number; reps: number; completedAt: string }> = {}
+          for (const log of allLogs) {
+            // skip today's date (we want previous sessions only)
+            if (log.date === parsed?.date) continue
+            for (const ex of (log.exercises || [])) {
+              if (!hist[ex.name]) {
+                hist[ex.name] = { sets: ex.sets, reps: ex.reps, completedAt: log.completedAt }
+              }
+            }
+          }
+          if (active) setExerciseHistory(hist)
+        }
       } catch {}
       if (active) {
         try {
@@ -319,9 +345,15 @@ export default function ExerciseSessionPage() {
                     </div>
                   </div>
                   <div style={{ fontSize: 18, fontWeight: 950, color: "var(--text)", letterSpacing: "-0.2px", marginBottom: 5, lineHeight: 1.1 }}>{ex.name}</div>
-                  <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.45, marginBottom: 10 }}>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.45, marginBottom: exerciseHistory[ex.name] ? 6 : 10 }}>
                     {getExerciseDesc(ex.name)}
                   </div>
+                  {exerciseHistory[ex.name] && (
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 10, borderRadius: 999, padding: "2px 8px", background: "rgba(107,191,184,0.08)", border: "1px solid rgba(107,191,184,0.2)", fontSize: 10, fontWeight: 800, color: ACCENT }}>
+                      <svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                      Last: {exerciseHistory[ex.name].sets}×{exerciseHistory[ex.name].reps} · {daysAgoLabel(exerciseHistory[ex.name].completedAt)}
+                    </div>
+                  )}
 
                   {/* W1 Set buttons + swap */}
                   <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
