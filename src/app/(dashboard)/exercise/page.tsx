@@ -47,6 +47,20 @@ function formatTime(s: number) {
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`
 }
 
+function playBeep() {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.connect(gain); gain.connect(ctx.destination)
+    osc.type = "sine"; osc.frequency.value = 880
+    gain.gain.setValueAtTime(0.28, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5)
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.5)
+  } catch {}
+}
+
 export default function ExerciseSessionPage() {
   const router = useRouter()
   const { t } = useLanguage()
@@ -66,6 +80,8 @@ export default function ExerciseSessionPage() {
   const [verifySettled, setVerifySettled] = useState(false)
   const { state: verifyState, challenge, start: startVerify, getResult } = useWorkoutVerification()
   const sessionTokenRef = useRef<string | null>(null)
+  const [restSeconds, setRestSeconds] = useState<number | null>(null)
+  const [restDuration, setRestDuration] = useState(60)
 
   useEffect(() => {
     let active = true
@@ -98,6 +114,18 @@ export default function ExerciseSessionPage() {
     return () => window.clearInterval(timer)
   }, [])
 
+  // Rest timer countdown
+  useEffect(() => {
+    if (restSeconds === null) return
+    if (restSeconds <= 0) {
+      playBeep()
+      setRestSeconds(null)
+      return
+    }
+    const t = window.setTimeout(() => setRestSeconds(v => (v !== null && v > 0) ? v - 1 : null), 1000)
+    return () => window.clearTimeout(t)
+  }, [restSeconds])
+
   const totalSets = useMemo(() => workout?.exercises.reduce((s, e) => s + e.sets, 0) ?? 0, [workout])
   const doneSets = useMemo(() => Object.values(completedSets).reduce((s, v) => s + v, 0), [completedSets])
   const allDone = Boolean(workout && doneSets === totalSets && totalSets > 0)
@@ -105,7 +133,14 @@ export default function ExerciseSessionPage() {
   function completeSet(exIdx: number) {
     if (!workout) return
     const ex = workout.exercises[exIdx]
-    setCompletedSets(prev => ({ ...prev, [exIdx]: Math.min((prev[exIdx] || 0) + 1, ex.sets) }))
+    const newCount = Math.min((completedSets[exIdx] || 0) + 1, ex.sets)
+    const newCompleted = { ...completedSets, [exIdx]: newCount }
+    setCompletedSets(newCompleted)
+    // Start rest timer unless this was the very last set of the session
+    const newDone = Object.values(newCompleted).reduce((s, v) => s + v, 0)
+    if (newDone < totalSets) {
+      setRestSeconds(restDuration)
+    }
   }
 
   function saveSessionFeedback(value: SessionFeedback) {
@@ -337,6 +372,19 @@ export default function ExerciseSessionPage() {
         </button>
       </div>
 
+      {/* Rest timer overlay */}
+      <AnimatePresence>
+        {restSeconds !== null && !celebrating && (
+          <RestTimerOverlay
+            seconds={restSeconds}
+            total={restDuration}
+            onSkip={() => setRestSeconds(null)}
+            onAddTime={() => setRestSeconds(s => s !== null ? s + 30 : s)}
+            onChangeDuration={(d) => { setRestDuration(d); setRestSeconds(d) }}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Breath-hold liveness challenge */}
       <AnimatePresence>
         {challenge && <BreathChallengeBanner challenge={challenge} />}
@@ -430,6 +478,160 @@ function BreathChallengeBanner({ challenge }: { challenge: ActiveChallenge }) {
           </motion.div>
         )}
       </div>
+    </motion.div>
+  )
+}
+
+// ── Rest Timer Overlay ─────────────────────────────────────────────────────────
+
+const REST_RING_R    = 56
+const REST_RING_CIRC = 2 * Math.PI * REST_RING_R   // ≈ 351.9
+
+function RestTimerOverlay({
+  seconds,
+  total,
+  onSkip,
+  onAddTime,
+  onChangeDuration,
+}: {
+  seconds: number
+  total: number
+  onSkip: () => void
+  onAddTime: () => void
+  onChangeDuration: (d: number) => void
+}) {
+  const pct        = Math.max(0, Math.min(1, seconds / total))
+  const dashoffset = REST_RING_CIRC * (1 - pct)
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      style={{
+        position: "fixed", inset: 0, zIndex: 90,
+        background: "rgba(0,0,0,0.80)",
+        backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        padding: "20px 20px max(90px, calc(env(safe-area-inset-bottom) + 90px))",
+      }}
+    >
+      <motion.div
+        initial={{ scale: 0.88, y: 22 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.88, y: 22 }}
+        transition={{ type: "spring", stiffness: 280, damping: 26 }}
+        style={{
+          background: "var(--panel)",
+          border: "1px solid rgba(107,191,184,0.28)",
+          borderRadius: 28,
+          padding: "28px 24px 22px",
+          width: "100%", maxWidth: 330,
+          display: "flex", flexDirection: "column",
+          alignItems: "center", gap: 20,
+          boxShadow: "0 28px 80px rgba(0,0,0,0.5)",
+        }}
+      >
+        {/* Label */}
+        <div style={{
+          fontSize: 10, fontWeight: 900, letterSpacing: "0.2em",
+          color: ACCENT, textTransform: "uppercase",
+        }}>
+          Rest
+        </div>
+
+        {/* Progress ring + countdown */}
+        <div style={{ position: "relative", width: 148, height: 148 }}>
+          <svg width={148} height={148} style={{ transform: "rotate(-90deg)" }}>
+            {/* background track */}
+            <circle cx={74} cy={74} r={REST_RING_R} fill="none" stroke="rgba(107,191,184,0.12)" strokeWidth={8} />
+            {/* progress arc */}
+            <circle
+              cx={74} cy={74} r={REST_RING_R}
+              fill="none"
+              stroke={ACCENT}
+              strokeWidth={8}
+              strokeLinecap="round"
+              strokeDasharray={REST_RING_CIRC}
+              strokeDashoffset={dashoffset}
+              style={{ transition: "stroke-dashoffset 0.95s linear" }}
+            />
+          </svg>
+          <div style={{
+            position: "absolute", inset: 0,
+            display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center",
+          }}>
+            <motion.div
+              key={seconds}
+              initial={{ scale: 1.12, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.14 }}
+              style={{
+                fontSize: 46, fontWeight: 950, color: "var(--text)",
+                fontVariantNumeric: "tabular-nums", lineHeight: 1,
+              }}
+            >
+              {seconds}
+            </motion.div>
+            <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, marginTop: 3 }}>sec</div>
+          </div>
+        </div>
+
+        {/* Duration chips */}
+        <div style={{ display: "flex", gap: 8 }}>
+          {([30, 60, 90, 120] as const).map(d => (
+            <button
+              key={d}
+              type="button"
+              onClick={() => onChangeDuration(d)}
+              style={{
+                border: total === d ? `1px solid ${ACCENT}` : "1px solid var(--border)",
+                background: total === d ? "rgba(107,191,184,0.14)" : "var(--surface-2)",
+                color: total === d ? ACCENT : "var(--text-muted)",
+                borderRadius: 10, padding: "5px 11px",
+                fontSize: 11, fontWeight: 900,
+                cursor: "pointer",
+              }}
+            >
+              {d}s
+            </button>
+          ))}
+        </div>
+
+        {/* Skip / +30s */}
+        <div style={{ display: "flex", gap: 10, width: "100%" }}>
+          <button
+            type="button"
+            onClick={onSkip}
+            style={{
+              flex: 1,
+              border: "1px solid var(--border)",
+              background: "transparent",
+              color: "var(--text-muted)",
+              borderRadius: 14, padding: "13px 0",
+              fontSize: 13, fontWeight: 900, cursor: "pointer",
+            }}
+          >
+            Skip
+          </button>
+          <button
+            type="button"
+            onClick={onAddTime}
+            style={{
+              flex: 1,
+              border: `1px solid rgba(107,191,184,0.35)`,
+              background: "rgba(107,191,184,0.1)",
+              color: ACCENT,
+              borderRadius: 14, padding: "13px 0",
+              fontSize: 13, fontWeight: 900, cursor: "pointer",
+            }}
+          >
+            +30s
+          </button>
+        </div>
+      </motion.div>
     </motion.div>
   )
 }

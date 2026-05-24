@@ -2,10 +2,11 @@
 
 import "leaflet/dist/leaflet.css"
 import type L from "leaflet"
-import { useEffect, useRef } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { motion } from "framer-motion"
 import { Clock, MapPin, TrendingUp, X, Zap } from "lucide-react"
 import type { Waypoint } from "@/components/HikeTracker"
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -49,6 +50,16 @@ function fmtDate(s: string): string {
   })
 }
 
+// ── Haversine (km) ────────────────────────────────────────────────────────────
+
+function haversineKm(p1: Waypoint, p2: Waypoint): number {
+  const R = 6371
+  const dLat = (p2.lat - p1.lat) * Math.PI / 180
+  const dLng = (p2.lng - p1.lng) * Math.PI / 180
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(p1.lat * Math.PI / 180) * Math.cos(p2.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 type Props = {
@@ -62,6 +73,20 @@ export function HikeRouteDetail({ hike, onClose }: Props) {
 
   const points   = Array.isArray(hike.routePoints) ? (hike.routePoints as Waypoint[]) : []
   const hasRoute = points.length >= 2
+
+  // Build cumulative-distance × altitude pairs for the elevation chart
+  const elevationProfile = useMemo(() => {
+    if (points.length < 2) return []
+    let cumDist = 0
+    const data: { dist: number; alt: number }[] = []
+    for (let i = 0; i < points.length; i++) {
+      if (i > 0) cumDist += haversineKm(points[i - 1], points[i])
+      if (points[i].alt !== null) {
+        data.push({ dist: Math.round(cumDist * 1000) / 1000, alt: Math.round(points[i].alt!) })
+      }
+    }
+    return data
+  }, [points])
 
   // ── Build Leaflet map ────────────────────────────────────────────────────────
 
@@ -281,6 +306,63 @@ export function HikeRouteDetail({ hike, onClose }: Props) {
                   Elevation gain
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Elevation profile chart */}
+          {elevationProfile.length >= 2 && (
+            <div style={{
+              background: "var(--surface-2, rgba(128,128,128,0.07))",
+              border: "1px solid var(--border)", borderRadius: 14,
+              padding: "14px 14px 8px",
+            }}>
+              <div style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
+                color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 10,
+              }}>
+                Elevation Profile
+              </div>
+              <ResponsiveContainer width="100%" height={110}>
+                <AreaChart data={elevationProfile} margin={{ top: 2, right: 4, bottom: 0, left: 0 }}>
+                  <defs>
+                    <linearGradient id="elevGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="10%" stopColor={ACCENT} stopOpacity={0.38} />
+                      <stop offset="95%" stopColor={ACCENT} stopOpacity={0.03} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.1)" vertical={false} />
+                  <XAxis
+                    dataKey="dist"
+                    tick={{ fontSize: 9, fill: "var(--text-muted)" }}
+                    tickFormatter={(v: number) => `${v}k`}
+                    axisLine={false} tickLine={false}
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis
+                    tick={{ fontSize: 9, fill: "var(--text-muted)" }}
+                    axisLine={false} tickLine={false}
+                    width={34}
+                    tickFormatter={(v: number) => `${v}m`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--panel)", border: "1px solid var(--border)",
+                      borderRadius: 10, fontSize: 11, fontWeight: 700,
+                    }}
+                    formatter={(v: number) => [`${v} m`, "Altitude"]}
+                    labelFormatter={(v: number) => `${v} km`}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="alt"
+                    stroke={ACCENT}
+                    strokeWidth={2}
+                    fill="url(#elevGrad)"
+                    dot={false}
+                    activeDot={{ r: 4, fill: ACCENT, stroke: "var(--panel)", strokeWidth: 2 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           )}
 
