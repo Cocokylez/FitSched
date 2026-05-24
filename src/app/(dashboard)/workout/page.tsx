@@ -10,7 +10,7 @@ import { useTheme } from "@/context/ThemeContext"
 import { SkeletonExerciseRow } from "@/components/Skeleton"
 import { getSmartExercisePlan, parseSetsReps, toWorkoutExercises } from "@/lib/workoutRecommendations"
 import { getFeedbackAdjustedExperienceLevel } from "@/lib/workoutFeedback"
-import { MUSCLE_GROUPS } from "@/lib/exerciseData"
+import { MUSCLE_GROUPS, getMuscleGroup } from "@/lib/exerciseData"
 import { formatLocalDate } from "@/lib/dateUtils"
 import { ACCENT } from "@/lib/theme"
 import { getCategory, CATEGORY_COLORS } from "@/lib/exerciseUtils"
@@ -205,6 +205,7 @@ export default function WorkoutPage() {
   const [computing, setComputing] = useState(true)
   const [showTemplates, setShowTemplates] = useState(false)
   const [templateExercises, setTemplateExercises] = useState<Array<[string, string]> | null>(null)
+  const [muscleReadiness, setMuscleReadiness] = useState<Array<{ group: string; status: "fresh" | "recovering" | "sore" | "untrained" }> | null>(null)
   const dayNames = [t.days.sun, t.days.mon, t.days.tue, t.days.wed, t.days.thu, t.days.fri, t.days.sat]
   const DAY_ABBR = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
 
@@ -364,6 +365,31 @@ export default function WorkoutPage() {
             recentNames = logs
               .filter((l: any) => new Date(l.completedAt || l.createdAt) > oneWeekAgo)
               .flatMap((l: any) => l.exercises?.map((e: any) => e.name) || [])
+
+            // Muscle readiness
+            const TRACKED = ["Chest", "Back", "Shoulders", "Arms", "Legs", "Core"] as const
+            const FULL_BODY_SPILL = ["Chest", "Back", "Legs", "Core"]
+            const lastTrained: Record<string, Date> = {}
+            const nowTime = new Date()
+            for (const log of logs) {
+              for (const ex of (log.exercises || [])) {
+                const rawGroup = getMuscleGroup(ex.name)
+                const affected = rawGroup === "Full Body" ? FULL_BODY_SPILL : [rawGroup]
+                for (const g of affected) {
+                  if (!TRACKED.includes(g as any)) continue
+                  const d = new Date(log.completedAt)
+                  if (!lastTrained[g] || d > lastTrained[g]) lastTrained[g] = d
+                }
+              }
+            }
+            setMuscleReadiness(TRACKED.map(group => {
+              const last = lastTrained[group]
+              if (!last) return { group, status: "untrained" as const }
+              const days = (nowTime.getTime() - last.getTime()) / (1000 * 60 * 60 * 24)
+              if (days < 1.5) return { group, status: "sore" as const }
+              if (days < 3.5) return { group, status: "recovering" as const }
+              return { group, status: "fresh" as const }
+            }))
           }
         } catch {}
 
@@ -564,6 +590,32 @@ export default function WorkoutPage() {
             Templates
           </button>
         </div>
+
+        {/* Muscle readiness strip — today only */}
+        {selectedDay === todayIdx && muscleReadiness && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{ marginBottom: 12, display: "flex", gap: 6, flexWrap: "wrap" }}
+          >
+            {muscleReadiness.map(({ group, status }) => {
+              const color = status === "sore" ? "#ef4444"
+                : status === "recovering" ? "#f59e0b"
+                : status === "fresh" ? "#10b981"
+                : "var(--text-muted)"
+              const bg = status === "sore" ? "rgba(239,68,68,0.1)"
+                : status === "recovering" ? "rgba(245,158,11,0.1)"
+                : status === "fresh" ? "rgba(16,185,129,0.1)"
+                : "var(--surface-2)"
+              return (
+                <div key={group} style={{ display: "flex", alignItems: "center", gap: 4, background: bg, border: `1px solid ${color}33`, borderRadius: 20, padding: "4px 9px", fontSize: 10, fontWeight: 800, color }}>
+                  <span style={{ width: 5, height: 5, borderRadius: "50%", background: color, flexShrink: 0 }} />
+                  {group}
+                </div>
+              )
+            })}
+          </motion.div>
+        )}
 
         {/* FT motivation strip */}
         <div style={{ background: "rgba(107,191,184,0.08)", border: "1px solid rgba(107,191,184,0.28)", borderRadius: 14, padding: "10px 14px", display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 700, color: "#6bbfb8", marginBottom: 14 }}>
