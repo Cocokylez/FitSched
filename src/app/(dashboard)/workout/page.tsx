@@ -647,6 +647,35 @@ export default function WorkoutPage() {
           </motion.div>
         )}
 
+        {/* Contextual tip — shown when relevant */}
+        {selectedDay === todayIdx && !computing && muscleReadiness && (() => {
+          const soreMuscles = muscleReadiness.filter(m => m.status === "sore").map(m => m.group)
+          const recovering = muscleReadiness.filter(m => m.status === "recovering").length
+          const fresh = muscleReadiness.filter(m => m.status === "fresh" || m.status === "untrained").length
+          let tip: string | null = null
+          if (weeklyDone === workoutsPerWeek) {
+            tip = "✓ Weekly goal reached — any extra sets are a bonus!"
+          } else if (weeklyDone === workoutsPerWeek - 1) {
+            tip = "One more to hit your weekly goal 💪"
+          } else if (soreMuscles.length >= 3) {
+            tip = "Most muscles still sore — focus on form over intensity today."
+          } else if (fresh >= 4) {
+            tip = "Muscles are fresh — great day for a strong session! ⚡"
+          } else if (recovering > 0 && soreMuscles.length === 0) {
+            tip = "Recovering well — a moderate session is perfect today."
+          }
+          if (!tip) return null
+          return (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{ marginBottom: 12, borderRadius: 12, padding: "9px 12px", background: "var(--surface)", border: "1px solid var(--border)", fontSize: 12, fontWeight: 700, color: "var(--text-muted)", lineHeight: 1.4 }}
+            >
+              {tip}
+            </motion.div>
+          )
+        })()}
+
         {/* FT motivation strip */}
         <div style={{ background: "rgba(107,191,184,0.08)", border: "1px solid rgba(107,191,184,0.28)", borderRadius: 14, padding: "10px 14px", display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 700, color: "#6bbfb8", marginBottom: 14 }}>
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
