@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
-import { History, Trash2, X } from "lucide-react"
+import { CloudOff, History, RefreshCw, Trash2, X } from "lucide-react"
 import { HikeTracker } from "@/components/HikeTracker"
 import type { TrackerResult } from "@/components/HikeTracker"
 import { HikeRouteDetail } from "@/components/HikeRouteDetail"
 import type { HikeDetail } from "@/components/HikeRouteDetail"
+import { getPendingHikeCount, queueHike, requestSync } from "@/lib/hikeOfflineQueue"
 import { playSound } from "@/lib/sound"
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -63,11 +64,28 @@ export default function HikePage() {
   const [selectedHike, setSelectedHike] = useState<HikeDetail | null>(null)
   const [detailLoading, setDetailLoading] = useState<string | null>(null)
 
+  // Offline save feedback
+  const [savedOffline, setSavedOffline] = useState(false)
+  const [pendingCount, setPendingCount] = useState(0)
+
   // ── Hide nav bar ──────────────────────────────────────────────────────────────
 
   useEffect(() => {
     window.dispatchEvent(new CustomEvent("hike-tracker-change", { detail: { open: true } }))
     return () => { window.dispatchEvent(new CustomEvent("hike-tracker-change", { detail: { open: false } })) }
+  }, [])
+
+  // ── Offline queue bookkeeping ─────────────────────────────────────────────────
+
+  useEffect(() => {
+    getPendingHikeCount().then(setPendingCount).catch(() => {})
+
+    // When SW flushes the queue, refresh pending count + logs list
+    const onSynced = () => {
+      getPendingHikeCount().then(setPendingCount).catch(() => {})
+    }
+    window.addEventListener("hike-synced", onSynced)
+    return () => window.removeEventListener("hike-synced", onSynced)
   }, [])
 
   // ── Tracker callbacks ─────────────────────────────────────────────────────────
@@ -84,29 +102,53 @@ export default function HikePage() {
     const r = pendingResultRef.current
     if (!r) return
     setSaving(true)
+
+    const hikeData = {
+      name:         saveName.trim() || "Hike",
+      locationName: saveLoc.trim()  || null,
+      distanceKm:   r.distanceKm,
+      durationMin:  r.durationMin,
+      elevationM:   r.elevationM,
+      routePoints:  r.routePoints,
+      notes:        saveNotes.trim() || null,
+      loggedAt:     new Date().toISOString(),
+    }
+
     try {
       const res = await fetch("/api/hike", {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name:         saveName.trim() || "Hike",
-          locationName: saveLoc.trim() || null,
-          distanceKm:   r.distanceKm,
-          durationMin:  r.durationMin,
-          elevationM:   r.elevationM,
-          routePoints:  r.routePoints,
-          notes:        saveNotes.trim() || null,
-          loggedAt:     new Date().toISOString(),
-        }),
+        body:    JSON.stringify(hikeData),
       })
+
       if (res.ok) {
         playSound("confirmation_002.ogg", 0.6)
         setShowSave(false)
         setSaveName(""); setSaveLoc(""); setSaveNotes("")
         pendingResultRef.current = null
         setTrackerKey(k => k + 1)
+        return
       }
-    } finally { setSaving(false) }
+    } catch {
+      // Network unavailable — fall through to offline queue
+    }
+
+    // ── Offline path ──────────────────────────────────────────────────────────
+    try {
+      await queueHike(hikeData)
+      await requestSync()
+      const newCount = await getPendingHikeCount()
+      setPendingCount(newCount)
+    } catch { /* IndexedDB unavailable */ }
+
+    playSound("confirmation_002.ogg", 0.5)
+    setSavedOffline(true)
+    setTimeout(() => setSavedOffline(false), 4000)
+    setShowSave(false)
+    setSaveName(""); setSaveLoc(""); setSaveNotes("")
+    pendingResultRef.current = null
+    setTrackerKey(k => k + 1)
+    setSaving(false)
   }
 
   function discardHike() {
@@ -170,22 +212,81 @@ export default function HikePage() {
 
       {/* ── Logs button ────────────────────────────────────────────────────── */}
       {!showSave && !showLogs && (
-        <motion.button
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          onClick={() => { setShowLogs(true); fetchLogs() }}
-          style={{
-            position: "absolute", top: 20, right: 18, zIndex: 20,
-            background: "var(--panel)", border: "1px solid var(--border)",
-            borderRadius: 999, padding: "8px 14px", color: "var(--text)",
-            display: "flex", alignItems: "center", gap: 6,
-            fontSize: 12, fontWeight: 700, cursor: "pointer",
-            backdropFilter: "blur(12px)",
-          }}
-        >
-          <History size={14} strokeWidth={2} />
-          Logs
-        </motion.button>
+        <div style={{ position: "absolute", top: 20, right: 18, zIndex: 20, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+          <motion.button
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            onClick={() => { setShowLogs(true); fetchLogs() }}
+            style={{
+              background: "var(--panel)", border: "1px solid var(--border)",
+              borderRadius: 999, padding: "8px 14px", color: "var(--text)",
+              display: "flex", alignItems: "center", gap: 6,
+              fontSize: 12, fontWeight: 700, cursor: "pointer",
+              backdropFilter: "blur(12px)", position: "relative",
+            }}
+          >
+            <History size={14} strokeWidth={2} />
+            Logs
+            {/* Pending sync badge */}
+            {pendingCount > 0 && (
+              <span style={{
+                position: "absolute", top: -5, right: -5,
+                background: "#facc15", color: "#000",
+                borderRadius: "50%", width: 16, height: 16,
+                fontSize: 9, fontWeight: 900,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                {pendingCount}
+              </span>
+            )}
+          </motion.button>
+
+          {/* Pending sync pill */}
+          <AnimatePresence>
+            {pendingCount > 0 && (
+              <motion.button
+                initial={{ opacity: 0, y: -6, scale: 0.92 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.92 }}
+                onClick={async () => { await requestSync(); getPendingHikeCount().then(setPendingCount).catch(() => {}) }}
+                style={{
+                  background: "rgba(250,204,21,0.15)", border: "1px solid rgba(250,204,21,0.4)",
+                  borderRadius: 999, padding: "6px 11px",
+                  display: "flex", alignItems: "center", gap: 6,
+                  fontSize: 11, fontWeight: 700, cursor: "pointer",
+                  color: "#facc15", backdropFilter: "blur(12px)",
+                }}
+              >
+                <RefreshCw size={11} strokeWidth={2.5} />
+                {pendingCount} hike{pendingCount > 1 ? "s" : ""} pending sync
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </div>
       )}
+
+      {/* ── Offline save toast ──────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {savedOffline && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            style={{
+              position: "absolute", bottom: 32, left: "50%", transform: "translateX(-50%)",
+              zIndex: 50, display: "flex", alignItems: "center", gap: 9,
+              background: "rgba(10,20,18,0.88)", backdropFilter: "blur(16px)",
+              border: "1px solid rgba(250,204,21,0.35)",
+              borderRadius: 999, padding: "11px 18px",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.4)", whiteSpace: "nowrap",
+            }}
+          >
+            <CloudOff size={14} color="#facc15" strokeWidth={2.5} />
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>
+              Saved offline — will sync when connected
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Save hike modal ─────────────────────────────────────────────────── */}
       <AnimatePresence>

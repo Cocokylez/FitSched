@@ -11,6 +11,44 @@ const ACCENT   = "#6bbfb8"
 const GREEN    = "#4ade80"
 const RED      = "#f87171"
 const BLUE     = "#60a5fa"
+const YELLOW   = "#facc15"
+
+// ── Tile pre-fetch (warms the offline cache around the starting position) ─────
+
+function prefetchTilesAround(lat: number, lng: number) {
+  const toTileXY = (la: number, lo: number, z: number) => {
+    const x = Math.floor(((lo + 180) / 360) * Math.pow(2, z))
+    const y = Math.floor(
+      ((1 - Math.log(Math.tan((la * Math.PI) / 180) + 1 / Math.cos((la * Math.PI) / 180)) / Math.PI) / 2) * Math.pow(2, z)
+    )
+    return { x, y }
+  }
+
+  // Fetch a grid at zoom 14 (3×3 = 9 tiles ≈ 10 km radius),
+  //  zoom 15 (5×5 = 25 tiles ≈ 5 km), and zoom 16 (7×7 = 49 tiles ≈ 2 km)
+  const plan: Array<{ z: number; r: number }> = [
+    { z: 14, r: 1 },
+    { z: 15, r: 2 },
+    { z: 16, r: 3 },
+  ]
+
+  const imgs: HTMLImageElement[] = []
+
+  plan.forEach(({ z, r }) => {
+    const { x, y } = toTileXY(lat, lng, z)
+    for (let dx = -r; dx <= r; dx++) {
+      for (let dy = -r; dy <= r; dy++) {
+        const img = new Image()
+        // Using subdomain "a" only — enough to warm the cache without hammering
+        img.src = `https://a.tile.opentopomap.org/${z}/${x + dx}/${y + dy}.png`
+        imgs.push(img)  // hold reference so GC doesn't drop them mid-load
+      }
+    }
+  })
+
+  // Release after a generous timeout
+  setTimeout(() => imgs.length = 0, 30_000)
+}
 
 export type Waypoint    = { lat: number; lng: number; alt: number | null; ts: number }
 export type TrackerResult = {
@@ -109,6 +147,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
   const [isOsmTrace, setIsOsmTrace]               = useState(false)
   const [showLegend, setShowLegend]               = useState(false)
   const [safetyAcknowledged, setSafetyAcknowledged] = useState(false)
+  const [isOnline, setIsOnline]                   = useState(typeof navigator !== "undefined" ? navigator.onLine : true)
 
   function setMode(m: "track" | "plan") {
     modeRef.current = m
@@ -137,6 +176,9 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
       startTimeRef.current = Date.now()
       setTrackStatus("tracking")
       mapRef.current?.setView([lat, lng], 16)
+
+      // Pre-fetch tiles around starting position to warm the offline cache
+      prefetchTilesAround(lat, lng)
 
       timerRef.current = setInterval(() => {
         if (pausedRef.current) return
@@ -385,6 +427,19 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // ── Online / offline indicator ───────────────────────────────────────────────
+
+  useEffect(() => {
+    const onOnline  = () => setIsOnline(true)
+    const onOffline = () => setIsOnline(false)
+    window.addEventListener("online",  onOnline)
+    window.addEventListener("offline", onOffline)
+    return () => {
+      window.removeEventListener("online",  onOnline)
+      window.removeEventListener("offline", onOffline)
+    }
+  }, [])
+
   // ── Hide dashboard nav while tracker is open ─────────────────────────────────
 
   useEffect(() => {
@@ -574,6 +629,32 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
               {/* pace */}
               <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.55)", fontVariantNumeric: "tabular-nums" }}>
                 {formatPace(distKm, elapsed)}<span style={{ fontSize: 10, marginLeft: 2 }}>/km</span>
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* TRACK: offline indicator pill ─────────────────────────────────── */}
+        <AnimatePresence>
+          {!isOnline && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+              style={{
+                position: "absolute", top: 14, left: 14, zIndex: 999,
+                display: "flex", alignItems: "center", gap: 7,
+                background: "rgba(10,20,18,0.82)", backdropFilter: "blur(12px)",
+                border: `1px solid rgba(250,204,21,0.45)`,
+                borderRadius: 999, padding: "7px 13px",
+                pointerEvents: "none",
+              }}
+            >
+              <motion.span
+                animate={{ opacity: [1, 0.3, 1] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                style={{ width: 7, height: 7, borderRadius: "50%", background: YELLOW, flexShrink: 0 }}
+              />
+              <span style={{ fontSize: 11, fontWeight: 700, color: YELLOW }}>
+                Offline — cached tiles only
               </span>
             </motion.div>
           )}
