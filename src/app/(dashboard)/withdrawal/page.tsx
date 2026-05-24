@@ -5,8 +5,7 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { ArrowLeft, Dumbbell, Flame, Zap } from "lucide-react"
-
-const ACCENT = "#6bbfb8"
+import { ACCENT } from "@/lib/theme"
 
 type Transaction = {
   id: string

@@ -13,8 +13,7 @@ import { getFeedbackAdjustedExperienceLevel } from "@/lib/workoutFeedback"
 import { getSmartExercisePlan, toWorkoutExercises } from "@/lib/workoutRecommendations"
 import { MUSCLE_GROUPS } from "@/lib/exerciseData"
 import { formatLocalDate } from "@/lib/dateUtils"
-
-const ACCENT = "#6bbfb8"
+import { ACCENT } from "@/lib/theme"
 
 const DAY_EXERCISES: Record<number, Array<{ name: string; sets: number; reps: number }>> = {
   1: [{ name: "Push-ups", sets: 3, reps: 15 }, { name: "Diamond Push-ups", sets: 3, reps: 10 }, { name: "Tricep Dips", sets: 3, reps: 12 }, { name: "Chest Fly", sets: 3, reps: 12 }, { name: "Close-grip Push-ups", sets: 3, reps: 10 }],

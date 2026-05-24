@@ -7,8 +7,9 @@ import { useLanguage } from "@/context/LanguageContext"
 import { saveWorkoutFeedback, type SessionFeedback } from "@/lib/workoutFeedback"
 import { useWorkoutVerification, type ActiveChallenge } from "@/lib/workoutVerification"
 import { ExerciseDemoVisual } from "@/components/ExerciseDemoPanel"
+import { ACCENT } from "@/lib/theme"
+import { getCategory, CATEGORY_COLORS } from "@/lib/exerciseUtils"
 
-const ACCENT = "#6bbfb8"
 const CONFETTI = Array.from({ length: 42 }, (_, i) => ({ id: i, left: 8 + ((i * 17) % 84), delay: (i % 9) * 0.08, drift: ((i % 7) - 3) * 18, rotate: ((i * 47) % 220) - 110, color: [ACCENT, "#f6d365", "#f97373", "#8ab4ff", "#ffffff"][i % 5] }))
 const FEEDBACK_OPTIONS: Array<{ value: SessionFeedback; label: string; detail: string }> = [
   { value: "too_easy", label: "Too easy", detail: "Add challenge" },
@@ -19,29 +20,6 @@ const FEEDBACK_OPTIONS: Array<{ value: SessionFeedback; label: string; detail: s
 type ActiveExercise = { name: string; sets: number; reps: number }
 type ActiveWorkout = { date: string; workoutName: string; exercises: ActiveExercise[] }
 type FitTokenReward = { amount?: number; totalAwarded?: number }
-
-// Category tag based on exercise name + position
-function getCategory(name: string, index: number): string {
-  if (index === 0) return "WARM"
-  const n = name.toLowerCase()
-  if (n.includes("plank") || n.includes("crunch") || n.includes("twist") || n.includes("climb") || n.includes("leg raise") || n.includes("bicycle")) return "CORE"
-  if (n.includes("squat") || n.includes("lunge") || n.includes("glute") || n.includes("calf") || n.includes("jump") || n.includes("step")) return "LEGS"
-  if (n.includes("pull") || n.includes("row") || n.includes("curl") || n.includes("hammer") || n.includes("superman")) return "PULL"
-  if (n.includes("push") || n.includes("press") || n.includes("fly") || n.includes("dip") || n.includes("pike")) return "PUSH"
-  if (n.includes("burpee") || n.includes("sprint") || n.includes("high knee") || n.includes("rope") || n.includes("battle")) return "CARDIO"
-  if (n.includes("raise") || n.includes("shrug") || n.includes("face pull") || n.includes("lateral") || n.includes("front")) return "SHOULDER"
-  return "CORE"
-}
-
-const CATEGORY_COLORS: Record<string, { bg: string; color: string }> = {
-  WARM:     { bg: "rgba(246,211,101,0.18)", color: "#c8960a" },
-  CORE:     { bg: "rgba(107,191,184,0.18)", color: ACCENT },
-  LEGS:     { bg: "rgba(138,180,255,0.18)", color: "#5b8fff" },
-  PULL:     { bg: "rgba(160,100,255,0.18)", color: "#a064ff" },
-  PUSH:     { bg: "rgba(249,115,115,0.18)", color: "#e85555" },
-  CARDIO:   { bg: "rgba(255,165,50,0.18)",  color: "#e08010" },
-  SHOULDER: { bg: "rgba(107,191,184,0.14)", color: ACCENT },
-}
 
 function formatTime(s: number) {
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`

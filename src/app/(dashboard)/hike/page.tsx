@@ -10,10 +10,8 @@ import { HikeRouteDetail } from "@/components/HikeRouteDetail"
 import type { HikeDetail } from "@/components/HikeRouteDetail"
 import { getPendingHikeCount, queueHike, requestSync } from "@/lib/hikeOfflineQueue"
 import { playSound } from "@/lib/sound"
-
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const ACCENT = "#6bbfb8"
+import { ACCENT } from "@/lib/theme"
+import { fmtDuration } from "@/lib/hikeUtils"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -31,12 +29,6 @@ type HikeLog = {
 
 function fmtDate(s: string): string {
   return new Date(s).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-}
-
-function fmtDuration(min: number): string {
-  const h = Math.floor(min / 60), m = min % 60
-  if (h === 0) return `${m}m`
-  return m === 0 ? `${h}h` : `${h}h ${m}m`
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
