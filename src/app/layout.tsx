@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { ProvidersWrapper } from "@/components/ProvidersWrapper";
 import { NativeShell } from "@/components/NativeShell";
+import { SwRegistration } from "@/components/SwRegistration";
 import { auth } from "@/lib/auth";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -73,6 +74,7 @@ export default async function RootLayout({
       <body className="min-h-dvh flex flex-col antialiased">
         <ThemeProvider>
           <NativeShell />
+          <SwRegistration />
           <SessionProvider session={session}>
             <LanguageProvider>
               <ProvidersWrapper>{children}</ProvidersWrapper>
