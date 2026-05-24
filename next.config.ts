@@ -14,7 +14,7 @@ const contentSecurityPolicy = [
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com",
-  "connect-src 'self' https://*.googleapis.com https://accounts.google.com",
+  "connect-src 'self' https://*.googleapis.com https://accounts.google.com https://*.tile.opentopomap.org",
   "frame-src https://accounts.google.com",
   ...(isProduction ? ["upgrade-insecure-requests"] : []),
 ].join("; ");
