@@ -48,7 +48,7 @@ export default function TermsPage() {
 
         <Section title="3. Your Account">
           <p>You are responsible for maintaining the confidentiality of your login credentials. You must be at least 13 years old to use {APP_NAME}.</p>
-          <p>You may not create accounts on behalf of others without their consent, attempt to access another user's data, or use the service for any unlawful purpose.</p>
+          <p>You may not create accounts on behalf of others without their consent, attempt to access another user&apos;s data, or use the service for any unlawful purpose.</p>
         </Section>
 
         <Section title="4. FitTokens">
@@ -61,7 +61,7 @@ export default function TermsPage() {
         </Section>
 
         <Section title="6. Availability">
-          <p>{APP_NAME} is provided "as is." We do not guarantee uninterrupted access and may modify, suspend, or discontinue features at any time. We are not liable for any loss resulting from downtime or data loss.</p>
+          <p>{APP_NAME} is provided &quot;as is.&quot; We do not guarantee uninterrupted access and may modify, suspend, or discontinue features at any time. We are not liable for any loss resulting from downtime or data loss.</p>
         </Section>
 
         <Section title="7. Termination">

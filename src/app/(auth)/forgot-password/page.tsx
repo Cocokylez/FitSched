@@ -76,7 +76,7 @@ export default function ForgotPasswordPage() {
                 </div>
                 <div className="display-text" style={{ fontSize: "22px", fontWeight: 800, color: "var(--text)", marginBottom: 8 }}>Google account</div>
                 <div style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 28 }}>
-                  <strong style={{ color: "var(--text)" }}>{email}</strong> is linked to a Google account. You don't need a password — just sign in with Google.
+                  <strong style={{ color: "var(--text)" }}>{email}</strong> is linked to a Google account. You don&apos;t need a password — just sign in with Google.
                 </div>
               </motion.div>
               <motion.div variants={fadeIn}>
@@ -95,10 +95,10 @@ export default function ForgotPasswordPage() {
                 </div>
                 <div className="display-text" style={{ fontSize: "22px", fontWeight: 800, color: "var(--text)", marginBottom: 8 }}>Check your email</div>
                 <div style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 28 }}>
-                  If <strong style={{ color: "var(--text)" }}>{email}</strong> has a FitSched account, you'll receive a reset link shortly. The link expires in 1 hour.
+                  If <strong style={{ color: "var(--text)" }}>{email}</strong> has a FitSched account, you&apos;ll receive a reset link shortly. The link expires in 1 hour.
                 </div>
                 <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: 20 }}>
-                  Didn't get it? Check your spam folder or{" "}
+                  Didn&apos;t get it? Check your spam folder or{" "}
                   <span style={{ color: "var(--text)", fontWeight: 600, cursor: "pointer" }} onClick={() => setSent(false)}>try again</span>.
                 </div>
               </motion.div>
@@ -115,7 +115,7 @@ export default function ForgotPasswordPage() {
             <>
               <motion.div variants={fadeIn}>
                 <div className="display-text" style={{ fontSize: "24px", fontWeight: 800, color: "var(--text)", marginBottom: 4 }}>Forgot password?</div>
-                <div style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: 24 }}>Enter your email and we'll send you a reset link.</div>
+                <div style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: 24 }}>Enter your email and we&apos;ll send you a reset link.</div>
               </motion.div>
 
               <form onSubmit={handleSubmit}>

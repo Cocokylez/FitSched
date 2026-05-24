@@ -51,9 +51,7 @@ export async function requestSync(): Promise<void> {
   try {
     const reg = await navigator.serviceWorker.ready
     // Background Sync API
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ("sync" in reg) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (reg as any).sync.register("sync-pending-hikes")
     }
   } catch {
