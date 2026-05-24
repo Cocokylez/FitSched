@@ -17,36 +17,36 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts            Account[]
-  sessions            Session[]
-  workoutPlans        WorkoutPlan[]
-  workoutLogs         WorkoutLog[]
-  exercises           Exercise[]
-  onboardingCompleted Boolean                @default(false)
-  fitnessGoal         String?
-  experienceLevel     String?
-  workoutsPerWeek     Int?
-  workoutEnvironment  String?
-  heightCm            Float?
-  weightKg            Float?
-  bmi                 Float?
-  hasInjury           Boolean                @default(false)
-  injuryNotes         String?
-  calendarConnections CalendarConnection[]
-  pushSubscriptions   PushSubscription[]
-  chatMessages        ChatMessage[]
-  workoutSchedules    WorkoutSchedule[]
-  workoutSessionLogs  WorkoutSessionLog[]
-  streakMilestones    StreakMilestone[]
-  fitTokens           FitToken[]
-  fitTokenBalance     FitTokenBalance?
-  tokenVersion        Int                    @default(0)
-  passwordResetTokens      PasswordResetToken[]
-  emailVerificationTokens  EmailVerificationToken[]
-  hikeLogs                 HikeLog[]
-  weightLogs               WeightLog[]
-  workoutTemplates         WorkoutTemplate[]
-  achievements             UserAchievement[]
+  accounts                Account[]
+  sessions                Session[]
+  workoutPlans            WorkoutPlan[]
+  workoutLogs             WorkoutLog[]
+  exercises               Exercise[]
+  onboardingCompleted     Boolean                  @default(false)
+  fitnessGoal             String?
+  experienceLevel         String?
+  workoutsPerWeek         Int?
+  workoutEnvironment      String?
+  heightCm                Float?
+  weightKg                Float?
+  bmi                     Float?
+  hasInjury               Boolean                  @default(false)
+  injuryNotes             String?
+  calendarConnections     CalendarConnection[]
+  pushSubscriptions       PushSubscription[]
+  chatMessages            ChatMessage[]
+  workoutSchedules        WorkoutSchedule[]
+  workoutSessionLogs      WorkoutSessionLog[]
+  streakMilestones        StreakMilestone[]
+  fitTokens               FitToken[]
+  fitTokenBalance         FitTokenBalance?
+  tokenVersion            Int                      @default(0)
+  passwordResetTokens     PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  hikeLogs                HikeLog[]
+  weightLogs              WeightLog[]
+  workoutTemplates        WorkoutTemplate[]
+  achievements            UserAchievement[]
 }
 
 model Account {
@@ -292,20 +292,20 @@ model WorkoutSchedule {
 }
 
 model WorkoutSessionLog {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   userId      String
   date        String
   workoutName String
   exercises   Json
   notes       String?
-  completedAt DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  completedAt DateTime   @default(now())
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   fitTokens   FitToken[]
 
+  @@unique([userId, date])
   @@index([userId])
   @@index([date])
   @@index([userId, date])
-  @@unique([userId, date])
 }
 
 model FitToken {
@@ -319,11 +319,11 @@ model FitToken {
   user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   workoutLog WorkoutSessionLog @relation(fields: [workoutLogId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, workoutLogId, reason])
   @@index([userId])
   @@index([workoutLogId])
   @@index([createdAt])
   @@index([userId, createdAt])
-  @@unique([userId, workoutLogId, reason])
 }
 
 model FitTokenBalance {
@@ -343,17 +343,17 @@ model StreakMilestone {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
   @@unique([userId, milestone])
+  @@index([userId])
 }
 
 model PasswordResetToken {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
-  token     String   @unique
+  token     String    @unique
   expiresAt DateTime
   usedAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -373,16 +373,16 @@ model EmailVerificationToken {
 }
 
 model HikeLog {
-  id            String   @id @default(cuid())
-  userId        String
-  name          String   @default("Hike")
-  distanceKm    Float
-  durationMin   Int
-  elevationM    Int?
-  locationName  String?
-  routePoints   Json?
-  notes         String?
-  loggedAt      DateTime @default(now())
+  id           String   @id @default(cuid())
+  userId       String
+  name         String   @default("Hike")
+  distanceKm   Float
+  durationMin  Int
+  elevationM   Int?
+  locationName String?
+  routePoints  Json?
+  notes        String?
+  loggedAt     DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -415,11 +415,11 @@ model PushSubscription {
 }
 
 model WeightLog {
-  id        String   @id @default(cuid())
-  userId    String
-  weightKg  Float
-  notes     String?
-  loggedAt  DateTime @default(now())
+  id       String   @id @default(cuid())
+  userId   String
+  weightKg Float
+  notes    String?
+  loggedAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -448,6 +448,6 @@ model UserAchievement {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
   @@unique([userId, type])
+  @@index([userId])
 }
