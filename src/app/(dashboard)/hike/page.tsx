@@ -378,6 +378,33 @@ export default function HikePage() {
                 </button>
               </div>
 
+              {/* ── Aggregate stats ──────────────────────────────────────────── */}
+              {!logsLoading && logs.length > 0 && (() => {
+                const totalKm   = logs.reduce((s, l) => s + l.distanceKm, 0)
+                const totalMin  = logs.reduce((s, l) => s + l.durationMin, 0)
+                const totalElev = logs.reduce((s, l) => s + (l.elevationM ?? 0), 0)
+                const totalHrs  = (totalMin / 60).toFixed(1)
+                const chips = [
+                  { label: "Hikes",     value: String(logs.length) },
+                  { label: "Distance",  value: `${totalKm.toFixed(1)} km` },
+                  { label: "Elevation", value: `↑${totalElev.toLocaleString()} m` },
+                  { label: "Time",      value: `${totalHrs} h` },
+                ]
+                return (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 7, marginBottom: 16 }}>
+                    {chips.map(chip => (
+                      <div key={chip.label} style={{
+                        background: "rgba(107,191,184,0.07)", border: "1px solid rgba(107,191,184,0.18)",
+                        borderRadius: 12, padding: "9px 8px", textAlign: "center",
+                      }}>
+                        <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text)", lineHeight: 1.1 }}>{chip.value}</div>
+                        <div style={{ fontSize: 9, color: "var(--text-muted)", marginTop: 3, fontWeight: 700, letterSpacing: "0.05em" }}>{chip.label.toUpperCase()}</div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
+
               {logsLoading ? (
                 <div style={{ textAlign: "center", color: "var(--text-muted)", padding: "32px 0", fontSize: 13 }}>Loading…</div>
               ) : logs.length === 0 ? (
