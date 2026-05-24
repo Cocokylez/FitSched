@@ -62,6 +62,36 @@ export async function GET(req: Request) {
   }
 }
 
+export async function PATCH(req: Request) {
+  try {
+    const originError = validateSameOrigin(req)
+    if (originError) return originError
+
+    const session = await auth()
+    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.write, "workout-log:patch")
+    if (limited) return limited
+
+    const body = await readJsonBody(req)
+    const id = typeof body.id === "string" ? body.id.trim() : null
+    if (!id) return safeError("Missing log id")
+
+    const notes = cleanText(body.notes, 500) || null
+
+    const updated = await db.workoutSessionLog.updateMany({
+      where: { id, userId: session.user.id },
+      data: { notes },
+    })
+
+    if (updated.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    const bodyError = requestBodyErrorResponse(error)
+    if (bodyError) return bodyError
+    return NextResponse.json({ error: "Failed to update workout log" }, { status: 500 })
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const originError = validateSameOrigin(req)

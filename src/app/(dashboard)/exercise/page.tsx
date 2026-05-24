@@ -60,6 +60,8 @@ export default function ExerciseSessionPage() {
   const sessionTokenRef = useRef<string | null>(null)
   const [restSeconds, setRestSeconds] = useState<number | null>(null)
   const [restDuration, setRestDuration] = useState(60)
+  const [workoutNote, setWorkoutNote] = useState("")
+  const [noteSaved, setNoteSaved] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -126,6 +128,18 @@ export default function ExerciseSessionPage() {
     setSessionFeedback(value)
     setFeedbackSaved(true)
     saveWorkoutFeedback({ workoutLogId: savedWorkoutLogId, date: workout.date, workoutName: workout.workoutName, feedback: value, durationSeconds: elapsed, exerciseCount: workout.exercises.length, totalSets, totalReps: workout.exercises.reduce((s, e) => s + e.sets * e.reps, 0), createdAt: new Date().toISOString() })
+  }
+
+  const saveNote = async (text: string) => {
+    if (!savedWorkoutLogId || !text.trim()) return
+    try {
+      await fetch("/api/workout-log", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: savedWorkoutLogId, notes: text.trim() }),
+      })
+      setNoteSaved(true)
+    } catch {}
   }
 
   const finishWorkout = async () => {
@@ -413,6 +427,27 @@ export default function ExerciseSessionPage() {
                   })}
                 </div>
                 {feedbackSaved && <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: 9, fontSize: 11, color: "rgba(107,191,184,0.92)", fontWeight: 800, textAlign: "center" }}>Feedback saved for future recommendations.</motion.div>}
+              </motion.div>
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.58 }} style={{ borderRadius: 20, padding: 14, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", marginBottom: 18, textAlign: "left" }}>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.11em", marginBottom: 10 }}>SESSION NOTES</div>
+                <textarea
+                  value={workoutNote}
+                  onChange={(e) => { setWorkoutNote(e.target.value); setNoteSaved(false) }}
+                  onBlur={() => saveNote(workoutNote)}
+                  placeholder="How did it go? PR? Something to remember…"
+                  rows={3}
+                  style={{
+                    width: "100%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
+                    borderRadius: 12, padding: "10px 12px", color: "#fff", fontSize: 13, fontWeight: 500,
+                    resize: "none", outline: "none", fontFamily: "inherit", lineHeight: 1.5,
+                    boxSizing: "border-box",
+                  }}
+                />
+                {noteSaved && (
+                  <motion.div initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: 6, fontSize: 11, color: "rgba(107,191,184,0.9)", fontWeight: 800 }}>
+                    ✓ Note saved
+                  </motion.div>
+                )}
               </motion.div>
               <button type="button" onClick={() => router.push("/workout")} style={{ width: "100%", border: "none", borderRadius: 16, padding: 15, background: ACCENT, color: "#fff", fontSize: 15, fontWeight: 950, cursor: "pointer", boxShadow: "0 12px 28px rgba(107,191,184,0.3)" }}>{t.continueLabel}</button>
             </motion.div>

@@ -46,6 +46,7 @@ interface WorkoutLog {
   workoutName: string
   completedAt: string
   exercises: Array<{ name: string; sets: number; reps: number }>
+  notes?: string | null
 }
 
 export default function ProgressPage() {
@@ -313,6 +314,11 @@ export default function ProgressPage() {
                             style={{ overflow: "hidden" }}
                           >
                             <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid var(--border)" }}>
+                              {log.notes && (
+                                <div style={{ marginBottom: 10, padding: "8px 10px", background: "var(--surface-2)", borderRadius: 8, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5, fontStyle: "italic" }}>
+                                  "{log.notes}"
+                                </div>
+                              )}
                               {(log.exercises || []).map((ex, i) => (
                                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", fontSize: "13px" }}>
                                   <span style={{ color: "var(--text)" }}>{ex.name}</span>
