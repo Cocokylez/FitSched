@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { awardFitTokensForWorkoutLogTx } from "@/lib/fitTokens"
 import { sendPushToUser } from "@/lib/pushNotify"
+import { unlockAchievementsForUser } from "@/lib/unlockAchievements"
 import { cleanText, clampInt, isDateId, rateLimitByUser, rateLimitPresets, readJsonBody, requestBodyErrorResponse, safeError, validateSameOrigin } from "@/lib/security"
 import { verifySessionToken } from "@/lib/sessionToken"
 import { Prisma } from "@prisma/client"
@@ -177,6 +178,9 @@ export async function POST(req: Request) {
       body: `You earned +${earned} FT. Keep it up!`,
       url: "/schedule",
     }).catch(() => {})
+
+    // Fire-and-forget achievement check — don't delay the response
+    unlockAchievementsForUser(db as any, userId).catch(() => {})
 
     return NextResponse.json({ ...result.log, fitTokenReward: result.fitTokenReward }, { status: 201 })
   } catch (error) {
