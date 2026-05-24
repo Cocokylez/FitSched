@@ -323,14 +323,14 @@ export function StreakWelcomeCard({
     setFreezing(false)
     setIntroPhase(true)
     setOpen(true)
-    playSound("pluck_001.ogg", 0.92)
-    playSound("confirmation_001.ogg", 0.58)
+    playSound("pluck_001.ogg", 0.42)
+    playSound("confirmation_001.ogg", 0.45)
     window.setTimeout(() => setIntroPhase(false), 1200)
   }, [displayStreak, hasActiveStreak, showMoment])
 
   useEffect(() => {
     if (!open || !hasActiveStreak) return
-    const stop = playSoundLoop("fire_crackle.wav", 1.0)
+    const stop = playSoundLoop("fire_crackle.wav", 2.2)
     fireStopRef.current = stop
     return () => { stop(); fireStopRef.current = null }
   }, [open, hasActiveStreak])
