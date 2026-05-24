@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
@@ -19,8 +19,11 @@ import {
   Calendar,
   Dumbbell,
   Flame,
+  Trophy,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { SkeletonCard } from "@/components/Skeleton";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -43,8 +46,9 @@ export default function HistoryPage() {
   const router = useRouter();
   const [logs, setLogs] = useState<WorkoutLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<"overview" | "chart">("overview");
+  const [view, setView] = useState<"overview" | "chart" | "prs">("overview");
   const [showAll, setShowAll] = useState(false);
+  const [expandedPr, setExpandedPr] = useState<string | null>(null);
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -91,6 +95,91 @@ export default function HistoryPage() {
       rating: log.rating || 0,
     }));
 
+  const personalRecords = useMemo(() => {
+    const byExercise: Record<string, typeof logs> = {};
+    logs.forEach((log) => {
+      const name = log.exercise.name;
+      if (!byExercise[name]) byExercise[name] = [];
+      byExercise[name].push(log);
+    });
+
+    return Object.entries(byExercise)
+      .map(([name, exerciseLogs]) => {
+        const sorted = [...exerciseLogs].sort(
+          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
+
+        const progression = sorted.map((log) => {
+          const weightSets = log.sets.filter(
+            (s) => s.weight != null && s.weight > 0
+          );
+          if (weightSets.length > 0) {
+            const best = weightSets.reduce((a, b) =>
+              b.weight! > a.weight! ? b : a
+            );
+            return {
+              date: new Date(log.date).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              }),
+              maxWeight: best.weight as number,
+              maxReps: best.reps,
+              rawDate: log.date,
+            };
+          }
+          const best = log.sets.reduce(
+            (a, b) => (b.reps > a.reps ? b : a),
+            log.sets[0]
+          );
+          return {
+            date: new Date(log.date).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+            }),
+            maxWeight: null as number | null,
+            maxReps: best?.reps || 0,
+            rawDate: log.date,
+          };
+        });
+
+        const prEntry = progression.reduce(
+          (best, cur) => {
+            if (
+              cur.maxWeight != null &&
+              (best.maxWeight == null || cur.maxWeight > best.maxWeight)
+            )
+              return cur;
+            if (
+              cur.maxWeight == null &&
+              best.maxWeight == null &&
+              cur.maxReps > best.maxReps
+            )
+              return cur;
+            return best;
+          },
+          progression[0]
+        );
+
+        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+        const isRecent = prEntry
+          ? new Date(prEntry.rawDate).getTime() > sevenDaysAgo
+          : false;
+
+        return {
+          name,
+          pr: prEntry,
+          isRecent,
+          progression,
+          sessionCount: sorted.length,
+        };
+      })
+      .sort((a, b) => {
+        if (a.isRecent && !b.isRecent) return -1;
+        if (!a.isRecent && b.isRecent) return 1;
+        return a.name.localeCompare(b.name);
+      });
+  }, [logs]);
+
   return (
     <div className="px-4 pt-4 pb-4">
       <motion.div
@@ -128,10 +217,217 @@ export default function HistoryPage() {
           >
             {t.charts}
           </button>
+          <button
+            onClick={() => setView("prs")}
+            className={`text-[12px] font-semibold px-3 py-1.5 rounded-[8px] transition-all ${
+              view === "prs"
+                ? "bg-[var(--bg1)] text-[var(--t1)] shadow-sm"
+                : "text-[var(--t3)]"
+            }`}
+          >
+            PRs
+          </button>
         </div>
       </motion.div>
 
-      {view === "overview" ? (
+      {view === "prs" ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.25 }}
+          className="space-y-2"
+        >
+          <p className="text-[12px] font-semibold text-[var(--text-muted)] mb-3 px-1 tracking-tight uppercase">
+            Personal Records
+          </p>
+          {personalRecords.length === 0 ? (
+            <div className="ios-inset-grouped p-8 text-center">
+              <Trophy className="w-8 h-8 mx-auto mb-2" style={{ color: "var(--text-muted)" }} />
+              <p className="text-[14px]" style={{ color: "var(--text-muted)" }}>
+                Log some workouts to see your PRs
+              </p>
+            </div>
+          ) : (
+            personalRecords.map((record, i) => {
+              const isOpen = expandedPr === record.name;
+              const hasWeight = record.pr?.maxWeight != null;
+              const prLabel = hasWeight
+                ? `${record.pr!.maxWeight}kg × ${record.pr!.maxReps}`
+                : `${record.pr?.maxReps ?? 0} reps`;
+              const prDate = record.pr
+                ? new Date(record.pr.rawDate).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  })
+                : "";
+              const progressionWithWeight = record.progression.filter(
+                (p) => p.maxWeight != null
+              );
+              const showChart =
+                (hasWeight ? progressionWithWeight : record.progression).length > 1;
+
+              return (
+                <motion.div
+                  key={record.name}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.04 }}
+                  className="ios-inset-grouped overflow-hidden"
+                >
+                  <button
+                    onClick={() => setExpandedPr(isOpen ? null : record.name)}
+                    className="w-full flex items-center justify-between px-4 py-3 text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-8 h-8 rounded-[8px] flex items-center justify-center flex-shrink-0"
+                        style={{
+                          background: record.isRecent
+                            ? "rgba(245, 158, 11, 0.15)"
+                            : "var(--surface-2)",
+                        }}
+                      >
+                        <Trophy
+                          className="w-4 h-4"
+                          style={{
+                            color: record.isRecent
+                              ? "var(--orange, #f59e0b)"
+                              : "var(--text-muted)",
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <div
+                          className="text-[14px] font-semibold"
+                          style={{ color: "var(--text)" }}
+                        >
+                          {record.name}
+                        </div>
+                        <div
+                          className="text-[11px]"
+                          style={{ color: "var(--text-muted)" }}
+                        >
+                          {record.sessionCount} session
+                          {record.sessionCount !== 1 ? "s" : ""}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-right">
+                        <div
+                          className="text-[14px] font-bold"
+                          style={{ color: "var(--text)" }}
+                        >
+                          {prLabel}
+                        </div>
+                        <div
+                          className="text-[11px]"
+                          style={{ color: "var(--text-muted)" }}
+                        >
+                          {record.isRecent && (
+                            <span
+                              className="font-bold mr-1"
+                              style={{ color: "var(--orange, #f59e0b)" }}
+                            >
+                              NEW ·{" "}
+                            </span>
+                          )}
+                          {prDate}
+                        </div>
+                      </div>
+                      {showChart &&
+                        (isOpen ? (
+                          <ChevronDown
+                            className="w-4 h-4 flex-shrink-0"
+                            style={{ color: "var(--text-muted)" }}
+                          />
+                        ) : (
+                          <ChevronRight
+                            className="w-4 h-4 flex-shrink-0"
+                            style={{ color: "var(--text-muted)" }}
+                          />
+                        ))}
+                    </div>
+                  </button>
+
+                  <AnimatePresence>
+                    {isOpen && showChart && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.22, ease: "easeInOut" }}
+                        style={{ overflow: "hidden" }}
+                      >
+                        <div
+                          className="px-4 pb-4"
+                          style={{
+                            borderTop: "1px solid var(--border)",
+                            paddingTop: 12,
+                          }}
+                        >
+                          <p
+                            className="text-[11px] font-semibold mb-2"
+                            style={{ color: "var(--text-muted)" }}
+                          >
+                            {hasWeight ? "WEIGHT OVER TIME" : "REPS OVER TIME"}
+                          </p>
+                          <ResponsiveContainer width="100%" height={130}>
+                            <LineChart
+                              data={
+                                hasWeight ? progressionWithWeight : record.progression
+                              }
+                            >
+                              <CartesianGrid
+                                strokeDasharray="3 3"
+                                stroke="var(--border)"
+                              />
+                              <XAxis
+                                dataKey="date"
+                                tick={{ fontSize: 9, fill: "var(--text-muted)" }}
+                                axisLine={false}
+                                tickLine={false}
+                                interval="preserveStartEnd"
+                              />
+                              <YAxis
+                                tick={{ fontSize: 9, fill: "var(--text-muted)" }}
+                                axisLine={false}
+                                tickLine={false}
+                                width={32}
+                              />
+                              <Tooltip
+                                contentStyle={{
+                                  background: "var(--surface)",
+                                  border: "1px solid var(--border)",
+                                  borderRadius: 8,
+                                  fontSize: 11,
+                                }}
+                                formatter={(val: number) =>
+                                  hasWeight
+                                    ? [`${val}kg`, "Weight"]
+                                    : [`${val}`, "Reps"]
+                                }
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey={hasWeight ? "maxWeight" : "maxReps"}
+                                stroke="var(--accent)"
+                                strokeWidth={2}
+                                dot={{ fill: "var(--accent)", r: 3 }}
+                                activeDot={{ r: 4 }}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              );
+            })
+          )}
+        </motion.div>
+      ) : view === "overview" ? (
         <>
           {loading ? (
             <div className="space-y-3">
