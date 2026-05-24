@@ -47,6 +47,7 @@ model User {
   weightLogs              WeightLog[]
   workoutTemplates        WorkoutTemplate[]
   achievements            UserAchievement[]
+  streakFreezeArmed       Boolean                  @default(false)
 }
 
 model Account {
