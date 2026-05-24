@@ -9,6 +9,7 @@ import { useWorkoutVerification, type ActiveChallenge } from "@/lib/workoutVerif
 import { ExerciseDemoVisual } from "@/components/ExerciseDemoPanel"
 import { ACCENT } from "@/lib/theme"
 import { getCategory, CATEGORY_COLORS } from "@/lib/exerciseUtils"
+import { estimateCalories } from "@/lib/calorieEstimate"
 
 const CONFETTI = Array.from({ length: 42 }, (_, i) => ({ id: i, left: 8 + ((i * 17) % 84), delay: (i % 9) * 0.08, drift: ((i % 7) - 3) * 18, rotate: ((i * 47) % 220) - 110, color: [ACCENT, "#f6d365", "#f97373", "#8ab4ff", "#ffffff"][i % 5] }))
 const FEEDBACK_OPTIONS: Array<{ value: SessionFeedback; label: string; detail: string }> = [
@@ -378,7 +379,7 @@ export default function ExerciseSessionPage() {
               <motion.div initial={{ scale: 0.5, rotate: -18 }} animate={{ scale: [0.5, 1.15, 1], rotate: [-18, 8, 0] }} transition={{ duration: 0.75, ease: "easeOut" }} style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 16px", display: "grid", placeItems: "center", background: "rgba(107,191,184,0.16)", border: "1px solid rgba(107,191,184,0.42)", color: ACCENT, fontSize: 26, fontWeight: 950 }}>FT</motion.div>
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} style={{ fontSize: 30, fontWeight: 950, letterSpacing: "-0.5px", marginBottom: 6 }}>{t.workoutCompleteTitle}</motion.div>
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} style={{ color: "rgba(255,255,255,0.64)", fontSize: 14, lineHeight: 1.45, marginBottom: 18 }}>{t.workoutCompleteBody}</motion.div>
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
                 {[{ label: "Time", value: formatTime(elapsed) }, { label: "Exercises", value: String(workout?.exercises.length ?? 0) }, { label: "Sets", value: String(doneSets) }, { label: "Reps", value: String(workout?.exercises.reduce((s, e) => s + e.sets * e.reps, 0) ?? 0) }].map(item => (
                   <div key={item.label} style={{ borderRadius: 16, padding: "12px 10px", background: "rgba(255,255,255,0.065)", border: "1px solid rgba(255,255,255,0.10)", textAlign: "left" }}>
                     <div style={{ fontSize: 10, color: "rgba(255,255,255,0.48)", fontWeight: 850, letterSpacing: "0.12em", marginBottom: 5 }}>{item.label}</div>
@@ -386,11 +387,15 @@ export default function ExerciseSessionPage() {
                   </div>
                 ))}
               </motion.div>
-              <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.32 }} style={{ borderRadius: 18, padding: "14px 16px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }} style={{ borderRadius: 14, padding: "10px 14px", background: "rgba(107,191,184,0.10)", border: "1px solid rgba(107,191,184,0.28)", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", fontWeight: 800, letterSpacing: "0.1em" }}>EST. CALORIES</div>
+                <div style={{ fontSize: 18, fontWeight: 950, color: ACCENT, fontVariantNumeric: "tabular-nums" }}>~{estimateCalories(workout?.exercises ?? [])} kcal</div>
+              </motion.div>
+              <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.40 }} style={{ borderRadius: 18, padding: "14px 16px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
                 <span style={{ color: "rgba(255,255,255,0.68)", fontSize: 13, fontWeight: 800 }}>{t.streakLabel}</span>
                 <span style={{ fontSize: 16, fontWeight: 950, color: ACCENT }}>{streakDay} {t.dayStreak}</span>
               </motion.div>
-              <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.42 }} style={{ borderRadius: 18, padding: 16, background: "linear-gradient(135deg, rgba(107,191,184,0.2), rgba(107,191,184,0.06))", border: "1px solid rgba(107,191,184,0.32)", marginBottom: 18 }}>
+              <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.50 }} style={{ borderRadius: 18, padding: 16, background: "linear-gradient(135deg, rgba(107,191,184,0.2), rgba(107,191,184,0.06))", border: "1px solid rgba(107,191,184,0.32)", marginBottom: 18 }}>
                 <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.12em", marginBottom: 7 }}>{t.receiveFitToken}</div>
                 <div style={{ fontSize: 34, fontWeight: 950, color: ACCENT, fontVariantNumeric: "tabular-nums" }}>+{Number(fitTokenReward?.amount ?? fitTokenReward?.totalAwarded ?? 1).toFixed(2)} FT</div>
               </motion.div>

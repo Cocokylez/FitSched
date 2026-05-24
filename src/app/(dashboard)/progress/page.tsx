@@ -13,6 +13,7 @@ import { getMuscleGroup } from "@/lib/exerciseData"
 import { getWeekId, formatLocalDate } from "@/lib/dateUtils"
 import { ActivityHeatmap } from "@/components/ActivityHeatmap"
 import { MuscleRecovery } from "@/components/MuscleRecovery"
+import { estimateCalories } from "@/lib/calorieEstimate"
 
 const cardStyle = {
   background: "var(--surface)",
@@ -292,9 +293,12 @@ export default function ProgressPage() {
                             {new Date(log.completedAt).toLocaleDateString()}
                           </div>
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                           <span style={{ background: "var(--surface-2)", borderRadius: "20px", padding: "4px 10px", fontSize: "11px", color: "var(--text-muted)" }}>
                             {log.exercises.length} {t.exercises}
+                          </span>
+                          <span style={{ background: "rgba(107,191,184,0.10)", border: "1px solid rgba(107,191,184,0.28)", borderRadius: "20px", padding: "4px 9px", fontSize: "11px", fontWeight: 700, color: "var(--accent, #6bbfb8)" }}>
+                            ~{estimateCalories(log.exercises)} kcal
                           </span>
                           {isExpanded ? <ChevronDown size={16} color="var(--text-muted)" /> : <ChevronRight size={16} color="var(--text-muted)" />}
                         </div>
