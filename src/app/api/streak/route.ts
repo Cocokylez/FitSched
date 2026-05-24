@@ -10,6 +10,7 @@ interface StreakData {
   streakBroken: boolean
   lastCompletedDate: string | null
   newMilestone: number | null
+  streakFreezeArmed: boolean
 }
 
 function getLocalDateId(offsetDays = 0) {
@@ -37,19 +38,31 @@ function addDays(dateId: string, days: number) {
   return date.toISOString().split("T")[0]
 }
 
-function countStreakFrom(sortedDates: string[], startDate: string) {
+function countStreakFrom(sortedDates: string[], startDate: string, freezeArmed: boolean) {
   let streak = 0
+  let freezeUsed = false
 
   for (let i = 0; i < sortedDates.length; i++) {
     const expected = addDays(startDate, -i)
     if (sortedDates[i] === expected) {
       streak++
+    } else if (!freezeUsed && freezeArmed) {
+      // Gap of 1 day — freeze covers it, skip ahead and continue counting
+      const afterGap = addDays(startDate, -(i + 1))
+      if (sortedDates[i] === afterGap) {
+        freezeUsed = true
+        streak++
+        i++ // the date at i was for the gap, next iteration checks i+1
+        streak++ // count afterGap date too (already matched above)
+      } else {
+        break
+      }
     } else {
       break
     }
   }
 
-  return streak
+  return { streak, freezeUsed }
 }
 
 export async function GET(req: Request) {
@@ -62,11 +75,16 @@ export async function GET(req: Request) {
   const limited = await rateLimitByUser(req, userId, rateLimitPresets.read, "streak:get")
   if (limited) return limited
 
-  const logs = await db.workoutSessionLog.findMany({
-    where: { userId },
-    orderBy: { date: "desc" },
-    select: { date: true },
-  })
+  const [logs, user] = await Promise.all([
+    db.workoutSessionLog.findMany({
+      where: { userId },
+      orderBy: { date: "desc" },
+      select: { date: true },
+    }),
+    db.user.findUnique({ where: { id: userId }, select: { streakFreezeArmed: true } }),
+  ])
+
+  const freezeArmed = user?.streakFreezeArmed ?? false
 
   const uniqueDates = new Set<string>()
   logs.forEach((log) => {
@@ -78,9 +96,30 @@ export async function GET(req: Request) {
   const yesterday = getLocalDateId(-1)
   const lastCompletedDate = sortedDates[0] || null
   const streakAnchor = lastCompletedDate === today || lastCompletedDate === yesterday ? lastCompletedDate : null
-  const streak = streakAnchor ? countStreakFrom(sortedDates, streakAnchor) : 0
-  const previousStreak = lastCompletedDate ? countStreakFrom(sortedDates, lastCompletedDate) : 0
+
+  let streak = 0
+  let freezeConsumed = false
+
+  if (streakAnchor) {
+    const result = countStreakFrom(sortedDates, streakAnchor, freezeArmed)
+    streak = result.streak
+    freezeConsumed = result.freezeUsed
+  } else if (freezeArmed && lastCompletedDate === addDays(yesterday, -1)) {
+    // Missed yesterday AND the day before was the last workout; freeze covers yesterday
+    const result = countStreakFrom(sortedDates, yesterday, true)
+    streak = result.streak
+    freezeConsumed = result.freezeUsed
+  }
+
+  const previousStreak = lastCompletedDate ? countStreakFrom(sortedDates, lastCompletedDate, false).streak : 0
   const streakBroken = Boolean(lastCompletedDate && lastCompletedDate < yesterday)
+
+  // Consume the freeze if it was used
+  let currentFreezeArmed = freezeArmed
+  if (freezeConsumed && freezeArmed) {
+    await db.user.update({ where: { id: userId }, data: { streakFreezeArmed: false } })
+    currentFreezeArmed = false
+  }
 
   const MILESTONES = [3, 7, 14, 30]
   let newMilestone: number | null = null
@@ -114,5 +153,6 @@ export async function GET(req: Request) {
     streakBroken,
     lastCompletedDate,
     newMilestone,
+    streakFreezeArmed: currentFreezeArmed,
   } satisfies StreakData)
 }
