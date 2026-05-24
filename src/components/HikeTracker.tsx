@@ -462,7 +462,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
   }
 
   const canPause  = trackStatus === "tracking" || trackStatus === "paused"
-  const canFinish = (trackStatus === "tracking" || trackStatus === "paused") && distanceRef.current >= 0.01
+  const canFinish = trackStatus === "tracking" || trackStatus === "paused"
 
   // ── Render ───────────────────────────────────────────────────────────────────
 
