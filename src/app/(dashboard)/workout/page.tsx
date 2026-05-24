@@ -206,6 +206,7 @@ export default function WorkoutPage() {
   const [showTemplates, setShowTemplates] = useState(false)
   const [templateExercises, setTemplateExercises] = useState<Array<[string, string]> | null>(null)
   const [muscleReadiness, setMuscleReadiness] = useState<Array<{ group: string; status: "fresh" | "recovering" | "sore" | "untrained" }> | null>(null)
+  const [workoutsPerWeek, setWorkoutsPerWeek] = useState(3)
   const dayNames = [t.days.sun, t.days.mon, t.days.tue, t.days.wed, t.days.thu, t.days.fri, t.days.sat]
   const DAY_ABBR = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
 
@@ -286,7 +287,9 @@ export default function WorkoutPage() {
         const profile = profileRes.ok ? await profileRes.json() : {}
         const fitnessGoal = profile.fitnessGoal || "stay_active"
         const experienceLevel = getFeedbackAdjustedExperienceLevel(profile.experienceLevel || "intermediate")
-        const workoutsPerWeek = profile.workoutsPerWeek || 3
+        const profileWorkoutsPerWeek = profile.workoutsPerWeek || 3
+        setWorkoutsPerWeek(profileWorkoutsPerWeek)
+        const workoutsPerWeek = profileWorkoutsPerWeek
         const workoutEnvironment = (profile.workoutEnvironment || "gym") as WorkoutEnvironment
         const hasInjury = Boolean(profile.hasInjury)
         const allowedAccess = getAllowedExerciseAccess(workoutEnvironment)
@@ -456,6 +459,10 @@ export default function WorkoutPage() {
   const workoutLocked = Boolean(selectedDateId && completedDateIds.has(selectedDateId)) || completed
   const workoutBlocked = selectedDayBlocked || workoutLocked
 
+  // Weekly progress
+  const weeklyDone = weekDates.filter(d => completedDateIds.has(formatLocalDate(d))).length
+  const weeklyGoalMet = weeklyDone >= workoutsPerWeek
+
   if (selectedDay === 0) {
     return (
       <div style={{ minHeight: "100vh", background: "transparent", display: "flex", flexDirection: "column" }}>
@@ -564,6 +571,29 @@ export default function WorkoutPage() {
             )
           })}
         </div>
+
+        {/* Weekly goal progress */}
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{ marginBottom: 14 }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+            <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.12em", color: "var(--text-muted)" }}>WEEKLY GOAL</span>
+            <span style={{ fontSize: 11, fontWeight: 800, color: weeklyGoalMet ? ACCENT : "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>
+              {weeklyDone} / {workoutsPerWeek}
+              {weeklyGoalMet && " ✓"}
+            </span>
+          </div>
+          <div style={{ height: 4, background: "var(--border)", borderRadius: 999, overflow: "hidden" }}>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.min(100, (weeklyDone / workoutsPerWeek) * 100)}%` }}
+              transition={{ duration: 0.7, ease: "easeOut", delay: 0.15 }}
+              style={{ height: "100%", borderRadius: 999, background: weeklyGoalMet ? `linear-gradient(90deg, ${ACCENT}, #8ee3dc)` : ACCENT }}
+            />
+          </div>
+        </motion.div>
 
         {/* W1 Title block */}
         <div style={{ marginBottom: 14, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
