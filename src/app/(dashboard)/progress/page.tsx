@@ -12,6 +12,7 @@ import { stagger, fadeUp } from "@/lib/animations"
 import { getMuscleGroup } from "@/lib/exerciseData"
 import { getWeekId } from "@/lib/dateUtils"
 import { ActivityHeatmap } from "@/components/ActivityHeatmap"
+import { MuscleRecovery } from "@/components/MuscleRecovery"
 
 const cardStyle = {
   background: "var(--surface)",
@@ -170,6 +171,13 @@ export default function ProgressPage() {
                     <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>{stat.label}</div>
                   </div>
                 ))}
+              </div>
+            </motion.div>
+
+            <motion.div variants={fadeUp}>
+              <div style={sectionLabelStyle}>RECOVERY</div>
+              <div style={cardStyle}>
+                <MuscleRecovery logs={logs} />
               </div>
             </motion.div>
 
