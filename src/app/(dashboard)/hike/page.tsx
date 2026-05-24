@@ -6,6 +6,8 @@ import { AnimatePresence, motion } from "framer-motion"
 import { History, Trash2, X } from "lucide-react"
 import { HikeTracker } from "@/components/HikeTracker"
 import type { TrackerResult } from "@/components/HikeTracker"
+import { HikeRouteDetail } from "@/components/HikeRouteDetail"
+import type { HikeDetail } from "@/components/HikeRouteDetail"
 import { playSound } from "@/lib/sound"
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -56,6 +58,10 @@ export default function HikePage() {
   const [logs, setLogs]               = useState<HikeLog[]>([])
   const [logsLoading, setLogsLoading] = useState(false)
   const [deletingId, setDeletingId]   = useState<string | null>(null)
+
+  // Route detail
+  const [selectedHike, setSelectedHike] = useState<HikeDetail | null>(null)
+  const [detailLoading, setDetailLoading] = useState<string | null>(null)
 
   // ── Hide nav bar ──────────────────────────────────────────────────────────────
 
@@ -126,6 +132,18 @@ export default function HikePage() {
       setLogs(prev => prev.filter(l => l.id !== id))
       playSound("close_001.ogg", 0.4)
     } finally { setDeletingId(null) }
+  }
+
+  async function openHikeDetail(id: string) {
+    setDetailLoading(id)
+    try {
+      const res = await fetch(`/api/hike/${id}`)
+      if (res.ok) {
+        const data = await res.json()
+        setSelectedHike(data)
+        setShowLogs(false)
+      }
+    } finally { setDetailLoading(null) }
   }
 
   // ── Input style ───────────────────────────────────────────────────────────────
@@ -274,11 +292,39 @@ export default function HikePage() {
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {logs.map(log => (
-                    <div key={log.id} style={{
-                      background: "var(--surface-2, rgba(128,128,128,0.06))", border: "1px solid var(--border)",
-                      borderRadius: 16, padding: "13px 15px",
-                      display: "flex", alignItems: "center", gap: 12,
-                    }}>
+                    <motion.div
+                      key={log.id}
+                      whileTap={{ scale: 0.985 }}
+                      onClick={() => openHikeDetail(log.id)}
+                      style={{
+                        background: "var(--surface-2, rgba(128,128,128,0.06))", border: "1px solid var(--border)",
+                        borderRadius: 16, padding: "13px 15px",
+                        display: "flex", alignItems: "center", gap: 12,
+                        cursor: "pointer",
+                        opacity: detailLoading === log.id ? 0.55 : 1,
+                        transition: "opacity 0.15s",
+                      }}
+                    >
+                      {/* Route icon */}
+                      <div style={{
+                        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                        background: "rgba(107,191,184,0.12)", border: "1px solid rgba(107,191,184,0.25)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        {detailLoading === log.id
+                          ? <motion.div
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
+                              style={{ width: 14, height: 14, borderRadius: "50%", border: `2px solid ${ACCENT}`, borderTopColor: "transparent" }}
+                            />
+                          : <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                              <path d="M3 14 C5 10, 8 8, 10 6 S14 3, 15 4" stroke={ACCENT} strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+                              <circle cx="3" cy="14" r="2" fill="#4ade80"/>
+                              <circle cx="15" cy="4"  r="2" fill="#f87171"/>
+                            </svg>
+                        }
+                      </div>
+
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text)", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {log.name}
@@ -291,7 +337,7 @@ export default function HikePage() {
                         </div>
                       </div>
                       <motion.button
-                        onClick={() => deleteLog(log.id)}
+                        onClick={e => { e.stopPropagation(); deleteLog(log.id) }}
                         disabled={deletingId === log.id}
                         whileTap={{ scale: 0.88 }}
                         style={{
@@ -303,12 +349,22 @@ export default function HikePage() {
                       >
                         <Trash2 size={13} strokeWidth={2} />
                       </motion.button>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               )}
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Route detail overlay ────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {selectedHike && (
+          <HikeRouteDetail
+            hike={selectedHike}
+            onClose={() => setSelectedHike(null)}
+          />
         )}
       </AnimatePresence>
     </div>
