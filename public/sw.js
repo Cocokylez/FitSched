@@ -3,7 +3,7 @@
 //  Handles: push notifications · map tile caching · offline hike save queue
 // ─────────────────────────────────────────────────────────────────────────────
 
-const TILE_CACHE  = "fitsched-tiles-v1"
+const TILE_CACHE  = "fitsched-tiles-v2"   // bump = forces browser to re-install SW
 const TILE_MAX    = 1200   // ~50 MB at ~40 KB/tile
 
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
@@ -47,15 +47,13 @@ async function handleTile(request) {
 
   try {
     const response = await fetch(request)
-    if (response.ok) {
-      // Evict the oldest entry when we hit the cap
-      const keys = await cache.keys()
-      if (keys.length >= TILE_MAX) {
-        await cache.delete(keys[0])
-      }
-      cache.put(request, response.clone())
-      return response
-    }
+    // Cache regardless of CORS mode — opaque (no-cors) responses have ok=false
+    // but can still be stored and served from the Cache API
+    const toStore = response.clone()
+    cache.keys().then(keys => {
+      if (keys.length >= TILE_MAX) cache.delete(keys[0])
+      cache.put(request, toStore).catch(() => {})
+    }).catch(() => {})
     return response
   } catch {
     // Offline and not cached — return a transparent 1×1 PNG placeholder
