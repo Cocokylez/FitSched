@@ -459,6 +459,12 @@ export default function ReportPage() {
                 </span>
                 <span style={{ fontSize: 12, fontWeight: 900, color: ACCENT, letterSpacing: 0 }}>{formatFT(ftBalance)} FT</span>
               </div>
+              {streakFreezeArmed && (
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, padding: "6px 10px", background: "rgba(99,179,237,0.08)", border: "1px solid rgba(99,179,237,0.25)", borderRadius: 10, fontSize: 11, fontWeight: 700, color: "#63b3ed" }}>
+                  <Snowflake size={11} strokeWidth={2.5} />
+                  2.00 FT spent · Streak freeze active
+                </div>
+              )}
               <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
                 {ftTxs.length === 0 ? (
                   <div style={{ padding: "20px", textAlign: "center", fontSize: 13, color: "var(--text-muted)" }}>
