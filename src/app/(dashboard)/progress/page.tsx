@@ -7,10 +7,10 @@ import { motion, AnimatePresence } from "framer-motion"
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "recharts"
 import { useLanguage } from "@/context/LanguageContext"
 import { SkeletonCard } from "@/components/Skeleton"
-import { ChevronDown, ChevronRight } from "lucide-react"
+import { ChevronDown, ChevronRight, RotateCcw, Check } from "lucide-react"
 import { stagger, fadeUp } from "@/lib/animations"
 import { getMuscleGroup } from "@/lib/exerciseData"
-import { getWeekId } from "@/lib/dateUtils"
+import { getWeekId, formatLocalDate } from "@/lib/dateUtils"
 import { ActivityHeatmap } from "@/components/ActivityHeatmap"
 import { MuscleRecovery } from "@/components/MuscleRecovery"
 
@@ -56,6 +56,33 @@ export default function ProgressPage() {
   const [workoutsPerWeek, setWorkoutsPerWeek] = useState(3)
   const [loading, setLoading] = useState(true)
   const [expandedLog, setExpandedLog] = useState<string | null>(null)
+  const [repeatingId, setRepeatingId] = useState<string | null>(null)
+  const [repeatedId, setRepeatedId] = useState<string | null>(null)
+
+  const handleRepeat = async (log: WorkoutLog) => {
+    if (repeatingId) return
+    setRepeatingId(log.id)
+    try {
+      const today = formatLocalDate(new Date())
+      const res = await fetch("/api/workout-schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: today,
+          workoutName: log.workoutName,
+          exercises: log.exercises,
+          source: "workout",
+        }),
+      })
+      if (res.ok) {
+        setRepeatedId(log.id)
+        setTimeout(() => {
+          router.push("/schedule")
+        }, 900)
+      }
+    } catch {}
+    setRepeatingId(null)
+  }
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/register")
@@ -288,6 +315,35 @@ export default function ProgressPage() {
                                   <span style={{ color: "var(--text-muted)" }}>{ex.sets}×{ex.reps}</span>
                                 </div>
                               ))}
+                              <motion.button
+                                whileTap={{ scale: 0.95 }}
+                                onClick={(e) => { e.stopPropagation(); handleRepeat(log) }}
+                                disabled={!!repeatingId || repeatedId === log.id}
+                                style={{
+                                  marginTop: 10,
+                                  width: "100%",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  gap: 6,
+                                  padding: "9px 0",
+                                  borderRadius: 10,
+                                  border: `1px solid ${repeatedId === log.id ? "var(--accent)" : "var(--border)"}`,
+                                  background: repeatedId === log.id ? "var(--accent-soft)" : "var(--surface-2)",
+                                  color: repeatedId === log.id ? "var(--accent)" : "var(--text-muted)",
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  cursor: repeatingId === log.id ? "wait" : repeatedId === log.id ? "default" : "pointer",
+                                }}
+                              >
+                                {repeatedId === log.id ? (
+                                  <><Check size={13} strokeWidth={2.5} /> Loaded for today!</>
+                                ) : repeatingId === log.id ? (
+                                  <>Loading…</>
+                                ) : (
+                                  <><RotateCcw size={13} strokeWidth={2.5} /> Repeat today</>
+                                )}
+                              </motion.button>
                             </div>
                           </motion.div>
                         )}
