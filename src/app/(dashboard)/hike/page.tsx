@@ -204,7 +204,7 @@ export default function HikePage() {
 
       {/* ── Logs button ────────────────────────────────────────────────────── */}
       {!showSave && !showLogs && (
-        <div style={{ position: "fixed", top: 20, right: 18, zIndex: 400, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+        <div style={{ position: "fixed", bottom: 110, left: 16, zIndex: 400, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
           <motion.button
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             onClick={() => { setShowLogs(true); fetchLogs() }}
