@@ -16,6 +16,7 @@ import { MuscleRecovery } from "@/components/MuscleRecovery"
 import { estimateCalories } from "@/lib/calorieEstimate"
 import FlameIcon from "@/components/FlameIcon"
 import { ACCENT } from "@/lib/theme"
+import { useTheme } from "@/context/ThemeContext"
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
@@ -92,6 +93,8 @@ export default function ReportPage() {
   const { status } = useSession()
   const router = useRouter()
   const { t, language } = useLanguage()
+  const { theme } = useTheme()
+  const isDark = theme === "dark"
 
   const [logs, setLogs] = useState<WorkoutLog[]>([])
   const [streak, setStreak] = useState(0)
@@ -270,17 +273,20 @@ export default function ReportPage() {
 
             {/* ── Streak Hero ───────────────────────────────────────── */}
             <motion.div variants={fadeUp} style={{ marginBottom: 10 }}>
-              <div style={{ sectionLabelStyle } as any} />
               <div style={{
                 position: "relative", overflow: "hidden", borderRadius: 20,
-                background: "linear-gradient(148deg, #193d35 0%, #0c1e1b 100%)",
-                border: "1px solid rgba(107,191,184,0.24)",
-                boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.05), 0 20px 48px rgba(0,0,0,0.4)",
+                background: isDark
+                  ? "linear-gradient(148deg, #193d35 0%, #0c1e1b 100%)"
+                  : "linear-gradient(148deg, #d4f0ed 0%, #eaf8f7 100%)",
+                border: `1px solid ${isDark ? "rgba(107,191,184,0.24)" : "rgba(107,191,184,0.35)"}`,
+                boxShadow: isDark
+                  ? "inset 0 0 0 1px rgba(255,255,255,0.05), 0 20px 48px rgba(0,0,0,0.4)"
+                  : "0 8px 32px rgba(107,191,184,0.18)",
               }}>
                 {/* top shimmer line */}
                 <div style={{ position: "absolute", inset: "0 0 auto", height: 1, background: "linear-gradient(90deg, transparent, rgba(107,191,184,0.52), transparent)", pointerEvents: "none" }} />
                 {/* radial glow */}
-                <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 12% -10%, rgba(107,191,184,0.2), transparent 52%)", pointerEvents: "none" }} />
+                <div style={{ position: "absolute", inset: 0, background: isDark ? "radial-gradient(ellipse at 12% -10%, rgba(107,191,184,0.2), transparent 52%)" : "radial-gradient(ellipse at 12% -10%, rgba(107,191,184,0.25), transparent 52%)", pointerEvents: "none" }} />
                 {/* shimmer sweep */}
                 <motion.div
                   style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "linear-gradient(108deg, transparent 25%, rgba(107,191,184,0.07) 50%, transparent 75%)" }}
@@ -290,7 +296,7 @@ export default function ReportPage() {
 
                 {/* Floating flame + embers */}
                 <div style={{ position: "absolute", right: 14, top: 12, pointerEvents: "none" }}>
-                  <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }} style={{ opacity: 0.82, transformOrigin: "50% 80%" }}>
+                  <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }} style={{ opacity: 0.9, transformOrigin: "50% 80%" }}>
                     <FlameIcon size={56} streak={streak} />
                   </motion.div>
                   <div style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)" }}>
@@ -309,20 +315,20 @@ export default function ReportPage() {
                 <div style={{ position: "relative", padding: "20px 22px 14px" }}>
                   <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.12em", color: ACCENT, marginBottom: 6 }}>CURRENT STREAK</div>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                    <span style={{ fontSize: "clamp(44px,12vw,58px)", fontWeight: 900, lineHeight: 1, color: "#fff", fontVariantNumeric: "tabular-nums" }}>
+                    <span style={{ fontSize: "clamp(44px,12vw,58px)", fontWeight: 900, lineHeight: 1, color: isDark ? "#fff" : "#0d2926", fontVariantNumeric: "tabular-nums" }}>
                       {displayStreak}
                     </span>
-                    <span style={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.4)" }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: isDark ? "rgba(255,255,255,0.4)" : "rgba(13,41,38,0.45)" }}>
                       {streak === 1 ? "day" : "days"}
                     </span>
                   </div>
-                  <div style={{ marginTop: 6, fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.36)" }}>
+                  <div style={{ marginTop: 6, fontSize: 12, fontWeight: 600, color: isDark ? "rgba(255,255,255,0.36)" : "rgba(13,41,38,0.48)" }}>
                     Personal best · <span style={{ color: ACCENT, fontWeight: 900 }}>{longestStreak} {longestStreak === 1 ? "day" : "days"}</span>
                   </div>
                 </div>
 
                 {/* Week strip */}
-                <div style={{ borderTop: "1px solid rgba(107,191,184,0.15)", padding: "12px 22px 18px" }}>
+                <div style={{ borderTop: `1px solid ${isDark ? "rgba(107,191,184,0.15)" : "rgba(107,191,184,0.25)"}`, padding: "12px 22px 18px" }}>
                   <motion.div
                     initial="hidden" animate="visible"
                     variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
@@ -334,18 +340,18 @@ export default function ReportPage() {
                       const done = completedDates.has(dateId)
                       return (
                         <motion.div key={dateId} variants={dayCellVariant} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                          <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.06em", color: isToday ? ACCENT : "rgba(255,255,255,0.26)" }}>{DAY_LETTERS[i]}</span>
+                          <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.06em", color: isToday ? ACCENT : isDark ? "rgba(255,255,255,0.26)" : "rgba(13,41,38,0.35)" }}>{DAY_LETTERS[i]}</span>
                           <motion.div
                             animate={isToday ? { boxShadow: ["0 0 8px rgba(107,191,184,0.28)", "0 0 18px rgba(107,191,184,0.52)", "0 0 8px rgba(107,191,184,0.28)"] } : {}}
                             transition={isToday ? { duration: 2.2, repeat: Infinity, ease: "easeInOut" } : {}}
-                            style={{ width: "100%", height: 34, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 9, background: isToday ? ACCENT : done ? "rgba(107,191,184,0.15)" : "rgba(255,255,255,0.05)", border: isToday ? "none" : done ? "1px solid rgba(107,191,184,0.3)" : "1px solid rgba(255,255,255,0.07)" }}
+                            style={{ width: "100%", height: 34, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 9, background: isToday ? ACCENT : done ? "rgba(107,191,184,0.22)" : isDark ? "rgba(255,255,255,0.05)" : "rgba(13,41,38,0.06)", border: isToday ? "none" : done ? "1px solid rgba(107,191,184,0.4)" : `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(13,41,38,0.1)"}` }}
                           >
                             {(isToday || done) ? (
                               <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3 + i * 0.06, type: "spring", stiffness: 350, damping: 18 }}>
-                                <Check size={11} strokeWidth={3} style={{ color: isToday ? "#0a1a18" : ACCENT, display: "block" }} />
+                                <Check size={11} strokeWidth={3} style={{ color: isToday ? "#fff" : ACCENT, display: "block" }} />
                               </motion.div>
                             ) : (
-                              <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.22)" }}>{day.getDate()}</span>
+                              <span style={{ fontSize: 10, fontWeight: 700, color: isDark ? "rgba(255,255,255,0.22)" : "rgba(13,41,38,0.35)" }}>{day.getDate()}</span>
                             )}
                           </motion.div>
                         </motion.div>
