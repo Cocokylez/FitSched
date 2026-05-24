@@ -71,7 +71,10 @@ export function HikeRouteDetail({ hike, onClose }: Props) {
   const mapDivRef = useRef<HTMLDivElement>(null)
   const mapRef    = useRef<L.Map | null>(null)
 
-  const points   = Array.isArray(hike.routePoints) ? (hike.routePoints as Waypoint[]) : []
+  const points   = useMemo(
+    () => Array.isArray(hike.routePoints) ? (hike.routePoints as Waypoint[]) : [],
+    [hike.routePoints]
+  )
   const hasRoute = points.length >= 2
 
   // Build cumulative-distance × altitude pairs for the elevation chart
@@ -95,7 +98,6 @@ export function HikeRouteDetail({ hike, onClose }: Props) {
     let map: L.Map
 
     import("leaflet").then(({ default: Lf }) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (Lf.Icon.Default.prototype as any)._getIconUrl
 
       map = Lf.map(mapDivRef.current!, {

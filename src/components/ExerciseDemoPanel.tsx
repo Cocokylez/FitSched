@@ -126,6 +126,7 @@ function DemoFrame({
       ) : (
         <>
           {!startFailed && (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={startImageSrc}
               alt={startAlt}
@@ -147,6 +148,7 @@ function DemoFrame({
             />
           )}
           {!endFailed && (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={endImageSrc}
               alt={endAlt}

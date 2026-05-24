@@ -284,6 +284,7 @@ export default function SettingsPage() {
           {/* Avatar */}
           <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
             {localPhoto ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
               <img src={localPhoto} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
               <div style={{ width: 48, height: 48, borderRadius: "50%", background: "linear-gradient(135deg, rgba(107,191,184,0.96), rgba(40,73,70,0.92))", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 15, fontWeight: 800 }}>

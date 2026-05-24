@@ -228,7 +228,7 @@ export default function SchedulePage() {
       setLoading(false)
     }
     load()
-  }, [status, selectedDay, fetchEvents, syncNow, router, weekDates, t.workout, reloadKey])
+  }, [status, selectedDay, fetchEvents, syncNow, router, weekDates, t.workout, t.exercisesCount, t.manual, reloadKey])
 
   useEffect(() => { if (sp.get("connected") === "true") setCalendarConnected(true) }, [sp, setCalendarConnected])
   useEffect(() => { setOpenDeleteId(null) }, [selectedDay])

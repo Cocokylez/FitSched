@@ -241,6 +241,7 @@ export default function ProfilePage() {
             style={{ position: "absolute", inset: 7, borderRadius: "50%", overflow: "hidden", cursor: "pointer" }}
           >
             {photo ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img src={photo} alt="Profile photo" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
             ) : (
               <div style={{

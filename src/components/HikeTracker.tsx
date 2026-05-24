@@ -338,7 +338,6 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
     let map: L.Map
 
     import("leaflet").then(({ default: Lf }) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (Lf.Icon.Default.prototype as any)._getIconUrl
 
       map = Lf.map(mapDivRef.current!, { zoomControl: false, attributionControl: false })
@@ -404,7 +403,6 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
       if (timerRef.current) clearInterval(timerRef.current)
       map?.remove()
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // ── Permission query on mount ────────────────────────────────────────────────
