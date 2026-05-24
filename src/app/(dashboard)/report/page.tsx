@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "recharts"
+import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell, AreaChart, Area, YAxis } from "recharts"
 import { useLanguage } from "@/context/LanguageContext"
 import { SkeletonCard } from "@/components/Skeleton"
 import { ChevronDown, ChevronRight, RotateCcw, Check, Wallet, Snowflake } from "lucide-react"
@@ -226,11 +226,13 @@ export default function ReportPage() {
     const d = new Date(now); d.setDate(d.getDate() - i * 7); weekIds.push(getWeekId(d))
   }
   const logsByWeek: Record<string, number> = {}
+  const caloriesByWeek: Record<string, number> = {}
   logs.forEach(log => {
     const id = getWeekId(new Date(log.completedAt))
     logsByWeek[id] = (logsByWeek[id] || 0) + 1
+    caloriesByWeek[id] = (caloriesByWeek[id] || 0) + estimateCalories(log.exercises)
   })
-  const weeklyData = weekIds.map(id => ({ week: formatShortWeek(id), actual: logsByWeek[id] || 0, planned: workoutsPerWeek }))
+  const weeklyData = weekIds.map(id => ({ week: formatShortWeek(id), actual: logsByWeek[id] || 0, planned: workoutsPerWeek, kcal: caloriesByWeek[id] || 0 }))
 
   const muscleCounts: Record<string, number> = {}
   logs.forEach(log => (log.exercises || []).forEach(ex => {
@@ -491,6 +493,39 @@ export default function ReportPage() {
                 </ResponsiveContainer>
               </div>
             </motion.div>
+
+            {/* Calorie burn trend */}
+            {weeklyData.some(w => w.kcal > 0) && (
+              <motion.div variants={fadeUp}>
+                <div style={sectionLabelStyle}>CALORIES BURNED (8 WEEKS)</div>
+                <div style={cardStyle}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 10 }}>
+                    <span style={{ fontSize: 22, fontWeight: 900, color: ACCENT, fontVariantNumeric: "tabular-nums" }}>
+                      ~{weeklyData.reduce((s, w) => s + w.kcal, 0).toLocaleString()}
+                    </span>
+                    <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700 }}>kcal total</span>
+                  </div>
+                  <ResponsiveContainer width="100%" height={140}>
+                    <AreaChart data={weeklyData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                      <defs>
+                        <linearGradient id="kcalGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={ACCENT} stopOpacity={0.38} />
+                          <stop offset="100%" stopColor={ACCENT} stopOpacity={0.02} />
+                        </linearGradient>
+                      </defs>
+                      <YAxis hide domain={["auto", "auto"]} />
+                      <XAxis dataKey="week" tick={{ fontSize: 10, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                      <Tooltip
+                        contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "8px", fontSize: "12px" }}
+                        labelStyle={{ color: "var(--text)" }}
+                        formatter={(v: number) => [`~${v} kcal`, "Calories"]}
+                      />
+                      <Area type="monotone" dataKey="kcal" stroke={ACCENT} strokeWidth={2} fill="url(#kcalGrad)" dot={{ r: 3, fill: ACCENT, strokeWidth: 0 }} activeDot={{ r: 5 }} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </motion.div>
+            )}
 
             {/* Most trained */}
             {topMuscles.length > 0 && (
