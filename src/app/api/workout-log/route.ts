@@ -209,10 +209,11 @@ export async function POST(req: Request) {
       url: "/schedule",
     }).catch(() => {})
 
-    // Fire-and-forget achievement check — don't delay the response
-    unlockAchievementsForUser(db as any, userId).catch(() => {})
+    // Check achievements (awaited so we can return newly unlocked ones)
+    let newAchievements: string[] = []
+    try { newAchievements = await unlockAchievementsForUser(db as any, userId) } catch {}
 
-    return NextResponse.json({ ...result.log, fitTokenReward: result.fitTokenReward }, { status: 201 })
+    return NextResponse.json({ ...result.log, fitTokenReward: result.fitTokenReward, newAchievements }, { status: 201 })
   } catch (error) {
     const bodyError = requestBodyErrorResponse(error)
     if (bodyError) return bodyError

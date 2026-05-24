@@ -11,6 +11,7 @@ import { ACCENT } from "@/lib/theme"
 import { getCategory, CATEGORY_COLORS } from "@/lib/exerciseUtils"
 import { estimateCalories } from "@/lib/calorieEstimate"
 import { getMuscleGroup } from "@/lib/exerciseData"
+import { ACHIEVEMENT_MAP, TIER_COLORS } from "@/lib/achievements"
 
 // Alternatives pool keyed by muscle group (display name)
 const SWAP_POOL: Record<string, string[]> = {
@@ -76,6 +77,7 @@ export default function ExerciseSessionPage() {
   const [workoutNote, setWorkoutNote] = useState("")
   const [noteSaved, setNoteSaved] = useState(false)
   const [swapIdx, setSwapIdx] = useState<number | null>(null)
+  const [newAchievements, setNewAchievements] = useState<string[]>([])
 
   useEffect(() => {
     let active = true
@@ -184,6 +186,9 @@ export default function ExerciseSessionPage() {
         const savedLog = await response.json()
         setSavedWorkoutLogId(savedLog.id || null)
         setFitTokenReward(savedLog.fitTokenReward || null)
+        if (Array.isArray(savedLog.newAchievements) && savedLog.newAchievements.length > 0) {
+          setNewAchievements(savedLog.newAchievements)
+        }
         setSessionFeedback(null)
         setFeedbackSaved(false)
         window.dispatchEvent(new Event("fitsched:tokens-updated"))
@@ -536,6 +541,35 @@ export default function ExerciseSessionPage() {
                   </motion.div>
                 )}
               </motion.div>
+              {newAchievements.length > 0 && (
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }} style={{ marginBottom: 18 }}>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.11em", marginBottom: 10 }}>🏆 ACHIEVEMENT UNLOCKED</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {newAchievements.map(type => {
+                      const def = ACHIEVEMENT_MAP[type]
+                      if (!def) return null
+                      const tc = TIER_COLORS[def.tier]
+                      return (
+                        <motion.div
+                          key={type}
+                          initial={{ scale: 0.85, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                          style={{ display: "flex", alignItems: "center", gap: 12, borderRadius: 14, padding: "10px 14px", background: tc.bg, border: `1px solid ${tc.border}` }}
+                        >
+                          <span style={{ fontSize: 22 }}>{def.emoji}</span>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 13, fontWeight: 900, color: tc.color }}>{def.name}</div>
+                            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 1 }}>{def.description}</div>
+                          </div>
+                          <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", color: tc.color, background: tc.border, borderRadius: 999, padding: "2px 7px", textTransform: "uppercase" }}>{def.tier}</span>
+                        </motion.div>
+                      )
+                    })}
+                  </div>
+                </motion.div>
+              )}
+
               <button type="button" onClick={() => router.push("/workout")} style={{ width: "100%", border: "none", borderRadius: 16, padding: 15, background: ACCENT, color: "#fff", fontSize: 15, fontWeight: 950, cursor: "pointer", boxShadow: "0 12px 28px rgba(107,191,184,0.3)" }}>{t.continueLabel}</button>
             </motion.div>
           </motion.div>
