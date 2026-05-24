@@ -7,7 +7,17 @@ import { motion } from "framer-motion"
 import { Settings } from "lucide-react"
 import { toDateId, getWeekId, calculateLongestStreak } from "@/lib/dateUtils"
 import { useLanguage } from "@/context/LanguageContext"
+import { ACHIEVEMENT_DEFS, TIER_COLORS } from "@/lib/achievements"
 import { ACCENT } from "@/lib/theme"
+
+type Achievement = {
+  type: string
+  name: string
+  description: string
+  emoji: string
+  tier: "bronze" | "silver" | "gold" | "platinum"
+  unlockedAt: string
+}
 const RING_RADIUS = 46
 const RING_CIRC = 2 * Math.PI * RING_RADIUS
 
@@ -98,6 +108,7 @@ export default function ProfilePage() {
   const [workoutsPerWeek, setWorkoutsPerWeek] = useState(3)
   const [loading, setLoading] = useState(true)
   const [savingName, setSavingName] = useState(false)
+  const [achievements, setAchievements] = useState<Achievement[]>([])
 
   const photoInputRef = useRef<HTMLInputElement>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
@@ -115,12 +126,13 @@ export default function ProfilePage() {
     const load = async () => {
       setLoading(true)
       try {
-        const [profileRes, logsRes, tokensRes, streakRes, onboardRes] = await Promise.all([
+        const [profileRes, logsRes, tokensRes, streakRes, onboardRes, achRes] = await Promise.all([
           fetch("/api/profile"),
           fetch("/api/workout-log"),
           fetch("/api/tokens"),
           fetch("/api/streak"),
           fetch("/api/onboarding"),
+          fetch("/api/achievements"),
         ])
 
         if (profileRes.ok) {
@@ -145,6 +157,7 @@ export default function ProfilePage() {
         if (tokensRes.ok) { const t = await tokensRes.json(); setFitTokenBalance(t.balance || 0) }
         if (streakRes.ok) { const s = await streakRes.json(); setStreak(Number(s.streak) || 0) }
         if (onboardRes.ok) { const o = await onboardRes.json(); setWorkoutsPerWeek(o.workoutsPerWeek || 3) }
+        if (achRes.ok) { setAchievements(await achRes.json()) }
       } catch {}
       setLoading(false)
     }
@@ -404,6 +417,77 @@ export default function ProfilePage() {
               </div>
             ))
           )}
+        </div>
+      </div>
+
+      {/* Quick links */}
+      <div style={{ padding: "20px 16px 0" }}>
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={() => router.push("/weight")}
+          style={{
+            width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+            background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 16,
+            padding: "14px 18px", cursor: "pointer", textAlign: "left",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{
+              width: 34, height: 34, borderRadius: 10,
+              background: "rgba(107,191,184,0.1)", border: "1px solid rgba(107,191,184,0.22)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 16, flexShrink: 0,
+            }}>
+              ⚖️
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Weight Log</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Track your body weight over time</div>
+            </div>
+          </div>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--text-muted)", flexShrink: 0 }}>
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </motion.button>
+      </div>
+
+      {/* Achievements */}
+      <div style={{ padding: "20px 16px 0" }}>
+        <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.13em", color: "var(--text-muted)", marginBottom: 10 }}>
+          ACHIEVEMENTS · {achievements.length} / {ACHIEVEMENT_DEFS.length}
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+          {ACHIEVEMENT_DEFS.map((def) => {
+            const unlocked = achievements.find((a) => a.type === def.type)
+            const colors = TIER_COLORS[def.tier]
+            return (
+              <motion.div
+                key={def.type}
+                whileTap={{ scale: 0.95 }}
+                style={{
+                  background: unlocked ? colors.bg : "var(--surface-2)",
+                  border: `1px solid ${unlocked ? colors.border : "var(--border)"}`,
+                  borderRadius: 16, padding: "14px 10px",
+                  textAlign: "center", opacity: unlocked ? 1 : 0.42,
+                  transition: "opacity 0.2s",
+                }}
+              >
+                <div style={{ fontSize: 26, marginBottom: 6 }}>{def.emoji}</div>
+                <div style={{
+                  fontSize: 10, fontWeight: 800, color: unlocked ? colors.color : "var(--text-muted)",
+                  lineHeight: 1.3, letterSpacing: "0.02em",
+                }}>
+                  {def.name}
+                </div>
+                {unlocked && (
+                  <div style={{ fontSize: 9, color: "var(--text-muted)", marginTop: 4, fontWeight: 600 }}>
+                    {new Date(unlocked.unlockedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </div>
+                )}
+              </motion.div>
+            )
+          })}
         </div>
       </div>
     </div>

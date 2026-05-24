@@ -14,6 +14,7 @@ import { MUSCLE_GROUPS } from "@/lib/exerciseData"
 import { formatLocalDate } from "@/lib/dateUtils"
 import { ACCENT } from "@/lib/theme"
 import { getCategory, CATEGORY_COLORS } from "@/lib/exerciseUtils"
+import { WorkoutTemplatesModal } from "@/components/WorkoutTemplatesModal"
 
 const DEFAULT_EXERCISES: Record<number, Array<[string, string]>> = {
   0: [],
@@ -202,6 +203,8 @@ export default function WorkoutPage() {
   const { theme, toggleTheme } = useTheme()
   const [smartExercises, setSmartExercises] = useState<Array<[string, string]> | null>(null)
   const [computing, setComputing] = useState(true)
+  const [showTemplates, setShowTemplates] = useState(false)
+  const [templateExercises, setTemplateExercises] = useState<Array<[string, string]> | null>(null)
   const dayNames = [t.days.sun, t.days.mon, t.days.tue, t.days.wed, t.days.thu, t.days.fri, t.days.sat]
   const DAY_ABBR = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
 
@@ -472,7 +475,7 @@ export default function WorkoutPage() {
   }
 
   const muscle = MUSCLE_GROUPS[selectedDay]
-  const todayExercises = smartExercises ?? getSmartExercisePlan({ selectedDay })
+  const todayExercises = templateExercises ?? smartExercises ?? getSmartExercisePlan({ selectedDay })
 
   const currentExercises = toWorkoutExercises(todayExercises)
 
@@ -537,11 +540,29 @@ export default function WorkoutPage() {
         </div>
 
         {/* W1 Title block */}
-        <div style={{ marginBottom: 14 }}>
-          <div className="display-text" style={{ fontSize: 32, fontWeight: 950, color: "var(--text)", letterSpacing: "-0.5px", marginBottom: 4 }}>{muscle}</div>
-          <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-            {computing ? "Computing…" : `${todayExercises.length} exercises · ${Math.round(todayExercises.length * 4)} min · medium`}
+        <div style={{ marginBottom: 14, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+          <div>
+            <div className="display-text" style={{ fontSize: 32, fontWeight: 950, color: "var(--text)", letterSpacing: "-0.5px", marginBottom: 4 }}>{muscle}</div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
+              {computing ? "Computing…" : `${todayExercises.length} exercises · ${Math.round(todayExercises.length * 4)} min · medium`}
+            </div>
           </div>
+          <button
+            onClick={() => setShowTemplates(true)}
+            style={{
+              flexShrink: 0, marginTop: 6,
+              background: "var(--surface-2)", border: "1px solid var(--border)",
+              borderRadius: 12, padding: "7px 12px",
+              fontSize: 12, fontWeight: 700, color: "var(--text-muted)",
+              cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
+            }}
+          >
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+            Templates
+          </button>
         </div>
 
         {/* FT motivation strip */}
@@ -555,6 +576,24 @@ export default function WorkoutPage() {
           <div style={{ background: "rgba(107,191,184,0.1)", border: "1px solid rgba(107,191,184,0.28)", borderRadius: 14, padding: "12px 14px", marginBottom: 14 }}>
             <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text)", marginBottom: 3 }}>{selectedDayBlocked ? t.todayWorkoutOnlyTitle : t.workoutLockedTitle}</div>
             <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.4 }}>{selectedDayBlocked ? t.todayWorkoutOnlyBody : t.workoutLockedBody}</div>
+          </div>
+        )}
+
+        {/* Template active banner */}
+        {templateExercises && (
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            background: "rgba(107,191,184,0.08)", border: "1px solid rgba(107,191,184,0.28)",
+            borderRadius: 14, padding: "9px 14px", marginBottom: 14,
+            fontSize: 12, fontWeight: 700, color: ACCENT,
+          }}>
+            <span>📋 Template active — {templateExercises.length} exercises</span>
+            <button
+              onClick={() => setTemplateExercises(null)}
+              style={{ background: "none", border: "none", cursor: "pointer", color: ACCENT, fontSize: 11, fontWeight: 800, padding: "2px 0" }}
+            >
+              Reset ×
+            </button>
           </div>
         )}
 
@@ -637,6 +676,16 @@ export default function WorkoutPage() {
       </div>
 
 
+
+          <AnimatePresence>
+            {showTemplates && (
+              <WorkoutTemplatesModal
+                currentExercises={todayExercises}
+                onLoad={(exs) => { setTemplateExercises(exs) }}
+                onClose={() => setShowTemplates(false)}
+              />
+            )}
+          </AnimatePresence>
 
           <AnimatePresence>
             {logging && (

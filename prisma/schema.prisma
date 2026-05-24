@@ -44,6 +44,9 @@ model User {
   passwordResetTokens      PasswordResetToken[]
   emailVerificationTokens  EmailVerificationToken[]
   hikeLogs                 HikeLog[]
+  weightLogs               WeightLog[]
+  workoutTemplates         WorkoutTemplate[]
+  achievements             UserAchievement[]
 }
 
 model Account {
@@ -294,6 +297,7 @@ model WorkoutSessionLog {
   date        String
   workoutName String
   exercises   Json
+  notes       String?
   completedAt DateTime @default(now())
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   fitTokens   FitToken[]
@@ -408,4 +412,42 @@ model PushSubscription {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model WeightLog {
+  id        String   @id @default(cuid())
+  userId    String
+  weightKg  Float
+  notes     String?
+  loggedAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([loggedAt])
+  @@index([userId, loggedAt])
+}
+
+model WorkoutTemplate {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  exercises Json
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model UserAchievement {
+  id         String   @id @default(cuid())
+  userId     String
+  type       String
+  unlockedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@unique([userId, type])
 }
