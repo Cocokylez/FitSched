@@ -1,76 +1,46 @@
-﻿"use client"
+"use client"
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip } from "recharts"
-import {
-  BarChart2, Check, ChevronDown, ChevronRight, Dumbbell,
-  Footprints, History, PencilLine, Ruler, Save, Scale,
-  ShieldCheck, TrendingUp, Wallet,
-} from "lucide-react"
+import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "recharts"
+import { useLanguage } from "@/context/LanguageContext"
 import { SkeletonCard } from "@/components/Skeleton"
-import FlameIcon from "@/components/FlameIcon"
+import { ChevronDown, ChevronRight, RotateCcw, Check, Wallet } from "lucide-react"
 import { stagger, fadeUp } from "@/lib/animations"
 import { getMuscleGroup } from "@/lib/exerciseData"
-import { toDateId, addDays, getWeekId, calculateLongestStreak } from "@/lib/dateUtils"
+import { getWeekId, formatLocalDate, toDateId, addDays, calculateLongestStreak } from "@/lib/dateUtils"
+import { ActivityHeatmap } from "@/components/ActivityHeatmap"
+import { MuscleRecovery } from "@/components/MuscleRecovery"
+import { estimateCalories } from "@/lib/calorieEstimate"
+import FlameIcon from "@/components/FlameIcon"
 import { ACCENT } from "@/lib/theme"
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ── Styles ────────────────────────────────────────────────────────────────────
 
-type WorkoutLog = {
-  id: string
-  date: string
-  workoutName: string
-  completedAt: string
-  exercises: Array<{ name: string; sets: number; reps: number }>
+const cardStyle = {
+  background: "var(--surface)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  border: "1px solid var(--border)",
+  borderRadius: "16px",
+  padding: "16px 20px",
+  marginBottom: "10px",
+  width: "100%",
+  boxSizing: "border-box" as const,
 }
 
-type ProfileData = {
-  heightCm: number | null
-  weightKg: number | null
-  bmi: number | null
-  hasInjury: boolean
-  injuryNotes: string | null
-  workoutsPerWeek?: number | null
+const sectionLabelStyle = {
+  fontSize: "10px",
+  fontWeight: "600",
+  letterSpacing: "0.12em",
+  color: "var(--text-muted)",
+  marginBottom: "8px",
+  marginTop: "20px",
 }
 
-type StreakData = {
-  streak: number
-  previousStreak: number
-  streakBroken: boolean
-  lastCompletedDate: string | null
-}
-
-type FitTokenData = {
-  balance: number
-  transactions: Array<{
-    id: string
-    amount: number
-    reason: string
-    createdAt: string
-    workoutName: string
-  }>
-}
-
-type HikeLog = {
-  id: string
-  name: string
-  distanceKm: number
-  durationMin: number
-  elevationM: number | null
-  locationName: string | null
-  loggedAt: string
-}
-
-// ─── Animation variants ───────────────────────────────────────────────────────
-
-
-const dayStagger = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.06 } },
-}
+const DAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"]
 
 const dayCellVariant = {
   hidden: { opacity: 0, scale: 0.7, y: 8 },
@@ -80,135 +50,98 @@ const dayCellVariant = {
   },
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-const DAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"]
-
-const cardStyle: React.CSSProperties = {
-  background: "var(--panel)",
-  border: "1px solid var(--border)",
-  borderRadius: 20,
-  padding: "17px 20px",
-  marginBottom: 10,
-  boxShadow: "var(--shadow)",
-  width: "100%",
-  boxSizing: "border-box",
+function formatShortWeek(dateStr: string): string {
+  const d = new Date(dateStr)
+  return `${d.getMonth() + 1}/${d.getDate()}`
 }
 
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  boxSizing: "border-box",
-  padding: "12px 14px",
-  borderRadius: 16,
-  border: "1px solid var(--border)",
-  background: "var(--surface-2)",
-  color: "var(--text)",
-  fontSize: 15,
-  fontWeight: 700,
-  outline: "none",
-  fontFamily: "inherit",
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function calculateBmi(h: string, w: string) {
-  const height = Number(h), weight = Number(w)
-  if (!height || !weight) return null
-  return Math.round((weight / ((height / 100) ** 2)) * 10) / 10
-}
-
-function getBmiStatus(bmi: number | null) {
-  if (!bmi) return { label: "Not set", color: "var(--text-muted)", position: 0 }
-  if (bmi < 18.5) return { label: "Underweight", color: "#82a7ff", position: 22 }
-  if (bmi < 25)   return { label: "Healthy", color: ACCENT, position: 49 }
-  if (bmi < 30)   return { label: "Overweight", color: "#e7c85a", position: 67 }
-  return { label: "High BMI", color: "#e76f6f", position: 86 }
-}
-
-function getTopMuscles(logs: WorkoutLog[]) {
-  const counts: Record<string, number> = {}
-  logs.forEach((log) => log.exercises.forEach((ex) => {
-    const g = getMuscleGroup(ex.name)
-    counts[g] = (counts[g] || 0) + 1
-  }))
-  const total = Object.values(counts).reduce((s, v) => s + v, 0)
-  return Object.entries(counts)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 3)
-    .map(([group, count]) => ({ group, pct: total ? Math.round((count / total) * 100) : 0 }))
-}
-
-function buildWeeklyData(logs: WorkoutLog[], workoutsPerWeek: number) {
-  const now = new Date()
-  const logsByWeek: Record<string, number> = {}
-  logs.forEach((log) => {
-    const weekId = getWeekId(new Date(log.completedAt))
-    logsByWeek[weekId] = (logsByWeek[weekId] || 0) + 1
-  })
-  return Array.from({ length: 8 }, (_, index) => {
-    const date = new Date(now)
-    date.setDate(now.getDate() - (7 - index) * 7)
-    const id = getWeekId(date)
-    return { week: id.slice(5), actual: logsByWeek[id] || 0, planned: workoutsPerWeek }
-  })
-}
-
-function fmtHikeDuration(min: number): string {
-  const h = Math.floor(min / 60), m = min % 60
-  if (h === 0) return `${m}m`
-  return m === 0 ? `${h}h` : `${h}h ${m}m`
-}
-
-function formatFitTokenAmount(value: number) {
-  return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+function formatFT(v: number) {
+  return v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 function formatTokenReason(reason: string, workoutName: string) {
   if (reason === "streak_bonus") return "Streak bonus"
-  if (reason === "workout_complete") return `${workoutName} workout`
+  if (reason === "workout_complete") return workoutName ? `${workoutName}` : "Workout"
   return reason.replace(/_/g, " ")
 }
 
-// ─── Section header with icon ─────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
 
-function SectionHeader({
-  icon: Icon, label, right,
-}: {
-  icon: React.ElementType
-  label: string
-  right?: React.ReactNode
-}) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, marginTop: 20 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <Icon size={13} strokeWidth={2} style={{ color: ACCENT }} />
-        <span className="label-text" style={{ fontSize: 10, color: ACCENT, letterSpacing: "0.12em" }}>{label}</span>
-      </div>
-      {right && <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{right}</span>}
-    </div>
-  )
+interface WorkoutLog {
+  id: string
+  date?: string
+  workoutName: string
+  completedAt: string
+  exercises: Array<{ name: string; sets: number; reps: number }>
+  notes?: string | null
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+interface FitTokenTx {
+  id: string
+  amount: number
+  reason: string
+  createdAt: string
+  workoutName: string
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ReportPage() {
   const { status } = useSession()
   const router = useRouter()
+  const { t, language } = useLanguage()
 
   const [logs, setLogs] = useState<WorkoutLog[]>([])
-  const [hikeLogs, setHikeLogs] = useState<HikeLog[]>([])
-  const [profile, setProfile] = useState<ProfileData | null>(null)
-  const [streak, setStreak] = useState<StreakData | null>(null)
-  const [fitTokens, setFitTokens] = useState<FitTokenData>({ balance: 0, transactions: [] })
-  const [heightCm, setHeightCm] = useState("")
-  const [weightKg, setWeightKg] = useState("")
-  const [hasInjury, setHasInjury] = useState(false)
-  const [injuryNotes, setInjuryNotes] = useState("")
+  const [streak, setStreak] = useState(0)
   const [workoutsPerWeek, setWorkoutsPerWeek] = useState(3)
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState("")
   const [expandedLog, setExpandedLog] = useState<string | null>(null)
+  const [repeatingId, setRepeatingId] = useState<string | null>(null)
+  const [repeatedId, setRepeatedId] = useState<string | null>(null)
+  const [historySearch, setHistorySearch] = useState("")
+  const [showAllHistory, setShowAllHistory] = useState(false)
+  const [ftBalance, setFtBalance] = useState(0)
+  const [ftTxs, setFtTxs] = useState<FitTokenTx[]>([])
+
+  // Streak count-up animation
+  const [displayStreak, setDisplayStreak] = useState(0)
+  const rafRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    if (streak === 0) { setDisplayStreak(0); return }
+    const start = performance.now()
+    const tick = (now: number) => {
+      const p = Math.min((now - start) / 820, 1)
+      setDisplayStreak(Math.round(streak * (1 - Math.pow(1 - p, 3))))
+      if (p < 1) rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
+  }, [streak])
+
+  // Ember particles for streak hero
+  const embers = useMemo(() =>
+    Array.from({ length: 5 }, (_, i) => ({
+      id: i, x: (i * 10) - 20, targetY: -(36 + i * 12),
+      size: 2.2 + (i % 3) * 0.8, delay: i * 0.26,
+      duration: 1.35 + (i % 3) * 0.3,
+      color: ["#fff4b0", "#e8842a", "#ffffff", "#ffb64d", "#c9a84c"][i],
+    })), [])
+
+  // Today + week days for streak strip
+  const [today, setToday] = useState<Date | null>(null)
+  useEffect(() => {
+    const d = new Date(); d.setHours(0, 0, 0, 0); setToday(d)
+  }, [])
+  const weekDays = useMemo(() => {
+    if (!today) return []
+    const dow = today.getDay()
+    const monday = addDays(today, -((dow + 6) % 7))
+    return Array.from({ length: 7 }, (_, i) => addDays(monday, i))
+  }, [today])
+  const completedDates = useMemo(() => new Set(logs.map(l => l.date || toDateId(new Date(l.completedAt)))), [logs])
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/register")
@@ -217,491 +150,390 @@ export default function ReportPage() {
   useEffect(() => {
     if (status !== "authenticated") return
     const load = async () => {
-      setLoading(true)
       try {
-        const [profileRes, logRes, streakRes, tokenRes, hikeRes] = await Promise.all([
-          fetch("/api/onboarding"),
+        const [logRes, streakRes, profileRes, tokenRes] = await Promise.all([
           fetch("/api/workout-log"),
           fetch("/api/streak"),
+          fetch("/api/onboarding"),
           fetch("/api/tokens"),
-          fetch("/api/hike"),
         ])
-        if (profileRes.ok) {
-          const p = (await profileRes.json()) as ProfileData
-          setProfile(p)
-          setHeightCm(p.heightCm ? String(p.heightCm) : "")
-          setWeightKg(p.weightKg ? String(p.weightKg) : "")
-          setHasInjury(Boolean(p.hasInjury))
-          setInjuryNotes(p.injuryNotes || "")
-          if (p.workoutsPerWeek) setWorkoutsPerWeek(p.workoutsPerWeek)
-        }
         if (logRes.ok) setLogs(await logRes.json())
-        if (streakRes.ok) setStreak(await streakRes.json())
-        if (tokenRes.ok) setFitTokens(await tokenRes.json())
-        if (hikeRes.ok) setHikeLogs(await hikeRes.json())
-      } catch {
-        setMessage("Could not load report data.")
-      } finally {
-        setLoading(false)
-      }
+        if (streakRes.ok) { const d = await streakRes.json(); setStreak(d.streak ?? 0) }
+        if (profileRes.ok) { const d = await profileRes.json(); if (d.workoutsPerWeek) setWorkoutsPerWeek(d.workoutsPerWeek) }
+        if (tokenRes.ok) {
+          const d = await tokenRes.json()
+          setFtBalance(d.balance ?? 0)
+          setFtTxs(d.transactions ?? [])
+        }
+      } catch {}
+      setLoading(false)
     }
     load()
   }, [status])
 
-  const bmi = calculateBmi(heightCm, weightKg) ?? profile?.bmi ?? null
-  const bmiStatus = getBmiStatus(bmi)
-  const longestStreak = useMemo(() => calculateLongestStreak(logs), [logs])
-  const topMuscles = useMemo(() => getTopMuscles(logs), [logs])
-  const weeklyData = useMemo(() => buildWeeklyData(logs, workoutsPerWeek), [logs, workoutsPerWeek])
-  const recentLogs = logs.slice(0, 10)
-
-  const hikeStats = useMemo(() => {
-    const totalKm    = hikeLogs.reduce((s, h) => s + h.distanceKm, 0)
-    const totalElev  = hikeLogs.reduce((s, h) => s + (h.elevationM ?? 0), 0)
-    const longestKm  = hikeLogs.reduce((best, h) => h.distanceKm > best ? h.distanceKm : best, 0)
-    const totalMin   = hikeLogs.reduce((s, h) => s + h.durationMin, 0)
-    return { count: hikeLogs.length, totalKm, totalElev, longestKm, totalMin }
-  }, [hikeLogs])
-
-  /* Count-up for streak number */
-  const [displayStreak, setDisplayStreak] = useState(0)
-  const rafRef = useRef<number | null>(null)
-  useEffect(() => {
-    const target = streak?.streak ?? 0
-    if (rafRef.current) cancelAnimationFrame(rafRef.current)
-    if (target === 0) { setDisplayStreak(0); return }
-    const startTime = performance.now()
-    const tick = (now: number) => {
-      const p = Math.min((now - startTime) / 820, 1)
-      setDisplayStreak(Math.round(target * (1 - Math.pow(1 - p, 3))))
-      if (p < 1) rafRef.current = requestAnimationFrame(tick)
-    }
-    rafRef.current = requestAnimationFrame(tick)
-    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
-  }, [streak?.streak])
-
-  /* Ember particles */
-  const embers = useMemo(() =>
-    Array.from({ length: 5 }, (_, i) => ({
-      id: i, x: (i * 10) - 20, targetY: -(36 + i * 12),
-      size: 2.2 + (i % 3) * 0.8, delay: i * 0.26,
-      duration: 1.35 + (i % 3) * 0.3,
-      color: ["#fff4b0", "#e8842a", "#ffffff", "#ffb64d", "#c9a84c"][i],
-    })), []
-  )
-
-  const [today, setToday] = useState<Date | null>(null)
-  const [weekNumber, setWeekNumber] = useState<number | null>(null)
-  useEffect(() => {
-    const d = new Date(); d.setHours(0, 0, 0, 0)
-    setToday(d)
-    const start = new Date(d.getFullYear(), 0, 1)
-    setWeekNumber(Math.ceil((((d.getTime() - start.getTime()) / 86400000) + start.getDay() + 1) / 7))
-  }, [])
-  const weekDays = useMemo(() => {
-    if (!today) return []
-    const dow = today.getDay()
-    const monday = addDays(today, -((dow + 6) % 7))
-    return Array.from({ length: 7 }, (_, i) => addDays(monday, i))
-  }, [today])
-  const completedDates = new Set(logs.map((log) => log.date))
-
-  const saveMetrics = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    setSaving(true); setMessage("")
+  const handleRepeat = async (log: WorkoutLog) => {
+    if (repeatingId) return
+    setRepeatingId(log.id)
     try {
-      const res = await fetch("/api/onboarding", {
-        method: "PATCH",
+      const today = formatLocalDate(new Date())
+      const res = await fetch("/api/workout-schedule", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          heightCm: heightCm ? Number(heightCm) : null,
-          weightKg: weightKg ? Number(weightKg) : null,
-          hasInjury, injuryNotes,
-        }),
+        body: JSON.stringify({ date: today, workoutName: log.workoutName, exercises: log.exercises, source: "workout" }),
       })
-      if (!res.ok) throw new Error()
-      const next = (await res.json()) as ProfileData
-      setProfile((cur) => ({ ...(cur || next), ...next }))
-      setMessage("Body report updated.")
-    } catch { setMessage("Could not save changes.") }
-    finally { setSaving(false) }
+      if (res.ok) {
+        setRepeatedId(log.id)
+        setTimeout(() => router.push("/schedule"), 900)
+      }
+    } catch {}
+    setRepeatingId(null)
   }
 
+  // Derived data
+  const totalWorkouts = logs.length
+  const totalExercisesDone = logs.reduce((s, l) => s + l.exercises.length, 0)
+  const longestStreak = useMemo(() => calculateLongestStreak(logs), [logs])
+
+  const now = new Date()
+  const weekIds: string[] = []
+  for (let i = 7; i >= 0; i--) {
+    const d = new Date(now); d.setDate(d.getDate() - i * 7); weekIds.push(getWeekId(d))
+  }
+  const logsByWeek: Record<string, number> = {}
+  logs.forEach(log => {
+    const id = getWeekId(new Date(log.completedAt))
+    logsByWeek[id] = (logsByWeek[id] || 0) + 1
+  })
+  const weeklyData = weekIds.map(id => ({ week: formatShortWeek(id), actual: logsByWeek[id] || 0, planned: workoutsPerWeek }))
+
+  const muscleCounts: Record<string, number> = {}
+  logs.forEach(log => (log.exercises || []).forEach(ex => {
+    const g = getMuscleGroup(ex.name); muscleCounts[g] = (muscleCounts[g] || 0) + 1
+  }))
+  const totalMuscleExercises = Object.values(muscleCounts).reduce((a, b) => a + b, 0)
+  const topMuscles = Object.entries(muscleCounts).sort(([, a], [, b]) => b - a).slice(0, 3)
+
+  const filteredLogs = historySearch.trim()
+    ? logs.filter(l => l.workoutName.toLowerCase().includes(historySearch.toLowerCase()))
+    : logs
+  const recentLogs = showAllHistory || historySearch.trim() ? filteredLogs : filteredLogs.slice(0, 10)
+
   return (
-    <div style={{ padding: "22px 16px 140px", minHeight: "100vh", background: "transparent" }}>
+    <div style={{ padding: "20px 16px 100px", minHeight: "100vh", background: "var(--bg)" }}>
       <motion.div variants={stagger} initial="hidden" animate="visible">
 
-        {/* ── Header ──────────────────────────────────────────────── */}
-        <motion.header
-          variants={fadeUp}
-          style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}
-        >
-          <div>
-            <p className="label-text" style={{ fontSize: 10, color: "var(--text-muted)", marginBottom: 6 }}>
-              {weekNumber ? `WEEK ${weekNumber} · ` : ""}THIS WEEK
-            </p>
-            <h1 className="display-text" style={{ fontSize: 36, fontWeight: 900, lineHeight: 1, color: "var(--text)", letterSpacing: "-0.02em" }}>
-              Report
-            </h1>
+        {/* Header */}
+        <motion.div variants={fadeUp}>
+          <div style={{ fontSize: "22px", fontWeight: "bold", color: "var(--text)", marginBottom: "20px" }}>
+            <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+              {t.progress}
+            </motion.span>
           </div>
-        </motion.header>
+        </motion.div>
 
-        {/* ── Skeletons ────────────────────────────────────────────── */}
         {loading ? (
-          <motion.div variants={fadeUp} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <SkeletonCard height="196px" />
-            <SkeletonCard height="280px" />
-            <SkeletonCard height="140px" />
-            <SkeletonCard height="100px" />
-            <SkeletonCard height="140px" />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <SkeletonCard height="80px" />
+            <SkeletonCard height="180px" />
+            <SkeletonCard height="200px" />
+            <SkeletonCard height="120px" />
+            <SkeletonCard height="60px" />
+          </motion.div>
+        ) : logs.length === 0 ? (
+          <motion.div variants={fadeUp} style={{ textAlign: "center", padding: "60px 16px" }}>
+            <div style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--surface)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+              <ChevronRight size={28} color="var(--text-muted)" />
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text)", marginBottom: 8 }}>{t.noWorkouts}</div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.55, maxWidth: 260, margin: "0 auto 28px" }}>{t.completeFirstWorkout}</div>
+            <button onClick={() => router.push("/schedule")} style={{ background: "var(--text)", color: "var(--bg)", border: "none", borderRadius: 999, padding: "12px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+              {t.goToSchedule}
+            </button>
           </motion.div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <>
+            {/* Stats row */}
+            <motion.div variants={fadeUp}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px", marginBottom: "10px" }}>
+                {[
+                  { value: totalWorkouts, label: t.totalWorkouts },
+                  { value: `${streak}`, label: t.currentStreak },
+                  { value: totalExercisesDone, label: t.totalExercises },
+                ].map((stat, i) => (
+                  <div key={i} style={{ ...cardStyle, textAlign: "center", marginBottom: 0, padding: "14px 12px" }}>
+                    <div style={{ fontSize: "28px", fontWeight: "bold", color: "var(--text)" }}>{stat.value}</div>
+                    <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
 
-            {/* ── 1. Streak hero ──────────────────────────────────── */}
-            <motion.section
-              variants={fadeUp}
-              style={{
-                position: "relative", overflow: "hidden", borderRadius: 26,
+            {/* ── Streak Hero ───────────────────────────────────────── */}
+            <motion.div variants={fadeUp} style={{ marginBottom: 10 }}>
+              <div style={{ sectionLabelStyle } as any} />
+              <div style={{
+                position: "relative", overflow: "hidden", borderRadius: 20,
                 background: "linear-gradient(148deg, #193d35 0%, #0c1e1b 100%)",
                 border: "1px solid rgba(107,191,184,0.24)",
-                boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.05), inset 0 1px 0 rgba(107,191,184,0.2), 0 24px 56px rgba(0,0,0,0.48)",
-              }}
-            >
-              <div style={{ position: "absolute", inset: "0 0 auto", height: 1, background: "linear-gradient(90deg, transparent, rgba(107,191,184,0.52), transparent)", pointerEvents: "none" }} />
-              <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 12% -10%, rgba(107,191,184,0.22), transparent 52%)", pointerEvents: "none" }} />
+                boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.05), 0 20px 48px rgba(0,0,0,0.4)",
+              }}>
+                {/* top shimmer line */}
+                <div style={{ position: "absolute", inset: "0 0 auto", height: 1, background: "linear-gradient(90deg, transparent, rgba(107,191,184,0.52), transparent)", pointerEvents: "none" }} />
+                {/* radial glow */}
+                <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 12% -10%, rgba(107,191,184,0.2), transparent 52%)", pointerEvents: "none" }} />
+                {/* shimmer sweep */}
+                <motion.div
+                  style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "linear-gradient(108deg, transparent 25%, rgba(107,191,184,0.07) 50%, transparent 75%)" }}
+                  animate={{ x: ["-110%", "210%"] }}
+                  transition={{ duration: 3.4, repeat: Infinity, repeatDelay: 5.5, ease: "easeInOut" }}
+                />
 
-              {/* Shimmer sweep */}
-              <motion.div
-                style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "linear-gradient(108deg, transparent 25%, rgba(107,191,184,0.07) 50%, transparent 75%)" }}
-                animate={{ x: ["-110%", "210%"] }}
-                transition={{ duration: 3.4, repeat: Infinity, repeatDelay: 5.5, ease: "easeInOut" }}
-              />
-
-              {/* Floating flame + embers */}
-              <div style={{ position: "absolute", right: 14, top: 12, pointerEvents: "none" }}>
-                <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }} style={{ opacity: 0.78, filter: "saturate(1.15) brightness(1.1)", transformOrigin: "50% 80%" }}>
-                  <FlameIcon size={60} streak={streak?.streak ?? 0} />
-                </motion.div>
-                <div style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)" }}>
-                  {embers.map((ember) => (
-                    <motion.div
-                      key={ember.id}
-                      style={{ position: "absolute", width: ember.size, height: ember.size, borderRadius: "50%", background: ember.color, boxShadow: `0 0 5px ${ember.color}` }}
-                      animate={{ x: [0, ember.x], y: [0, ember.targetY], opacity: [0, 0.85, 0], scale: [0.4, 1, 0.3] }}
-                      transition={{ duration: ember.duration, delay: ember.delay, repeat: Infinity, repeatDelay: 0.3, ease: "easeOut" }}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Numbers */}
-              <div style={{ position: "relative", padding: "22px 22px 16px" }}>
-                <motion.div className="label-text" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.28 }} style={{ fontSize: 10, color: ACCENT, marginBottom: 8 }}>
-                  Current Streak
-                </motion.div>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                  <motion.span className="number-text" initial={{ opacity: 0, scale: 0.82 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.16, type: "spring", stiffness: 200, damping: 18 }} style={{ fontSize: "clamp(48px, 13vw, 62px)", fontWeight: 900, lineHeight: 1, color: "#fff" }}>
-                    {displayStreak}
-                  </motion.span>
-                  <motion.span initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.36, duration: 0.24 }} style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.42)" }}>
-                    {(streak?.streak ?? 0) === 1 ? "day" : "days"}
-                  </motion.span>
-                </div>
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.52, duration: 0.3 }} style={{ marginTop: 8, fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.38)" }}>
-                  Personal best · <span style={{ color: ACCENT, fontWeight: 900 }}>{longestStreak} {longestStreak === 1 ? "day" : "days"}</span>
-                </motion.div>
-              </div>
-
-              {/* Week strip */}
-              <div style={{ borderTop: "1px solid rgba(107,191,184,0.16)", padding: "14px 22px 20px" }}>
-                <motion.div variants={dayStagger} initial="hidden" animate="visible" style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 7 }}>
-                  {weekDays.map((day, i) => {
-                    const dateId = toDateId(day)
-                    const isToday = today ? dateId === toDateId(today) : false
-                    const completed = completedDates.has(dateId)
-                    return (
-                      <motion.div key={dateId} variants={dayCellVariant} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-                        <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: isToday ? ACCENT : "rgba(255,255,255,0.28)" }}>{DAY_LETTERS[i]}</span>
-                        <motion.div
-                          animate={isToday ? { boxShadow: ["0 0 8px rgba(107,191,184,0.28)", "0 0 20px rgba(107,191,184,0.54)", "0 0 8px rgba(107,191,184,0.28)"] } : {}}
-                          transition={isToday ? { duration: 2.2, repeat: Infinity, ease: "easeInOut" } : {}}
-                          style={{ width: "100%", height: 36, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 10, background: isToday ? ACCENT : completed ? "rgba(107,191,184,0.16)" : "rgba(255,255,255,0.05)", border: isToday ? "none" : completed ? "1px solid rgba(107,191,184,0.32)" : "1px solid rgba(255,255,255,0.07)" }}
-                        >
-                          {isToday || completed ? (
-                            <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.3 + i * 0.06, type: "spring", stiffness: 350, damping: 18 }}>
-                              <Check size={12} strokeWidth={3} style={{ color: isToday ? "#0a1a18" : ACCENT, display: "block" }} />
-                            </motion.div>
-                          ) : (
-                            <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.24)" }}>{day.getDate()}</span>
-                          )}
-                        </motion.div>
-                      </motion.div>
-                    )
-                  })}
-                </motion.div>
-              </div>
-            </motion.section>
-
-            {/* ── 2. BMI + form ───────────────────────────────────── */}
-            <motion.section variants={fadeUp}>
-              <SectionHeader icon={Scale} label="BMI" right={
-                <span style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-                  <span className="number-text" style={{ fontSize: 18, fontWeight: 900, color: "var(--text)" }}>{bmi ? bmi.toFixed(1) : "--"}</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: bmiStatus.color }}>{bmiStatus.label}</span>
-                </span>
-              } />
-              <div className="ios-inset-grouped" style={{ overflow: "hidden" }}>
-                <div style={{ padding: "18px 20px 0" }}>
-                  <div style={{ position: "relative", height: 13, borderRadius: 999, overflow: "hidden", marginBottom: 8 }}>
-                    <div style={{ position: "absolute", inset: 0, display: "grid", gridTemplateColumns: "1fr 1.35fr 1fr 1fr" }}>
-                      <div style={{ background: "#5266dd" }} /><div style={{ background: "#6bc7c0" }} />
-                      <div style={{ background: "#e7c85a" }} /><div style={{ background: "#e76f6f" }} />
-                    </div>
-                    {bmi && <div style={{ position: "absolute", top: 0, bottom: 0, left: `calc(${bmiStatus.position}% - 1.5px)`, width: 3, borderRadius: 999, background: "rgba(255,255,255,0.94)", boxShadow: "0 0 6px rgba(255,255,255,0.6)", transition: "left 0.35s cubic-bezier(0.16,1,0.3,1)" }} />}
+                {/* Floating flame + embers */}
+                <div style={{ position: "absolute", right: 14, top: 12, pointerEvents: "none" }}>
+                  <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }} style={{ opacity: 0.82, transformOrigin: "50% 80%" }}>
+                    <FlameIcon size={56} streak={streak} />
+                  </motion.div>
+                  <div style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)" }}>
+                    {embers.map(ember => (
+                      <motion.div
+                        key={ember.id}
+                        style={{ position: "absolute", width: ember.size, height: ember.size, borderRadius: "50%", background: ember.color, boxShadow: `0 0 5px ${ember.color}` }}
+                        animate={{ x: [0, ember.x], y: [0, ember.targetY], opacity: [0, 0.85, 0], scale: [0.4, 1, 0.3] }}
+                        transition={{ duration: ember.duration, delay: ember.delay, repeat: Infinity, repeatDelay: 0.3, ease: "easeOut" }}
+                      />
+                    ))}
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
-                    {["15", "18.5", "25", "30", "40"].map((l) => <span key={l} style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)" }}>{l}</span>)}
-                  </div>
-                  <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5, marginBottom: 18 }}>Used as context only, not a judgment.</p>
                 </div>
-                <form onSubmit={saveMetrics} style={{ borderTop: "1px solid var(--border)", padding: "18px 20px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>
-                        <Ruler size={12} strokeWidth={2} /> Height
-                      </span>
-                      <input type="number" min="50" max="260" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} placeholder="cm" style={inputStyle} />
-                    </label>
-                    <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>
-                        <Scale size={12} strokeWidth={2} /> Weight
-                      </span>
-                      <input type="number" min="20" max="400" step="0.1" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} placeholder="kg" style={inputStyle} />
-                    </label>
-                  </div>
-                  <button type="button" onClick={() => setHasInjury((v) => !v)} className="motion-lift" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 15px", borderRadius: 18, border: hasInjury ? "1px solid rgba(231,111,111,0.34)" : "1px solid var(--border)", background: hasInjury ? "rgba(231,111,111,0.08)" : "var(--surface-2)", cursor: "pointer", textAlign: "left" as const }}>
-                    <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <span style={{ width: 34, height: 34, flexShrink: 0, display: "grid", placeItems: "center", borderRadius: 11, background: "var(--panel)", color: "var(--accent-strong)" }}><ShieldCheck size={16} strokeWidth={1.8} /></span>
-                      <span>
-                        <span style={{ display: "block", fontSize: 14, fontWeight: 900, color: "var(--text)" }}>Injury note</span>
-                        <span style={{ display: "block", fontSize: 12, color: "var(--text-muted)", marginTop: 1 }}>{hasInjury ? "FitSched will stay cautious." : "No active injury marked."}</span>
-                      </span>
+
+                {/* Numbers */}
+                <div style={{ position: "relative", padding: "20px 22px 14px" }}>
+                  <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.12em", color: ACCENT, marginBottom: 6 }}>CURRENT STREAK</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                    <span style={{ fontSize: "clamp(44px,12vw,58px)", fontWeight: 900, lineHeight: 1, color: "#fff", fontVariantNumeric: "tabular-nums" }}>
+                      {displayStreak}
                     </span>
-                    <span style={{ fontSize: 12, fontWeight: 900, color: "var(--text-muted)", flexShrink: 0 }}>{hasInjury ? "On" : "Off"}</span>
-                  </button>
-                  <AnimatePresence>
-                    {hasInjury && (
-                      <motion.label initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.22, ease: "easeOut" }} style={{ display: "flex", flexDirection: "column", gap: 6, overflow: "hidden" }}>
-                        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>
-                          <PencilLine size={12} strokeWidth={2} /> Notes
-                        </span>
-                        <textarea value={injuryNotes} onChange={(e) => setInjuryNotes(e.target.value)} placeholder="Example: avoid heavy knee impact this week." style={{ ...inputStyle, minHeight: 88, resize: "vertical", lineHeight: 1.5, fontWeight: 600 }} />
-                      </motion.label>
-                    )}
-                  </AnimatePresence>
-                  <button type="submit" disabled={saving} className="motion-lift" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", borderRadius: 18, border: "1px solid var(--border-strong)", background: "var(--accent)", color: "#0a1a18", fontSize: 14, fontWeight: 900, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1, fontFamily: "inherit" }}>
-                    <Save size={15} strokeWidth={2.2} />
-                    {saving ? "Saving…" : "Update report"}
-                  </button>
-                  {message && <p style={{ textAlign: "center", fontSize: 12, fontWeight: 700, color: "var(--text-muted)" }}>{message}</p>}
-                </form>
-              </div>
-            </motion.section>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.4)" }}>
+                      {streak === 1 ? "day" : "days"}
+                    </span>
+                  </div>
+                  <div style={{ marginTop: 6, fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.36)" }}>
+                    Personal best · <span style={{ color: ACCENT, fontWeight: 900 }}>{longestStreak} {longestStreak === 1 ? "day" : "days"}</span>
+                  </div>
+                </div>
 
-            {/* ── 3. FitToken Earnings ─────────────────────────────── */}
-            <motion.section variants={fadeUp}>
-              <SectionHeader icon={Wallet} label="FitToken Earnings" right={
-                <span className="number-text" style={{ fontSize: 13, fontWeight: 900, color: ACCENT }}>
-                  {formatFitTokenAmount(fitTokens.balance)} FT
+                {/* Week strip */}
+                <div style={{ borderTop: "1px solid rgba(107,191,184,0.15)", padding: "12px 22px 18px" }}>
+                  <motion.div
+                    initial="hidden" animate="visible"
+                    variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
+                    style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 }}
+                  >
+                    {weekDays.map((day, i) => {
+                      const dateId = toDateId(day)
+                      const isToday = today ? dateId === toDateId(today) : false
+                      const done = completedDates.has(dateId)
+                      return (
+                        <motion.div key={dateId} variants={dayCellVariant} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                          <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.06em", color: isToday ? ACCENT : "rgba(255,255,255,0.26)" }}>{DAY_LETTERS[i]}</span>
+                          <motion.div
+                            animate={isToday ? { boxShadow: ["0 0 8px rgba(107,191,184,0.28)", "0 0 18px rgba(107,191,184,0.52)", "0 0 8px rgba(107,191,184,0.28)"] } : {}}
+                            transition={isToday ? { duration: 2.2, repeat: Infinity, ease: "easeInOut" } : {}}
+                            style={{ width: "100%", height: 34, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 9, background: isToday ? ACCENT : done ? "rgba(107,191,184,0.15)" : "rgba(255,255,255,0.05)", border: isToday ? "none" : done ? "1px solid rgba(107,191,184,0.3)" : "1px solid rgba(255,255,255,0.07)" }}
+                          >
+                            {(isToday || done) ? (
+                              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3 + i * 0.06, type: "spring", stiffness: 350, damping: 18 }}>
+                                <Check size={11} strokeWidth={3} style={{ color: isToday ? "#0a1a18" : ACCENT, display: "block" }} />
+                              </motion.div>
+                            ) : (
+                              <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.22)" }}>{day.getDate()}</span>
+                            )}
+                          </motion.div>
+                        </motion.div>
+                      )
+                    })}
+                  </motion.div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Recovery */}
+            <motion.div variants={fadeUp}>
+              <div style={sectionLabelStyle}>RECOVERY</div>
+              <div style={cardStyle}><MuscleRecovery logs={logs} /></div>
+            </motion.div>
+
+            {/* Activity heatmap */}
+            <motion.div variants={fadeUp}>
+              <div style={sectionLabelStyle}>ACTIVITY</div>
+              <div style={cardStyle}><ActivityHeatmap logs={logs} weeks={16} /></div>
+            </motion.div>
+
+            {/* ── FitToken Earnings ─────────────────────────────────── */}
+            <motion.div variants={fadeUp}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", ...sectionLabelStyle }}>
+                <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <Wallet size={11} strokeWidth={2} style={{ color: ACCENT }} />
+                  FITTOKEN EARNINGS
                 </span>
-              } />
-              <div className="ios-inset-grouped" style={{ padding: "4px 0" }}>
-                {fitTokens.transactions.length > 0 ? (
-                  fitTokens.transactions.slice(0, 8).map((tx, i) => (
-                    <div key={tx.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "12px 20px", borderTop: i > 0 ? "1px solid var(--border)" : "none" }}>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {formatTokenReason(tx.reason, tx.workoutName)}
-                        </div>
-                        <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
-                          {new Date(tx.createdAt).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <div className="number-text" style={{ color: ACCENT, fontSize: 13, fontWeight: 900, flexShrink: 0 }}>
-                        +{formatFitTokenAmount(tx.amount)}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div style={{ padding: "20px 20px", textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
+                <span style={{ fontSize: 12, fontWeight: 900, color: ACCENT, letterSpacing: 0 }}>{formatFT(ftBalance)} FT</span>
+              </div>
+              <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
+                {ftTxs.length === 0 ? (
+                  <div style={{ padding: "20px", textAlign: "center", fontSize: 13, color: "var(--text-muted)" }}>
                     Complete a workout to earn your first FitToken.
                   </div>
-                )}
+                ) : ftTxs.slice(0, 8).map((tx, i) => (
+                  <div key={tx.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "12px 18px", borderTop: i > 0 ? "1px solid var(--border)" : "none" }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {formatTokenReason(tx.reason, tx.workoutName)}
+                      </div>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                        {new Date(tx.createdAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div style={{ color: ACCENT, fontSize: 13, fontWeight: 900, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
+                      +{formatFT(tx.amount)}
+                    </div>
+                  </div>
+                ))}
               </div>
-            </motion.section>
+            </motion.div>
 
-            {/* ── 4. Last 8 Weeks ──────────────────────────────────── */}
-            <motion.section variants={fadeUp}>
-              <SectionHeader icon={BarChart2} label="Last 8 Weeks" />
-              <div className="ios-inset-grouped" style={{ padding: "14px 12px 8px" }}>
-                <ResponsiveContainer width="100%" height={120}>
-                  <BarChart data={weeklyData} margin={{ top: 6, right: 4, bottom: 0, left: 4 }}>
-                    <Tooltip
-                      cursor={{ fill: "rgba(255,255,255,0.04)" }}
-                      formatter={(value) => [`${value} workouts`, "Completed"]}
-                      labelFormatter={() => "Weekly activity"}
-                      contentStyle={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 10, color: "var(--text)", fontSize: 12 }}
-                    />
-                    <Bar dataKey="actual" radius={[6, 6, 0, 0]} maxBarSize={22}>
-                      {weeklyData.map((entry) => (
-                        <Cell key={entry.week} fill={entry.actual >= entry.planned ? ACCENT : "rgba(255,255,255,0.1)"} opacity={entry.actual > 0 ? 1 : 0.5} />
+            {/* Last 8 weeks chart */}
+            <motion.div variants={fadeUp}>
+              <div style={sectionLabelStyle}>{t.last8Weeks}</div>
+              <div style={cardStyle}>
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={weeklyData} margin={{ top: 8, right: 4, bottom: 4, left: -16 }}>
+                    <XAxis dataKey="week" tick={{ fontSize: 10, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "8px", fontSize: "12px" }} labelStyle={{ color: "var(--text)" }} />
+                    <Bar dataKey="actual" radius={[4, 4, 0, 0]} maxBarSize={24}>
+                      {weeklyData.map((entry, index) => (
+                        <Cell key={index} fill={entry.actual >= entry.planned ? "var(--text)" : "var(--border)"} opacity={entry.actual >= entry.planned ? 1 : 0.5} />
                       ))}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-            </motion.section>
+            </motion.div>
 
-            {/* ── 5. Most Trained ──────────────────────────────────── */}
-            <motion.section variants={fadeUp}>
-              <SectionHeader icon={Dumbbell} label="Most Trained" right="last 30 days" />
-              {topMuscles.length > 0 ? (
-                <div className="ios-inset-grouped" style={{ padding: "4px 0" }}>
-                  {topMuscles.map((muscle, index) => (
-                    <div key={muscle.group} style={{ padding: "14px 20px", borderTop: index > 0 ? "1px solid var(--border)" : "none" }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
-                        <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{muscle.group}</span>
-                        <span className="number-text" style={{ fontSize: 13, fontWeight: 900, color: ACCENT }}>{muscle.pct}%</span>
+            {/* Most trained */}
+            {topMuscles.length > 0 && (
+              <motion.div variants={fadeUp}>
+                <div style={sectionLabelStyle}>{t.mostTrained}</div>
+                {topMuscles.map(([group, count]) => {
+                  const pct = totalMuscleExercises > 0 ? Math.round((count / totalMuscleExercises) * 100) : 0
+                  return (
+                    <div key={group} style={{ ...cardStyle, marginBottom: "8px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                        <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)" }}>{group}</div>
+                        <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>{pct}%</div>
                       </div>
-                      <div style={{ height: 6, borderRadius: 999, overflow: "hidden", background: "var(--surface-2)" }}>
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${muscle.pct}%` }}
-                          transition={{ duration: 0.75, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                          style={{ height: "100%", borderRadius: 999, background: `linear-gradient(90deg, #3d9a93, ${ACCENT})` }}
-                        />
+                      <div style={{ width: "100%", height: 6, background: "var(--border)", borderRadius: 3, overflow: "hidden" }}>
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }} style={{ height: "100%", background: "var(--text)", borderRadius: 3 }} />
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="ios-inset-grouped" style={{ textAlign: "center", padding: "28px 20px" }}>
-                  <p style={{ fontSize: 13, color: "var(--text-muted)" }}>Complete a workout to see your muscle patterns.</p>
-                </div>
-              )}
-            </motion.section>
+                  )
+                })}
+              </motion.div>
+            )}
 
-            {/* ── 6. Hike Activity ─────────────────────────────────── */}
-            <motion.section variants={fadeUp}>
-              <SectionHeader icon={Footprints} label="Hike Activity" right={hikeStats.count > 0 ? `${hikeStats.count} hike${hikeStats.count !== 1 ? "s" : ""}` : undefined} />
-              {hikeStats.count === 0 ? (
-                <div style={{ ...cardStyle, textAlign: "center", padding: "28px 20px", marginBottom: 0 }}>
-                  <p style={{ fontSize: 13, color: "var(--text-muted)" }}>No hikes logged yet. Use the Hike tab to track your first adventure.</p>
-                </div>
-              ) : (
-                <>
-                  {/* Stat grid */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-                    {([
-                      { label: "Total Distance", value: `${hikeStats.totalKm.toFixed(1)} km`, Icon: Ruler },
-                      { label: "Total Time",     value: fmtHikeDuration(hikeStats.totalMin), Icon: History },
-                      { label: "Elevation",      value: hikeStats.totalElev > 0 ? `↑${hikeStats.totalElev.toLocaleString()} m` : "—", Icon: TrendingUp },
-                      { label: "Longest Hike",   value: `${hikeStats.longestKm.toFixed(1)} km`, Icon: Footprints },
-                    ] as const).map(({ label, value, Icon }) => (
-                      <div key={label} style={{ ...cardStyle, marginBottom: 0, padding: "15px 16px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 7 }}>
-                          <Icon size={12} strokeWidth={2} style={{ color: ACCENT }} />
-                          <span style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: "var(--text-muted)" }}>{label}</span>
-                        </div>
-                        <div className="number-text" style={{ fontSize: 20, fontWeight: 900, color: "var(--text)", lineHeight: 1 }}>{value}</div>
-                      </div>
-                    ))}
+            {/* Workout History */}
+            <motion.div variants={fadeUp}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", ...sectionLabelStyle }}>
+                <span>{t.workoutHistory}</span>
+                <span style={{ fontWeight: 600, letterSpacing: 0 }}>{filteredLogs.length} total</span>
+              </div>
+              <div style={{ position: "relative", marginBottom: 10 }}>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search workouts…"
+                  value={historySearch}
+                  onChange={e => setHistorySearch(e.target.value)}
+                  style={{ width: "100%", boxSizing: "border-box", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "9px 12px 9px 30px", fontSize: 13, color: "var(--text)", outline: "none", fontFamily: "inherit" }}
+                />
+                {historySearch && (
+                  <button onClick={() => setHistorySearch("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 15, lineHeight: 1, padding: 0 }}>×</button>
+                )}
+              </div>
+            </motion.div>
+
+            {recentLogs.length === 0 ? (
+              <motion.div variants={fadeUp}>
+                <div style={{ ...cardStyle, textAlign: "center", padding: "24px" }}>
+                  <div style={{ fontSize: "14px", color: "var(--text-muted)" }}>
+                    {historySearch ? `No workouts matching "${historySearch}"` : t.noWorkouts}
                   </div>
-
-                  {/* Recent hike cards */}
-                  {hikeLogs.slice(0, 5).map(log => (
-                    <div key={log.id} style={{ ...cardStyle, padding: "13px 16px" }}>
-                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {log.name}
-                          </div>
-                          {log.locationName && (
-                            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {log.locationName}
-                            </div>
-                          )}
+                </div>
+              </motion.div>
+            ) : (
+              recentLogs.map((log) => {
+                const isExpanded = expandedLog === log.id
+                return (
+                  <motion.div key={log.id} variants={fadeUp}>
+                    <div onClick={() => setExpandedLog(isExpanded ? null : log.id)} style={{ ...cardStyle, cursor: "pointer", marginBottom: "8px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div>
+                          <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>{log.workoutName}</div>
+                          <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>{new Date(log.completedAt).toLocaleDateString()}</div>
                         </div>
-                        <span style={{ fontSize: 11, color: "var(--text-muted)", flexShrink: 0, marginTop: 2 }}>
-                          {new Date(log.loggedAt).toLocaleDateString()}
-                        </span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <span style={{ background: "var(--surface-2)", borderRadius: "20px", padding: "4px 10px", fontSize: "11px", color: "var(--text-muted)" }}>
+                            {log.exercises.length} {t.exercises}
+                          </span>
+                          <span style={{ background: "rgba(107,191,184,0.10)", border: "1px solid rgba(107,191,184,0.28)", borderRadius: "20px", padding: "4px 9px", fontSize: "11px", fontWeight: 700, color: "var(--accent, #6bbfb8)" }}>
+                            ~{estimateCalories(log.exercises)} kcal
+                          </span>
+                          {isExpanded ? <ChevronDown size={16} color="var(--text-muted)" /> : <ChevronRight size={16} color="var(--text-muted)" />}
+                        </div>
                       </div>
-                      <div style={{ display: "flex", flexWrap: "wrap" as const, gap: "4px 12px", marginTop: 9 }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: ACCENT }}>{log.distanceKm} km</span>
-                        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{fmtHikeDuration(log.durationMin)}</span>
-                        {log.elevationM ? <span style={{ fontSize: 12, color: "var(--text-muted)" }}>↑{log.elevationM} m</span> : null}
-                      </div>
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2, ease: "easeInOut" }} style={{ overflow: "hidden" }}>
+                            <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid var(--border)" }}>
+                              {log.notes && (
+                                <div style={{ marginBottom: 10, padding: "8px 10px", background: "var(--surface-2)", borderRadius: 8, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5, fontStyle: "italic" }}>
+                                  "{log.notes}"
+                                </div>
+                              )}
+                              {(log.exercises || []).map((ex, i) => (
+                                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", fontSize: "13px" }}>
+                                  <span style={{ color: "var(--text)" }}>{ex.name}</span>
+                                  <span style={{ color: "var(--text-muted)" }}>{ex.sets}×{ex.reps}</span>
+                                </div>
+                              ))}
+                              <motion.button
+                                whileTap={{ scale: 0.95 }}
+                                onClick={(e) => { e.stopPropagation(); handleRepeat(log) }}
+                                disabled={!!repeatingId || repeatedId === log.id}
+                                style={{ marginTop: 10, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "9px 0", borderRadius: 10, border: `1px solid ${repeatedId === log.id ? "var(--accent)" : "var(--border)"}`, background: repeatedId === log.id ? "var(--accent-soft)" : "var(--surface-2)", color: repeatedId === log.id ? "var(--accent)" : "var(--text-muted)", fontSize: 12, fontWeight: 700, cursor: repeatingId === log.id ? "wait" : repeatedId === log.id ? "default" : "pointer" }}
+                              >
+                                {repeatedId === log.id ? <><Check size={13} strokeWidth={2.5} /> Loaded for today!</>
+                                  : repeatingId === log.id ? <>Loading…</>
+                                  : <><RotateCcw size={13} strokeWidth={2.5} /> Repeat today</>}
+                              </motion.button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
-                  ))}
-                </>
-              )}
-            </motion.section>
+                  </motion.div>
+                )
+              })
+            )}
 
-            {/* ── 7. Workout History ───────────────────────────────── */}
-            <motion.section variants={fadeUp}>
-              <SectionHeader icon={History} label="Workout History" />
-              {recentLogs.length === 0 ? (
-                <div className="ios-inset-grouped" style={{ textAlign: "center", padding: "28px 20px" }}>
-                  <p style={{ fontSize: 13, color: "var(--text-muted)" }}>No workouts logged yet.</p>
-                </div>
-              ) : (
-                <div className="ios-inset-grouped" style={{ padding: "4px 0" }}>
-                  {recentLogs.map((log, idx) => {
-                    const isExpanded = expandedLog === log.id
-                    return (
-                      <div key={log.id} onClick={() => setExpandedLog(isExpanded ? null : log.id)} style={{ padding: "14px 20px", borderTop: idx > 0 ? "1px solid var(--border)" : "none", cursor: "pointer" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-                          <div style={{ minWidth: 0 }}>
-                            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {log.workoutName}
-                            </div>
-                            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 3 }}>
-                              {new Date(log.completedAt).toLocaleDateString()}
-                            </div>
-                          </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                            <span style={{ background: "var(--surface-2)", borderRadius: 999, padding: "4px 10px", fontSize: 11, color: "var(--text-muted)" }}>
-                              {log.exercises.length} ex
-                            </span>
-                            {isExpanded
-                              ? <ChevronDown size={15} strokeWidth={2} style={{ color: "var(--text-muted)" }} />
-                              : <ChevronRight size={15} strokeWidth={2} style={{ color: "var(--text-muted)" }} />
-                            }
-                          </div>
-                        </div>
-                        <AnimatePresence>
-                          {isExpanded && (
-                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2, ease: "easeInOut" }} style={{ overflow: "hidden" }}>
-                              <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
-                                {log.exercises.map((ex, i) => (
-                                  <div key={`${ex.name}-${i}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", gap: 14, fontSize: 13 }}>
-                                    <span style={{ color: "var(--text)" }}>{ex.name}</span>
-                                    <span className="number-text" style={{ color: "var(--text-muted)", flexShrink: 0 }}>{ex.sets} × {ex.reps}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </motion.section>
-
-          </div>
+            {!historySearch.trim() && filteredLogs.length > 10 && (
+              <motion.div variants={fadeUp}>
+                <button onClick={() => setShowAllHistory(v => !v)} style={{ width: "100%", border: "1px solid var(--border)", background: "var(--surface)", borderRadius: 12, padding: "11px 0", fontSize: 13, fontWeight: 700, color: "var(--text-muted)", cursor: "pointer", marginTop: 2 }}>
+                  {showAllHistory ? "Show less" : `Show all ${filteredLogs.length} workouts`}
+                </button>
+              </motion.div>
+            )}
+          </>
         )}
       </motion.div>
     </div>
