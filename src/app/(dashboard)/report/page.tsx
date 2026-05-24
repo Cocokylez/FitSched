@@ -105,6 +105,7 @@ export default function ReportPage() {
   const [repeatedId, setRepeatedId] = useState<string | null>(null)
   const [historySearch, setHistorySearch] = useState("")
   const [showAllHistory, setShowAllHistory] = useState(false)
+  const [historyMuscleFilter, setHistoryMuscleFilter] = useState<string | null>(null)
   const [ftBalance, setFtBalance] = useState(0)
   const [ftTxs, setFtTxs] = useState<FitTokenTx[]>([])
   const [streakFreezeArmed, setStreakFreezeArmed] = useState(false)
@@ -241,10 +242,15 @@ export default function ReportPage() {
   const totalMuscleExercises = Object.values(muscleCounts).reduce((a, b) => a + b, 0)
   const topMuscles = Object.entries(muscleCounts).sort(([, a], [, b]) => b - a).slice(0, 3)
 
-  const filteredLogs = historySearch.trim()
-    ? logs.filter(l => l.workoutName.toLowerCase().includes(historySearch.toLowerCase()))
-    : logs
-  const recentLogs = showAllHistory || historySearch.trim() ? filteredLogs : filteredLogs.slice(0, 10)
+  const filteredLogs = logs.filter(l => {
+    if (historySearch.trim() && !l.workoutName.toLowerCase().includes(historySearch.toLowerCase())) return false
+    if (historyMuscleFilter) {
+      const groups = (l.exercises || []).map(ex => getMuscleGroup(ex.name))
+      if (!groups.includes(historyMuscleFilter)) return false
+    }
+    return true
+  })
+  const recentLogs = showAllHistory || historySearch.trim() || historyMuscleFilter ? filteredLogs : filteredLogs.slice(0, 10)
 
   return (
     <div style={{ padding: "20px 16px 100px", minHeight: "100vh", background: "var(--bg)" }}>
@@ -554,6 +560,24 @@ export default function ReportPage() {
                 <span>{t.workoutHistory}</span>
                 <span style={{ fontWeight: 600, letterSpacing: 0 }}>{filteredLogs.length} total</span>
               </div>
+              {/* Muscle group filter chips */}
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                {[null, "Chest", "Back", "Legs", "Shoulders", "Arms", "Core", "Full Body"].map(group => (
+                  <button
+                    key={group ?? "all"}
+                    onClick={() => { setHistoryMuscleFilter(group); setShowAllHistory(false) }}
+                    style={{
+                      border: historyMuscleFilter === group ? "1px solid rgba(107,191,184,0.6)" : "1px solid var(--border)",
+                      background: historyMuscleFilter === group ? "rgba(107,191,184,0.12)" : "var(--surface)",
+                      color: historyMuscleFilter === group ? ACCENT : "var(--text-muted)",
+                      borderRadius: 999, padding: "4px 10px", fontSize: 11, fontWeight: 800,
+                      cursor: "pointer", whiteSpace: "nowrap",
+                    }}
+                  >
+                    {group ?? "All"}
+                  </button>
+                ))}
+              </div>
               <div style={{ position: "relative", marginBottom: 10 }}>
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
                   <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -575,7 +599,7 @@ export default function ReportPage() {
               <motion.div variants={fadeUp}>
                 <div style={{ ...cardStyle, textAlign: "center", padding: "24px" }}>
                   <div style={{ fontSize: "14px", color: "var(--text-muted)" }}>
-                    {historySearch ? `No workouts matching "${historySearch}"` : t.noWorkouts}
+                    {historySearch ? `No workouts matching "${historySearch}"` : historyMuscleFilter ? `No ${historyMuscleFilter} workouts yet` : t.noWorkouts}
                   </div>
                 </div>
               </motion.div>
