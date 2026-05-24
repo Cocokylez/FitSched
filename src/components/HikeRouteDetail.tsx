@@ -7,6 +7,8 @@ import { motion } from "framer-motion"
 import { Clock, MapPin, TrendingUp, X, Zap } from "lucide-react"
 import type { Waypoint } from "@/components/HikeTracker"
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { ACCENT, GREEN, RED } from "@/lib/theme"
+import { haversineKm, fmtDuration } from "@/lib/hikeUtils"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -22,12 +24,6 @@ export type HikeDetail = {
   loggedAt: string
 }
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const ACCENT = "#6bbfb8"
-const GREEN  = "#4ade80"
-const RED    = "#f87171"
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatPace(distKm: number, durationMin: number): string {
@@ -38,26 +34,10 @@ function formatPace(distKm: number, durationMin: number): string {
   return `${m}:${String(s).padStart(2, "0")}`
 }
 
-function formatDuration(min: number): string {
-  const h = Math.floor(min / 60), m = min % 60
-  if (h === 0) return `${m}m`
-  return m === 0 ? `${h}h` : `${h}h ${m}m`
-}
-
 function fmtDate(s: string): string {
   return new Date(s).toLocaleDateString("en-US", {
     weekday: "short", month: "short", day: "numeric", year: "numeric",
   })
-}
-
-// ── Haversine (km) ────────────────────────────────────────────────────────────
-
-function haversineKm(p1: Waypoint, p2: Waypoint): number {
-  const R = 6371
-  const dLat = (p2.lat - p1.lat) * Math.PI / 180
-  const dLng = (p2.lng - p1.lng) * Math.PI / 180
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(p1.lat * Math.PI / 180) * Math.cos(p2.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -83,7 +63,7 @@ export function HikeRouteDetail({ hike, onClose }: Props) {
     let cumDist = 0
     const data: { dist: number; alt: number }[] = []
     for (let i = 0; i < points.length; i++) {
-      if (i > 0) cumDist += haversineKm(points[i - 1], points[i])
+      if (i > 0) cumDist += haversineKm(points[i - 1].lat, points[i - 1].lng, points[i].lat, points[i].lng)
       if (points[i].alt !== null) {
         data.push({ dist: Math.round(cumDist * 1000) / 1000, alt: Math.round(points[i].alt!) })
       }
@@ -258,7 +238,7 @@ export function HikeRouteDetail({ hike, onClose }: Props) {
         }}>
           {[
             { icon: <MapPin   size={15} strokeWidth={2} />, label: "Distance", value: `${hike.distanceKm} km` },
-            { icon: <Clock    size={15} strokeWidth={2} />, label: "Time",     value: formatDuration(hike.durationMin) },
+            { icon: <Clock    size={15} strokeWidth={2} />, label: "Time",     value: fmtDuration(hike.durationMin) },
             { icon: <Zap      size={15} strokeWidth={2} />, label: "Pace",     value: `${formatPace(hike.distanceKm, hike.durationMin)}/km` },
           ].map(({ icon, label, value }, i) => (
             <div

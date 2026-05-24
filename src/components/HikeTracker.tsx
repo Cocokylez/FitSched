@@ -6,12 +6,8 @@ import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { CheckCircle, Flag, Locate, MapPin, Navigation, Pause, Play, RotateCcw, X } from "lucide-react"
 import { playSound } from "@/lib/sound"
-
-const ACCENT   = "#6bbfb8"
-const GREEN    = "#4ade80"
-const RED      = "#f87171"
-const BLUE     = "#60a5fa"
-const YELLOW   = "#facc15"
+import { ACCENT, GREEN, RED, BLUE, YELLOW } from "@/lib/theme"
+import { haversineKm } from "@/lib/hikeUtils"
 
 // ── Tile pre-fetch (warms the offline cache around the starting position) ─────
 
@@ -59,15 +55,6 @@ export type TrackerResult = {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371
-  const toRad = (d: number) => (d * Math.PI) / 180
-  const dLat = toRad(lat2 - lat1), dLng = toRad(lng2 - lng1)
-  const a = Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-}
 
 function formatTime(s: number): string {
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60
@@ -195,7 +182,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
 
     if (prev.length > 0) {
       const last = prev[prev.length - 1]
-      const d = haversine(last.lat, last.lng, lat, lng)
+      const d = haversineKm(last.lat, last.lng, lat, lng)
       if (d < 0.003) return
       distanceRef.current += d
       if (alt !== null && last.alt !== null && alt > last.alt) {
@@ -298,7 +285,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
       setPlanStep("ready")
     } catch {
       // No trail data in OSM — fall back to straight-line between the two points
-      const distKmStraight = haversine(start.lat, start.lng, end.lat, end.lng)
+      const distKmStraight = haversineKm(start.lat, start.lng, end.lat, end.lng)
       const distM  = distKmStraight * 1000
       const durSec = (distKmStraight / 4) * 3600 // estimate at 4 km/h hiking pace
 

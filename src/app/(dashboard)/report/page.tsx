@@ -15,6 +15,7 @@ import FlameIcon from "@/components/FlameIcon"
 import { stagger, fadeUp } from "@/lib/animations"
 import { getMuscleGroup } from "@/lib/exerciseData"
 import { toDateId, addDays, getWeekId, calculateLongestStreak } from "@/lib/dateUtils"
+import { ACCENT } from "@/lib/theme"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -81,7 +82,6 @@ const dayCellVariant = {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const ACCENT = "#6bbfb8"
 const DAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"]
 
 const cardStyle: React.CSSProperties = {

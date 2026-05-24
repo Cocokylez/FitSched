@@ -8,12 +8,10 @@ import {
   Calendar, CheckCheck, Dumbbell, Globe2, ChevronDown,
 } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
+import { ACCENT, ACCENT_DIM, ACCENT_BD } from "@/lib/theme"
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-const ACCENT      = "#6bbfb8"
-const ACCENT_DIM  = "rgba(107, 191, 184, 0.11)"
-const ACCENT_BD   = "rgba(107, 191, 184, 0.22)"
 const BORDER      = "rgba(255,255,255,0.075)"
 const TEXT_MUTED  = "rgba(255,255,255,0.38)"
 

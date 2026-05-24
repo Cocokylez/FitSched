@@ -6,8 +6,7 @@ import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { Building2, Dumbbell, Home } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
-
-const ACCENT = "#6bbfb8"
+import { ACCENT } from "@/lib/theme"
 
 type WorkoutEnvironment = "home_bodyweight" | "home_dumbbells" | "gym"
 

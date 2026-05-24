@@ -7,8 +7,7 @@ import { motion } from "framer-motion"
 import { Settings } from "lucide-react"
 import { toDateId, getWeekId, calculateLongestStreak } from "@/lib/dateUtils"
 import { useLanguage } from "@/context/LanguageContext"
-
-const ACCENT = "#6bbfb8"
+import { ACCENT } from "@/lib/theme"
 const RING_RADIUS = 46
 const RING_CIRC = 2 * Math.PI * RING_RADIUS
 
