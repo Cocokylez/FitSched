@@ -109,6 +109,10 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [savingName, setSavingName] = useState(false)
   const [achievements, setAchievements] = useState<Achievement[]>([])
+  const [heightCm, setHeightCm] = useState<number | null>(null)
+  const [weightKg, setWeightKg] = useState<number | null>(null)
+  const [bmi, setBmi] = useState<number | null>(null)
+  const [hikeTotals, setHikeTotals] = useState<{ count: number; km: number } | null>(null)
 
   const photoInputRef = useRef<HTMLInputElement>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
@@ -156,8 +160,23 @@ export default function ProfilePage() {
         if (logsRes.ok) setLogs(await logsRes.json())
         if (tokensRes.ok) { const t = await tokensRes.json(); setFitTokenBalance(t.balance || 0) }
         if (streakRes.ok) { const s = await streakRes.json(); setStreak(Number(s.streak) || 0) }
-        if (onboardRes.ok) { const o = await onboardRes.json(); setWorkoutsPerWeek(o.workoutsPerWeek || 3) }
+        if (onboardRes.ok) {
+          const o = await onboardRes.json()
+          setWorkoutsPerWeek(o.workoutsPerWeek || 3)
+          if (o.heightCm) setHeightCm(o.heightCm)
+          if (o.weightKg) setWeightKg(o.weightKg)
+          if (o.bmi) setBmi(o.bmi)
+        }
         if (achRes.ok) { setAchievements(await achRes.json()) }
+        // Hike totals (best-effort — don't block load)
+        fetch("/api/hike").then(r => r.ok ? r.json() : []).then((hikes: any[]) => {
+          if (hikes.length > 0) {
+            setHikeTotals({
+              count: hikes.length,
+              km: Math.round(hikes.reduce((s: number, h: any) => s + h.distanceKm, 0) * 10) / 10,
+            })
+          }
+        }).catch(() => {})
       } catch {}
       setLoading(false)
     }
@@ -420,6 +439,56 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      {/* Body Stats */}
+      {bmi !== null && (
+        <div style={{ padding: "20px 16px 0" }}>
+          <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.13em", color: "var(--text-muted)", marginBottom: 10 }}>
+            BODY
+          </div>
+          {(() => {
+            const cat =
+              bmi < 18.5 ? { label: "Underweight", color: "#60a5fa", bg: "rgba(96,165,250,0.12)", border: "rgba(96,165,250,0.28)" }
+              : bmi < 25 ? { label: "Normal", color: "#4ade80", bg: "rgba(74,222,128,0.12)", border: "rgba(74,222,128,0.28)" }
+              : bmi < 30 ? { label: "Overweight", color: "#f59e0b", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.28)" }
+              : { label: "Obese", color: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.28)" }
+            return (
+              <div style={{
+                background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 20,
+                padding: "18px 20px", display: "flex", alignItems: "center", gap: 16,
+                boxShadow: "var(--shadow)",
+              }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                    <span className="number-text" style={{ fontSize: 40, fontWeight: 900, color: "var(--text)", letterSpacing: "-1px", lineHeight: 1 }}>
+                      <AnimatedNumber value={Math.round(bmi * 10) / 10} />
+                    </span>
+                    <span style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 700 }}>BMI</span>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                    {heightCm && (
+                      <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600 }}>
+                        {heightCm} cm
+                      </span>
+                    )}
+                    {weightKg && (
+                      <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600 }}>
+                        · {weightKg} kg
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div style={{
+                  background: cat.bg, border: `1px solid ${cat.border}`,
+                  borderRadius: 12, padding: "8px 14px", textAlign: "center", flexShrink: 0,
+                }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: cat.color }}>{cat.label}</div>
+                </div>
+              </div>
+            )
+          })()}
+        </div>
+      )}
+
       {/* Quick links */}
       <div style={{ padding: "20px 16px 0" }}>
         <motion.button
@@ -449,6 +518,39 @@ export default function ProfilePage() {
             <polyline points="9 18 15 12 9 6" />
           </svg>
         </motion.button>
+
+        {hikeTotals && (
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={() => router.push("/hike")}
+            style={{
+              marginTop: 10,
+              width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+              background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 16,
+              padding: "14px 18px", cursor: "pointer", textAlign: "left",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{
+                width: 34, height: 34, borderRadius: 10,
+                background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.22)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 16, flexShrink: 0,
+              }}>
+                🥾
+              </div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Hike Logs</div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                  {hikeTotals.count} hike{hikeTotals.count !== 1 ? "s" : ""} · {hikeTotals.km} km total
+                </div>
+              </div>
+            </div>
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--text-muted)", flexShrink: 0 }}>
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </motion.button>
+        )}
       </div>
 
       {/* Achievements */}
