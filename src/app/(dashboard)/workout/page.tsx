@@ -698,7 +698,10 @@ export default function WorkoutPage() {
             borderRadius: 14, padding: "9px 14px", marginBottom: 14,
             fontSize: 12, fontWeight: 700, color: ACCENT,
           }}>
-            <span>📋 Template active — {templateExercises.length} exercises</span>
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+              Template active — {templateExercises.length} exercises
+            </span>
             <button
               onClick={() => setTemplateExercises(null)}
               style={{ background: "none", border: "none", cursor: "pointer", color: ACCENT, fontSize: 11, fontWeight: 800, padding: "2px 0" }}

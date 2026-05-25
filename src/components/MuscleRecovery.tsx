@@ -78,7 +78,7 @@ export function MuscleRecovery({ logs }: Props) {
 
   const suggestion =
     readyGroups.length === 0 && allResting
-      ? "💤 Consider a rest day — all groups are recovering"
+      ? "Rest day recommended — all groups are still recovering"
       : readyGroups.length === 0
       ? "Start logging workouts to track recovery"
       : readyGroups.length === 1

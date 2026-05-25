@@ -736,7 +736,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
                 color: "rgba(255,255,255,0.7)", fontSize: 11, fontWeight: 700, fontFamily: "inherit",
               }}
             >
-              <span style={{ fontSize: 13 }}>🗺</span> Map legend
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg> Map legend
             </motion.button>
 
             <AnimatePresence>
@@ -843,7 +843,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
                   borderRadius: 10, padding: "8px 12px",
                   display: "flex", alignItems: "center", gap: 8,
                 }}>
-                  <span style={{ fontSize: 13 }}>⚠️</span>
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#f87171" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
                   <span style={{ fontSize: 11, color: "rgba(255,120,120,0.9)", fontWeight: 600, lineHeight: 1.4 }}>
                     No trail data — straight-line only. Navigate with extreme care.
                   </span>
@@ -855,7 +855,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
                   borderRadius: 10, padding: "8px 12px",
                   display: "flex", alignItems: "center", gap: 8,
                 }}>
-                  <span style={{ fontSize: 14 }}>🗺️</span>
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="rgba(74,222,128,0.85)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
                   <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontWeight: 600, lineHeight: 1.4 }}>
                     Traced from OSM trail data — turn-by-turn not available
                   </span>
@@ -909,7 +909,11 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ fontSize: 32, lineHeight: 1 }}>⛰️</div>
+                  <div style={{ width: 42, height: 42, borderRadius: 12, background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.28)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#f87171" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m8 3 4 8 5-5 5 15H2L8 3z"/>
+                    </svg>
+                  </div>
                   <div>
                     <div style={{ color: "#f87171", fontWeight: 900, fontSize: 16, lineHeight: 1.2 }}>No Trail Data Found</div>
                     <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 3 }}>This area has no official trail records</div>
@@ -918,13 +922,29 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {[
-                    { icon: "🗺️", text: "The dotted line shown is a straight-line estimate only — it does not follow any real path." },
-                    { icon: "🧗", text: "Actual terrain may include cliffs, dense forest, rivers, or impassable slopes." },
-                    { icon: "📍", text: "Always use official trail maps or consult local guides before attempting unmarked routes." },
-                    { icon: "📞", text: "Tell someone your exact destination and expected return time before you go." },
-                  ].map(({ icon, text }) => (
-                    <div key={icon} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                      <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>{icon}</span>
+                    {
+                      key: "route",
+                      iconHtml: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex-shrink:0"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>`,
+                      text: "The dotted line shown is a straight-line estimate only — it does not follow any real path.",
+                    },
+                    {
+                      key: "terrain",
+                      iconHtml: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex-shrink:0"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>`,
+                      text: "Actual terrain may include cliffs, dense forest, rivers, or impassable slopes.",
+                    },
+                    {
+                      key: "trails",
+                      iconHtml: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex-shrink:0"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`,
+                      text: "Always use official trail maps or consult local guides before attempting unmarked routes.",
+                    },
+                    {
+                      key: "contact",
+                      iconHtml: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex-shrink:0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.72 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.63 1.17h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.37a16 16 0 0 0 6 6l.88-.88a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.92 16a2 2 0 0 1 .08.92z"/></svg>`,
+                      text: "Tell someone your exact destination and expected return time before you go.",
+                    },
+                  ].map(({ key, iconHtml, text }) => (
+                    <div key={key} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                      <span style={{ flexShrink: 0, marginTop: 2 }} dangerouslySetInnerHTML={{ __html: iconHtml }} />
                       <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.55 }}>{text}</span>
                     </div>
                   ))}

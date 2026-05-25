@@ -99,7 +99,7 @@ export function WeeklyRecapModal() {
     // Verdict message
     const message =
       consistency >= 100
-        ? "Goal crushed. Full week, full effort. 🔥"
+        ? "Goal crushed. Full week, full effort."
         : consistency >= 66
         ? "Solid week. Keep the momentum going."
         : consistency >= 33

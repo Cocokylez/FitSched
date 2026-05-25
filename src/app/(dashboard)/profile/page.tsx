@@ -15,7 +15,7 @@ type Achievement = {
   type: string
   name: string
   description: string
-  emoji: string
+  svg: string
   tier: "bronze" | "silver" | "gold" | "platinum"
   unlockedAt: string
 }
@@ -623,9 +623,11 @@ export default function ProfilePage() {
                 width: 34, height: 34, borderRadius: 10,
                 background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.22)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 16, flexShrink: 0,
+                flexShrink: 0,
               }}>
-                🥾
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="rgba(74,222,128,0.85)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>
+                </svg>
               </div>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Hike Logs</div>
@@ -663,7 +665,7 @@ export default function ProfilePage() {
                   transition: "opacity 0.2s",
                 }}
               >
-                <div style={{ fontSize: 26, marginBottom: 6 }}>{def.emoji}</div>
+                <div style={{ fontSize: 26, marginBottom: 6, display: "flex", justifyContent: "center", color: unlocked ? colors.color : "var(--text-muted)" }} dangerouslySetInnerHTML={{ __html: def.svg }} />
                 <div style={{
                   fontSize: 10, fontWeight: 800, color: unlocked ? colors.color : "var(--text-muted)",
                   lineHeight: 1.3, letterSpacing: "0.02em",
