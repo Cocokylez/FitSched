@@ -15,6 +15,7 @@ import { formatLocalDate } from "@/lib/dateUtils"
 import { ACCENT } from "@/lib/theme"
 import { getCategory, CATEGORY_COLORS } from "@/lib/exerciseUtils"
 import { WorkoutTemplatesModal } from "@/components/WorkoutTemplatesModal"
+import { ExerciseDemoVisual } from "@/components/ExerciseDemoPanel"
 
 const DEFAULT_EXERCISES: Record<number, Array<[string, string]>> = {
   0: [],
@@ -728,20 +729,42 @@ export default function WorkoutPage() {
               const category = getCategory(name, i)
               const catStyle = CATEGORY_COLORS[category] || CATEGORY_COLORS.CORE
               return (
-                <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05, duration: 0.24, ease: "easeOut" }} style={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 20, marginBottom: 10, overflow: "hidden", boxShadow: "var(--shadow)" }}>
-                  <div style={{ display: "flex" }}>
-                    <div style={{ width: 64, padding: "14px 0 14px 14px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "space-between", flexShrink: 0, gap: 8 }}>
-                      <div style={{ background: catStyle.bg, color: catStyle.color, borderRadius: 6, padding: "2px 6px", fontSize: 9, fontWeight: 900, letterSpacing: "0.1em" }}>{category}</div>
-                      <div style={{ width: 34, height: 34, borderRadius: 10, background: catStyle.bg, border: `1px solid ${catStyle.color}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <span style={{ fontSize: 14, fontWeight: 900, color: catStyle.color }}>{i + 1}</span>
-                      </div>
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05, duration: 0.24, ease: "easeOut" }}
+                  style={{
+                    background: "var(--panel)",
+                    borderTop: "1px solid var(--border)",
+                    borderRight: "1px solid var(--border)",
+                    borderBottom: "1px solid var(--border)",
+                    borderLeft: `3px solid ${catStyle.color}`,
+                    borderRadius: 20, marginBottom: 10, overflow: "hidden",
+                  }}
+                >
+                  {/* Header */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px 0 13px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                      <span style={{ width: 7, height: 7, borderRadius: "50%", background: catStyle.color }} />
+                      <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.11em", color: catStyle.color }}>{category}</span>
+                      <span style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 600 }}>· {getMuscleGroup(name)}</span>
                     </div>
-                    <div style={{ flex: 1, padding: "14px 14px 14px 8px", minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "flex-end", gap: 8, marginBottom: 6 }}>
-                        <div style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 800, color: "var(--text-muted)", flexShrink: 0 }}>{setsReps}</div>
-                      </div>
-                      <div style={{ fontSize: 18, fontWeight: 950, color: "var(--text)", letterSpacing: "-0.2px", marginBottom: 5, lineHeight: 1.1 }}>{name}</div>
-                      <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.45 }}>{getExerciseDesc(name)}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                      <span style={{ fontSize: 10, fontWeight: 800, color: "var(--text-muted)" }}>#{String(i + 1).padStart(2, "0")}</span>
+                      <div style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 800, color: "var(--text-muted)" }}>{setsReps}</div>
+                    </div>
+                  </div>
+                  {/* Body: 1:1 square demo + info */}
+                  <div style={{ display: "flex", padding: "8px 12px 12px 12px", gap: 12 }}>
+                    {/* Square demo */}
+                    <div style={{ width: 120, height: 120, flexShrink: 0, borderRadius: 14, overflow: "hidden" }}>
+                      <ExerciseDemoVisual exerciseName={name} compact height={120} objectFit="contain" />
+                    </div>
+                    {/* Info */}
+                    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center", gap: 5 }}>
+                      <div style={{ fontSize: 17, fontWeight: 950, color: "var(--text)", letterSpacing: "-0.2px", lineHeight: 1.1 }}>{name}</div>
+                      <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.4 }}>{getExerciseDesc(name)}</div>
                     </div>
                   </div>
                 </motion.div>
