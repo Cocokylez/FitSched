@@ -24,8 +24,9 @@ function formatDate(iso: string) {
 }
 
 const REASON_META: Record<string, { label: string; icon: typeof Dumbbell; color: string }> = {
-  workout_complete: { label: "Workout completed", icon: Dumbbell, color: ACCENT },
-  streak_bonus:     { label: "Streak bonus",       icon: Flame,    color: "#f97316" },
+  workout_complete:         { label: "Workout completed", icon: Dumbbell, color: ACCENT },
+  workout_complete_boosted: { label: "Workout (2× boost)", icon: Zap,     color: "#eab308" },
+  streak_bonus:             { label: "Streak bonus",       icon: Flame,    color: "#f97316" },
 }
 
 export default function WithdrawalPage() {
