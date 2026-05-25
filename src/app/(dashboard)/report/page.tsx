@@ -43,6 +43,17 @@ const sectionLabelStyle = {
 
 const DAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"]
 
+const MUSCLE_GROUP_COLORS: Record<string, string> = {
+  Chest:      "#e85555",
+  Back:       "#a064ff",
+  Legs:       "#5b8fff",
+  Shoulders:  "#6bbfb8",
+  Arms:       "#e08010",
+  Core:       "#6bbfb8",
+  "Full Body":"#8d9996",
+  Cardio:     "#e08010",
+}
+
 const dayCellVariant = {
   hidden: { opacity: 0, scale: 0.7, y: 8 },
   visible: {
@@ -65,7 +76,7 @@ function formatFT(v: number) {
 function formatTokenReason(reason: string, workoutName: string) {
   if (reason === "streak_bonus") return "Streak bonus"
   if (reason === "workout_complete") return workoutName ? `${workoutName}` : "Workout"
-  if (reason === "workout_complete_boosted") return workoutName ? `⚡ ${workoutName} (2× boost)` : "⚡ Workout (2× boost)"
+  if (reason === "workout_complete_boosted") return workoutName ? `${workoutName} (2× boost)` : "Workout (2× boost)"
   return reason.replace(/_/g, " ")
 }
 
@@ -676,7 +687,7 @@ export default function ReportPage() {
                         <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>{pct}%</div>
                       </div>
                       <div style={{ width: "100%", height: 6, background: "var(--border)", borderRadius: 3, overflow: "hidden" }}>
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }} style={{ height: "100%", background: "var(--text)", borderRadius: 3 }} />
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }} style={{ height: "100%", background: MUSCLE_GROUP_COLORS[group] ?? ACCENT, borderRadius: 3 }} />
                       </div>
                     </div>
                   )

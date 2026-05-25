@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { Flame, Scale, Settings } from "lucide-react"
 import { toDateId, getWeekId, calculateLongestStreak } from "@/lib/dateUtils"
 import { useLanguage } from "@/context/LanguageContext"
@@ -115,6 +115,7 @@ export default function ProfilePage() {
   const [bmi, setBmi] = useState<number | null>(null)
   const [hikeTotals, setHikeTotals] = useState<{ count: number; km: number } | null>(null)
   const [weightHistory, setWeightHistory] = useState<Array<{ weightKg: number; loggedAt: string }>>([])
+  const [selectedAchType, setSelectedAchType] = useState<string | null>(null)
 
   const photoInputRef = useRef<HTMLInputElement>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
@@ -657,12 +658,13 @@ export default function ProfilePage() {
               <motion.div
                 key={def.type}
                 whileTap={{ scale: 0.95 }}
+                onClick={() => setSelectedAchType(def.type)}
                 style={{
                   background: unlocked ? colors.bg : "var(--surface-2)",
                   border: `1px solid ${unlocked ? colors.border : "var(--border)"}`,
                   borderRadius: 16, padding: "14px 10px",
                   textAlign: "center", opacity: unlocked ? 1 : 0.42,
-                  transition: "opacity 0.2s",
+                  transition: "opacity 0.2s", cursor: "pointer",
                 }}
               >
                 <div style={{ fontSize: 26, marginBottom: 6, display: "flex", justifyContent: "center", color: unlocked ? colors.color : "var(--text-muted)" }} dangerouslySetInnerHTML={{ __html: def.svg }} />
@@ -682,6 +684,131 @@ export default function ProfilePage() {
           })}
         </div>
       </div>
+
+      {/* Achievement detail modal */}
+      <AnimatePresence>
+        {selectedAchType && (() => {
+          const def = ACHIEVEMENT_DEFS.find(d => d.type === selectedAchType)
+          if (!def) return null
+          const unlocked = achievements.find(a => a.type === selectedAchType)
+          const colors = TIER_COLORS[def.tier]
+          return (
+            <motion.div
+              key="ach-modal"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              onClick={() => setSelectedAchType(null)}
+              style={{
+                position: "fixed", inset: 0, zIndex: 9993,
+                background: "rgba(0,0,0,0.62)",
+                backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                padding: 24,
+              }}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.86, y: 22 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.92, y: 12 }}
+                transition={{ type: "spring", stiffness: 200, damping: 22, delay: 0.04 }}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  width: "min(88vw, 310px)",
+                  background: "var(--panel)", border: "1px solid var(--border)",
+                  borderRadius: 26, padding: "28px 22px 24px",
+                  textAlign: "center", boxShadow: "var(--shadow-lg)",
+                  position: "relative", overflow: "hidden",
+                }}
+              >
+                {/* Glow blob */}
+                <div style={{
+                  position: "absolute", top: -60, left: "50%", transform: "translateX(-50%)",
+                  width: 200, height: 150, pointerEvents: "none",
+                  background: `radial-gradient(ellipse, ${colors.bg.replace("0.10", "0.35")} 0%, transparent 70%)`,
+                }} />
+
+                {/* Close */}
+                <button
+                  onClick={() => setSelectedAchType(null)}
+                  style={{
+                    position: "absolute", top: 14, right: 14,
+                    width: 28, height: 28, borderRadius: "50%",
+                    background: "var(--surface-2)", border: "1px solid var(--border)",
+                    cursor: "pointer", color: "var(--text-muted)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+
+                {/* Icon */}
+                <div style={{
+                  width: 72, height: 72, borderRadius: 20,
+                  background: unlocked ? colors.bg : "var(--surface-2)",
+                  border: `1.5px solid ${unlocked ? colors.border : "var(--border)"}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  margin: "0 auto 14px",
+                  fontSize: 36, color: unlocked ? colors.color : "var(--text-muted)",
+                  position: "relative", zIndex: 1,
+                }} dangerouslySetInnerHTML={{ __html: def.svg }} />
+
+                {/* Tier badge */}
+                <div style={{
+                  display: "inline-flex", alignItems: "center",
+                  background: unlocked ? colors.bg : "var(--surface-2)",
+                  border: `1px solid ${unlocked ? colors.border : "var(--border)"}`,
+                  borderRadius: 999, padding: "3px 10px", marginBottom: 10,
+                  fontSize: 9, fontWeight: 900, letterSpacing: "0.14em",
+                  color: unlocked ? colors.color : "var(--text-muted)",
+                  textTransform: "uppercase", position: "relative", zIndex: 1,
+                }}>
+                  {def.tier}
+                </div>
+
+                {/* Name */}
+                <div style={{ fontSize: 18, fontWeight: 900, color: "var(--text)", marginBottom: 8, lineHeight: 1.2, position: "relative", zIndex: 1 }}>
+                  {def.name}
+                </div>
+
+                {/* Description / unlock condition */}
+                <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.55, marginBottom: 18, position: "relative", zIndex: 1 }}>
+                  {def.description}
+                </div>
+
+                {/* Status pill */}
+                {unlocked ? (
+                  <div style={{
+                    display: "inline-flex", alignItems: "center", gap: 5,
+                    background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.28)",
+                    borderRadius: 999, padding: "7px 14px",
+                    fontSize: 12, fontWeight: 700, color: "#4ade80",
+                    position: "relative", zIndex: 1,
+                  }}>
+                    <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Unlocked {new Date(unlocked.unlockedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  </div>
+                ) : (
+                  <div style={{
+                    display: "inline-block",
+                    fontSize: 12, fontWeight: 700, color: "var(--text-muted)",
+                    padding: "7px 14px", borderRadius: 999,
+                    background: "var(--surface-2)", border: "1px solid var(--border)",
+                    position: "relative", zIndex: 1,
+                  }}>
+                    Not yet unlocked
+                  </div>
+                )}
+              </motion.div>
+            </motion.div>
+          )
+        })()}
+      </AnimatePresence>
     </div>
   )
 }
