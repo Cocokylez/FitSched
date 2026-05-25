@@ -740,7 +740,7 @@ export default function ExerciseSessionPage() {
                           transition={{ type: "spring", stiffness: 300, damping: 20 }}
                           style={{ display: "flex", alignItems: "center", gap: 12, borderRadius: 14, padding: "10px 14px", background: tc.bg, border: `1px solid ${tc.border}` }}
                         >
-                          <span style={{ fontSize: 22 }}>{def.emoji}</span>
+                          <span style={{ fontSize: 22, display: "flex", alignItems: "center", color: tc.color }} dangerouslySetInnerHTML={{ __html: def.svg }} />
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: 13, fontWeight: 900, color: tc.color }}>{def.name}</div>
                             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 1 }}>{def.description}</div>

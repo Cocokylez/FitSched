@@ -24,7 +24,7 @@ export async function GET(req: Request) {
           type: row.type,
           name: def.name,
           description: def.description,
-          emoji: def.emoji,
+          svg: def.svg,
           tier: def.tier,
           unlockedAt: row.unlockedAt,
         }
