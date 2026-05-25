@@ -81,21 +81,50 @@ export async function PATCH(req: Request) {
     if (bodyError) return bodyError
     return safeError("Invalid request")
   }
-  const data: { workoutEnvironment?: string } = {}
+  const data: Record<string, unknown> = {}
 
   if ("workoutEnvironment" in body) {
     const workoutEnvironment = parseWorkoutEnvironment(body.workoutEnvironment)
-    if (!workoutEnvironment) {
-      return safeError("Invalid workout environment")
-    }
+    if (!workoutEnvironment) return safeError("Invalid workout environment")
     data.workoutEnvironment = workoutEnvironment
   }
+
+  if ("fitnessGoal" in body) {
+    const fg = typeof body.fitnessGoal === "string" && FITNESS_GOALS.has(body.fitnessGoal) ? body.fitnessGoal : null
+    if (fg) data.fitnessGoal = fg
+  }
+
+  if ("experienceLevel" in body) {
+    const el = typeof body.experienceLevel === "string" && EXPERIENCE_LEVELS.has(body.experienceLevel) ? body.experienceLevel : null
+    if (el) data.experienceLevel = el
+  }
+
+  if ("heightCm" in body) {
+    const h = Number(body.heightCm)
+    if (Number.isFinite(h) && h >= 50 && h <= 260) data.heightCm = h
+  }
+
+  if ("workoutsPerWeek" in body) {
+    data.workoutsPerWeek = clampInt(body.workoutsPerWeek, 1, 6, 3)
+  }
+
+  if ("hasInjury" in body) {
+    data.hasInjury = Boolean(body.hasInjury)
+    if (!data.hasInjury) data.injuryNotes = null
+  }
+
+  if (Object.keys(data).length === 0) return safeError("No valid fields to update")
 
   const user = await db.user.update({
     where: { id: session.user.id },
     data,
     select: {
       workoutEnvironment: true,
+      fitnessGoal: true,
+      experienceLevel: true,
+      workoutsPerWeek: true,
+      heightCm: true,
+      hasInjury: true,
     },
   })
 
