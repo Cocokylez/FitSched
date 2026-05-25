@@ -591,7 +591,31 @@ export default function SchedulePage() {
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke={ACCENT} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
                   </div>
                   <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text)", marginBottom: 6 }}>{t.restDay}</div>
-                  <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.55 }}>{t.restBody}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.55, marginBottom: 20 }}>{t.restBody}</div>
+                  {canStartExerciseToday && (
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        if (!selectedDate) return
+                        const lightExercises = [
+                          { name: "Walking Lunges", sets: 2, reps: 12 },
+                          { name: "Cat-Cow Stretch", sets: 2, reps: 10 },
+                          { name: "Superman Hold", sets: 2, reps: 15 },
+                          { name: "Hip Circles", sets: 2, reps: 10 },
+                          { name: "Dead Hang", sets: 2, reps: 20 },
+                        ]
+                        sessionStorage.setItem("fitsched-active-workout", JSON.stringify({
+                          date: formatLocalDate(selectedDate),
+                          workoutName: "Active Recovery",
+                          exercises: lightExercises,
+                        }))
+                        router.push("/exercise")
+                      }}
+                      style={{ border: `1px solid rgba(107,191,184,0.4)`, background: "rgba(107,191,184,0.12)", color: ACCENT, borderRadius: 999, padding: "10px 22px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}
+                    >
+                      {t.lightWorkoutBtn}
+                    </motion.button>
+                  )}
                 </div>
               )}
             </>
