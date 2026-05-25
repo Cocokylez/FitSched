@@ -421,6 +421,13 @@ export default function SettingsPage() {
             </div>
           }
         />
+        <Row
+          divider
+          label="Exercise Library"
+          sublabel="Browse & manage exercises"
+          onClick={() => router.push("/exercises")}
+          right={<Chevron />}
+        />
       </SectionCard>
 
       {/* PREFERENCES */}

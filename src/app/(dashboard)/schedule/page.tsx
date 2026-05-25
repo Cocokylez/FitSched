@@ -130,6 +130,8 @@ export default function SchedulePage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [suggestedExercises, setSuggestedExercises] = useState<Array<{ name: string; sets: number; reps: number }>>([])
   const longPressTimer = useRef<number | null>(null)
+  const [weekWorkouts, setWeekWorkouts] = useState(0)
+  const [workoutsPerWeek, setWorkoutsPerWeek] = useState(3)
   const [weekSummary, setWeekSummary] = useState<Record<number, string[]>>(() => {
     const s: Record<number, string[]> = {}
     for (let i = 0; i < 7; i++) s[i] = (MOCK[i] || []).map(b => b.kind)
@@ -181,6 +183,30 @@ export default function SchedulePage() {
           setPreviousStreak(Number(d.previousStreak) || 0)
           setStreakBroken(Boolean(d.streakBroken))
           setNewMilestone(d.newMilestone)
+        }
+      } catch {}
+      // Load this week's workout count + goal
+      try {
+        const [logRes, profileRes] = await Promise.all([
+          fetch("/api/workout-log"),
+          fetch("/api/onboarding"),
+        ])
+        if (logRes.ok) {
+          const allLogs: Array<{ date?: string; completedAt: string }> = await logRes.json()
+          // Count logs completed this calendar week (Mon–Sun)
+          const now = new Date()
+          const dow = now.getDay()
+          const monday = new Date(now); monday.setDate(now.getDate() - ((dow + 6) % 7)); monday.setHours(0, 0, 0, 0)
+          const sunday = new Date(monday); sunday.setDate(monday.getDate() + 7)
+          const thisWeek = allLogs.filter((l) => {
+            const d = new Date(l.completedAt)
+            return d >= monday && d < sunday
+          })
+          setWeekWorkouts(thisWeek.length)
+        }
+        if (profileRes.ok) {
+          const p = await profileRes.json()
+          if (p.workoutsPerWeek) setWorkoutsPerWeek(Number(p.workoutsPerWeek))
         }
       } catch {}
       let workoutEvents: any[] = []
@@ -318,6 +344,36 @@ export default function SchedulePage() {
       </div>
 
       <div data-dashboard-scroll style={{ flex: 1, overflowY: "auto", paddingBottom: 100 }}>
+        {/* Weekly goal progress pill */}
+        {weekWorkouts > 0 && (
+          <div style={{ padding: "0 16px 4px", display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 7,
+              background: weekWorkouts >= workoutsPerWeek ? "rgba(107,191,184,0.12)" : "var(--surface-2)",
+              border: `1px solid ${weekWorkouts >= workoutsPerWeek ? "rgba(107,191,184,0.32)" : "var(--border)"}`,
+              borderRadius: 999, padding: "5px 12px",
+            }}>
+              {/* Mini progress dots */}
+              <div style={{ display: "flex", gap: 4 }}>
+                {Array.from({ length: workoutsPerWeek }, (_, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      width: 6, height: 6, borderRadius: "50%",
+                      background: idx < weekWorkouts ? ACCENT : "var(--border)",
+                      transition: "background 0.2s",
+                    }}
+                  />
+                ))}
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 800, color: weekWorkouts >= workoutsPerWeek ? ACCENT : "var(--text-muted)" }}>
+                {weekWorkouts}/{workoutsPerWeek} this week
+                {weekWorkouts >= workoutsPerWeek && " ✓"}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Week strip — individual day cards */}
         <div style={{ display: "flex", gap: 6, padding: "8px 16px 16px" }}>
           {weekDates.map((date, i) => {
