@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { BarChart3, Dumbbell, Footprints, Settings } from 'lucide-react'
+import { BarChart3, Dumbbell, Footprints, Settings, Sparkles } from 'lucide-react'
 import { useTheme } from "@/context/ThemeContext"
 import { useLanguage } from "@/context/LanguageContext"
 import { playSound } from "@/lib/sound"
@@ -32,6 +32,12 @@ const navItems = [
     label: "Hike",
     href: "/hike",
     icon: <Footprints size={20} />,
+  },
+  {
+    id: "ai",
+    label: "AI",
+    href: "/ai",
+    icon: <Sparkles size={20} strokeWidth={1.8} />,
   },
   {
     id: "settings",

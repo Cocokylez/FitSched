@@ -65,6 +65,7 @@ function formatFT(v: number) {
 function formatTokenReason(reason: string, workoutName: string) {
   if (reason === "streak_bonus") return "Streak bonus"
   if (reason === "workout_complete") return workoutName ? `${workoutName}` : "Workout"
+  if (reason === "workout_complete_boosted") return workoutName ? `⚡ ${workoutName} (2× boost)` : "⚡ Workout (2× boost)"
   return reason.replace(/_/g, " ")
 }
 
@@ -111,6 +112,9 @@ export default function ReportPage() {
   const [streakFreezeArmed, setStreakFreezeArmed] = useState(false)
   const [buyingFreeze, setBuyingFreeze] = useState(false)
   const [freezeError, setFreezeError] = useState<string | null>(null)
+  const [ftBoostArmed, setFtBoostArmed] = useState(false)
+  const [buyingBoost, setBuyingBoost] = useState(false)
+  const [boostError, setBoostError] = useState<string | null>(null)
 
   // Streak count-up animation
   const [displayStreak, setDisplayStreak] = useState(0)
@@ -171,12 +175,33 @@ export default function ReportPage() {
           const d = await tokenRes.json()
           setFtBalance(d.balance ?? 0)
           setFtTxs(d.transactions ?? [])
+          setFtBoostArmed(d.ftBoostArmed ?? false)
         }
       } catch {}
       setLoading(false)
     }
     load()
   }, [status])
+
+  const buyBoost = async () => {
+    if (buyingBoost || ftBoostArmed || ftBalance < 3) return
+    setBuyingBoost(true)
+    setBoostError(null)
+    try {
+      const res = await fetch("/api/tokens/boost", { method: "POST" })
+      if (res.ok) {
+        const d = await res.json()
+        setFtBoostArmed(true)
+        setFtBalance(d.balance ?? ftBalance - 3)
+      } else {
+        const d = await res.json().catch(() => ({}))
+        setBoostError(d.error ?? "Failed to activate boost")
+      }
+    } catch {
+      setBoostError("Network error — try again")
+    }
+    setBuyingBoost(false)
+  }
 
   const buyFreeze = async () => {
     if (buyingFreeze || streakFreezeArmed || ftBalance < 2) return
@@ -367,41 +392,15 @@ export default function ReportPage() {
                   </div>
                 </div>
 
-                {/* Freeze button row */}
-                <div style={{ padding: "0 22px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                  {streakFreezeArmed ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, borderRadius: 20, padding: "6px 12px", background: "rgba(99,179,237,0.15)", border: "1px solid rgba(99,179,237,0.38)", fontSize: 11, fontWeight: 800, color: "#63b3ed" }}>
+                {/* Freeze status pill */}
+                {streakFreezeArmed && (
+                  <div style={{ padding: "0 22px 14px" }}>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 20, padding: "6px 12px", background: "rgba(99,179,237,0.15)", border: "1px solid rgba(99,179,237,0.38)", fontSize: 11, fontWeight: 800, color: "#63b3ed" }}>
                       <Snowflake size={12} strokeWidth={2.5} />
                       Freeze armed — one miss protected
                     </div>
-                  ) : (
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <button
-                        onClick={buyFreeze}
-                        disabled={buyingFreeze || ftBalance < 2 || streak === 0}
-                        style={{
-                          display: "flex", alignItems: "center", gap: 6,
-                          borderRadius: 20, padding: "6px 12px",
-                          background: ftBalance >= 2 && streak > 0 ? "rgba(99,179,237,0.12)" : "rgba(255,255,255,0.05)",
-                          border: `1px solid ${ftBalance >= 2 && streak > 0 ? "rgba(99,179,237,0.35)" : isDark ? "rgba(255,255,255,0.1)" : "rgba(13,41,38,0.12)"}`,
-                          fontSize: 11, fontWeight: 800,
-                          color: ftBalance >= 2 && streak > 0 ? "#63b3ed" : isDark ? "rgba(255,255,255,0.28)" : "rgba(13,41,38,0.35)",
-                          cursor: ftBalance >= 2 && streak > 0 ? "pointer" : "not-allowed",
-                          opacity: buyingFreeze ? 0.6 : 1,
-                        }}
-                      >
-                        <Snowflake size={12} strokeWidth={2.5} />
-                        {buyingFreeze ? "Activating…" : "Freeze Streak · 2 FT"}
-                      </button>
-                      {freezeError && (
-                        <span style={{ fontSize: 11, color: "#fc8181", fontWeight: 700 }}>{freezeError}</span>
-                      )}
-                    </div>
-                  )}
-                  {streak === 0 && !streakFreezeArmed && (
-                    <span style={{ fontSize: 10, color: isDark ? "rgba(255,255,255,0.28)" : "rgba(13,41,38,0.35)", fontWeight: 700 }}>Start a streak to unlock</span>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Week strip */}
                 <div style={{ borderTop: `1px solid ${isDark ? "rgba(107,191,184,0.15)" : "rgba(107,191,184,0.25)"}`, padding: "12px 22px 18px" }}>
@@ -459,12 +458,6 @@ export default function ReportPage() {
                 </span>
                 <span style={{ fontSize: 12, fontWeight: 900, color: ACCENT, letterSpacing: 0 }}>{formatFT(ftBalance)} FT</span>
               </div>
-              {streakFreezeArmed && (
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, padding: "6px 10px", background: "rgba(99,179,237,0.08)", border: "1px solid rgba(99,179,237,0.25)", borderRadius: 10, fontSize: 11, fontWeight: 700, color: "#63b3ed" }}>
-                  <Snowflake size={11} strokeWidth={2.5} />
-                  2.00 FT spent · Streak freeze active
-                </div>
-              )}
               <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
                 {ftTxs.length === 0 ? (
                   <div style={{ padding: "20px", textAlign: "center", fontSize: 13, color: "var(--text-muted)" }}>
@@ -485,6 +478,92 @@ export default function ReportPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </motion.div>
+
+            {/* ── FitToken Store ────────────────────────────────────── */}
+            <motion.div variants={fadeUp}>
+              <div style={{ ...sectionLabelStyle, display: "flex", alignItems: "center", gap: 5 }}>
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke={ACCENT} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                FT STORE
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+
+                {/* Streak Freeze card */}
+                <div style={{
+                  ...cardStyle, marginBottom: 0,
+                  background: streakFreezeArmed
+                    ? (isDark ? "rgba(99,179,237,0.12)" : "rgba(99,179,237,0.08)")
+                    : "var(--surface)",
+                  border: streakFreezeArmed ? "1px solid rgba(99,179,237,0.45)" : "1px solid var(--border)",
+                }}>
+                  <div style={{ fontSize: 22, marginBottom: 8 }}>❄️</div>
+                  <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text)", marginBottom: 3 }}>Streak Freeze</div>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.4, marginBottom: 12 }}>
+                    Protect your streak from one missed day
+                  </div>
+                  {streakFreezeArmed ? (
+                    <div style={{ fontSize: 11, fontWeight: 900, color: "#63b3ed", display: "flex", alignItems: "center", gap: 4 }}>
+                      <Snowflake size={11} strokeWidth={2.5} /> Armed
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        onClick={buyFreeze}
+                        disabled={buyingFreeze || ftBalance < 2 || streak === 0}
+                        style={{
+                          width: "100%", border: "none", borderRadius: 10, padding: "8px 0",
+                          background: ftBalance >= 2 && streak > 0 ? "rgba(99,179,237,0.15)" : "var(--surface-2)",
+                          color: ftBalance >= 2 && streak > 0 ? "#63b3ed" : "var(--text-muted)",
+                          fontSize: 11, fontWeight: 900, cursor: ftBalance >= 2 && streak > 0 ? "pointer" : "not-allowed",
+                          opacity: buyingFreeze ? 0.6 : 1,
+                        }}
+                      >
+                        {buyingFreeze ? "Activating…" : "2 FT"}
+                      </button>
+                      {freezeError && <div style={{ marginTop: 4, fontSize: 10, color: "#fc8181", fontWeight: 700 }}>{freezeError}</div>}
+                      {streak === 0 && <div style={{ marginTop: 4, fontSize: 10, color: "var(--text-muted)", fontWeight: 700 }}>Start a streak first</div>}
+                    </>
+                  )}
+                </div>
+
+                {/* Double Tokens Boost card */}
+                <div style={{
+                  ...cardStyle, marginBottom: 0,
+                  background: ftBoostArmed
+                    ? (isDark ? "rgba(246,211,101,0.1)" : "rgba(246,211,101,0.08)")
+                    : "var(--surface)",
+                  border: ftBoostArmed ? "1px solid rgba(246,211,101,0.45)" : "1px solid var(--border)",
+                }}>
+                  <div style={{ fontSize: 22, marginBottom: 8 }}>⚡</div>
+                  <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text)", marginBottom: 3 }}>Token Boost</div>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.4, marginBottom: 12 }}>
+                    Earn 2× FitTokens on your next workout
+                  </div>
+                  {ftBoostArmed ? (
+                    <div style={{ fontSize: 11, fontWeight: 900, color: "#c8a832", display: "flex", alignItems: "center", gap: 4 }}>
+                      ⚡ Active for next session
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        onClick={buyBoost}
+                        disabled={buyingBoost || ftBalance < 3}
+                        style={{
+                          width: "100%", border: "none", borderRadius: 10, padding: "8px 0",
+                          background: ftBalance >= 3 ? "rgba(246,211,101,0.15)" : "var(--surface-2)",
+                          color: ftBalance >= 3 ? "#c8a832" : "var(--text-muted)",
+                          fontSize: 11, fontWeight: 900, cursor: ftBalance >= 3 ? "pointer" : "not-allowed",
+                          opacity: buyingBoost ? 0.6 : 1,
+                        }}
+                      >
+                        {buyingBoost ? "Activating…" : "3 FT"}
+                      </button>
+                      {boostError && <div style={{ marginTop: 4, fontSize: 10, color: "#fc8181", fontWeight: 700 }}>{boostError}</div>}
+                    </>
+                  )}
+                </div>
+
               </div>
             </motion.div>
 
