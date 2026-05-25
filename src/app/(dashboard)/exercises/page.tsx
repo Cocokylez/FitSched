@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { Plus, Search, Trash2, Dumbbell, X } from "lucide-react"
+import { Plus, Search, Trash2, Dumbbell, X, Pencil } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { SkeletonCard } from "@/components/Skeleton"
 import { useLanguage } from "@/context/LanguageContext"
@@ -56,6 +56,9 @@ export default function ExercisesPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [showAdd, setShowAdd] = useState(false)
+  const [editingExercise, setEditingExercise] = useState<Exercise | null>(null)
+  const [editForm, setEditForm] = useState({ name: "", description: "", muscleGroup: "CHEST", equipment: "BODYWEIGHT", difficulty: "BEGINNER" })
+  const [saving, setSaving] = useState(false)
   const [filterMuscle, setFilterMuscle] = useState("")
   const { t } = useLanguage()
   const [newExercise, setNewExercise] = useState({
@@ -104,6 +107,29 @@ export default function ExercisesPage() {
       const res = await fetch(`/api/exercises?id=${id}`, { method: "DELETE" })
       if (res.ok) setExercises((prev) => prev.filter((e) => e.id !== id))
     } catch {}
+  }
+
+  const openEdit = (ex: Exercise) => {
+    setEditForm({ name: ex.name, description: ex.description ?? "", muscleGroup: ex.muscleGroup, equipment: ex.equipment, difficulty: ex.difficulty })
+    setEditingExercise(ex)
+  }
+
+  const updateExercise = async () => {
+    if (!editingExercise || !editForm.name.trim()) return
+    setSaving(true)
+    try {
+      const res = await fetch("/api/exercises", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: editingExercise.id, ...editForm }),
+      })
+      if (res.ok) {
+        const updated = await res.json()
+        setExercises((prev) => prev.map((e) => e.id === updated.id ? updated : e))
+        setEditingExercise(null)
+      }
+    } catch {}
+    setSaving(false)
   }
 
   const filtered = exercises.filter((ex) => {
@@ -281,21 +307,36 @@ export default function ExercisesPage() {
                       </div>
                     </div>
 
-                    {/* Delete — custom exercises only */}
+                    {/* Edit + Delete — custom exercises only */}
                     {!ex.isSystem && (
-                      <motion.button
-                        whileTap={{ scale: 0.88 }}
-                        onClick={() => deleteExercise(ex.id)}
-                        style={{
-                          background: "none", border: "none", cursor: "pointer",
-                          color: "var(--text-muted)", padding: 4, flexShrink: 0,
-                          display: "flex", alignItems: "center", transition: "color 0.15s",
-                        }}
-                        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#f87171" }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-muted)" }}
-                      >
-                        <Trash2 size={15} strokeWidth={2} />
-                      </motion.button>
+                      <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
+                        <motion.button
+                          whileTap={{ scale: 0.88 }}
+                          onClick={() => openEdit(ex)}
+                          style={{
+                            background: "none", border: "none", cursor: "pointer",
+                            color: "var(--text-muted)", padding: 4,
+                            display: "flex", alignItems: "center", transition: "color 0.15s",
+                          }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = ACCENT }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-muted)" }}
+                        >
+                          <Pencil size={14} strokeWidth={2} />
+                        </motion.button>
+                        <motion.button
+                          whileTap={{ scale: 0.88 }}
+                          onClick={() => deleteExercise(ex.id)}
+                          style={{
+                            background: "none", border: "none", cursor: "pointer",
+                            color: "var(--text-muted)", padding: 4,
+                            display: "flex", alignItems: "center", transition: "color 0.15s",
+                          }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#f87171" }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-muted)" }}
+                        >
+                          <Trash2 size={14} strokeWidth={2} />
+                        </motion.button>
+                      </div>
                     )}
                   </div>
                 </motion.div>
@@ -319,6 +360,158 @@ export default function ExercisesPage() {
           )}
         </div>
       )}
+
+      {/* ── Edit exercise modal ─────────────────────────────────────── */}
+      <AnimatePresence>
+        {editingExercise && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setEditingExercise(null)}
+            style={{
+              position: "fixed", inset: 0, zIndex: 50,
+              background: "rgba(0,0,0,0.52)",
+              backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
+              display: "flex", alignItems: "flex-end", justifyContent: "center",
+              padding: "0 16px 28px",
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 40 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: "100%", maxWidth: 480,
+                background: "var(--panel)", border: "1px solid var(--border)",
+                borderRadius: 22, overflow: "hidden",
+                boxShadow: "0 24px 80px rgba(0,0,0,0.4)",
+              }}
+            >
+              {/* Modal header */}
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "16px 18px 12px",
+              }}>
+                <div style={{ fontSize: 17, fontWeight: 900, color: "var(--text)" }}>Edit Exercise</div>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setEditingExercise(null)}
+                  style={{
+                    width: 28, height: 28, borderRadius: "50%",
+                    background: "var(--surface-2)", border: "1px solid var(--border)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer", color: "var(--text-muted)",
+                  }}
+                >
+                  <X size={14} strokeWidth={2} />
+                </motion.button>
+              </div>
+
+              {/* Form */}
+              <div style={{ padding: "0 18px 22px", display: "flex", flexDirection: "column", gap: 14 }}>
+
+                {/* Name */}
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.1em", marginBottom: 7 }}>
+                    {t.name}
+                  </div>
+                  <input
+                    autoFocus
+                    type="text"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))}
+                    onKeyDown={(e) => { if (e.key === "Enter" && editForm.name) updateExercise() }}
+                    placeholder={t.exerciseName}
+                    style={inputStyle}
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.1em", marginBottom: 7 }}>
+                    {t.description}
+                  </div>
+                  <input
+                    type="text"
+                    value={editForm.description}
+                    onChange={(e) => setEditForm((p) => ({ ...p, description: e.target.value }))}
+                    placeholder={t.optionalDescription}
+                    style={inputStyle}
+                  />
+                </div>
+
+                {/* Three dropdowns */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.1em", marginBottom: 6 }}>
+                      {t.muscle}
+                    </div>
+                    <select
+                      value={editForm.muscleGroup}
+                      onChange={(e) => setEditForm((p) => ({ ...p, muscleGroup: e.target.value }))}
+                      style={selectStyle}
+                    >
+                      {MUSCLE_OPTIONS.map((m) => (
+                        <option key={m} value={m}>{formatLabel(m)}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.1em", marginBottom: 6 }}>
+                      {t.equipment}
+                    </div>
+                    <select
+                      value={editForm.equipment}
+                      onChange={(e) => setEditForm((p) => ({ ...p, equipment: e.target.value }))}
+                      style={selectStyle}
+                    >
+                      {EQUIPMENT_OPTIONS.map((eq) => (
+                        <option key={eq} value={eq}>{formatLabel(eq)}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.1em", marginBottom: 6 }}>
+                      {t.difficulty}
+                    </div>
+                    <select
+                      value={editForm.difficulty}
+                      onChange={(e) => setEditForm((p) => ({ ...p, difficulty: e.target.value }))}
+                      style={selectStyle}
+                    >
+                      {DIFFICULTY_OPTIONS.map((d) => (
+                        <option key={d} value={d}>{formatLabel(d)}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Submit */}
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={updateExercise}
+                  disabled={!editForm.name.trim() || saving}
+                  style={{
+                    width: "100%", padding: "13px 0",
+                    background: editForm.name.trim() && !saving ? ACCENT : "var(--surface-2)",
+                    color: editForm.name.trim() && !saving ? "#0a1412" : "var(--text-muted)",
+                    border: "none", borderRadius: 12,
+                    fontSize: 14, fontWeight: 800,
+                    cursor: editForm.name.trim() && !saving ? "pointer" : "default",
+                    transition: "background 0.15s, color 0.15s",
+                  }}
+                >
+                  {saving ? "Saving…" : "Save Changes"}
+                </motion.button>
+
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Add exercise modal ─────────────────────────────────────── */}
       <AnimatePresence>

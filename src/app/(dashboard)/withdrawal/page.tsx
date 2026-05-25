@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
-import { ArrowLeft, Dumbbell, Flame, Zap } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { ArrowLeft, Dumbbell, Flame, Zap, Bell, BellOff, Gift, Trophy, ShoppingBag, CheckCircle2 } from "lucide-react"
 import { ACCENT } from "@/lib/theme"
 
 type Transaction = {
@@ -35,10 +35,26 @@ export default function WithdrawalPage() {
   const [balance, setBalance] = useState<number | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
+  const [notifyOn, setNotifyOn] = useState(false)
+  const [justToggled, setJustToggled] = useState(false)
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/register")
   }, [status, router])
+
+  useEffect(() => {
+    try {
+      setNotifyOn(localStorage.getItem("fitsched-withdrawal-notify") === "1")
+    } catch {}
+  }, [])
+
+  const toggleNotify = () => {
+    const next = !notifyOn
+    setNotifyOn(next)
+    setJustToggled(true)
+    setTimeout(() => setJustToggled(false), 2000)
+    try { localStorage.setItem("fitsched-withdrawal-notify", next ? "1" : "0") } catch {}
+  }
 
   useEffect(() => {
     if (status !== "authenticated") return
@@ -151,20 +167,79 @@ export default function WithdrawalPage() {
           </motion.div>
         )}
 
-        {/* Withdrawal coming soon */}
+        {/* What's coming */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.32, delay: 0.14, ease: [0.16, 1, 0.3, 1] }}
-          style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "20px", textAlign: "center" }}
+          style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "18px 20px", marginBottom: 12 }}
         >
-          <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(107,191,184,0.1)", border: "1px solid rgba(107,191,184,0.22)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px", color: ACCENT, fontSize: 13, fontWeight: 900 }}>
-            FT
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-muted)", marginBottom: 14 }}>COMING SOON</div>
+          {[
+            { icon: Gift,        color: "#c084fc", bg: "rgba(192,132,252,0.1)", title: "Redeem for rewards",     detail: "Exchange FT for gear, subscriptions & perks" },
+            { icon: Trophy,      color: "#eab308", bg: "rgba(234,179,8,0.1)",   title: "Challenge prizes",       detail: "Win FT in weekly community challenges" },
+            { icon: ShoppingBag, color: "#f97316", bg: "rgba(249,115,22,0.1)", title: "Partner discounts",      detail: "Use FT toward partner fitness brands" },
+          ].map(({ icon: Icon, color, bg, title, detail }) => (
+            <div key={title} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid var(--border)" }}>
+              <div style={{ width: 34, height: 34, borderRadius: 10, background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Icon size={16} color={color} strokeWidth={2} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{title}</div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{detail}</div>
+              </div>
+            </div>
+          ))}
+          <div style={{ paddingTop: 12, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.55 }}>
+            Your FT balance is safe and will carry over when the reward store launches.
           </div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: "var(--text)", marginBottom: 6 }}>Withdrawals coming soon</div>
-          <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.55 }}>
-            Your balance is safe. Withdrawals will be available once the reward system launches.
+        </motion.div>
+
+        {/* Notify me */}
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.32, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
+          style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "18px 20px" }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 3 }}>Get early access</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.45 }}>
+                Be the first to know when FT redemption goes live.
+              </div>
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={toggleNotify}
+              style={{
+                display: "flex", alignItems: "center", gap: 7,
+                padding: "10px 16px", borderRadius: 12, border: "none",
+                background: notifyOn ? "rgba(107,191,184,0.15)" : "var(--surface-2)",
+                color: notifyOn ? ACCENT : "var(--text-muted)",
+                fontSize: 13, fontWeight: 800, cursor: "pointer",
+                flexShrink: 0, transition: "background 0.18s, color 0.18s",
+              }}
+            >
+              {notifyOn ? <Bell size={15} strokeWidth={2} /> : <BellOff size={15} strokeWidth={2} />}
+              {notifyOn ? "Opted in" : "Notify me"}
+            </motion.button>
           </div>
+          <AnimatePresence>
+            {justToggled && notifyOn && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                style={{ overflow: "hidden" }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 7, paddingTop: 14, fontSize: 12, color: "#4ade80", fontWeight: 600 }}>
+                  <CheckCircle2 size={15} strokeWidth={2} />
+                  You&apos;re on the early access list!
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
 
       </div>
