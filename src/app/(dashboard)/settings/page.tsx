@@ -117,6 +117,10 @@ export default function SettingsPage() {
   const [savingLevel, setSavingLevel] = useState(false)
   const [fitTokenBalance, setFitTokenBalance] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [heightCm, setHeightCm] = useState<number | null>(null)
+  const [weightKg, setWeightKg] = useState<number | null>(null)
+  const [heightInput, setHeightInput] = useState("")
+  const [weightInput, setWeightInput] = useState("")
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState("")
   const [deleting, setDeleting] = useState(false)
@@ -173,6 +177,8 @@ export default function SettingsPage() {
           if (p.workoutEnvironment) setWorkoutEnvironment(p.workoutEnvironment)
           if (p.fitnessGoal) setFitnessGoal(p.fitnessGoal)
           if (p.experienceLevel) setExperienceLevel(p.experienceLevel)
+          if (p.heightCm) { setHeightCm(p.heightCm); setHeightInput(String(p.heightCm)) }
+          if (p.weightKg) { setWeightKg(p.weightKg); setWeightInput(String(p.weightKg)) }
         }
         if (tokensRes.ok) {
           const t = await tokensRes.json()
@@ -251,6 +257,20 @@ export default function SettingsPage() {
       if (!res.ok) setExperienceLevel(prev)
     } catch { setExperienceLevel(prev) }
     setSavingLevel(false)
+  }
+
+  const saveBodyStat = async (field: "heightCm" | "weightKg", rawValue: string) => {
+    const num = parseFloat(rawValue.replace(",", "."))
+    if (!isFinite(num) || num <= 0) return
+    if (field === "heightCm") setHeightCm(num)
+    if (field === "weightKg") setWeightKg(num)
+    try {
+      await fetch("/api/onboarding", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: num }),
+      })
+    } catch {}
   }
 
   const togglePush = async () => {
@@ -459,6 +479,43 @@ export default function SettingsPage() {
                 </button>
               )
             })}
+          </div>
+        </div>
+
+        {/* Body stats */}
+        <div style={{ borderTop: "1px solid var(--border)", padding: "12px 14px" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>Body stats</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {([
+              { label: "Height", field: "heightCm" as const, value: heightInput, setter: setHeightInput, unit: "cm", min: 100, max: 250, placeholder: "175" },
+              { label: "Weight", field: "weightKg" as const, value: weightInput, setter: setWeightInput, unit: "kg",  min: 20,  max: 500, placeholder: "70"  },
+            ]).map(({ label, field, value, setter, unit, min, max, placeholder }) => (
+              <div key={field}>
+                <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, marginBottom: 5 }}>{label}</div>
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  background: "var(--surface-2)", border: "1px solid var(--border)",
+                  borderRadius: 10, padding: "9px 12px",
+                }}>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min={min}
+                    max={max}
+                    value={value}
+                    placeholder={placeholder}
+                    onChange={(e) => setter(e.target.value)}
+                    onBlur={(e) => saveBodyStat(field, e.target.value)}
+                    style={{
+                      flex: 1, background: "transparent", border: "none", outline: "none",
+                      fontSize: 15, fontWeight: 800, color: "var(--text)",
+                      width: "100%", fontFamily: "inherit",
+                    }}
+                  />
+                  <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700, flexShrink: 0 }}>{unit}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </SectionCard>

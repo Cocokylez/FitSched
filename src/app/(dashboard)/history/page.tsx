@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from "recharts"
-import { Calendar, Dumbbell, TrendingUp, Trophy, ChevronDown, Check, PenLine } from "lucide-react"
+import { Calendar, Dumbbell, TrendingUp, Trophy, ChevronDown, Check, PenLine, Trash2 } from "lucide-react"
+import { getMuscleGroup } from "@/lib/exerciseData"
 import { motion, AnimatePresence } from "framer-motion"
 import { SkeletonCard } from "@/components/Skeleton"
 import { useLanguage } from "@/context/LanguageContext"
@@ -35,6 +36,8 @@ export default function HistoryPage() {
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const [noteValues, setNoteValues] = useState<Record<string, string>>({})
   const [savingNoteId, setSavingNoteId] = useState<string | null>(null)
+  const [historyMuscleFilter, setHistoryMuscleFilter] = useState<string | null>(null)
+  const [deletingLogId, setDeletingLogId] = useState<string | null>(null)
   const noteInputRef = useRef<HTMLTextAreaElement>(null)
   const { t } = useLanguage()
 
@@ -71,6 +74,18 @@ export default function HistoryPage() {
     setSavingNoteId(null)
   }, [noteValues])
 
+  const deleteLog = useCallback(async (logId: string) => {
+    setDeletingLogId(logId)
+    try {
+      const res = await fetch(`/api/workout-log?id=${encodeURIComponent(logId)}`, { method: "DELETE" })
+      if (res.ok) {
+        setLogs((prev) => prev.filter((l) => l.id !== logId))
+        setExpandedLogId(null)
+      }
+    } catch {}
+    setDeletingLogId(null)
+  }, [])
+
   // ── Derived stats ────────────────────────────────────────────────────────────
 
   const totalSessions = logs.length
@@ -85,6 +100,13 @@ export default function HistoryPage() {
     return d
   }, [])
   const thisWeekCount = logs.filter((l) => new Date(l.completedAt) >= weekStart).length
+
+  const filteredLogs = useMemo(() => {
+    if (!historyMuscleFilter) return logs
+    return logs.filter(log =>
+      log.exercises.some(ex => getMuscleGroup(ex.name) === historyMuscleFilter)
+    )
+  }, [logs, historyMuscleFilter])
 
   // Chart: last 14 sessions
   const chartData = [...logs].slice(0, 14).reverse().map((log) => ({
@@ -195,8 +217,28 @@ export default function HistoryPage() {
               </motion.div>
 
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-muted)", marginBottom: 10 }}>{t.recentActivity}</div>
+
+              {/* Muscle group filter chips */}
+              <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 10 }}>
+                {[null, "Chest", "Back", "Legs", "Shoulders", "Arms", "Core"].map(group => (
+                  <button
+                    key={group ?? "all"}
+                    onClick={() => { setHistoryMuscleFilter(group); setShowAll(false) }}
+                    style={{
+                      border: historyMuscleFilter === group ? "1px solid rgba(107,191,184,0.6)" : "1px solid var(--border)",
+                      background: historyMuscleFilter === group ? "rgba(107,191,184,0.12)" : "var(--surface)",
+                      color: historyMuscleFilter === group ? ACCENT : "var(--text-muted)",
+                      borderRadius: 999, padding: "4px 10px", fontSize: 11, fontWeight: 800,
+                      cursor: "pointer", whiteSpace: "nowrap",
+                    }}
+                  >
+                    {group ?? "All"}
+                  </button>
+                ))}
+              </div>
+
               <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>
-                {(showAll ? logs : logs.slice(0, 10)).map((log, i) => {
+                {(showAll ? filteredLogs : filteredLogs.slice(0, 10)).map((log, i) => {
                   const isExpanded = expandedLogId === log.id
                   const isEditingNote = editingNoteId === log.id
                   const noteVal = noteValues[log.id] ?? (log.notes || "")
@@ -301,6 +343,25 @@ export default function HistoryPage() {
                                   {log.notes || "Tap to add a note…"}
                                 </div>
                               )}
+
+                              {/* Delete log */}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); deleteLog(log.id) }}
+                                disabled={deletingLogId === log.id}
+                                style={{
+                                  marginTop: 8, width: "100%",
+                                  display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+                                  padding: "8px 0", borderRadius: 9,
+                                  border: "1px solid rgba(248,113,113,0.28)",
+                                  background: "rgba(248,113,113,0.06)",
+                                  color: deletingLogId === log.id ? "var(--text-muted)" : "#f87171",
+                                  fontSize: 12, fontWeight: 700, cursor: "pointer",
+                                  opacity: deletingLogId === log.id ? 0.5 : 1,
+                                }}
+                              >
+                                <Trash2 size={12} strokeWidth={2} />
+                                {deletingLogId === log.id ? "Deleting…" : "Delete log"}
+                              </button>
                             </div>
                           </motion.div>
                         )}
@@ -308,19 +369,21 @@ export default function HistoryPage() {
                     </div>
                   )
                 })}
-                {logs.length === 0 && (
+                {filteredLogs.length === 0 && (
                   <div style={{ padding: "32px 16px", textAlign: "center" }}>
                     <Dumbbell size={28} color="var(--text-muted)" style={{ marginBottom: 10 }} />
-                    <p style={{ fontSize: 14, color: "var(--text-muted)", margin: 0 }}>{t.noWorkouts}</p>
+                    <p style={{ fontSize: 14, color: "var(--text-muted)", margin: 0 }}>
+                      {historyMuscleFilter ? `No ${historyMuscleFilter} workouts yet` : t.noWorkouts}
+                    </p>
                   </div>
                 )}
               </div>
-              {logs.length > 10 && (
+              {filteredLogs.length > 10 && (
                 <button
                   onClick={() => setShowAll((v) => !v)}
                   style={{ width: "100%", marginTop: 8, padding: "12px 0", fontSize: 13, fontWeight: 700, color: "var(--text-muted)", background: "transparent", border: "1px solid var(--border)", borderRadius: 12, cursor: "pointer" }}
                 >
-                  {showAll ? t.showLess : t.showAll?.replace("{n}", String(logs.length)) ?? `Show all ${logs.length}`}
+                  {showAll ? t.showLess : `Show all ${filteredLogs.length}`}
                 </button>
               )}
             </>
