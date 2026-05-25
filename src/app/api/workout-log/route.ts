@@ -142,6 +142,32 @@ export async function PATCH(req: Request) {
   }
 }
 
+export async function DELETE(req: Request) {
+  try {
+    const originError = validateSameOrigin(req)
+    if (originError) return originError
+
+    const session = await auth()
+    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.write, "workout-log:delete")
+    if (limited) return limited
+
+    const { searchParams } = new URL(req.url)
+    const id = searchParams.get("id")
+    if (!id || id.length > 100) return safeError("Missing or invalid log id")
+
+    const deleted = await db.workoutSessionLog.deleteMany({
+      where: { id, userId: session.user.id },
+    })
+
+    if (deleted.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error("Workout log DELETE error:", error)
+    return NextResponse.json({ error: "Failed to delete workout log" }, { status: 500 })
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const originError = validateSameOrigin(req)
