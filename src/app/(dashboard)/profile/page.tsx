@@ -199,6 +199,16 @@ export default function ProfilePage() {
     return { totalWorkouts, totalExercises, thisWeek, thisWeekPct, bestStreak }
   }, [logs, workoutsPerWeek])
 
+  // Live BMI: prefer latest weight-log entry over stale onboarding value
+  const liveBmi = useMemo(() => {
+    const latestLogWeight = weightHistory.length > 0 ? weightHistory[weightHistory.length - 1].weightKg : null
+    const w = latestLogWeight ?? weightKg
+    if (!w || !heightCm) return bmi
+    return Math.round((w / ((heightCm / 100) ** 2)) * 10) / 10
+  }, [weightHistory, weightKg, heightCm, bmi])
+
+  const liveWeightKg = weightHistory.length > 0 ? weightHistory[weightHistory.length - 1].weightKg : weightKg
+
   const ringOffset = streak > 0 ? RING_CIRC - Math.min(streak / 30, 1) * RING_CIRC : RING_CIRC
 
   const handlePhotoChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -446,16 +456,16 @@ export default function ProfilePage() {
       </div>
 
       {/* Body Stats */}
-      {bmi !== null && (
+      {liveBmi !== null && (
         <div style={{ padding: "20px 16px 0" }}>
           <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.13em", color: "var(--text-muted)", marginBottom: 10 }}>
             BODY
           </div>
           {(() => {
             const cat =
-              bmi < 18.5 ? { label: "Underweight", color: "#60a5fa", bg: "rgba(96,165,250,0.12)", border: "rgba(96,165,250,0.28)" }
-              : bmi < 25 ? { label: "Normal", color: "#4ade80", bg: "rgba(74,222,128,0.12)", border: "rgba(74,222,128,0.28)" }
-              : bmi < 30 ? { label: "Overweight", color: "#f59e0b", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.28)" }
+              liveBmi! < 18.5 ? { label: "Underweight", color: "#60a5fa", bg: "rgba(96,165,250,0.12)", border: "rgba(96,165,250,0.28)" }
+              : liveBmi! < 25 ? { label: "Normal", color: "#4ade80", bg: "rgba(74,222,128,0.12)", border: "rgba(74,222,128,0.28)" }
+              : liveBmi! < 30 ? { label: "Overweight", color: "#f59e0b", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.28)" }
               : { label: "Obese", color: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.28)" }
             return (
               <div style={{
@@ -466,7 +476,7 @@ export default function ProfilePage() {
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
                     <span className="number-text" style={{ fontSize: 40, fontWeight: 900, color: "var(--text)", letterSpacing: "-1px", lineHeight: 1 }}>
-                      <AnimatedNumber value={Math.round(bmi * 10) / 10} />
+                      <AnimatedNumber value={Math.round(liveBmi! * 10) / 10} />
                     </span>
                     <span style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 700 }}>BMI</span>
                   </div>
@@ -476,9 +486,9 @@ export default function ProfilePage() {
                         {heightCm} cm
                       </span>
                     )}
-                    {weightKg && (
+                    {liveWeightKg && (
                       <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600 }}>
-                        · {weightKg} kg
+                        · {liveWeightKg} kg{weightHistory.length > 0 && weightKg && weightHistory[weightHistory.length - 1].weightKg !== weightKg ? " (live)" : ""}
                       </span>
                     )}
                   </div>

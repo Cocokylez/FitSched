@@ -109,6 +109,10 @@ export default function SettingsPage() {
   const [workoutEnvironment, setWorkoutEnvironment] = useState<WorkoutEnvironment>("gym")
   const [savingEnvironment, setSavingEnvironment] = useState(false)
   const [savingPerWeek, setSavingPerWeek] = useState(false)
+  const [fitnessGoal, setFitnessGoal] = useState("stay_active")
+  const [experienceLevel, setExperienceLevel] = useState("intermediate")
+  const [savingGoal, setSavingGoal] = useState(false)
+  const [savingLevel, setSavingLevel] = useState(false)
   const [fitTokenBalance, setFitTokenBalance] = useState(0)
   const [loading, setLoading] = useState(true)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -165,6 +169,8 @@ export default function SettingsPage() {
           const p = await profileRes.json()
           if (p.workoutsPerWeek) setWorkoutsPerWeek(p.workoutsPerWeek)
           if (p.workoutEnvironment) setWorkoutEnvironment(p.workoutEnvironment)
+          if (p.fitnessGoal) setFitnessGoal(p.fitnessGoal)
+          if (p.experienceLevel) setExperienceLevel(p.experienceLevel)
         }
         if (tokensRes.ok) {
           const t = await tokensRes.json()
@@ -221,6 +227,28 @@ export default function SettingsPage() {
       await fetch("/api/onboarding", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workoutsPerWeek: next }) })
     } catch {}
     setSavingPerWeek(false)
+  }
+
+  const saveFitnessGoal = async (next: string) => {
+    const prev = fitnessGoal
+    setFitnessGoal(next)
+    setSavingGoal(true)
+    try {
+      const res = await fetch("/api/onboarding", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fitnessGoal: next }) })
+      if (!res.ok) setFitnessGoal(prev)
+    } catch { setFitnessGoal(prev) }
+    setSavingGoal(false)
+  }
+
+  const saveExperienceLevel = async (next: string) => {
+    const prev = experienceLevel
+    setExperienceLevel(next)
+    setSavingLevel(true)
+    try {
+      const res = await fetch("/api/onboarding", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ experienceLevel: next }) })
+      if (!res.ok) setExperienceLevel(prev)
+    } catch { setExperienceLevel(prev) }
+    setSavingLevel(false)
   }
 
   const togglePush = async () => {
@@ -361,6 +389,76 @@ export default function SettingsPage() {
             onClick={disconnectCalendar}
           />
         )}
+      </SectionCard>
+
+      {/* FITNESS PROFILE */}
+      <SectionLabel>FITNESS PROFILE</SectionLabel>
+      <SectionCard>
+        <div style={{ padding: "12px 14px" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>Goal</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
+            {([
+              { id: "lose_weight",       label: "Lose Weight",       emoji: "🔥" },
+              { id: "build_muscle",      label: "Build Muscle",      emoji: "💪" },
+              { id: "stay_active",       label: "Stay Active",       emoji: "🏃" },
+              { id: "improve_endurance", label: "Endurance",         emoji: "⚡" },
+            ] as const).map((opt) => {
+              const selected = fitnessGoal === opt.id
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => saveFitnessGoal(opt.id)}
+                  disabled={savingGoal}
+                  style={{
+                    border: `1px solid ${selected ? "rgba(107,191,184,0.72)" : "var(--border)"}`,
+                    background: selected ? "rgba(107,191,184,0.12)" : "var(--surface-2)",
+                    color: selected ? ACCENT : "var(--text)",
+                    borderRadius: 12, padding: "10px 8px",
+                    display: "flex", alignItems: "center", gap: 7,
+                    cursor: savingGoal ? "default" : "pointer",
+                    fontSize: 12, fontWeight: 700,
+                  }}
+                >
+                  <span style={{ fontSize: 16 }}>{opt.emoji}</span>
+                  {opt.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+        <div style={{ borderTop: "1px solid var(--border)", padding: "12px 14px" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>Experience level</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 7 }}>
+            {([
+              { id: "beginner",     label: "Beginner",     sub: "Just starting" },
+              { id: "intermediate", label: "Intermediate", sub: "Some experience" },
+              { id: "advanced",     label: "Advanced",     sub: "Well-trained" },
+            ] as const).map((opt) => {
+              const selected = experienceLevel === opt.id
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => saveExperienceLevel(opt.id)}
+                  disabled={savingLevel}
+                  style={{
+                    border: `1px solid ${selected ? "rgba(107,191,184,0.72)" : "var(--border)"}`,
+                    background: selected ? "rgba(107,191,184,0.12)" : "var(--surface-2)",
+                    color: selected ? ACCENT : "var(--text)",
+                    borderRadius: 12, padding: "10px 6px",
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                    cursor: savingLevel ? "default" : "pointer",
+                    minHeight: 66,
+                  }}
+                >
+                  <span style={{ fontSize: 12, fontWeight: 800, color: selected ? ACCENT : "var(--text)", lineHeight: 1.1, textAlign: "center" }}>{opt.label}</span>
+                  <span style={{ fontSize: 9, color: "var(--text-muted)", fontWeight: 600, textAlign: "center" }}>{opt.sub}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
       </SectionCard>
 
       {/* WORKOUT SETUP */}

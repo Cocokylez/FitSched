@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useState, useCallback, useMemo } from "react"
+import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from "recharts"
-import { Calendar, Dumbbell, TrendingUp, Trophy } from "lucide-react"
+import { Calendar, Dumbbell, TrendingUp, Trophy, ChevronDown, Check } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { SkeletonCard } from "@/components/Skeleton"
 import { useLanguage } from "@/context/LanguageContext"
@@ -31,6 +31,11 @@ export default function HistoryPage() {
   const [view, setView] = useState<"overview" | "chart" | "prs">("overview")
   const [showAll, setShowAll] = useState(false)
   const [expandedPr, setExpandedPr] = useState<string | null>(null)
+  const [expandedLogId, setExpandedLogId] = useState<string | null>(null)
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const [noteValues, setNoteValues] = useState<Record<string, string>>({})
+  const [savingNoteId, setSavingNoteId] = useState<string | null>(null)
+  const noteInputRef = useRef<HTMLTextAreaElement>(null)
   const { t } = useLanguage()
 
   useEffect(() => {
@@ -48,6 +53,23 @@ export default function HistoryPage() {
   useEffect(() => {
     if (status === "authenticated") fetchLogs()
   }, [status, fetchLogs])
+
+  const saveNote = useCallback(async (logId: string) => {
+    const text = (noteValues[logId] ?? "").trim()
+    setSavingNoteId(logId)
+    try {
+      const res = await fetch("/api/workout-log", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: logId, notes: text || null }),
+      })
+      if (res.ok) {
+        setLogs((prev) => prev.map((l) => l.id === logId ? { ...l, notes: text || null } : l))
+        setEditingNoteId(null)
+      }
+    } catch {}
+    setSavingNoteId(null)
+  }, [noteValues])
 
   // ── Derived stats ────────────────────────────────────────────────────────────
 
@@ -174,31 +196,118 @@ export default function HistoryPage() {
 
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-muted)", marginBottom: 10 }}>{t.recentActivity}</div>
               <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>
-                {(showAll ? logs : logs.slice(0, 10)).map((log, i) => (
-                  <motion.div
-                    key={log.id}
-                    initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
-                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 16px", borderTop: i > 0 ? "1px solid var(--border)" : "none" }}
-                  >
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{log.workoutName}</div>
-                      <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-                        {new Date(log.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                        {" · "}{log.exercises.length} exercises
-                      </div>
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
-                        {log.exercises.reduce((s, e) => s + e.sets, 0)} sets
-                      </div>
-                      {log.exercises.some((e) => e.weight) && (
-                        <div style={{ fontSize: 11, color: ACCENT, fontWeight: 700, marginTop: 2 }}>
-                          {Math.max(...log.exercises.filter((e) => e.weight).map((e) => e.weight!))} kg max
+                {(showAll ? logs : logs.slice(0, 10)).map((log, i) => {
+                  const isExpanded = expandedLogId === log.id
+                  const isEditingNote = editingNoteId === log.id
+                  const noteVal = noteValues[log.id] ?? (log.notes || "")
+                  return (
+                    <div key={log.id} style={{ borderTop: i > 0 ? "1px solid var(--border)" : "none" }}>
+                      <motion.div
+                        initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 16px", cursor: "pointer" }}
+                        onClick={() => setExpandedLogId(isExpanded ? null : log.id)}
+                      >
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{log.workoutName}</div>
+                          <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
+                            {new Date(log.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                            {" · "}{log.exercises.length} exercises
+                            {log.notes && <span style={{ color: ACCENT }}> · 📝</span>}
+                          </div>
                         </div>
-                      )}
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
+                              {log.exercises.reduce((s, e) => s + e.sets, 0)} sets
+                            </div>
+                            {log.exercises.some((e) => e.weight) && (
+                              <div style={{ fontSize: 11, color: ACCENT, fontWeight: 700, marginTop: 2 }}>
+                                {Math.max(...log.exercises.filter((e) => e.weight).map((e) => e.weight!))} kg max
+                              </div>
+                            )}
+                          </div>
+                          <ChevronDown
+                            size={14}
+                            color="var(--text-muted)"
+                            style={{ transition: "transform 0.2s", transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0 }}
+                          />
+                        </div>
+                      </motion.div>
+
+                      {/* Expanded detail + notes */}
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                            style={{ overflow: "hidden", borderTop: "1px solid var(--border)", background: "var(--surface-2)" }}
+                          >
+                            <div style={{ padding: "12px 16px" }}>
+                              {/* Exercise list */}
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+                                {log.exercises.map((ex, ei) => (
+                                  <span key={ei} style={{ fontSize: 11, fontWeight: 700, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "4px 9px", color: "var(--text)" }}>
+                                    {ex.name} · {ex.sets}×{ex.reps}{ex.weight ? ` · ${ex.weight}kg` : ""}
+                                  </span>
+                                ))}
+                              </div>
+
+                              {/* Notes section */}
+                              {isEditingNote ? (
+                                <div>
+                                  <textarea
+                                    ref={noteInputRef}
+                                    value={noteVal}
+                                    onChange={(e) => setNoteValues((prev) => ({ ...prev, [log.id]: e.target.value }))}
+                                    placeholder="Add a note about this session…"
+                                    maxLength={500}
+                                    rows={3}
+                                    style={{
+                                      width: "100%", boxSizing: "border-box",
+                                      background: "var(--surface)", border: "1px solid var(--border)",
+                                      borderRadius: 10, padding: "10px 12px",
+                                      color: "var(--text)", fontSize: 13, fontFamily: "inherit",
+                                      resize: "none", outline: "none",
+                                    }}
+                                  />
+                                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                                    <button
+                                      onClick={() => { setEditingNoteId(null) }}
+                                      style={{ flex: 1, padding: "8px 0", borderRadius: 9, border: "1px solid var(--border)", background: "transparent", color: "var(--text-muted)", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button
+                                      onClick={() => saveNote(log.id)}
+                                      disabled={savingNoteId === log.id}
+                                      style={{ flex: 2, padding: "8px 0", borderRadius: 9, border: "none", background: ACCENT, color: "#0a1412", fontSize: 12, fontWeight: 800, cursor: "pointer", opacity: savingNoteId === log.id ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}
+                                    >
+                                      <Check size={12} strokeWidth={2.5} />
+                                      {savingNoteId === log.id ? "Saving…" : "Save note"}
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div
+                                  onClick={() => {
+                                    setNoteValues((prev) => ({ ...prev, [log.id]: log.notes || "" }))
+                                    setEditingNoteId(log.id)
+                                    setTimeout(() => noteInputRef.current?.focus(), 80)
+                                  }}
+                                  style={{ cursor: "pointer", padding: "8px 10px", borderRadius: 9, border: "1px dashed var(--border)", color: log.notes ? "var(--text)" : "var(--text-muted)", fontSize: 12, fontWeight: log.notes ? 600 : 500, lineHeight: 1.5 }}
+                                >
+                                  {log.notes || "Tap to add a note…"}
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
-                  </motion.div>
-                ))}
+                  )
+                })}
                 {logs.length === 0 && (
                   <div style={{ padding: "32px 16px", textAlign: "center" }}>
                     <Dumbbell size={28} color="var(--text-muted)" style={{ marginBottom: 10 }} />

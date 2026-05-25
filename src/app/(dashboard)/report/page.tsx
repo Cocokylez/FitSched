@@ -115,6 +115,7 @@ export default function ReportPage() {
   const [ftBoostArmed, setFtBoostArmed] = useState(false)
   const [buyingBoost, setBuyingBoost] = useState(false)
   const [boostError, setBoostError] = useState<string | null>(null)
+  const [hikeTotals, setHikeTotals] = useState<{ count: number; km: number; durationMin: number } | null>(null)
 
   // Streak count-up animation
   const [displayStreak, setDisplayStreak] = useState(0)
@@ -162,11 +163,12 @@ export default function ReportPage() {
     if (status !== "authenticated") return
     const load = async () => {
       try {
-        const [logRes, streakRes, profileRes, tokenRes] = await Promise.all([
+        const [logRes, streakRes, profileRes, tokenRes, hikeRes] = await Promise.all([
           fetch("/api/workout-log"),
           fetch("/api/streak"),
           fetch("/api/onboarding"),
           fetch("/api/tokens"),
+          fetch("/api/hike"),
         ])
         if (logRes.ok) setLogs(await logRes.json())
         if (streakRes.ok) { const d = await streakRes.json(); setStreak(d.streak ?? 0); setStreakFreezeArmed(d.streakFreezeArmed ?? false) }
@@ -176,6 +178,16 @@ export default function ReportPage() {
           setFtBalance(d.balance ?? 0)
           setFtTxs(d.transactions ?? [])
           setFtBoostArmed(d.ftBoostArmed ?? false)
+        }
+        if (hikeRes.ok) {
+          const hikes: Array<{ distanceKm: number; durationMin: number }> = await hikeRes.json()
+          if (hikes.length > 0) {
+            setHikeTotals({
+              count: hikes.length,
+              km: Math.round(hikes.reduce((s, h) => s + h.distanceKm, 0) * 10) / 10,
+              durationMin: Math.round(hikes.reduce((s, h) => s + h.durationMin, 0)),
+            })
+          }
         }
       } catch {}
       setLoading(false)
@@ -614,6 +626,35 @@ export default function ReportPage() {
                       <Area type="monotone" dataKey="kcal" stroke={ACCENT} strokeWidth={2} fill="url(#kcalGrad)" dot={{ r: 3, fill: ACCENT, strokeWidth: 0 }} activeDot={{ r: 5 }} />
                     </AreaChart>
                   </ResponsiveContainer>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Hike stats */}
+            {hikeTotals && (
+              <motion.div variants={fadeUp}>
+                <div style={sectionLabelStyle}>HIKE STATS</div>
+                <div style={{ ...cardStyle, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 0, padding: 0, overflow: "hidden" }}>
+                  {[
+                    { label: "Hikes", value: hikeTotals.count, suffix: "" },
+                    { label: "Distance", value: hikeTotals.km, suffix: " km" },
+                    { label: "Time", value: Math.round(hikeTotals.durationMin / 60 * 10) / 10, suffix: " h" },
+                  ].map((stat, i) => (
+                    <div key={i} style={{ padding: "16px 14px", textAlign: "center", borderLeft: i > 0 ? "1px solid var(--border)" : "none" }}>
+                      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 2 }}>
+                        <span style={{ fontSize: 28, fontWeight: 900, color: "var(--text)", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.5px" }}>{stat.value}</span>
+                        {stat.suffix && <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 700 }}>{stat.suffix}</span>}
+                      </div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", marginTop: 4, letterSpacing: "0.06em" }}>{stat.label.toUpperCase()}</div>
+                    </div>
+                  ))}
+                </div>
+                <div
+                  onClick={() => router.push("/hike")}
+                  style={{ marginTop: 6, padding: "10px 14px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "var(--text-muted)", display: "flex", alignItems: "center", justifyContent: "space-between" }}
+                >
+                  <span>View all hikes</span>
+                  <ChevronRight size={14} />
                 </div>
               </motion.div>
             )}
