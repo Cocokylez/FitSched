@@ -404,57 +404,31 @@ export default function ExerciseSessionPage() {
                 </div>
               </div>
 
-              {/* ── Main content: visual tile + detail */}
-              <div style={{ display: "flex" }}>
-                {/* Left: styled category tile */}
-                <div style={{ width: 96, padding: "8px 0 10px 12px", flexShrink: 0 }}>
-                  <div style={{
-                    width: "100%", height: 104, borderRadius: 14,
-                    background: `linear-gradient(150deg, ${catStyle.color}20 0%, ${catStyle.color}08 100%)`,
-                    border: `1px solid ${catStyle.color}30`,
-                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                    gap: 5, position: "relative", overflow: "hidden",
-                  }}>
-                    {/* Watermark number */}
-                    <div style={{
-                      position: "absolute", right: 3, bottom: -2,
-                      fontSize: 58, fontWeight: 950, lineHeight: 1,
-                      color: catStyle.color, opacity: 0.12,
-                      fontVariantNumeric: "tabular-nums", userSelect: "none",
-                    }}>
-                      {i + 1}
-                    </div>
-                    {/* Category icon */}
-                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke={catStyle.color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      {catIconPaths(category)}
-                    </svg>
-                    {/* Muscle group */}
-                    <div style={{
-                      fontSize: 9, fontWeight: 900, color: catStyle.color,
-                      textAlign: "center", letterSpacing: "0.06em", lineHeight: 1.3,
-                      padding: "0 5px", textTransform: "uppercase",
-                    }}>
-                      {getMuscleGroup(ex.name)}
-                    </div>
-                    {/* Done overlay */}
-                    {allSetsDone && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        style={{
-                          position: "absolute", inset: 0, borderRadius: 14,
-                          background: "rgba(107,191,184,0.18)",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                        }}
-                      >
-                        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                      </motion.div>
-                    )}
-                  </div>
-                </div>
+              {/* ── Full-width exercise demo */}
+              <div style={{ margin: "8px 12px 0", borderRadius: 14, overflow: "hidden", position: "relative" }}>
+                <ExerciseDemoVisual exerciseName={ex.name} compact height={130} objectFit="contain" />
+                {/* Done overlay on demo */}
+                <AnimatePresence>
+                  {allSetsDone && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      style={{
+                        position: "absolute", inset: 0, borderRadius: 14,
+                        background: "rgba(107,191,184,0.22)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        backdropFilter: "blur(1px)",
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
-                {/* Right: name, desc, history, sets, weight */}
-                <div style={{ flex: 1, padding: "10px 14px 12px 10px", minWidth: 0 }}>
+              {/* ── Exercise details */}
+              <div style={{ padding: "10px 14px 12px 13px" }}>
                   <div style={{ fontSize: 19, fontWeight: 950, color: "var(--text)", letterSpacing: "-0.3px", marginBottom: 4, lineHeight: 1.1 }}>{ex.name}</div>
                   <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.4, marginBottom: exerciseHistory[ex.name] ? 6 : 10 }}>
                     {getExerciseDesc(ex.name)}
@@ -576,7 +550,6 @@ export default function ExerciseSessionPage() {
                       </div>
                     )
                   })()}
-                </div>
               </div>
 
               {/* ── Progress bar — animates as sets complete */}
