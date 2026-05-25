@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { Activity, Building2, Dumbbell, Flame, Home, Zap } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
+import { useTheme } from "@/context/ThemeContext"
 import { ACCENT } from "@/lib/theme"
 
 type WorkoutEnvironment = "home_bodyweight" | "home_dumbbells" | "gym"
@@ -99,6 +100,7 @@ export default function SettingsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const { t, language, cycleLanguage } = useLanguage()
+  const { theme, toggleTheme } = useTheme()
 
   const [isCalendarConnected, setIsCalendarConnected] = useState(false)
   const [connecting, setConnecting] = useState(false)
@@ -535,6 +537,12 @@ export default function SettingsPage() {
           label="Notifications"
           sublabel={pushEnabled ? "Enabled" : t.workoutReminders}
           right={<Toggle on={pushEnabled} onToggle={togglePush} />}
+        />
+        <Row
+          divider
+          label="Appearance"
+          sublabel={theme === "dark" ? "Dark mode" : "Light mode"}
+          right={<Toggle on={theme === "dark"} onToggle={toggleTheme} />}
         />
         <Row
           divider

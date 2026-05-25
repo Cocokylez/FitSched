@@ -420,6 +420,20 @@ export default function SchedulePage() {
                   }}>
                     {date.getDate()}
                   </div>
+                  {/* Activity dots from weekSummary */}
+                  {(weekSummary[i] || []).filter(k => k !== "rst").length > 0 && (
+                    <div style={{ position: "relative", zIndex: 1, display: "flex", gap: 2.5, justifyContent: "center" }}>
+                      {(weekSummary[i] || []).filter(k => k !== "rst").slice(0, 3).map((kind, ki) => (
+                        <div
+                          key={ki}
+                          style={{
+                            width: 3, height: 3, borderRadius: "50%",
+                            background: isActive ? "rgba(11,23,21,0.55)" : KIND_DOT[kind] ?? ACCENT,
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               </motion.button>
             )
