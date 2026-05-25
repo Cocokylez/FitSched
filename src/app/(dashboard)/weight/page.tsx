@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { ArrowLeft, Plus, Trash2, TrendingDown, TrendingUp, Minus } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, TrendingDown, TrendingUp, Minus, Target, X } from "lucide-react"
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine,
@@ -46,6 +46,32 @@ export default function WeightPage() {
   const [saving, setSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const [goalKg, setGoalKg] = useState<number | null>(null)
+  const [showGoalModal, setShowGoalModal] = useState(false)
+  const [goalInput, setGoalInput] = useState("")
+  const goalInputRef = useRef<HTMLInputElement>(null)
+
+  // Load goal from localStorage
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("fitsched-weight-goal")
+      if (raw) { const v = parseFloat(raw); if (isFinite(v)) setGoalKg(v) }
+    } catch {}
+  }, [])
+
+  const saveGoal = () => {
+    const v = parseFloat(goalInput.replace(",", "."))
+    if (!isFinite(v) || v < 20 || v > 500) return
+    setGoalKg(v)
+    try { localStorage.setItem("fitsched-weight-goal", String(v)) } catch {}
+    setShowGoalModal(false)
+    setGoalInput("")
+  }
+
+  const clearGoal = () => {
+    setGoalKg(null)
+    try { localStorage.removeItem("fitsched-weight-goal") } catch {}
+  }
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/register")
@@ -128,22 +154,108 @@ export default function WeightPage() {
             </div>
             <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
               {entries.length} {entries.length === 1 ? "entry" : "entries"}
+              {goalKg != null && (
+                <span style={{ marginLeft: 8, color: "#f97316", fontWeight: 700 }}>
+                  · Goal: {goalKg} kg
+                </span>
+              )}
             </div>
           </div>
-          <motion.button
-            whileTap={{ scale: 0.93 }}
-            onClick={() => { setShowForm(true); setTimeout(() => inputRef.current?.focus(), 80) }}
-            style={{
-              display: "flex", alignItems: "center", gap: 6,
-              background: ACCENT, border: "none", borderRadius: 14,
-              padding: "10px 16px", color: "#0a1412", fontSize: 13, fontWeight: 800,
-              cursor: "pointer",
-            }}
-          >
-            <Plus size={15} strokeWidth={2.5} />
-            Log weight
-          </motion.button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <motion.button
+              whileTap={{ scale: 0.93 }}
+              onClick={() => { setGoalInput(goalKg != null ? String(goalKg) : ""); setShowGoalModal(true); setTimeout(() => goalInputRef.current?.focus(), 80) }}
+              title={goalKg != null ? "Edit goal" : "Set goal weight"}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                width: 38, height: 38,
+                background: goalKg != null ? "rgba(249,115,22,0.12)" : "var(--surface-2)",
+                border: `1px solid ${goalKg != null ? "rgba(249,115,22,0.35)" : "var(--border)"}`,
+                borderRadius: 12, color: goalKg != null ? "#f97316" : "var(--text-muted)",
+                cursor: "pointer",
+              }}
+            >
+              <Target size={16} strokeWidth={2} />
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.93 }}
+              onClick={() => { setShowForm(true); setTimeout(() => inputRef.current?.focus(), 80) }}
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                background: ACCENT, border: "none", borderRadius: 14,
+                padding: "10px 16px", color: "#0a1412", fontSize: 13, fontWeight: 800,
+                cursor: "pointer",
+              }}
+            >
+              <Plus size={15} strokeWidth={2.5} />
+              Log weight
+            </motion.button>
+          </div>
         </div>
+
+        {/* Goal modal */}
+        <AnimatePresence>
+          {showGoalModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={(e) => { if (e.target === e.currentTarget) setShowGoalModal(false) }}
+              style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 16px 32px" }}
+            >
+              <motion.div
+                initial={{ y: 50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 50, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 360, damping: 32 }}
+                style={{ width: "100%", maxWidth: 480, background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 24, padding: "24px 22px 28px", boxShadow: "0 20px 70px rgba(0,0,0,0.45)" }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "var(--text)" }}>Set weight goal</div>
+                  <button onClick={() => setShowGoalModal(false)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: 4 }}>
+                    <X size={18} />
+                  </button>
+                </div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 14, lineHeight: 1.5 }}>
+                  Set a target weight to track your progress toward your goal.
+                </div>
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <input
+                    ref={goalInputRef}
+                    type="number"
+                    inputMode="decimal"
+                    step="0.1"
+                    min="20"
+                    max="500"
+                    placeholder="e.g. 70.0"
+                    value={goalInput}
+                    onChange={(e) => setGoalInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") saveGoal() }}
+                    style={{ flex: 1, background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 12, padding: "13px 14px", fontSize: 20, fontWeight: 800, color: "var(--text)", outline: "none", boxSizing: "border-box" as const }}
+                  />
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-muted)", flexShrink: 0 }}>kg</span>
+                </div>
+                <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+                  {goalKg != null && (
+                    <button
+                      onClick={() => { clearGoal(); setShowGoalModal(false) }}
+                      style={{ flex: 1, padding: "12px", borderRadius: 12, border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text-muted)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+                    >
+                      Clear goal
+                    </button>
+                  )}
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={saveGoal}
+                    style={{ flex: 2, padding: "13px", borderRadius: 12, border: "none", background: "#f97316", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer" }}
+                  >
+                    Set goal
+                  </motion.button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Add entry form */}
         <AnimatePresence>
@@ -292,11 +404,21 @@ export default function WeightPage() {
               borderRadius: 18, padding: "18px 14px 12px", marginBottom: 14,
             }}
           >
-            <div style={{
-              fontSize: 10, fontWeight: 800, letterSpacing: "0.12em",
-              color: "var(--text-muted)", marginBottom: 14,
-            }}>
-              WEIGHT TREND
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.12em", color: "var(--text-muted)" }}>
+                WEIGHT TREND
+              </div>
+              {goalKg != null && (
+                <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 800, color: "#f97316" }}>
+                  <div style={{ width: 16, height: 2, background: "#f97316", borderRadius: 1 }} />
+                  Goal: {goalKg} kg
+                  {latest && (
+                    <span style={{ color: "var(--text-muted)", fontWeight: 600 }}>
+                      ({latest.weightKg > goalKg ? `${(latest.weightKg - goalKg).toFixed(1)} to go` : "✓ reached"})
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             <ResponsiveContainer width="100%" height={160}>
               <LineChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
@@ -308,7 +430,7 @@ export default function WeightPage() {
                   interval="preserveStartEnd"
                 />
                 <YAxis
-                  domain={[minW, maxW]}
+                  domain={[Math.min(minW, goalKg != null ? goalKg - 2 : minW), Math.max(maxW, goalKg != null ? goalKg + 2 : maxW)]}
                   tick={{ fontSize: 9, fill: "var(--text-muted)" }}
                   axisLine={false} tickLine={false}
                   width={32}
@@ -327,6 +449,15 @@ export default function WeightPage() {
                     stroke={ACCENT}
                     strokeDasharray="4 4"
                     strokeOpacity={0.4}
+                  />
+                )}
+                {goalKg != null && (
+                  <ReferenceLine
+                    y={goalKg}
+                    stroke="#f97316"
+                    strokeDasharray="6 3"
+                    strokeWidth={1.5}
+                    label={{ value: `Goal`, position: "insideTopRight", fontSize: 9, fill: "#f97316", fontWeight: 800 }}
                   />
                 )}
                 <Line

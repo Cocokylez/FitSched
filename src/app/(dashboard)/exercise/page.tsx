@@ -437,45 +437,74 @@ export default function ExerciseSessionPage() {
                     const currentWeight = exerciseWeights[i]
                     const histWeight = exerciseHistory[ex.name]?.weight
                     const isPRAttempt = currentWeight != null && currentWeight > 0 && (histWeight == null || currentWeight > histWeight)
+                    const suggested = histWeight != null ? Math.round((histWeight + 2.5) * 10) / 10 : null
                     return (
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
-                        <input
-                          type="number"
-                          inputMode="decimal"
-                          min={0}
-                          max={999}
-                          step={0.5}
-                          placeholder={histWeight != null ? String(histWeight) : "0"}
-                          value={currentWeight ?? ""}
-                          onChange={(e) => {
-                            const v = parseFloat(e.target.value)
-                            setExerciseWeights((prev) => ({ ...prev, [i]: isNaN(v) ? null : v }))
-                          }}
-                          style={{
-                            flex: 1,
-                            background: isPRAttempt ? "rgba(107,191,184,0.08)" : "var(--surface-2)",
-                            border: isPRAttempt ? "1px solid rgba(107,191,184,0.4)" : "1px solid var(--border)",
-                            borderRadius: 10,
-                            padding: "6px 10px",
-                            color: "var(--text)",
-                            fontSize: 13,
-                            fontWeight: 700,
-                            outline: "none",
-                            fontFamily: "inherit",
-                            transition: "border-color 0.2s, background 0.2s",
-                          }}
-                        />
-                        <span style={{ fontSize: 11, fontWeight: 800, color: isPRAttempt ? ACCENT : "var(--text-muted)", flexShrink: 0, minWidth: 20 }}>
-                          kg
-                        </span>
-                        {isPRAttempt && (
-                          <motion.span
-                            initial={{ opacity: 0, scale: 0.7 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            style={{ fontSize: 10, fontWeight: 900, color: ACCENT, flexShrink: 0 }}
+                      <div style={{ marginTop: 8 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            min={0}
+                            max={999}
+                            step={0.5}
+                            placeholder={histWeight != null ? String(histWeight) : "0"}
+                            value={currentWeight ?? ""}
+                            onChange={(e) => {
+                              const v = parseFloat(e.target.value)
+                              setExerciseWeights((prev) => ({ ...prev, [i]: isNaN(v) ? null : v }))
+                            }}
+                            style={{
+                              flex: 1,
+                              background: isPRAttempt ? "rgba(107,191,184,0.08)" : "var(--surface-2)",
+                              border: isPRAttempt ? "1px solid rgba(107,191,184,0.4)" : "1px solid var(--border)",
+                              borderRadius: 10,
+                              padding: "6px 10px",
+                              color: "var(--text)",
+                              fontSize: 13,
+                              fontWeight: 700,
+                              outline: "none",
+                              fontFamily: "inherit",
+                              transition: "border-color 0.2s, background 0.2s",
+                            }}
+                          />
+                          <span style={{ fontSize: 11, fontWeight: 800, color: isPRAttempt ? ACCENT : "var(--text-muted)", flexShrink: 0, minWidth: 20 }}>
+                            kg
+                          </span>
+                          {isPRAttempt && (
+                            <motion.span
+                              initial={{ opacity: 0, scale: 0.7 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              style={{ fontSize: 10, fontWeight: 900, color: ACCENT, flexShrink: 0 }}
+                            >
+                              🏆 PR
+                            </motion.span>
+                          )}
+                        </div>
+                        {/* Progressive overload suggestion */}
+                        {suggested != null && currentWeight == null && (
+                          <motion.button
+                            type="button"
+                            initial={{ opacity: 0, y: -4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            onClick={() => setExerciseWeights((prev) => ({ ...prev, [i]: suggested }))}
+                            style={{
+                              marginTop: 5,
+                              border: "1px dashed rgba(107,191,184,0.45)",
+                              background: "rgba(107,191,184,0.06)",
+                              borderRadius: 8,
+                              padding: "4px 9px",
+                              color: ACCENT,
+                              fontSize: 10,
+                              fontWeight: 800,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                            }}
                           >
-                            🏆 PR
-                          </motion.span>
+                            <svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                            Try {suggested} kg (+2.5)
+                          </motion.button>
                         )}
                       </div>
                     )
