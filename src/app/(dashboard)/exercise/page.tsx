@@ -404,39 +404,43 @@ export default function ExerciseSessionPage() {
                 </div>
               </div>
 
-              {/* ── Full-width exercise demo */}
-              <div style={{ margin: "8px 12px 0", borderRadius: 14, overflow: "hidden", position: "relative" }}>
-                <ExerciseDemoVisual exerciseName={ex.name} compact height={130} objectFit="contain" />
-                {/* Done overlay on demo */}
-                <AnimatePresence>
-                  {allSetsDone && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      style={{
-                        position: "absolute", inset: 0, borderRadius: 14,
-                        background: "rgba(107,191,184,0.22)",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        backdropFilter: "blur(1px)",
-                      }}
-                    >
-                      <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              {/* ── Body: 1:1 square demo + exercise details side by side */}
+              <div style={{ display: "flex", padding: "8px 12px 10px 12px", gap: 12 }}>
 
-              {/* ── Exercise details */}
-              <div style={{ padding: "10px 14px 12px 13px" }}>
-                  <div style={{ fontSize: 19, fontWeight: 950, color: "var(--text)", letterSpacing: "-0.3px", marginBottom: 4, lineHeight: 1.1 }}>{ex.name}</div>
-                  <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.4, marginBottom: exerciseHistory[ex.name] ? 6 : 10 }}>
+                {/* 1:1 Square demo */}
+                <div style={{ position: "relative", flexShrink: 0 }}>
+                  <div style={{ width: 130, height: 130, borderRadius: 16, overflow: "hidden" }}>
+                    <ExerciseDemoVisual exerciseName={ex.name} compact height={130} objectFit="contain" />
+                  </div>
+                  <AnimatePresence>
+                    {allSetsDone && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                          position: "absolute", inset: 0, borderRadius: 16,
+                          background: "rgba(107,191,184,0.28)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          backdropFilter: "blur(1px)",
+                        }}
+                      >
+                        <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Right: name, desc, history, sets, weight */}
+                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 0 }}>
+                  <div style={{ fontSize: 17, fontWeight: 950, color: "var(--text)", letterSpacing: "-0.3px", marginBottom: 4, lineHeight: 1.15 }}>{ex.name}</div>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.4, marginBottom: exerciseHistory[ex.name] ? 6 : 8 }}>
                     {getExerciseDesc(ex.name)}
                   </div>
 
                   {/* Last session hint */}
                   {exerciseHistory[ex.name] && (
-                    <div style={{ display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 10, borderRadius: 999, padding: "2px 8px", background: "rgba(107,191,184,0.08)", border: "1px solid rgba(107,191,184,0.2)", fontSize: 10, fontWeight: 800, color: ACCENT }}>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 8, borderRadius: 999, padding: "2px 8px", background: "rgba(107,191,184,0.08)", border: "1px solid rgba(107,191,184,0.2)", fontSize: 10, fontWeight: 800, color: ACCENT }}>
                       <svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                       {exerciseHistory[ex.name].weight != null && `${exerciseHistory[ex.name].weight}kg · `}Last: {exerciseHistory[ex.name].sets}×{exerciseHistory[ex.name].reps} · {daysAgoLabel(exerciseHistory[ex.name].completedAt)}
                     </div>
@@ -550,7 +554,8 @@ export default function ExerciseSessionPage() {
                       </div>
                     )
                   })()}
-              </div>
+                </div>{/* end right column */}
+              </div>{/* end body flex */}
 
               {/* ── Progress bar — animates as sets complete */}
               <div style={{ height: 3, background: "var(--border)", margin: "0 13px 11px" }}>
