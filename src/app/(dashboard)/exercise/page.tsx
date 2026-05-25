@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { useLanguage } from "@/context/LanguageContext"
 import { saveWorkoutFeedback, type SessionFeedback } from "@/lib/workoutFeedback"
 import { useWorkoutVerification, type ActiveChallenge } from "@/lib/workoutVerification"
-import { ExerciseDemoVisual } from "@/components/ExerciseDemoPanel"
+import { ExerciseDemoVisual } from "@/components/ExerciseDemoPanel" // still used in full panel; not in list cards
 import { ACCENT } from "@/lib/theme"
 import { getCategory, CATEGORY_COLORS } from "@/lib/exerciseUtils"
 import { estimateCalories } from "@/lib/calorieEstimate"
@@ -36,6 +36,28 @@ type ActiveExercise = { name: string; sets: number; reps: number; weight?: numbe
 type ActiveWorkout = { date: string; workoutName: string; exercises: ActiveExercise[] }
 type FitTokenReward = { amount?: number; totalAwarded?: number; boosted?: boolean }
 type PRRecord = { exerciseName: string; weight: number; prevBest?: number }
+
+// Returns JSX path elements for each workout category icon
+function catIconPaths(category: string) {
+  switch (category) {
+    case "WARM":
+      return <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+    case "PUSH":
+      return <><circle cx="5" cy="12" r="3"/><circle cx="19" cy="12" r="3"/><line x1="8" y1="12" x2="16" y2="12" strokeWidth="2.5"/></>
+    case "PULL":
+      return <><path d="M9 3H15"/><path d="M12 3v5"/><path d="M5 9a7 7 0 1 0 14 0"/><path d="M9 16l-2 5"/><path d="M15 16l2 5"/></>
+    case "LEGS":
+      return <><path d="M12 2v10"/><path d="m8 12-3 9"/><path d="m16 12 3 9"/><path d="M6 12h12"/></>
+    case "CORE":
+      return <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+    case "CARDIO":
+      return <><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></>
+    case "SHOULDER":
+      return <><circle cx="12" cy="5" r="3"/><path d="M6.5 8.5 4 15h16l-2.5-6.5"/><path d="M12 8v7"/></>
+    default:
+      return <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+  }
+}
 
 function formatTime(s: number) {
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`
@@ -382,11 +404,53 @@ export default function ExerciseSessionPage() {
                 </div>
               </div>
 
-              {/* ── Main content: image + detail */}
+              {/* ── Main content: visual tile + detail */}
               <div style={{ display: "flex" }}>
-                {/* Left: demo image */}
-                <div style={{ width: 100, padding: "10px 0 10px 12px", flexShrink: 0 }}>
-                  <ExerciseDemoVisual exerciseName={ex.name} compact height={100} objectFit="cover" />
+                {/* Left: styled category tile */}
+                <div style={{ width: 96, padding: "8px 0 10px 12px", flexShrink: 0 }}>
+                  <div style={{
+                    width: "100%", height: 104, borderRadius: 14,
+                    background: `linear-gradient(150deg, ${catStyle.color}20 0%, ${catStyle.color}08 100%)`,
+                    border: `1px solid ${catStyle.color}30`,
+                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                    gap: 5, position: "relative", overflow: "hidden",
+                  }}>
+                    {/* Watermark number */}
+                    <div style={{
+                      position: "absolute", right: 3, bottom: -2,
+                      fontSize: 58, fontWeight: 950, lineHeight: 1,
+                      color: catStyle.color, opacity: 0.12,
+                      fontVariantNumeric: "tabular-nums", userSelect: "none",
+                    }}>
+                      {i + 1}
+                    </div>
+                    {/* Category icon */}
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke={catStyle.color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      {catIconPaths(category)}
+                    </svg>
+                    {/* Muscle group */}
+                    <div style={{
+                      fontSize: 9, fontWeight: 900, color: catStyle.color,
+                      textAlign: "center", letterSpacing: "0.06em", lineHeight: 1.3,
+                      padding: "0 5px", textTransform: "uppercase",
+                    }}>
+                      {getMuscleGroup(ex.name)}
+                    </div>
+                    {/* Done overlay */}
+                    {allSetsDone && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        style={{
+                          position: "absolute", inset: 0, borderRadius: 14,
+                          background: "rgba(107,191,184,0.18)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}
+                      >
+                        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      </motion.div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Right: name, desc, history, sets, weight */}
