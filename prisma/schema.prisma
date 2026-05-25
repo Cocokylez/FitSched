@@ -19,8 +19,6 @@ model User {
 
   accounts                Account[]
   sessions                Session[]
-  workoutPlans            WorkoutPlan[]
-  workoutLogs             WorkoutLog[]
   exercises               Exercise[]
   onboardingCompleted     Boolean                  @default(false)
   fitnessGoal             String?
@@ -48,6 +46,7 @@ model User {
   workoutTemplates        WorkoutTemplate[]
   achievements            UserAchievement[]
   streakFreezeArmed       Boolean                  @default(false)
+  ftBoostArmed            Boolean                  @default(false)
 }
 
 model Account {
@@ -125,9 +124,6 @@ model Exercise {
   createdAt   DateTime    @default(now())
 
   user                 User?                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workoutPlanExercises WorkoutPlanExercise[]
-  workoutLogSets       WorkoutLogSet[]
-  workoutLogs          WorkoutLog[]
 
   @@index([userId])
   @@index([muscleGroup])
@@ -151,96 +147,6 @@ model ChatMessage {
   @@index([userId])
   @@index([createdAt])
   @@index([userId, createdAt])
-}
-
-model WorkoutPlan {
-  id            String    @id @default(cuid())
-  userId        String
-  name          String
-  description   String?
-  startDate     DateTime
-  endDate       DateTime?
-  isAIGenerated Boolean   @default(false)
-  aiPrompt      String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  days      WorkoutPlanDay[]
-  exercises WorkoutPlanExercise[]
-
-  @@index([userId])
-}
-
-model WorkoutPlanDay {
-  id            String      @id @default(cuid())
-  planId        String
-  dayOfWeek     Int
-  muscleGroup   MuscleGroup
-  order         Int
-  scheduledTime DateTime?
-  notes         String?
-
-  plan      WorkoutPlan           @relation(fields: [planId], references: [id], onDelete: Cascade)
-  exercises WorkoutPlanExercise[]
-
-  @@index([planId])
-}
-
-model WorkoutPlanExercise {
-  id          String  @id @default(cuid())
-  planId      String
-  dayId       String?
-  exerciseId  String
-  sets        Int
-  reps        Int
-  duration    Int?
-  restSeconds Int     @default(60)
-  order       Int
-  notes       String?
-
-  plan     WorkoutPlan     @relation(fields: [planId], references: [id], onDelete: Cascade)
-  day      WorkoutPlanDay? @relation(fields: [dayId], references: [id], onDelete: SetNull)
-  exercise Exercise        @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
-
-  @@index([planId])
-  @@index([dayId])
-}
-
-model WorkoutLog {
-  id          String   @id @default(cuid())
-  userId      String
-  exerciseId  String
-  date        DateTime
-  duration    Int?
-  notes       String?
-  rating      Int?
-  completedAt DateTime @default(now())
-
-  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  exercise Exercise        @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
-  sets     WorkoutLogSet[]
-
-  @@index([userId])
-  @@index([date])
-  @@index([userId, date])
-  @@index([exerciseId])
-}
-
-model WorkoutLogSet {
-  id        String  @id @default(cuid())
-  logId     String
-  setNumber Int
-  reps      Int
-  weight    Float?
-  duration  Int?
-  completed Boolean @default(true)
-
-  log        WorkoutLog @relation(fields: [logId], references: [id], onDelete: Cascade)
-  exercise   Exercise?  @relation(fields: [exerciseId], references: [id])
-  exerciseId String?
-
-  @@index([logId])
 }
 
 model CalendarConnection {

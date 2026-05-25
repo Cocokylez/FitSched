@@ -32,9 +32,10 @@ const FEEDBACK_OPTIONS: Array<{ value: SessionFeedback; label: string; detail: s
   { value: "too_hard", label: "Too hard", detail: "Scale back" },
 ]
 
-type ActiveExercise = { name: string; sets: number; reps: number }
+type ActiveExercise = { name: string; sets: number; reps: number; weight?: number }
 type ActiveWorkout = { date: string; workoutName: string; exercises: ActiveExercise[] }
-type FitTokenReward = { amount?: number; totalAwarded?: number }
+type FitTokenReward = { amount?: number; totalAwarded?: number; boosted?: boolean }
+type PRRecord = { exerciseName: string; weight: number; prevBest?: number }
 
 function formatTime(s: number) {
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`
@@ -85,7 +86,9 @@ export default function ExerciseSessionPage() {
   const [noteSaved, setNoteSaved] = useState(false)
   const [swapIdx, setSwapIdx] = useState<number | null>(null)
   const [newAchievements, setNewAchievements] = useState<string[]>([])
-  const [exerciseHistory, setExerciseHistory] = useState<Record<string, { sets: number; reps: number; completedAt: string }>>({})
+  const [newPRs, setNewPRs] = useState<PRRecord[]>([])
+  const [exerciseWeights, setExerciseWeights] = useState<Record<number, number | null>>({})
+  const [exerciseHistory, setExerciseHistory] = useState<Record<string, { sets: number; reps: number; completedAt: string; weight?: number }>>({})
 
   useEffect(() => {
     let active = true
@@ -105,13 +108,24 @@ export default function ExerciseSessionPage() {
         const histRes = await fetch("/api/workout-log")
         if (histRes.ok && active) {
           const allLogs = await histRes.json()
-          const hist: Record<string, { sets: number; reps: number; completedAt: string }> = {}
+          const hist: Record<string, { sets: number; reps: number; completedAt: string; weight?: number }> = {}
           for (const log of allLogs) {
             // skip today's date (we want previous sessions only)
             if (log.date === parsed?.date) continue
             for (const ex of (log.exercises || [])) {
               if (!hist[ex.name]) {
-                hist[ex.name] = { sets: ex.sets, reps: ex.reps, completedAt: log.completedAt }
+                hist[ex.name] = {
+                  sets: ex.sets,
+                  reps: ex.reps,
+                  completedAt: log.completedAt,
+                  weight: ex.weight ?? undefined,
+                }
+              } else if (ex.weight != null && (hist[ex.name].weight == null || ex.weight > hist[ex.name].weight!)) {
+                // Keep track of personal best weight seen across all history
+                hist[ex.name] = {
+                  ...hist[ex.name],
+                  weight: ex.weight,
+                }
               }
             }
           }
@@ -203,10 +217,20 @@ export default function ExerciseSessionPage() {
     setSaving(true)
     try {
       const { score: verificationScore } = getResult(elapsed)
+      // Merge per-exercise weights into the exercises array before sending
+      const exercisesWithWeight = workout.exercises.map((ex, i) => {
+        const w = exerciseWeights[i]
+        return w != null && w > 0 ? { ...ex, weight: w } : ex
+      })
       const response = await fetch("/api/workout-log", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...workout, verificationScore, sessionToken: sessionTokenRef.current }),
+        body: JSON.stringify({
+          ...workout,
+          exercises: exercisesWithWeight,
+          verificationScore,
+          sessionToken: sessionTokenRef.current,
+        }),
       })
       if (response.ok) {
         const savedLog = await response.json()
@@ -214,6 +238,9 @@ export default function ExerciseSessionPage() {
         setFitTokenReward(savedLog.fitTokenReward || null)
         if (Array.isArray(savedLog.newAchievements) && savedLog.newAchievements.length > 0) {
           setNewAchievements(savedLog.newAchievements)
+        }
+        if (Array.isArray(savedLog.newPRs) && savedLog.newPRs.length > 0) {
+          setNewPRs(savedLog.newPRs)
         }
         setSessionFeedback(null)
         setFeedbackSaved(false)
@@ -351,7 +378,7 @@ export default function ExerciseSessionPage() {
                   {exerciseHistory[ex.name] && (
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 10, borderRadius: 999, padding: "2px 8px", background: "rgba(107,191,184,0.08)", border: "1px solid rgba(107,191,184,0.2)", fontSize: 10, fontWeight: 800, color: ACCENT }}>
                       <svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                      Last: {exerciseHistory[ex.name].sets}×{exerciseHistory[ex.name].reps} · {daysAgoLabel(exerciseHistory[ex.name].completedAt)}
+                      {exerciseHistory[ex.name].weight != null && `${exerciseHistory[ex.name].weight}kg · `}Last: {exerciseHistory[ex.name].sets}×{exerciseHistory[ex.name].reps} · {daysAgoLabel(exerciseHistory[ex.name].completedAt)}
                     </div>
                   )}
 
@@ -404,6 +431,55 @@ export default function ExerciseSessionPage() {
                       </button>
                     )}
                   </div>
+
+                  {/* Weight input row */}
+                  {(() => {
+                    const currentWeight = exerciseWeights[i]
+                    const histWeight = exerciseHistory[ex.name]?.weight
+                    const isPRAttempt = currentWeight != null && currentWeight > 0 && (histWeight == null || currentWeight > histWeight)
+                    return (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          min={0}
+                          max={999}
+                          step={0.5}
+                          placeholder={histWeight != null ? String(histWeight) : "0"}
+                          value={currentWeight ?? ""}
+                          onChange={(e) => {
+                            const v = parseFloat(e.target.value)
+                            setExerciseWeights((prev) => ({ ...prev, [i]: isNaN(v) ? null : v }))
+                          }}
+                          style={{
+                            flex: 1,
+                            background: isPRAttempt ? "rgba(107,191,184,0.08)" : "var(--surface-2)",
+                            border: isPRAttempt ? "1px solid rgba(107,191,184,0.4)" : "1px solid var(--border)",
+                            borderRadius: 10,
+                            padding: "6px 10px",
+                            color: "var(--text)",
+                            fontSize: 13,
+                            fontWeight: 700,
+                            outline: "none",
+                            fontFamily: "inherit",
+                            transition: "border-color 0.2s, background 0.2s",
+                          }}
+                        />
+                        <span style={{ fontSize: 11, fontWeight: 800, color: isPRAttempt ? ACCENT : "var(--text-muted)", flexShrink: 0, minWidth: 20 }}>
+                          kg
+                        </span>
+                        {isPRAttempt && (
+                          <motion.span
+                            initial={{ opacity: 0, scale: 0.7 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            style={{ fontSize: 10, fontWeight: 900, color: ACCENT, flexShrink: 0 }}
+                          >
+                            🏆 PR
+                          </motion.span>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
             </motion.div>
@@ -534,9 +610,50 @@ export default function ExerciseSessionPage() {
                 <span style={{ fontSize: 16, fontWeight: 950, color: ACCENT }}>{streakDay} {t.dayStreak}</span>
               </motion.div>
               <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.50 }} style={{ borderRadius: 18, padding: 16, background: "linear-gradient(135deg, rgba(107,191,184,0.2), rgba(107,191,184,0.06))", border: "1px solid rgba(107,191,184,0.32)", marginBottom: 18 }}>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.12em", marginBottom: 7 }}>{t.receiveFitToken}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.12em" }}>{t.receiveFitToken}</div>
+                  {fitTokenReward?.boosted && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 380, damping: 18, delay: 0.55 }}
+                      style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", color: "#f6d365", background: "rgba(246,211,101,0.18)", border: "1px solid rgba(246,211,101,0.4)", borderRadius: 999, padding: "2px 7px" }}
+                    >
+                      ⚡ 2X BOOST
+                    </motion.span>
+                  )}
+                </div>
                 <div style={{ fontSize: 34, fontWeight: 950, color: ACCENT, fontVariantNumeric: "tabular-nums" }}>+{Number(fitTokenReward?.amount ?? fitTokenReward?.totalAwarded ?? 1).toFixed(2)} FT</div>
               </motion.div>
+
+              {/* PRs section */}
+              {newPRs.length > 0 && (
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.53 }} style={{ borderRadius: 20, padding: 14, background: "rgba(212,180,80,0.08)", border: "1px solid rgba(212,180,80,0.3)", marginBottom: 18 }}>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.11em", marginBottom: 10 }}>🏆 PERSONAL RECORDS</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {newPRs.map((pr) => (
+                      <motion.div
+                        key={pr.exerciseName}
+                        initial={{ scale: 0.88, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 22 }}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, borderRadius: 12, padding: "10px 14px", background: "rgba(212,180,80,0.12)", border: "1px solid rgba(212,180,80,0.28)" }}
+                      >
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 900, color: "#c8a832", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pr.exerciseName}</div>
+                          {pr.prevBest != null && (
+                            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.48)", marginTop: 2 }}>was {pr.prevBest} kg</div>
+                          )}
+                          {pr.prevBest == null && (
+                            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.48)", marginTop: 2 }}>First time logged!</div>
+                          )}
+                        </div>
+                        <div style={{ fontSize: 18, fontWeight: 950, color: "#c8a832", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{pr.weight} kg</div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} style={{ borderRadius: 20, padding: 14, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", marginBottom: 18, textAlign: "left" }}>
                 <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.11em", marginBottom: 10 }}>HOW DID IT FEEL?</div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>

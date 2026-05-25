@@ -23,11 +23,61 @@ function isSerializableConflict(error: unknown) {
 function normalizeCompletedExercises(value: unknown) {
   if (!Array.isArray(value) || value.length === 0 || value.length > 20) return null
 
-  return value.map((exercise) => ({
-    name: cleanText((exercise as any)?.name, 100),
-    sets: clampInt((exercise as any)?.sets, 1, 10, 3),
-    reps: clampInt((exercise as any)?.reps, 1, 200, 12),
-  })).filter((exercise) => exercise.name)
+  return value.map((exercise) => {
+    const rawWeight = (exercise as any)?.weight
+    const weight =
+      typeof rawWeight === "number" && isFinite(rawWeight) && rawWeight > 0 && rawWeight <= 1000
+        ? Math.round(rawWeight * 10) / 10
+        : null
+    return {
+      name: cleanText((exercise as any)?.name, 100),
+      sets: clampInt((exercise as any)?.sets, 1, 10, 3),
+      reps: clampInt((exercise as any)?.reps, 1, 200, 12),
+      ...(weight !== null ? { weight } : {}),
+    }
+  }).filter((exercise) => exercise.name)
+}
+
+type NormalizedExercise = { name: string; sets: number; reps: number; weight?: number }
+
+async function detectPersonalRecords(
+  tx: Parameters<Parameters<typeof import("@/lib/db")["db"]["$transaction"]>[0]>[0],
+  userId: string,
+  exercises: NormalizedExercise[],
+): Promise<Array<{ exerciseName: string; weight: number; prevBest?: number }>> {
+  const withWeight = exercises.filter((ex) => ex.weight != null && ex.weight > 0)
+  if (withWeight.length === 0) return []
+
+  // Query all historical logs to build a max-weight map
+  const pastLogs = await tx.workoutSessionLog.findMany({
+    where: { userId },
+    select: { exercises: true },
+    orderBy: { completedAt: "desc" },
+    take: 300,
+  })
+
+  const maxWeightMap: Record<string, number> = {}
+  for (const log of pastLogs) {
+    const exs = log.exercises as Array<{ name?: string; weight?: number | null }>
+    if (!Array.isArray(exs)) continue
+    for (const ex of exs) {
+      if (ex.name && ex.weight != null && ex.weight > 0) {
+        if (!maxWeightMap[ex.name] || ex.weight > maxWeightMap[ex.name]) {
+          maxWeightMap[ex.name] = ex.weight
+        }
+      }
+    }
+  }
+
+  const prs: Array<{ exerciseName: string; weight: number; prevBest?: number }> = []
+  for (const ex of withWeight) {
+    const prevBest = maxWeightMap[ex.name!]
+    if (prevBest == null || ex.weight! > prevBest) {
+      prs.push({ exerciseName: ex.name!, weight: ex.weight!, prevBest })
+    }
+  }
+
+  return prs
 }
 
 export async function GET(req: Request) {
@@ -167,8 +217,12 @@ export async function POST(req: Request) {
             balance: 0,
             transactions: [],
           },
+          newPRs: [] as Array<{ exerciseName: string; weight: number; prevBest?: number }>,
         }
       }
+
+      // Detect PRs before creating the new log so history doesn't include this session
+      const newPRs = await detectPersonalRecords(tx, userId, exercises as NormalizedExercise[])
 
       const createdLog = await tx.workoutSessionLog.create({
         data: {
@@ -186,7 +240,7 @@ export async function POST(req: Request) {
         verificationScore,
       )
 
-      return { log: createdLog, fitTokenReward: reward }
+      return { log: createdLog, fitTokenReward: reward, newPRs }
     }, {
       isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
     })
@@ -213,7 +267,12 @@ export async function POST(req: Request) {
     let newAchievements: string[] = []
     try { newAchievements = await unlockAchievementsForUser(db as any, userId) } catch {}
 
-    return NextResponse.json({ ...result.log, fitTokenReward: result.fitTokenReward, newAchievements }, { status: 201 })
+    return NextResponse.json({
+      ...result.log,
+      fitTokenReward: result.fitTokenReward,
+      newAchievements,
+      newPRs: result.newPRs ?? [],
+    }, { status: 201 })
   } catch (error) {
     const bodyError = requestBodyErrorResponse(error)
     if (bodyError) return bodyError
