@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
-import { Building2, Dumbbell, Home } from "lucide-react"
+import { Activity, Building2, Dumbbell, Flame, Home, Zap } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
 import { ACCENT } from "@/lib/theme"
 
@@ -398,10 +398,10 @@ export default function SettingsPage() {
           <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>Goal</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
             {([
-              { id: "lose_weight",       label: "Lose Weight",       emoji: "🔥" },
-              { id: "build_muscle",      label: "Build Muscle",      emoji: "💪" },
-              { id: "stay_active",       label: "Stay Active",       emoji: "🏃" },
-              { id: "improve_endurance", label: "Endurance",         emoji: "⚡" },
+              { id: "lose_weight",       label: "Lose Weight", Icon: Flame,    color: "#f97316" },
+              { id: "build_muscle",      label: "Build Muscle", Icon: Dumbbell, color: ACCENT   },
+              { id: "stay_active",       label: "Stay Active",  Icon: Activity, color: "#60a5fa" },
+              { id: "improve_endurance", label: "Endurance",    Icon: Zap,      color: "#eab308" },
             ] as const).map((opt) => {
               const selected = fitnessGoal === opt.id
               return (
@@ -420,7 +420,7 @@ export default function SettingsPage() {
                     fontSize: 12, fontWeight: 700,
                   }}
                 >
-                  <span style={{ fontSize: 16 }}>{opt.emoji}</span>
+                  <opt.Icon size={15} strokeWidth={1.9} color={selected ? ACCENT : opt.color} />
                   {opt.label}
                 </button>
               )

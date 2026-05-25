@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { Settings } from "lucide-react"
+import { Flame, Scale, Settings } from "lucide-react"
 import { toDateId, getWeekId, calculateLongestStreak } from "@/lib/dateUtils"
 import { useLanguage } from "@/context/LanguageContext"
 import { ACHIEVEMENT_DEFS, TIER_COLORS } from "@/lib/achievements"
@@ -332,7 +332,7 @@ export default function ProfilePage() {
                 whiteSpace: "nowrap", boxShadow: "var(--shadow)",
               }}
             >
-              <span style={{ fontSize: 10 }}>🔥</span>
+              <Flame size={11} strokeWidth={2} color="#f97316" />
               <span>{streak}d</span>
             </motion.div>
           )}
@@ -593,9 +593,9 @@ export default function ProfilePage() {
               width: 34, height: 34, borderRadius: 10,
               background: "rgba(107,191,184,0.1)", border: "1px solid rgba(107,191,184,0.22)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 16, flexShrink: 0,
+              flexShrink: 0,
             }}>
-              ⚖️
+              <Scale size={16} strokeWidth={1.8} color={ACCENT} />
             </div>
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Weight Log</div>
