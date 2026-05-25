@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from "recharts"
-import { Calendar, Dumbbell, TrendingUp, Trophy, ChevronDown, Check } from "lucide-react"
+import { Calendar, Dumbbell, TrendingUp, Trophy, ChevronDown, Check, PenLine } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { SkeletonCard } from "@/components/Skeleton"
 import { useLanguage } from "@/context/LanguageContext"
@@ -212,7 +212,7 @@ export default function HistoryPage() {
                           <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
                             {new Date(log.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                             {" · "}{log.exercises.length} exercises
-                            {log.notes && <span style={{ color: ACCENT }}> · 📝</span>}
+                            {log.notes && <PenLine size={10} strokeWidth={2} color={ACCENT} style={{ marginLeft: 4, display: "inline", verticalAlign: "middle" }} />}
                           </div>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>

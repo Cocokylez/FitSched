@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell, AreaChart, Area, YAxis } from "recharts"
 import { useLanguage } from "@/context/LanguageContext"
 import { SkeletonCard } from "@/components/Skeleton"
-import { ChevronDown, ChevronRight, RotateCcw, Check, Wallet, Snowflake } from "lucide-react"
+import { ChevronDown, ChevronRight, RotateCcw, Check, Wallet, Snowflake, Zap } from "lucide-react"
 import { stagger, fadeUp } from "@/lib/animations"
 import { getMuscleGroup } from "@/lib/exerciseData"
 import { getWeekId, formatLocalDate, toDateId, addDays, calculateLongestStreak } from "@/lib/dateUtils"
@@ -509,7 +509,9 @@ export default function ReportPage() {
                     : "var(--surface)",
                   border: streakFreezeArmed ? "1px solid rgba(99,179,237,0.45)" : "1px solid var(--border)",
                 }}>
-                  <div style={{ fontSize: 22, marginBottom: 8 }}>❄️</div>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(99,179,237,0.12)", border: "1px solid rgba(99,179,237,0.28)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
+                    <Snowflake size={18} strokeWidth={1.8} color="#63b3ed" />
+                  </div>
                   <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text)", marginBottom: 3 }}>Streak Freeze</div>
                   <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.4, marginBottom: 12 }}>
                     Protect your streak from one missed day
@@ -547,14 +549,16 @@ export default function ReportPage() {
                     : "var(--surface)",
                   border: ftBoostArmed ? "1px solid rgba(246,211,101,0.45)" : "1px solid var(--border)",
                 }}>
-                  <div style={{ fontSize: 22, marginBottom: 8 }}>⚡</div>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(246,211,101,0.12)", border: "1px solid rgba(246,211,101,0.28)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
+                    <Zap size={18} strokeWidth={1.8} color="#c8a832" />
+                  </div>
                   <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text)", marginBottom: 3 }}>Token Boost</div>
                   <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.4, marginBottom: 12 }}>
                     Earn 2× FitTokens on your next workout
                   </div>
                   {ftBoostArmed ? (
                     <div style={{ fontSize: 11, fontWeight: 900, color: "#c8a832", display: "flex", alignItems: "center", gap: 4 }}>
-                      ⚡ Active for next session
+                      <Zap size={11} strokeWidth={2.5} /> Active for next session
                     </div>
                   ) : (
                     <>

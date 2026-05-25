@@ -474,9 +474,10 @@ export default function ExerciseSessionPage() {
                             <motion.span
                               initial={{ opacity: 0, scale: 0.7 }}
                               animate={{ opacity: 1, scale: 1 }}
-                              style={{ fontSize: 10, fontWeight: 900, color: ACCENT, flexShrink: 0 }}
+                              style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 900, color: ACCENT, flexShrink: 0 }}
                             >
-                              🏆 PR
+                              <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
+                              PR
                             </motion.span>
                           )}
                         </div>
@@ -646,9 +647,10 @@ export default function ExerciseSessionPage() {
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: "spring", stiffness: 380, damping: 18, delay: 0.55 }}
-                      style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", color: "#f6d365", background: "rgba(246,211,101,0.18)", border: "1px solid rgba(246,211,101,0.4)", borderRadius: 999, padding: "2px 7px" }}
+                      style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", color: "#f6d365", background: "rgba(246,211,101,0.18)", border: "1px solid rgba(246,211,101,0.4)", borderRadius: 999, padding: "2px 7px", display: "flex", alignItems: "center", gap: 3 }}
                     >
-                      ⚡ 2X BOOST
+                      <svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                      2X BOOST
                     </motion.span>
                   )}
                 </div>
@@ -658,7 +660,10 @@ export default function ExerciseSessionPage() {
               {/* PRs section */}
               {newPRs.length > 0 && (
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.53 }} style={{ borderRadius: 20, padding: 14, background: "rgba(212,180,80,0.08)", border: "1px solid rgba(212,180,80,0.3)", marginBottom: 18 }}>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.11em", marginBottom: 10 }}>🏆 PERSONAL RECORDS</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.11em", marginBottom: 10, display: "flex", alignItems: "center", gap: 5 }}>
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
+                    PERSONAL RECORDS
+                  </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {newPRs.map((pr) => (
                       <motion.div
@@ -721,7 +726,7 @@ export default function ExerciseSessionPage() {
               </motion.div>
               {newAchievements.length > 0 && (
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }} style={{ marginBottom: 18 }}>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.11em", marginBottom: 10 }}>🏆 ACHIEVEMENT UNLOCKED</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.11em", marginBottom: 10, display: "flex", alignItems: "center", gap: 5 }}><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>ACHIEVEMENT UNLOCKED</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {newAchievements.map(type => {
                       const def = ACHIEVEMENT_MAP[type]
