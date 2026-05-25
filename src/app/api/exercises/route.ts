@@ -105,6 +105,49 @@ export async function POST(req: Request) {
   }
 }
 
+export async function PATCH(req: Request) {
+  try {
+    const originError = validateSameOrigin(req);
+    if (originError) return originError;
+
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.write, "exercises:patch");
+    if (limited) return limited;
+
+    const body = await readJsonBody(req);
+    const id = typeof body.id === "string" ? body.id.trim() : null;
+    if (!id) return safeError("Exercise ID required");
+
+    const exercise = await db.exercise.findUnique({ where: { id } });
+    if (!exercise || exercise.isSystem) {
+      return NextResponse.json({ error: "Cannot edit system exercises" }, { status: 403 });
+    }
+    if (exercise.userId !== session.user.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    const name = cleanText(body.name, 80) || exercise.name;
+    const description = typeof body.description === "string" ? cleanText(body.description, 500) : exercise.description;
+    const muscleGroup = MUSCLE_GROUPS.has(body.muscleGroup) ? body.muscleGroup : exercise.muscleGroup;
+    const equipment = EQUIPMENT.has(body.equipment) ? body.equipment : exercise.equipment;
+    const difficulty = DIFFICULTY.has(body.difficulty) ? body.difficulty : exercise.difficulty;
+
+    const updated = await db.exercise.update({
+      where: { id },
+      data: { name, description: description || null, muscleGroup, equipment, difficulty },
+    });
+
+    return NextResponse.json(updated);
+  } catch (error) {
+    const bodyError = requestBodyErrorResponse(error);
+    if (bodyError) return bodyError;
+    return NextResponse.json({ error: "Failed to update exercise" }, { status: 500 });
+  }
+}
+
 export async function DELETE(req: Request) {
   try {
     const originError = validateSameOrigin(req);

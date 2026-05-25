@@ -32,6 +32,9 @@ function fmtDateLong(iso: string) {
   })
 }
 
+function kgToLbs(kg: number) { return +(kg * 2.20462).toFixed(1) }
+function lbsToKg(lbs: number) { return +(lbs / 2.20462).toFixed(1) }
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function WeightPage() {
@@ -50,20 +53,35 @@ export default function WeightPage() {
   const [showGoalModal, setShowGoalModal] = useState(false)
   const [goalInput, setGoalInput] = useState("")
   const goalInputRef = useRef<HTMLInputElement>(null)
+  const [unit, setUnit] = useState<"kg" | "lbs">("kg")
 
-  // Load goal from localStorage
+  // Load goal + unit preference from localStorage
   useEffect(() => {
     try {
       const raw = localStorage.getItem("fitsched-weight-goal")
       if (raw) { const v = parseFloat(raw); if (isFinite(v)) setGoalKg(v) }
     } catch {}
+    try {
+      const saved = localStorage.getItem("fitsched-weight-unit")
+      if (saved === "kg" || saved === "lbs") setUnit(saved)
+    } catch {}
   }, [])
 
+  const displayWeight = (kg: number) => unit === "lbs" ? kgToLbs(kg) : kg
+  const displayDiff = (diffKg: number) => unit === "lbs" ? +(diffKg * 2.20462).toFixed(1) : diffKg
+
+  const toggleUnit = () => {
+    const next = unit === "kg" ? "lbs" : "kg"
+    setUnit(next)
+    try { localStorage.setItem("fitsched-weight-unit", next) } catch {}
+  }
+
   const saveGoal = () => {
-    const v = parseFloat(goalInput.replace(",", "."))
-    if (!isFinite(v) || v < 20 || v > 500) return
-    setGoalKg(v)
-    try { localStorage.setItem("fitsched-weight-goal", String(v)) } catch {}
+    const raw = parseFloat(goalInput.replace(",", "."))
+    const kg = unit === "lbs" ? lbsToKg(raw) : raw
+    if (!isFinite(kg) || kg < 20 || kg > 500) return
+    setGoalKg(kg)
+    try { localStorage.setItem("fitsched-weight-goal", String(kg)) } catch {}
     setShowGoalModal(false)
     setGoalInput("")
   }
@@ -92,14 +110,16 @@ export default function WeightPage() {
   // Chart data — last 90 entries max, formatted for recharts
   const chartData = entries.slice(-90).map((e) => ({
     date: fmtDate(e.loggedAt),
-    weight: e.weightKg,
+    weight: displayWeight(e.weightKg),
   }))
 
-  const minW = entries.length ? Math.min(...entries.map((e) => e.weightKg)) - 2 : 40
-  const maxW = entries.length ? Math.max(...entries.map((e) => e.weightKg)) + 2 : 120
+  const buf = unit === "lbs" ? 4.4 : 2
+  const minW = entries.length ? Math.min(...entries.map((e) => displayWeight(e.weightKg))) - buf : (unit === "lbs" ? 88 : 40)
+  const maxW = entries.length ? Math.max(...entries.map((e) => displayWeight(e.weightKg))) + buf : (unit === "lbs" ? 264 : 120)
 
   async function handleSave() {
-    const kg = parseFloat(inputKg.replace(",", "."))
+    const raw = parseFloat(inputKg.replace(",", "."))
+    const kg = unit === "lbs" ? lbsToKg(raw) : raw
     if (!isFinite(kg) || kg < 20 || kg > 500) return
     setSaving(true)
     try {
@@ -156,15 +176,33 @@ export default function WeightPage() {
               {entries.length} {entries.length === 1 ? "entry" : "entries"}
               {goalKg != null && (
                 <span style={{ marginLeft: 8, color: "#f97316", fontWeight: 700 }}>
-                  · Goal: {goalKg} kg
+                  · Goal: {displayWeight(goalKg)} {unit}
                 </span>
               )}
             </div>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {/* Unit toggle */}
+            <div style={{ display: "flex", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 10, padding: 3, gap: 2 }}>
+              {(["kg", "lbs"] as const).map((u) => (
+                <button
+                  key={u}
+                  onClick={() => u !== unit && toggleUnit()}
+                  style={{
+                    background: unit === u ? ACCENT : "transparent",
+                    border: "none", borderRadius: 7,
+                    padding: "5px 10px", fontSize: 11, fontWeight: 800,
+                    color: unit === u ? "#0a1412" : "var(--text-muted)",
+                    cursor: "pointer", transition: "background 0.15s, color 0.15s",
+                  }}
+                >
+                  {u}
+                </button>
+              ))}
+            </div>
             <motion.button
               whileTap={{ scale: 0.93 }}
-              onClick={() => { setGoalInput(goalKg != null ? String(goalKg) : ""); setShowGoalModal(true); setTimeout(() => goalInputRef.current?.focus(), 80) }}
+              onClick={() => { setGoalInput(goalKg != null ? String(displayWeight(goalKg)) : ""); setShowGoalModal(true); setTimeout(() => goalInputRef.current?.focus(), 80) }}
               title={goalKg != null ? "Edit goal" : "Set goal weight"}
               style={{
                 display: "flex", alignItems: "center", justifyContent: "center",
@@ -225,15 +263,13 @@ export default function WeightPage() {
                     type="number"
                     inputMode="decimal"
                     step="0.1"
-                    min="20"
-                    max="500"
-                    placeholder="e.g. 70.0"
+                    placeholder={unit === "lbs" ? "e.g. 154.3" : "e.g. 70.0"}
                     value={goalInput}
                     onChange={(e) => setGoalInput(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") saveGoal() }}
                     style={{ flex: 1, background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 12, padding: "13px 14px", fontSize: 20, fontWeight: 800, color: "var(--text)", outline: "none", boxSizing: "border-box" as const }}
                   />
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-muted)", flexShrink: 0 }}>kg</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-muted)", flexShrink: 0 }}>{unit}</span>
                 </div>
                 <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
                   {goalKg != null && (
@@ -278,16 +314,14 @@ export default function WeightPage() {
               <div style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 6 }}>
-                    Weight (kg)
+                    Weight ({unit})
                   </div>
                   <input
                     ref={inputRef}
                     type="number"
                     inputMode="decimal"
                     step="0.1"
-                    min="20"
-                    max="500"
-                    placeholder="e.g. 72.5"
+                    placeholder={unit === "lbs" ? "e.g. 159.8" : "e.g. 72.5"}
                     value={inputKg}
                     onChange={(e) => setInputKg(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") handleSave() }}
@@ -359,8 +393,8 @@ export default function WeightPage() {
           >
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 42, fontWeight: 950, color: "var(--text)", letterSpacing: "-1px", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
-                {latest.weightKg}
-                <span style={{ fontSize: 18, fontWeight: 700, color: "var(--text-muted)", marginLeft: 4 }}>kg</span>
+                {displayWeight(latest.weightKg)}
+                <span style={{ fontSize: 18, fontWeight: 700, color: "var(--text-muted)", marginLeft: 4 }}>{unit}</span>
               </div>
               <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6, fontWeight: 700 }}>
                 Last logged · {fmtDateLong(latest.loggedAt)}
@@ -385,7 +419,7 @@ export default function WeightPage() {
                   fontSize: 14, fontWeight: 900, fontVariantNumeric: "tabular-nums",
                   color: diff < 0 ? "#4ade80" : diff > 0 ? "#f87171" : "var(--text-muted)",
                 }}>
-                  {diff > 0 ? "+" : ""}{diff.toFixed(1)}
+                  {diff > 0 ? "+" : ""}{displayDiff(diff).toFixed(1)}
                 </div>
                 <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.08em" }}>vs PREV</div>
               </div>
@@ -411,10 +445,10 @@ export default function WeightPage() {
               {goalKg != null && (
                 <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 800, color: "#f97316" }}>
                   <div style={{ width: 16, height: 2, background: "#f97316", borderRadius: 1 }} />
-                  Goal: {goalKg} kg
+                  Goal: {displayWeight(goalKg)} {unit}
                   {latest && (
                     <span style={{ color: "var(--text-muted)", fontWeight: 600 }}>
-                      ({latest.weightKg > goalKg ? `${(latest.weightKg - goalKg).toFixed(1)} to go` : "✓ reached"})
+                      ({latest.weightKg > goalKg ? `${(displayWeight(latest.weightKg) - displayWeight(goalKg)).toFixed(1)} ${unit} to go` : "✓ reached"})
                     </span>
                   )}
                 </div>
@@ -430,10 +464,13 @@ export default function WeightPage() {
                   interval="preserveStartEnd"
                 />
                 <YAxis
-                  domain={[Math.min(minW, goalKg != null ? goalKg - 2 : minW), Math.max(maxW, goalKg != null ? goalKg + 2 : maxW)]}
+                  domain={[
+                    Math.min(minW, goalKg != null ? displayWeight(goalKg) - buf : minW),
+                    Math.max(maxW, goalKg != null ? displayWeight(goalKg) + buf : maxW),
+                  ]}
                   tick={{ fontSize: 9, fill: "var(--text-muted)" }}
                   axisLine={false} tickLine={false}
-                  width={32}
+                  width={36}
                   tickFormatter={(v: number) => `${v}`}
                 />
                 <Tooltip
@@ -441,11 +478,11 @@ export default function WeightPage() {
                     background: "var(--panel)", border: "1px solid var(--border)",
                     borderRadius: 10, fontSize: 12, fontWeight: 700,
                   }}
-                  formatter={(v: number) => [`${v} kg`, "Weight"]}
+                  formatter={(v: number) => [`${v} ${unit}`, "Weight"]}
                 />
                 {latest && (
                   <ReferenceLine
-                    y={latest.weightKg}
+                    y={displayWeight(latest.weightKg)}
                     stroke={ACCENT}
                     strokeDasharray="4 4"
                     strokeOpacity={0.4}
@@ -453,7 +490,7 @@ export default function WeightPage() {
                 )}
                 {goalKg != null && (
                   <ReferenceLine
-                    y={goalKg}
+                    y={displayWeight(goalKg)}
                     stroke="#f97316"
                     strokeDasharray="6 3"
                     strokeWidth={1.5}
@@ -523,7 +560,7 @@ export default function WeightPage() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
                     <span style={{ fontSize: 16, fontWeight: 900, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>
-                      {entry.weightKg} kg
+                      {displayWeight(entry.weightKg)} {unit}
                     </span>
                     {entry.notes && (
                       <span style={{ fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
