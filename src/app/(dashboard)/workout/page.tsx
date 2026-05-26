@@ -398,19 +398,23 @@ export default function WorkoutPage() {
           <div style={{ display: "flex", gap: 6, padding: "12px 0 20px" }}>
             {weekDates.map((date, i) => {
               const isActive = i === selectedDay
-              const isToday = i === todayDay
-              const dateId = formatLocalDate(date)
-              const isDone = completedDateIds.has(dateId)
+              const isToday  = i === todayDay
+              const dateId   = formatLocalDate(date)
+              const isDone   = completedDateIds.has(dateId)
               return (
                 <motion.button key={i} onClick={() => setSelectedDay(i)} whileTap={{ scale: 0.92 }} style={{ flex: 1, border: "none", background: "transparent", cursor: "pointer", padding: 0, position: "relative" }}>
-                  <div style={{ width: "100%", borderRadius: 12, padding: "7px 2px 6px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, position: "relative", overflow: "hidden", boxSizing: "border-box", border: isToday && !isActive ? `1.5px solid ${ACCENT}` : "1.5px solid transparent", background: isActive ? "transparent" : isToday ? "transparent" : "var(--surface-2, rgba(255,255,255,0.06))" }}>
-                    {isActive && (
-                      <motion.div layoutId="workout-week-pill" style={{ position: "absolute", inset: 0, borderRadius: 10, background: "linear-gradient(145deg, #7dd4cc 0%, #5aaea7 100%)", boxShadow: "0 4px 14px rgba(107,191,184,0.4), inset 0 1px 0 rgba(255,255,255,0.22)" }} transition={{ type: "spring", stiffness: 420, damping: 34 }} />
-                    )}
-                    <div style={{ position: "relative", zIndex: 1, fontSize: 9, fontWeight: 800, letterSpacing: "0.06em", color: isActive ? "#0b1715" : isToday ? ACCENT : "var(--text-muted)", transition: "color 0.22s" }}>{DAY_ABBR[i]}</div>
-                    <div style={{ position: "relative", zIndex: 1, fontSize: 17, fontWeight: 900, lineHeight: 1, color: isActive ? "#0b1715" : isToday ? ACCENT : "var(--text)", transition: "color 0.22s" }}>{date.getDate()}</div>
-                    <div style={{ minHeight: 4, position: "relative", zIndex: 1, marginTop: 1 }}>
-                      {isDone && <div style={{ width: 4, height: 4, borderRadius: "50%", background: isActive ? "rgba(11,23,21,0.4)" : ACCENT }} />}
+                  {isActive && (
+                    <motion.span
+                      layoutId="workout-week-pill"
+                      style={{ position: "absolute", inset: 0, borderRadius: 12, pointerEvents: "none", background: "linear-gradient(180deg, rgba(107,191,184,0.22) 0%, rgba(107,191,184,0.08) 100%)", border: "1px solid rgba(107,191,184,0.32)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 6px 18px rgba(107,191,184,0.18)" }}
+                      transition={{ type: "spring", stiffness: 350, damping: 28, mass: 0.78 }}
+                    />
+                  )}
+                  <div style={{ width: "100%", borderRadius: 12, padding: "7px 2px 6px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, position: "relative", zIndex: 1, boxSizing: "border-box", border: isToday && !isActive ? `1.5px solid ${ACCENT}` : "1.5px solid transparent", background: !isActive && !isToday ? "var(--surface-2, rgba(255,255,255,0.06))" : "transparent" }}>
+                    <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.06em", color: isActive ? ACCENT : isToday ? ACCENT : "var(--text-muted)", transition: "color 0.22s" }}>{DAY_ABBR[i]}</div>
+                    <div style={{ fontSize: 17, fontWeight: 900, lineHeight: 1, color: isActive ? "var(--text)" : isToday ? ACCENT : "var(--text)", transition: "color 0.22s" }}>{date.getDate()}</div>
+                    <div style={{ minHeight: 4, marginTop: 1 }}>
+                      {isDone && <div style={{ width: 4, height: 4, borderRadius: "50%", background: ACCENT }} />}
                     </div>
                   </div>
                 </motion.button>
@@ -542,23 +546,27 @@ export default function WorkoutPage() {
       </div>
 
       <div data-dashboard-scroll style={{ flex: 1, overflowY: "auto", padding: "0 16px", paddingBottom: 140 }}>
-        {/* Day selector — card style */}
+        {/* Day selector — sliding glass bubble */}
         <div style={{ display: "flex", gap: 6, padding: "12px 0 20px" }}>
           {weekDates.map((date, i) => {
             const isActive = i === selectedDay
-            const isToday = i === todayDay
-            const dateId = formatLocalDate(date)
-            const isDone = completedDateIds.has(dateId)
+            const isToday  = i === todayDay
+            const dateId   = formatLocalDate(date)
+            const isDone   = completedDateIds.has(dateId)
             return (
               <motion.button key={i} onClick={() => setSelectedDay(i)} whileTap={{ scale: 0.92 }} style={{ flex: 1, border: "none", background: "transparent", cursor: "pointer", padding: 0, position: "relative" }}>
-                <div style={{ width: "100%", borderRadius: 12, padding: "7px 2px 6px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, position: "relative", overflow: "hidden", boxSizing: "border-box", border: isToday && !isActive ? `1.5px solid ${ACCENT}` : "1.5px solid transparent", background: isActive ? "transparent" : isToday ? "transparent" : "var(--surface-2, rgba(255,255,255,0.06))" }}>
-                  {isActive && (
-                    <motion.div layoutId="workout-week-pill" style={{ position: "absolute", inset: 0, borderRadius: 10, background: "linear-gradient(145deg, #7dd4cc 0%, #5aaea7 100%)", boxShadow: "0 4px 14px rgba(107,191,184,0.4), inset 0 1px 0 rgba(255,255,255,0.22)" }} transition={{ type: "spring", stiffness: 420, damping: 34 }} />
-                  )}
-                  <div style={{ position: "relative", zIndex: 1, fontSize: 9, fontWeight: 800, letterSpacing: "0.06em", color: isActive ? "#0b1715" : isToday ? ACCENT : "var(--text-muted)", transition: "color 0.22s" }}>{DAY_ABBR[i]}</div>
-                  <div style={{ position: "relative", zIndex: 1, fontSize: 17, fontWeight: 900, lineHeight: 1, color: isActive ? "#0b1715" : isToday ? ACCENT : "var(--text)", transition: "color 0.22s" }}>{date.getDate()}</div>
-                  <div style={{ minHeight: 4, position: "relative", zIndex: 1, marginTop: 1 }}>
-                    {isDone && <div style={{ width: 4, height: 4, borderRadius: "50%", background: isActive ? "rgba(11,23,21,0.4)" : ACCENT }} />}
+                {isActive && (
+                  <motion.span
+                    layoutId="workout-week-pill"
+                    style={{ position: "absolute", inset: 0, borderRadius: 12, pointerEvents: "none", background: "linear-gradient(180deg, rgba(107,191,184,0.22) 0%, rgba(107,191,184,0.08) 100%)", border: "1px solid rgba(107,191,184,0.32)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 6px 18px rgba(107,191,184,0.18)" }}
+                    transition={{ type: "spring", stiffness: 350, damping: 28, mass: 0.78 }}
+                  />
+                )}
+                <div style={{ width: "100%", borderRadius: 12, padding: "7px 2px 6px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, position: "relative", zIndex: 1, boxSizing: "border-box", border: isToday && !isActive ? `1.5px solid ${ACCENT}` : "1.5px solid transparent", background: !isActive && !isToday ? "var(--surface-2, rgba(255,255,255,0.06))" : "transparent" }}>
+                  <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.06em", color: isActive ? ACCENT : isToday ? ACCENT : "var(--text-muted)", transition: "color 0.22s" }}>{DAY_ABBR[i]}</div>
+                  <div style={{ fontSize: 17, fontWeight: 900, lineHeight: 1, color: isActive ? "var(--text)" : isToday ? ACCENT : "var(--text)", transition: "color 0.22s" }}>{date.getDate()}</div>
+                  <div style={{ minHeight: 4, marginTop: 1 }}>
+                    {isDone && <div style={{ width: 4, height: 4, borderRadius: "50%", background: ACCENT }} />}
                   </div>
                 </div>
               </motion.button>
@@ -1068,15 +1076,18 @@ export default function WorkoutPage() {
                     alignItems: "center", justifyContent: "center",
                     padding: "0 28px", gap: 18,
                   }}>
-                    {/* Progress dots */}
-                    <div style={{ display: "flex", gap: 6 }}>
-                      {todayExercises.map((_, i) => (
-                        <div key={i} style={{
-                          width: i === exIdx ? 20 : 6, height: 6, borderRadius: 3,
-                          background: i <= exIdx ? ACCENT : "rgba(0,0,0,0.12)",
-                          transition: "width 0.3s ease, background 0.3s ease",
-                        }} />
-                      ))}
+                    {/* Exercise progress bar */}
+                    <div style={{ width: 180 }}>
+                      <div style={{ height: 5, background: "rgba(0,0,0,0.09)", borderRadius: 999, overflow: "hidden" }}>
+                        <motion.div
+                          animate={{ width: `${((exIdx + 1) / Math.max(todayExercises.length, 1)) * 100}%` }}
+                          transition={{ type: "spring", stiffness: 200, damping: 26 }}
+                          style={{ height: "100%", background: ACCENT, borderRadius: 999 }}
+                        />
+                      </div>
+                      <div style={{ marginTop: 6, fontSize: 10, fontWeight: 800, color: "rgba(0,0,0,0.28)", letterSpacing: "0.12em", textAlign: "center" }}>
+                        {exIdx + 1} / {todayExercises.length}
+                      </div>
                     </div>
 
                     <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT }}>

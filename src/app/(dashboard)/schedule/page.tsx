@@ -331,16 +331,11 @@ export default function SchedulePage() {
             {monthName} {dateNum}
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8, paddingTop: 4 }}>
-          <button onClick={toggleTheme} style={{ width: 36, height: 36, borderRadius: "50%", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              {theme === "dark" ? <><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></> : <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>}
-            </svg>
-          </button>
-          <button onClick={openAddSchedule} style={{ width: 36, height: 36, borderRadius: "50%", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </button>
-        </div>
+        <button onClick={toggleTheme} style={{ width: 36, height: 36, borderRadius: "50%", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", marginTop: 4 }}>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            {theme === "dark" ? <><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></> : <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>}
+          </svg>
+        </button>
       </div>
 
       <div data-dashboard-scroll style={{ flex: 1, overflowY: "auto", paddingBottom: 100 }}>
@@ -378,11 +373,11 @@ export default function SchedulePage() {
           </div>
         )}
 
-        {/* Week strip — individual day cards */}
+        {/* Week strip — sliding glass bubble (same mechanic as DashboardNav) */}
         <div style={{ display: "flex", gap: 6, padding: "8px 16px 16px" }}>
           {weekDates.map((date, i) => {
             const isActive = i === selectedDay
-            const isToday = i === todayDay
+            const isToday  = i === todayDay
             return (
               <motion.button
                 key={i}
@@ -390,51 +385,37 @@ export default function SchedulePage() {
                 whileTap={{ scale: 0.92 }}
                 style={{ flex: 1, border: "none", background: "transparent", cursor: "pointer", padding: 0, position: "relative" }}
               >
+                {/* Bubble lives on the button — outside any overflow:hidden — so layoutId can travel */}
+                {isActive && (
+                  <motion.span
+                    layoutId="schedule-week-pill"
+                    style={{
+                      position: "absolute", inset: 0, borderRadius: 12, pointerEvents: "none",
+                      background: "linear-gradient(180deg, rgba(107,191,184,0.22) 0%, rgba(107,191,184,0.08) 100%)",
+                      border: "1px solid rgba(107,191,184,0.32)",
+                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 6px 18px rgba(107,191,184,0.18)",
+                    }}
+                    transition={{ type: "spring", stiffness: 350, damping: 28, mass: 0.78 }}
+                  />
+                )}
                 <div style={{
                   width: "100%", borderRadius: 12, padding: "7px 2px 6px",
                   display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-                  position: "relative", overflow: "hidden", boxSizing: "border-box",
+                  position: "relative", zIndex: 1, boxSizing: "border-box",
                   border: isToday && !isActive ? `1.5px solid ${ACCENT}` : "1.5px solid transparent",
-                  background: isActive ? "transparent" : isToday ? "transparent" : "var(--surface-2, rgba(255,255,255,0.06))",
+                  background: !isActive && !isToday ? "var(--surface-2, rgba(255,255,255,0.06))" : "transparent",
                 }}>
-                  {isActive && (
-                    <motion.div
-                      layoutId="schedule-week-pill"
-                      style={{
-                        position: "absolute", inset: 0, borderRadius: 10,
-                        background: "linear-gradient(145deg, #7dd4cc 0%, #5aaea7 100%)",
-                        boxShadow: "0 4px 14px rgba(107,191,184,0.4), inset 0 1px 0 rgba(255,255,255,0.22)",
-                      }}
-                      transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                    />
-                  )}
-                  <div style={{
-                    position: "relative", zIndex: 1,
-                    fontSize: 9, fontWeight: 800, letterSpacing: "0.06em",
-                    color: isActive ? "#0b1715" : isToday ? ACCENT : "var(--text-muted)",
-                    transition: "color 0.22s",
-                  }}>
+                  <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.06em", color: isActive ? ACCENT : isToday ? ACCENT : "var(--text-muted)", transition: "color 0.22s" }}>
                     {DAY_ABBR[i]}
                   </div>
-                  <div style={{
-                    position: "relative", zIndex: 1,
-                    fontSize: 17, fontWeight: 900, lineHeight: 1,
-                    color: isActive ? "#0b1715" : isToday ? ACCENT : "var(--text)",
-                    transition: "color 0.22s",
-                  }}>
+                  <div style={{ fontSize: 17, fontWeight: 900, lineHeight: 1, color: isActive ? "var(--text)" : isToday ? ACCENT : "var(--text)", transition: "color 0.22s" }}>
                     {date.getDate()}
                   </div>
-                  {/* Activity dots from weekSummary */}
+                  {/* Activity dots */}
                   {(weekSummary[i] || []).filter(k => k !== "rst").length > 0 && (
-                    <div style={{ position: "relative", zIndex: 1, display: "flex", gap: 2.5, justifyContent: "center" }}>
+                    <div style={{ display: "flex", gap: 2.5, justifyContent: "center" }}>
                       {(weekSummary[i] || []).filter(k => k !== "rst").slice(0, 3).map((kind, ki) => (
-                        <div
-                          key={ki}
-                          style={{
-                            width: 3, height: 3, borderRadius: "50%",
-                            background: isActive ? "rgba(11,23,21,0.55)" : KIND_DOT[kind] ?? ACCENT,
-                          }}
-                        />
+                        <div key={ki} style={{ width: 3, height: 3, borderRadius: "50%", background: KIND_DOT[kind] ?? ACCENT }} />
                       ))}
                     </div>
                   )}
@@ -658,6 +639,33 @@ export default function SchedulePage() {
               </button>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Add-event FAB — fixed bottom-right in the thumb zone, above nav bar */}
+      <AnimatePresence>
+        {!addOpen && (
+          <motion.button
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            whileTap={{ scale: 0.90 }}
+            transition={{ type: "spring", stiffness: 340, damping: 22 }}
+            onClick={openAddSchedule}
+            style={{
+              position: "fixed", right: 20,
+              bottom: "max(90px, calc(env(safe-area-inset-bottom) + 80px))",
+              zIndex: 60, width: 52, height: 52, borderRadius: "50%",
+              background: ACCENT, border: "none", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 4px 20px rgba(107,191,184,0.45), 0 2px 8px rgba(0,0,0,0.12)",
+              color: "#0d1f1e",
+            }}
+          >
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </motion.button>
         )}
       </AnimatePresence>
 
