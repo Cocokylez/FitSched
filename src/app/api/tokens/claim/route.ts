@@ -100,18 +100,34 @@ export async function POST(req: Request) {
       const result = await mintFitTokensOnChain(walletAddress, claimableNum, "app_claim")
       txHash = result.txHash
     } catch (contractErr) {
-      // Compensate: roll back the reservation so user can retry
-      await db.$executeRaw`
-        UPDATE "FitTokenBalance"
-        SET    "claimedAmount" = "claimedAmount" - ${claimableNum}::numeric,
-               "updatedAt"     = NOW()
-        WHERE  "userId" = ${userId}
-      `
-      console.error("tokens-claim: on-chain mint failed, reservation rolled back:", contractErr)
-      return NextResponse.json(
-        { error: "On-chain mint failed. Your FIT balance is unchanged. Please try again." },
-        { status: 500 },
-      )
+      // Compensate: roll back the reservation so user can retry.
+      // Wrapped in its own try/catch — if the rollback itself fails, the user's
+      // claimedAmount is incremented but no tokens were minted. Log loudly so
+      // it can be corrected manually; never silently swallow this.
+      try {
+        await db.$executeRaw`
+          UPDATE "FitTokenBalance"
+          SET    "claimedAmount" = "claimedAmount" - ${claimableNum}::numeric,
+                 "updatedAt"     = NOW()
+          WHERE  "userId" = ${userId}
+        `
+        console.error("tokens-claim: on-chain mint failed, reservation rolled back:", contractErr)
+        return NextResponse.json(
+          { error: "On-chain mint failed. Your FIT balance is unchanged. Please try again." },
+          { status: 500 },
+        )
+      } catch (rollbackErr) {
+        // ⚠️ CRITICAL: reservation incremented but tokens never minted.
+        // Manual correction required: set claimedAmount back by ${claimableNum} for userId.
+        console.error(
+          "tokens-claim: CRITICAL — compensation rollback failed. User balance requires manual correction.",
+          { userId, claimableNum, contractErr, rollbackErr },
+        )
+        return NextResponse.json(
+          { error: "A critical error occurred processing your claim. Please contact support." },
+          { status: 500 },
+        )
+      }
     }
 
     // ── Step 5: Store claim receipt (audit trail) ──────────────────────────────
