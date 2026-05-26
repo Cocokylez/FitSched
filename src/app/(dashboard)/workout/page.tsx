@@ -12,7 +12,7 @@ import { getSmartExercisePlan, parseSetsReps, toWorkoutExercises } from "@/lib/w
 import { getFeedbackAdjustedExperienceLevel } from "@/lib/workoutFeedback"
 import { MUSCLE_GROUPS, getMuscleGroup } from "@/lib/exerciseData"
 import { formatLocalDate } from "@/lib/dateUtils"
-import { ACCENT } from "@/lib/theme"
+import { ACCENT, ACCENT_DIM, ACCENT_BD } from "@/lib/theme"
 import { getCategory, CATEGORY_COLORS } from "@/lib/exerciseUtils"
 import { WorkoutTemplatesModal } from "@/components/WorkoutTemplatesModal"
 import { ExerciseDemoVisual } from "@/components/ExerciseDemoPanel"
@@ -208,6 +208,11 @@ export default function WorkoutPage() {
   const [templateExercises, setTemplateExercises] = useState<Array<[string, string]> | null>(null)
   const [muscleReadiness, setMuscleReadiness] = useState<Array<{ group: string; status: "fresh" | "recovering" | "sore" | "untrained" }> | null>(null)
   const [workoutsPerWeek, setWorkoutsPerWeek] = useState(3)
+  // Exercise walkthrough flow
+  const [exMode, setExMode] = useState<"idle" | "countdown" | "active" | "done">("idle")
+  const [exIdx, setExIdx] = useState(0)
+  const [cdCount, setCdCount] = useState(3)
+  const [completing, setCompleting] = useState(false)
   const dayNames = [t.days.sun, t.days.mon, t.days.tue, t.days.wed, t.days.thu, t.days.fri, t.days.sat]
   const DAY_ABBR = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
 
@@ -453,6 +458,23 @@ export default function WorkoutPage() {
     compute()
   }, [status, selectedDay])
 
+  // 3-2-1 countdown effect — re-runs whenever we enter countdown or advance to next exercise
+  useEffect(() => {
+    if (exMode !== "countdown") return
+    setCdCount(3)
+    let n = 3
+    const timerId = setInterval(() => {
+      n--
+      if (n <= 0) {
+        clearInterval(timerId)
+        setExMode("active")
+      } else {
+        setCdCount(n)
+      }
+    }, 1000)
+    return () => clearInterval(timerId)
+  }, [exMode, exIdx])
+
   const selectedDate = weekDates[selectedDay]
   const selectedDateId = selectedDate ? formatLocalDate(selectedDate) : ""
   const todayDateId = formatLocalDate(new Date())
@@ -519,6 +541,45 @@ export default function WorkoutPage() {
       updated[index] = { ...updated[index], [field]: parseInt(value) }
       return updated
     })
+  }
+
+  // ── Exercise flow handlers ──────────────────────────────────────────────────
+  function startExFlow() {
+    if (!todayExercises.length) return
+    setExIdx(0)
+    setExMode("countdown")
+  }
+
+  function advanceEx() {
+    if (exIdx + 1 < todayExercises.length) {
+      setExIdx(i => i + 1)
+      setExMode("countdown")
+    } else {
+      setExMode("done")
+    }
+  }
+
+  async function finishWorkout() {
+    const selDate = weekDates[selectedDay]
+    if (!selDate) return
+    setCompleting(true)
+    const dateStr = formatLocalDate(selDate)
+    const exs = todayExercises.map(([name, reps]) => ({ name, ...parseSetsReps(reps) }))
+    try {
+      const res = await fetch("/api/workout-log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: dateStr, workoutName: muscle, exercises: exs }),
+      })
+      if (res.ok) {
+        window.dispatchEvent(new Event("fitsched:tokens-updated"))
+        window.dispatchEvent(new Event("fitsched:workout-completed"))
+        setCompletedDateIds(prev => new Set([...prev, dateStr]))
+      }
+    } catch {}
+    setCompleting(false)
+    setExMode("idle")
+    setCompleted(true)
   }
 
   const modalStyle = {
@@ -792,16 +853,9 @@ export default function WorkoutPage() {
               {saveSuccess ? t.savedToSchedule : t.saveToSchedule}
             </button>
             <button
-              onClick={() => {
-                const selectedDate = weekDates[selectedDay]
-                if (!selectedDate) return
-                const dateStr = formatLocalDate(selectedDate)
-                sessionStorage.setItem("fitsched-active-workout", JSON.stringify({ date: dateStr, workoutName: muscle, exercises: currentExercises.map(e => ({ ...e })) }))
-                router.push("/exercise")
-              }}
-              style={{ width: "100%", border: "none", background: "#6bbfb8", color: "#0b1715", borderRadius: 14, padding: 13, fontSize: 14, fontWeight: 950, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 4px 16px rgba(107,191,184,0.3)" }}
+              onClick={startExFlow}
+              style={{ width: "100%", border: "none", background: "#6bbfb8", color: "#0b1715", borderRadius: 14, padding: 13, fontSize: 14, fontWeight: 950, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px rgba(107,191,184,0.3)" }}
             >
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6.5 6.5h11"/><path d="M6.5 17.5h11"/><path d="M3 9.5h2v5H3z"/><path d="M19 9.5h2v5h-2z"/><path d="M5 12h14"/></svg>
               {t.goExercise}
             </button>
           </div>
@@ -821,6 +875,288 @@ export default function WorkoutPage() {
                 onLoad={(exs) => { setTemplateExercises(exs) }}
                 onClose={() => setShowTemplates(false)}
               />
+            )}
+          </AnimatePresence>
+
+          {/* ── Fullscreen exercise walkthrough ─────────────────────────────── */}
+          <AnimatePresence>
+            {exMode !== "idle" && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.22 }}
+                style={{
+                  position: "fixed", inset: 0, zIndex: 9998,
+                  background: "#0b1715",
+                  display: "flex", flexDirection: "column",
+                  userSelect: "none",
+                }}
+              >
+                {/* Top progress bar */}
+                <div style={{ height: 3, background: "rgba(255,255,255,0.07)", flexShrink: 0 }}>
+                  <motion.div
+                    animate={{ width: `${((exIdx + (exMode === "done" ? 1 : 0)) / todayExercises.length) * 100}%` }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    style={{ height: "100%", background: ACCENT, borderRadius: 999 }}
+                  />
+                </div>
+
+                {/* Back/close */}
+                <button
+                  onClick={() => setExMode("idle")}
+                  style={{
+                    position: "absolute", top: 18, left: 18, zIndex: 1,
+                    width: 36, height: 36, borderRadius: "50%",
+                    background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)",
+                    color: "rgba(255,255,255,0.65)", fontSize: 18,
+                    display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                  }}
+                >
+                  ←
+                </button>
+
+                {/* Exercise counter */}
+                <div style={{
+                  paddingTop: 22, textAlign: "center",
+                  fontSize: 10, fontWeight: 800, letterSpacing: "0.16em",
+                  color: "rgba(255,255,255,0.3)",
+                }}>
+                  {exMode !== "done"
+                    ? `${exIdx + 1} / ${todayExercises.length}`
+                    : `${todayExercises.length} / ${todayExercises.length}`}
+                </div>
+
+                {/* ── Countdown screen ─────────────────────────────────────────── */}
+                {exMode === "countdown" && (
+                  <div style={{
+                    flex: 1, display: "flex", flexDirection: "column",
+                    alignItems: "center", justifyContent: "center",
+                    padding: "0 28px", gap: 20,
+                  }}>
+                    {/* Progress dots */}
+                    <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+                      {todayExercises.map((_, i) => (
+                        <div key={i} style={{
+                          width: i === exIdx ? 20 : 6, height: 6, borderRadius: 3,
+                          background: i < exIdx ? ACCENT : i === exIdx ? ACCENT : "rgba(255,255,255,0.15)",
+                          transition: "width 0.3s ease, background 0.3s ease",
+                          opacity: i > exIdx ? 0.5 : 1,
+                        }} />
+                      ))}
+                    </div>
+
+                    <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.18em", color: ACCENT, textTransform: "uppercase" }}>
+                      Up next
+                    </div>
+
+                    {/* Animated countdown number */}
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={cdCount}
+                        initial={{ opacity: 0, scale: 0.45, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 1.5, y: -20 }}
+                        transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                        style={{
+                          fontFamily: "var(--font-display)",
+                          fontSize: 120, fontWeight: 900, lineHeight: 1,
+                          color: "#fff", letterSpacing: "-0.05em",
+                        }}
+                      >
+                        {cdCount}
+                      </motion.div>
+                    </AnimatePresence>
+
+                    <div style={{
+                      fontFamily: "var(--font-display)",
+                      fontSize: 26, fontWeight: 900, color: "#fff",
+                      letterSpacing: "-0.025em", textAlign: "center", lineHeight: 1.2,
+                    }}>
+                      {todayExercises[exIdx]?.[0]}
+                    </div>
+                    <div style={{
+                      background: ACCENT_DIM, border: `1px solid ${ACCENT_BD}`,
+                      borderRadius: 999, padding: "5px 16px",
+                      fontSize: 12, fontWeight: 800, color: ACCENT,
+                    }}>
+                      {todayExercises[exIdx]?.[1]}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Active exercise screen ────────────────────────────────────── */}
+                {exMode === "active" && (() => {
+                  const [exName, exSR] = todayExercises[exIdx] || ["", ""]
+                  const isLast = exIdx + 1 >= todayExercises.length
+                  return (
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                      {/* Large demo visual */}
+                      <div style={{
+                        flex: 1, display: "flex", alignItems: "center",
+                        justifyContent: "center", padding: "12px 16px 4px",
+                        minHeight: 0,
+                      }}>
+                        <motion.div
+                          key={exIdx}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+                          style={{
+                            width: "min(100%, 340px)", aspectRatio: "1 / 1",
+                            borderRadius: 26, overflow: "hidden",
+                          }}
+                        >
+                          <ExerciseDemoVisual exerciseName={exName} compact={false} height={340} objectFit="contain" />
+                        </motion.div>
+                      </div>
+
+                      {/* Bottom info card */}
+                      <motion.div
+                        key={`info-${exIdx}`}
+                        initial={{ y: 48, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+                        style={{
+                          background: "rgba(255,255,255,0.04)",
+                          borderTop: "1px solid rgba(255,255,255,0.07)",
+                          borderRadius: "28px 28px 0 0",
+                          padding: "22px 22px",
+                          paddingBottom: "max(22px, env(safe-area-inset-bottom))",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <div style={{ marginBottom: 16 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                            <span style={{
+                              background: ACCENT_DIM, border: `1px solid ${ACCENT_BD}`,
+                              borderRadius: 999, padding: "3px 12px",
+                              fontSize: 11, fontWeight: 800, color: ACCENT,
+                            }}>
+                              {exSR}
+                            </span>
+                            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontWeight: 700, letterSpacing: "0.04em" }}>
+                              {getMuscleGroup(exName).toUpperCase()}
+                            </span>
+                          </div>
+                          <div style={{
+                            fontFamily: "var(--font-display)",
+                            fontSize: 28, fontWeight: 900, color: "#fff",
+                            letterSpacing: "-0.025em", lineHeight: 1.1, marginBottom: 6,
+                          }}>
+                            {exName}
+                          </div>
+                          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>
+                            {getExerciseDesc(exName)}
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={advanceEx}
+                          style={{
+                            width: "100%", border: "none",
+                            background: ACCENT, color: "#0b1715",
+                            borderRadius: 16, padding: "15px 24px",
+                            fontSize: 15, fontWeight: 900, cursor: "pointer",
+                            fontFamily: "var(--font-display)", letterSpacing: "-0.01em",
+                            boxShadow: "0 4px 20px rgba(107,191,184,0.35)",
+                          }}
+                        >
+                          {isLast ? "Finish ✓" : "Next →"}
+                        </button>
+                      </motion.div>
+                    </div>
+                  )
+                })()}
+
+                {/* ── Done screen ───────────────────────────────────────────────── */}
+                {exMode === "done" && (
+                  <div style={{
+                    flex: 1, display: "flex", flexDirection: "column",
+                    alignItems: "center", justifyContent: "center",
+                    padding: "0 24px", gap: 20, overflowY: "auto",
+                  }}>
+                    <motion.div
+                      initial={{ scale: 0, rotate: -30 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ type: "spring", stiffness: 220, damping: 16, delay: 0.1 }}
+                      style={{
+                        width: 72, height: 72, borderRadius: "50%",
+                        background: ACCENT_DIM, border: `2px solid ${ACCENT}`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.22 }}
+                      style={{ textAlign: "center" }}
+                    >
+                      <div style={{
+                        fontFamily: "var(--font-display)",
+                        fontSize: 32, fontWeight: 900, color: "#fff",
+                        letterSpacing: "-0.03em", marginBottom: 6,
+                      }}>
+                        All done! 💪
+                      </div>
+                      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>
+                        {todayExercises.length} exercises · ~{Math.round(todayExercises.length * 4)} min
+                      </div>
+                    </motion.div>
+
+                    {/* Exercise summary list */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.32 }}
+                      style={{
+                        width: "100%", background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.07)",
+                        borderRadius: 18, padding: "4px 18px",
+                      }}
+                    >
+                      {todayExercises.map(([name, sr], i) => (
+                        <div key={i} style={{
+                          display: "flex", alignItems: "center", gap: 10, padding: "11px 0",
+                          borderBottom: i < todayExercises.length - 1
+                            ? "1px solid rgba(255,255,255,0.06)" : "none",
+                        }}>
+                          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          <span style={{ flex: 1, fontSize: 13, color: "#fff", fontWeight: 700 }}>{name}</span>
+                          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontWeight: 600 }}>{sr}</span>
+                        </div>
+                      ))}
+                    </motion.div>
+
+                    <motion.button
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.44 }}
+                      onClick={finishWorkout}
+                      disabled={completing}
+                      style={{
+                        width: "100%", border: "none",
+                        background: ACCENT, color: "#0b1715",
+                        borderRadius: 16, padding: "16px 24px",
+                        fontSize: 16, fontWeight: 900,
+                        cursor: completing ? "default" : "pointer",
+                        fontFamily: "var(--font-display)", letterSpacing: "-0.01em",
+                        boxShadow: "0 4px 20px rgba(107,191,184,0.35)",
+                        opacity: completing ? 0.7 : 1,
+                      }}
+                    >
+                      {completing ? "Saving…" : "Complete workout →"}
+                    </motion.button>
+                  </div>
+                )}
+              </motion.div>
             )}
           </AnimatePresence>
 
