@@ -31,7 +31,8 @@ export async function POST(req: Request) {
     const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.strictWrite, "hike:post")
     if (limited) return limited
 
-    const body = await readJsonBody(req)
+    // routePoints can be up to ~400 waypoints; allow 100 KB for this route
+    const body = await readJsonBody(req, 100_000)
     const { name, distanceKm, durationMin, elevationM, locationName, routePoints, notes, loggedAt } = body
 
     const distKm = Number(distanceKm)
