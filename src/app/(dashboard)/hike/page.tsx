@@ -58,6 +58,7 @@ export default function HikePage() {
 
   // Offline save feedback
   const [savedOffline, setSavedOffline] = useState(false)
+  const [saveError, setSaveError]       = useState<string | null>(null)
   const [pendingCount, setPendingCount] = useState(0)
 
   // FitToken reward toast
@@ -102,6 +103,7 @@ export default function HikePage() {
     const r = pendingResultRef.current
     if (!r) return
     setSaving(true)
+    setSaveError(null)
 
     const hikeData = {
       name:         saveName.trim() || "Hike",
@@ -114,6 +116,7 @@ export default function HikePage() {
       loggedAt:     new Date().toISOString(),
     }
 
+    let networkError = false
     try {
       const res = await fetch("/api/hike", {
         method:  "POST",
@@ -131,17 +134,27 @@ export default function HikePage() {
           setTokenReward({ amount: data.fitTokenReward.amount, rewardKm, totalKm, excluded })
           setTimeout(() => setTokenReward(null), 6000)
         }
+        setSaving(false)
         setShowSave(false)
         setSaveName(""); setSaveLoc(""); setSaveNotes("")
         pendingResultRef.current = null
         setTrackerKey(k => k + 1)
         return
       }
+
+      // Server returned a real error (4xx/5xx) — show it, don't queue offline
+      const errData = await res.json().catch(() => null)
+      setSaveError(errData?.error || `Save failed (${res.status}) — please try again`)
+      setSaving(false)
+      return
     } catch {
-      // Network unavailable — fall through to offline queue
+      // Actual network failure (offline, DNS, etc.) — fall through to offline queue
+      networkError = true
     }
 
-    // ── Offline path ──────────────────────────────────────────────────────────
+    if (!networkError) { setSaving(false); return }
+
+    // ── Offline path — only reached on a genuine network failure ──────────────
     try {
       await queueHike(hikeData)
       await requestSync()
@@ -152,11 +165,11 @@ export default function HikePage() {
     playSound("confirmation_002.ogg", 0.5)
     setSavedOffline(true)
     setTimeout(() => setSavedOffline(false), 4000)
+    setSaving(false)
     setShowSave(false)
     setSaveName(""); setSaveLoc(""); setSaveNotes("")
     pendingResultRef.current = null
     setTrackerKey(k => k + 1)
-    setSaving(false)
   }
 
   function discardHike() {
@@ -408,6 +421,18 @@ export default function HikePage() {
                   <label style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: "0.09em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 6 }}>Notes</label>
                   <textarea value={saveNotes} onChange={e => setSaveNotes(e.target.value)} placeholder="How was it?" rows={2} style={{ ...inp, resize: "none" }} />
                 </div>
+                {saveError && (
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 8,
+                    background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)",
+                    borderRadius: 12, padding: "10px 14px",
+                  }}>
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <span style={{ fontSize: 12, color: "#f87171", lineHeight: 1.4 }}>{saveError}</span>
+                  </div>
+                )}
                 <motion.button
                   onClick={saveHike} disabled={saving}
                   whileTap={!saving ? { scale: 0.97 } : {}}

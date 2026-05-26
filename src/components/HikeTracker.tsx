@@ -453,11 +453,27 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
     if (watchRef.current !== null) navigator.geolocation.clearWatch(watchRef.current)
     if (timerRef.current) clearInterval(timerRef.current)
     playSound("confirmation_001.ogg", 0.65)
+
+    // Subsample to ≤ 400 waypoints so the JSON body stays under the server's
+    // 100 KB limit. 400 evenly-spaced points are more than enough for anti-cheat
+    // speed analysis and route drawing.
+    const MAX_WP = 400
+    const raw    = waypointsRef.current
+    let routePoints: Waypoint[]
+    if (raw.length <= MAX_WP) {
+      routePoints = raw
+    } else {
+      routePoints = [raw[0]]
+      const step  = (raw.length - 1) / (MAX_WP - 1)
+      for (let i = 1; i < MAX_WP - 1; i++) routePoints.push(raw[Math.round(i * step)])
+      routePoints.push(raw[raw.length - 1])
+    }
+
     onFinish({
       distanceKm: Math.round(distanceRef.current * 100) / 100,
       durationMin: Math.max(1, Math.round(elapsed / 60)),
       elevationM:  elevGainRef.current > 1 ? Math.round(elevGainRef.current) : null,
-      routePoints: waypointsRef.current,
+      routePoints,
     })
   }
 
