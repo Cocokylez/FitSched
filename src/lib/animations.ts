@@ -11,10 +11,3 @@ export const fadeUp = {
   },
 }
 
-export const scaleIn = {
-  hidden: { opacity: 0, scale: 0.88 },
-  visible: {
-    opacity: 1, scale: 1,
-    transition: { type: "spring" as const, stiffness: 280, damping: 22 },
-  },
-}

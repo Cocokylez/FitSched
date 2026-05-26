@@ -135,7 +135,7 @@ export async function GET(req: Request) {
             await db.streakMilestone.create({ data: { userId, milestone: ms } })
             newMilestone = ms
             sendPushToUser(userId, {
-              title: `🔥 ${ms}-day streak!`,
+              title: `${ms}-day streak!`,
               body: ms >= 30 ? "Incredible! One month of consistent training." : ms >= 14 ? "Two weeks strong! You're building a habit." : ms >= 7 ? "One week down. You're on a roll!" : "3 days in a row — the habit is forming!",
               url: "/report",
             }).catch(() => {})

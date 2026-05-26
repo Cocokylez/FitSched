@@ -10,7 +10,7 @@
  * flag before reaching the mint call.
  */
 
-// 🔒 Prevents this file from being imported in client components.
+// Prevents this file from being imported in client components.
 // Next.js will throw a build error if it is — protecting DISTRIBUTOR_PRIVATE_KEY.
 import "server-only"
 
