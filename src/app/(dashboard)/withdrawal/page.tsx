@@ -339,14 +339,22 @@ export default function WithdrawalPage() {
           {/* Connected address — when set + not editing */}
           {data?.walletAddress && !editingWallet && (
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{
-                flex: 1, background: "var(--surface-2)", border: "1px solid var(--border)",
-                borderRadius: 10, padding: "10px 14px", fontFamily: "monospace",
-                fontSize: 13, fontWeight: 600, color: "var(--text)",
-                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-              }}>
-                {data.walletAddress}
-              </div>
+              <a
+                href={basescanAddressUrl(data.walletAddress)}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={data.walletAddress}
+                style={{
+                  flex: 1, background: "var(--surface-2)", border: "1px solid var(--border)",
+                  borderRadius: 10, padding: "10px 14px", fontFamily: "monospace",
+                  fontSize: 13, fontWeight: 600, color: "var(--text-muted)",
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  textDecoration: "none", gap: 8,
+                }}
+              >
+                <span>{truncateAddress(data.walletAddress)}</span>
+                <ExternalLink size={12} strokeWidth={2} color="var(--text-muted)" style={{ flexShrink: 0, opacity: 0.6 }} />
+              </a>
               <AnimatePresence>
                 {walletSaved && (
                   <motion.div
