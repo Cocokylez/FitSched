@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react"
 import { motion, useInView, AnimatePresence } from "framer-motion"
 import {
   ArrowRight, Flame, Zap, Navigation, BarChart2,
-  Calendar, CheckCheck, Dumbbell, ChevronDown,
+  Calendar, CheckCheck, Dumbbell, ChevronDown, Globe2,
 } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
 import { ACCENT, ACCENT_DIM, ACCENT_BD } from "@/lib/theme"
@@ -489,19 +489,19 @@ function Navbar() {
           <button
             onClick={() => setLangOpen(v => !v)}
             style={{
-              display: "flex", alignItems: "center", gap: 6,
-              background: "var(--surface-2)", border: "1px solid var(--border)",
-              borderRadius: 999, padding: "6px 12px 6px 8px",
-              color: "var(--text)", fontSize: 13, fontWeight: 600,
+              display: "flex", alignItems: "center", gap: 5,
+              background: ACCENT_DIM, border: `1px solid ${ACCENT_BD}`,
+              borderRadius: 999, padding: "7px 12px",
+              color: ACCENT, fontSize: 12, fontWeight: 800,
               cursor: "pointer", fontFamily: "inherit",
               transition: "background 0.15s, border-color 0.15s",
             }}
           >
-            <span style={{ fontSize: 16, lineHeight: 1 }}>{current.flag}</span>
-            <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.01em" }}>{current.native}</span>
+            <Globe2 size={13} color={ACCENT} strokeWidth={2.2} />
+            <span style={{ letterSpacing: "0.04em" }}>{language}</span>
             <ChevronDown
-              size={12} strokeWidth={2.5} color="var(--text-muted)"
-              style={{ transform: langOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}
+              size={12} strokeWidth={2.2} color={ACCENT}
+              style={{ transform: langOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.18s ease" }}
             />
           </button>
 
