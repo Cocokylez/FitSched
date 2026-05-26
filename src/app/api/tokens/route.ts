@@ -40,18 +40,26 @@ export async function GET(req: Request) {
           },
         },
         orderBy: { createdAt: "desc" },
-        take: 5,
+        take: 20,
       }),
       db.user.findUnique({
         where: { id: session.user.id },
-        select: { ftBoostArmed: true },
+        select: { ftBoostArmed: true, walletAddress: true },
       }).catch(() => null),
     ])
 
+    const totalEarned  = Number(balance?.amount        || 0)
+    const totalClaimed = Number(balance?.claimedAmount || 0)
+    const claimable    = Math.max(0, totalEarned - totalClaimed)
+
     return NextResponse.json({
-      balance: Number(balance?.amount || 0),
-      transactions: transactions.map(formatTransaction),
-      ftBoostArmed: (user as any)?.ftBoostArmed ?? false,
+      balance:       totalEarned,
+      claimable,
+      claimed:       totalClaimed,
+      transactions:  transactions.map(formatTransaction),
+      ftBoostArmed:  (user as any)?.ftBoostArmed  ?? false,
+      walletAddress: (user as any)?.walletAddress ?? null,
+      tokenDeployed: Boolean(process.env.FIT_TOKEN_ADDRESS),
     })
   } catch (error) {
     console.error("FitToken GET error:", error)
