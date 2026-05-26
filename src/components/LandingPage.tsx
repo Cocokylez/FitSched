@@ -5,7 +5,7 @@ import { useRef, useState } from "react"
 import { motion, useInView, AnimatePresence } from "framer-motion"
 import {
   ArrowRight, Flame, Zap, Navigation, BarChart2,
-  Calendar, CheckCheck, Dumbbell, Globe2, ChevronDown,
+  Calendar, CheckCheck, Dumbbell, ChevronDown,
 } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
 import { ACCENT, ACCENT_DIM, ACCENT_BD } from "@/lib/theme"
@@ -426,16 +426,30 @@ function ProgressCard() {
 // ── Navbar ────────────────────────────────────────────────────────────────────
 
 const LANG_OPTIONS = [
-  { id: "EN" as const, label: "English" },
-  { id: "CN" as const, label: "中文" },
-  { id: "JP" as const, label: "日本語" },
-  { id: "VI" as const, label: "Tiếng Việt" },
+  { id: "EN" as const, native: "English",     flag: "🇺🇸" },
+  { id: "CN" as const, native: "中文",          flag: "🇨🇳" },
+  { id: "JP" as const, native: "日本語",        flag: "🇯🇵" },
+  { id: "VI" as const, native: "Tiếng Việt",   flag: "🇻🇳" },
 ]
 
 function Navbar() {
   const { language, changeLanguage, t } = useLanguage()
   const [langOpen, setLangOpen] = useState(false)
   const langRef = useRef<HTMLDivElement>(null)
+
+  // Close on outside click
+  useEffect(() => {
+    if (!langOpen) return
+    function handleClick(e: MouseEvent) {
+      if (langRef.current && !langRef.current.contains(e.target as Node)) {
+        setLangOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [langOpen])
+
+  const current = LANG_OPTIONS.find(l => l.id === language)!
 
   return (
     <motion.nav
@@ -454,6 +468,7 @@ function Navbar() {
         backdropFilter: "blur(18px)",
       }}
     >
+      {/* Brand */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{
           width: 30, height: 30, borderRadius: 9,
@@ -471,60 +486,72 @@ function Navbar() {
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        {/* Language picker */}
+
+        {/* ── Language picker ── */}
         <div ref={langRef} style={{ position: "relative" }}>
           <button
             onClick={() => setLangOpen(v => !v)}
             style={{
-              display: "flex", alignItems: "center", gap: 5,
-              background: ACCENT_DIM, border: `1px solid ${ACCENT_BD}`,
-              borderRadius: 999, padding: "7px 12px",
-              color: ACCENT, fontSize: 12, fontWeight: 800,
+              display: "flex", alignItems: "center", gap: 6,
+              background: "var(--surface-2)", border: "1px solid var(--border)",
+              borderRadius: 999, padding: "6px 12px 6px 8px",
+              color: "var(--text)", fontSize: 13, fontWeight: 600,
               cursor: "pointer", fontFamily: "inherit",
+              transition: "background 0.15s, border-color 0.15s",
             }}
           >
-            <Globe2 size={13} strokeWidth={2.2} />
-            {language}
+            <span style={{ fontSize: 16, lineHeight: 1 }}>{current.flag}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.01em" }}>{current.native}</span>
             <ChevronDown
-              size={12} strokeWidth={2.2}
-              style={{ transform: langOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.18s ease" }}
+              size={12} strokeWidth={2.5} color="var(--text-muted)"
+              style={{ transform: langOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}
             />
           </button>
 
           <AnimatePresence>
             {langOpen && (
               <motion.div
-                initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                initial={{ opacity: 0, y: -8, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -6, scale: 0.97 }}
-                transition={{ duration: 0.15 }}
+                exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
                 style={{
-                  position: "absolute", top: 42, right: 0,
-                  width: 150,
-                  background: "var(--panel)", backdropFilter: "blur(18px)",
+                  position: "absolute", top: "calc(100% + 8px)", right: 0,
+                  width: 180,
+                  background: "var(--panel)",
+                  backdropFilter: "blur(20px)",
+                  WebkitBackdropFilter: "blur(20px)",
                   border: "1px solid var(--border)",
-                  borderRadius: 14, padding: 6,
+                  borderRadius: 16, padding: 5,
                   boxShadow: "var(--shadow-lg)",
                   zIndex: 50,
                 }}
               >
-                {LANG_OPTIONS.map(item => {
+                {LANG_OPTIONS.map((item, i) => {
                   const active = item.id === language
                   return (
                     <button
                       key={item.id}
                       onClick={() => { changeLanguage(item.id); setLangOpen(false) }}
                       style={{
-                        width: "100%", background: active ? ACCENT_DIM : "transparent",
-                        border: "none", borderRadius: 10, padding: "9px 10px",
-                        color: active ? ACCENT : "var(--text-muted)",
-                        display: "flex", alignItems: "center", justifyContent: "space-between",
-                        fontSize: 12, fontWeight: active ? 800 : 600,
+                        width: "100%",
+                        background: active ? ACCENT_DIM : "transparent",
+                        border: `1px solid ${active ? ACCENT_BD : "transparent"}`,
+                        borderRadius: 11, padding: "9px 11px",
+                        color: active ? ACCENT : "var(--text)",
+                        display: "flex", alignItems: "center", gap: 10,
+                        fontSize: 13, fontWeight: active ? 700 : 500,
                         cursor: "pointer", fontFamily: "inherit",
+                        marginBottom: i < LANG_OPTIONS.length - 1 ? 2 : 0,
+                        transition: "background 0.12s, border-color 0.12s",
                       }}
                     >
-                      <span>{item.label}</span>
-                      <span style={{ opacity: 0.5, fontSize: 11 }}>{item.id}</span>
+                      <span style={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }}>{item.flag}</span>
+                      <span style={{ flex: 1, textAlign: "left" }}>{item.native}</span>
+                      <span style={{
+                        fontSize: 10, fontWeight: 800, letterSpacing: "0.06em",
+                        color: active ? ACCENT : "var(--text-muted)", opacity: active ? 1 : 0.6,
+                      }}>{item.id}</span>
                     </button>
                   )
                 })}
@@ -533,6 +560,7 @@ function Navbar() {
           </AnimatePresence>
         </div>
 
+        {/* CTA */}
         <Link href="/register" style={{
           display: "flex", alignItems: "center", gap: 6,
           background: ACCENT, color: "#0d1f1e",
