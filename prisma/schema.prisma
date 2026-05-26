@@ -48,6 +48,7 @@ model User {
   streakFreezeArmed       Boolean                  @default(false)
   ftBoostArmed            Boolean                  @default(false)
   walletAddress           String?                  // Base EVM address for FIT token claims
+  claimReceipts           ClaimReceipt[]
 }
 
 model Account {
@@ -347,6 +348,23 @@ model WorkoutTemplate {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// Permanent audit log of every on-chain FIT claim.
+// Written after mintReward() succeeds — never deleted.
+model ClaimReceipt {
+  id            String   @id @default(cuid())
+  userId        String
+  txHash        String   @unique              // on-chain tx hash
+  amount        Decimal  @db.Decimal(10, 2)  // FIT claimed (human-readable)
+  walletAddress String                        // destination wallet at time of claim
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([userId, createdAt])
 }
 
 model UserAchievement {
