@@ -439,8 +439,8 @@ export default function WeightPage() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.12em", color: "var(--text-muted)" }}>
-                WEIGHT TREND
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)" }}>
+                Weight trend
               </div>
               {goalKg != null && (
                 <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 800, color: "#f97316" }}>
@@ -448,7 +448,7 @@ export default function WeightPage() {
                   Goal: {displayWeight(goalKg)} {unit}
                   {latest && (
                     <span style={{ color: "var(--text-muted)", fontWeight: 600 }}>
-                      ({latest.weightKg > goalKg ? `${(displayWeight(latest.weightKg) - displayWeight(goalKg)).toFixed(1)} ${unit} to go` : "✓ reached"})
+                      ({latest.weightKg > goalKg ? `${(displayWeight(latest.weightKg) - displayWeight(goalKg)).toFixed(1)} ${unit} to go` : "reached"})
                     </span>
                   )}
                 </div>
@@ -545,8 +545,8 @@ export default function WeightPage() {
               borderRadius: 18, overflow: "hidden",
             }}
           >
-            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.12em", color: "var(--text-muted)", padding: "14px 18px 10px" }}>
-              HISTORY
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", padding: "14px 18px 10px" }}>
+              History
             </div>
             {[...entries].reverse().map((entry, i) => (
               <div
