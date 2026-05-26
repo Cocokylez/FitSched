@@ -216,6 +216,7 @@ export default function WorkoutPage() {
   const [cdCount, setCdCount] = useState(3)
   const [completing, setCompleting] = useState(false)
   const [verifySettled, setVerifySettled] = useState(false)
+  const [verifyRequesting, setVerifyRequesting] = useState(false)
   const sessionStartRef = useRef<number>(0)
   const { state: verifyState, challenge, start: startVerify, getResult, stop: stopVerify } = useWorkoutVerification()
   const dayNames = [t.days.sun, t.days.mon, t.days.tue, t.days.wed, t.days.thu, t.days.fri, t.days.sat]
@@ -563,8 +564,13 @@ export default function WorkoutPage() {
     setExMode("countdown")
   }
 
-  function handleEnableMic() {
-    startVerify()
+  async function handleEnableMic() {
+    setVerifyRequesting(true)
+    // Await so the browser permission dialog completes before we transition
+    // away — otherwise the dialog can be buried under the countdown screen
+    // on some browsers and silently dismissed.
+    await startVerify()
+    setVerifyRequesting(false)
     setVerifySettled(true)
     beginSession()
   }
@@ -1100,31 +1106,53 @@ export default function WorkoutPage() {
                       border: "1px solid rgba(0,0,0,0.08)",
                       borderRadius: 16, padding: "14px 16px",
                       fontSize: 12, color: "rgba(0,0,0,0.45)", lineHeight: 1.55,
+                      display: "flex", alignItems: "flex-start", gap: 9,
                     }}>
-                      🔒 Mic audio is <strong style={{ color: "#111827" }}>never recorded or sent</strong>. It's processed locally — only breathing rhythm is detected.
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="rgba(0,0,0,0.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                      </svg>
+                      <span>Mic audio is <strong style={{ color: "#111827" }}>never recorded or sent</strong>. It's processed locally — only breathing rhythm is detected.</span>
                     </div>
 
                     <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
                       <button
                         onClick={handleEnableMic}
+                        disabled={verifyRequesting}
                         style={{
                           width: "100%", border: "none",
-                          background: ACCENT, color: "#0b1715",
+                          background: verifyRequesting ? "rgba(107,191,184,0.55)" : ACCENT,
+                          color: "#0b1715",
                           borderRadius: 16, padding: "15px 24px",
-                          fontSize: 15, fontWeight: 900, cursor: "pointer",
+                          fontSize: 15, fontWeight: 900,
+                          cursor: verifyRequesting ? "default" : "pointer",
                           fontFamily: "var(--font-display)",
-                          boxShadow: "0 4px 20px rgba(107,191,184,0.32)",
+                          boxShadow: verifyRequesting ? "none" : "0 4px 20px rgba(107,191,184,0.32)",
+                          transition: "background 0.2s, box-shadow 0.2s",
+                          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                         }}
                       >
-                        Enable mic & start →
+                        {verifyRequesting ? (
+                          <>
+                            <motion.span
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                              style={{ display: "inline-block", width: 14, height: 14, borderRadius: "50%", border: "2px solid #0b1715", borderTopColor: "transparent" }}
+                            />
+                            Requesting access…
+                          </>
+                        ) : "Enable mic & start →"}
                       </button>
                       <button
                         onClick={handleSkipVerify}
+                        disabled={verifyRequesting}
                         style={{
                           width: "100%", border: "1px solid rgba(0,0,0,0.1)",
                           background: "transparent", color: "rgba(0,0,0,0.45)",
                           borderRadius: 16, padding: "13px 24px",
-                          fontSize: 14, fontWeight: 700, cursor: "pointer",
+                          fontSize: 14, fontWeight: 700,
+                          cursor: verifyRequesting ? "default" : "pointer",
+                          opacity: verifyRequesting ? 0.4 : 1,
+                          transition: "opacity 0.2s",
                         }}
                       >
                         Skip — start without mic
