@@ -31,67 +31,90 @@ export async function POST(req: Request) {
   }
 
   try {
-    const result = await db.$transaction(async (tx) => {
-      // ── Load user wallet + balance in one shot ──────────────────────────────
-      const [user, balance] = await Promise.all([
-        tx.user.findUnique({
-          where:  { id: userId },
-          select: { walletAddress: true },
-        }),
-        tx.fitTokenBalance.findUnique({ where: { userId } }),
-      ])
+    // ── Step 1: Read current state ─────────────────────────────────────────────
+    const [user, balance] = await Promise.all([
+      db.user.findUnique({ where: { id: userId }, select: { walletAddress: true } }),
+      db.fitTokenBalance.findUnique({ where: { userId } }),
+    ])
 
-      // ── Wallet address required ─────────────────────────────────────────────
-      const walletAddress = user?.walletAddress
-      if (!walletAddress || !isValidEvmAddress(walletAddress)) {
-        throw Object.assign(
-          new Error("No wallet address set"),
-          { code: "NO_WALLET" },
-        )
-      }
-
-      // ── Must have something to claim ────────────────────────────────────────
-      const totalEarned  = new Prisma.Decimal(balance?.amount        ?? 0)
-      const totalClaimed = new Prisma.Decimal(balance?.claimedAmount ?? 0)
-      const claimable    = totalEarned.minus(totalClaimed)
-
-      if (claimable.lessThanOrEqualTo(0)) {
-        throw Object.assign(
-          new Error("Nothing to claim"),
-          { code: "NOTHING_TO_CLAIM" },
-        )
-      }
-
-      // ── Mint on-chain (may throw if RPC fails) ──────────────────────────────
-      const { txHash } = await mintFitTokensOnChain(
-        walletAddress,
-        claimable.toNumber(),
-        "app_claim",
-      )
-
-      // ── Record claim in DB ──────────────────────────────────────────────────
-      const updated = await tx.fitTokenBalance.update({
-        where: { userId },
-        data:  { claimedAmount: { increment: claimable } },
-      })
-
-      return {
-        txHash,
-        claimedAmount: claimable.toNumber(),
-        newClaimedTotal: Number(updated.claimedAmount),
-        remainingClaimable: 0,
-        walletAddress,
-      }
-    })
-
-    return NextResponse.json({ ok: true, ...result })
-  } catch (err: any) {
-    if (err?.code === "NO_WALLET") {
+    const walletAddress = user?.walletAddress
+    if (!walletAddress || !isValidEvmAddress(walletAddress)) {
       return NextResponse.json({ error: "No wallet address saved on your profile" }, { status: 422 })
     }
-    if (err?.code === "NOTHING_TO_CLAIM") {
+
+    const totalEarned  = new Prisma.Decimal(balance?.amount        ?? 0)
+    const totalClaimed = new Prisma.Decimal(balance?.claimedAmount ?? 0)
+    const claimable    = totalEarned.minus(totalClaimed)
+
+    if (claimable.lessThanOrEqualTo(0)) {
       return NextResponse.json({ error: "No claimable FIT balance" }, { status: 422 })
     }
+
+    // ── Step 2: Optimistic lock — atomically reserve the claimable amount ──────
+    //
+    // Uses a raw UPDATE with a WHERE condition that matches only if claimedAmount
+    // still equals the value we just read. If a concurrent request already
+    // updated it, 0 rows match and we abort — no double-mint.
+    //
+    // This runs OUTSIDE any db.$transaction() so the DB connection is released
+    // immediately, and no Prisma transaction is held open during the slow
+    // blockchain call that follows.
+    const claimableNum = claimable.toNumber()
+    const expectedClaimedNum = totalClaimed.toNumber()
+
+    const reservedRows = await db.$executeRaw`
+      UPDATE "FitTokenBalance"
+      SET    "claimedAmount" = "claimedAmount" + ${claimableNum}::numeric,
+             "updatedAt"     = NOW()
+      WHERE  "userId"        = ${userId}
+        AND  "claimedAmount" = ${expectedClaimedNum}::numeric
+        AND  "amount" - "claimedAmount" > 0
+    `
+
+    if (reservedRows === 0) {
+      // Another concurrent claim already updated claimedAmount — safe to retry
+      return NextResponse.json(
+        { error: "Another claim is in progress. Please try again in a moment." },
+        { status: 409 },
+      )
+    }
+
+    // ── Step 3: Mint on-chain (outside any DB transaction) ─────────────────────
+    //
+    // If this fails, we compensate by rolling back the reservation.
+    // The compensation itself is a simple decrement — not wrapped in a
+    // transaction — so it won't deadlock even under high concurrency.
+    let txHash: `0x${string}`
+    try {
+      const result = await mintFitTokensOnChain(walletAddress, claimableNum, "app_claim")
+      txHash = result.txHash
+    } catch (contractErr) {
+      // ── Compensate: un-reserve the amount we just locked ────────────────────
+      await db.$executeRaw`
+        UPDATE "FitTokenBalance"
+        SET    "claimedAmount" = "claimedAmount" - ${claimableNum}::numeric,
+               "updatedAt"     = NOW()
+        WHERE  "userId" = ${userId}
+      `
+      console.error("tokens-claim: on-chain mint failed, reservation rolled back:", contractErr)
+      return NextResponse.json(
+        { error: "On-chain mint failed. Your FIT balance is unchanged. Please try again." },
+        { status: 500 },
+      )
+    }
+
+    // ── Step 4: Return success ──────────────────────────────────────────────────
+    const updatedBalance = await db.fitTokenBalance.findUnique({ where: { userId } })
+
+    return NextResponse.json({
+      ok:                 true,
+      txHash,
+      claimedAmount:      claimableNum,
+      newClaimedTotal:    Number(updatedBalance?.claimedAmount ?? 0),
+      remainingClaimable: 0,
+      walletAddress,
+    })
+  } catch (err: any) {
     console.error("tokens-claim POST error:", err)
     return NextResponse.json({ error: "Failed to process claim. Please try again." }, { status: 500 })
   }

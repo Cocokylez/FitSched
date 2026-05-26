@@ -10,6 +10,10 @@
  * flag before reaching the mint call.
  */
 
+// 🔒 Prevents this file from being imported in client components.
+// Next.js will throw a build error if it is — protecting DISTRIBUTOR_PRIVATE_KEY.
+import "server-only"
+
 import { createWalletClient, createPublicClient, http, parseUnits, isAddress, getAddress } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 import { base, baseSepolia } from "viem/chains"
