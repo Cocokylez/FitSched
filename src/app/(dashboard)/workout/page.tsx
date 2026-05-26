@@ -932,19 +932,6 @@ export default function WorkoutPage() {
                   />
                 </div>
 
-                {/* Back/close */}
-                <button
-                  onClick={() => { setExMode("idle"); stopVerify() }}
-                  style={{
-                    position: "absolute", top: 14, left: 14, zIndex: 10,
-                    width: 36, height: 36, borderRadius: "50%",
-                    background: "rgba(0,0,0,0.06)", border: "1px solid rgba(0,0,0,0.08)",
-                    color: "#374151", fontSize: 16,
-                    display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                  }}
-                >
-                  ←
-                </button>
 
                 {/* Mic status pill — top right, after verify is settled */}
                 {verifySettled && (
