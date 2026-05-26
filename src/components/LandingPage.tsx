@@ -10,11 +10,6 @@ import {
 import { useLanguage } from "@/context/LanguageContext"
 import { ACCENT, ACCENT_DIM, ACCENT_BD } from "@/lib/theme"
 
-// ── Constants ──────────────────────────────────────────────────────────────────
-
-const BORDER      = "rgba(255,255,255,0.075)"
-const TEXT_MUTED  = "rgba(255,255,255,0.38)"
-
 // ── Scroll-reveal wrapper ──────────────────────────────────────────────────────
 
 function FadeIn({
@@ -41,7 +36,7 @@ function FadeIn({
   )
 }
 
-// ── Phone mockup ───────────────────────────────────────────────────────────────
+// ── Phone mockup — intentionally always dark (showing a phone screen) ──────────
 
 const WEEK_DAYS = ["SUN","MON","TUE","WED","THU","FRI","SAT"]
 const MOCK_CARDS = [
@@ -203,11 +198,10 @@ const MARQUEE_ITEMS = [
 ]
 
 function MarqueeStrip() {
-  const doubled = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS]
   return (
     <div style={{
-      borderTop: `1px solid ${BORDER}`,
-      borderBottom: `1px solid ${BORDER}`,
+      borderTop: "1px solid var(--border)",
+      borderBottom: "1px solid var(--border)",
       padding: "13px 0",
       overflow: "hidden",
     }}>
@@ -216,11 +210,11 @@ function MarqueeStrip() {
         animation: "lp-marquee 30s linear infinite",
         whiteSpace: "nowrap",
       }}>
-        {doubled.map((item, i) => (
+        {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
           <span key={i} style={{
             display: "inline-flex", alignItems: "center", gap: 10,
             fontSize: 11, fontWeight: 800, letterSpacing: "0.09em",
-            textTransform: "uppercase", color: "rgba(255,255,255,0.3)",
+            textTransform: "uppercase", color: "var(--text-muted)",
             flexShrink: 0,
           }}>
             <span style={{
@@ -242,8 +236,8 @@ const BAR_HEIGHTS = [28, 44, 36, 52, 40, 62, 48, 70, 56, 66]
 function ScheduleCard() {
   return (
     <div style={{
-      background: "rgba(255,255,255,0.032)",
-      border: `1px solid ${BORDER}`,
+      background: "var(--surface)",
+      border: "1px solid var(--border)",
       borderRadius: 28,
       padding: "28px 28px 24px",
       height: "100%", display: "flex", flexDirection: "column", gap: 20,
@@ -265,7 +259,7 @@ function ScheduleCard() {
           <div style={{
             fontFamily: "var(--font-display)",
             fontSize: 22, fontWeight: 800, lineHeight: 1.15,
-            color: "rgba(255,255,255,0.92)", letterSpacing: "-0.025em",
+            color: "var(--text)", letterSpacing: "-0.025em",
           }}>
             One prompt.<br />A full week of training.
           </div>
@@ -279,11 +273,11 @@ function ScheduleCard() {
           return (
             <div key={i} style={{
               flex: 1, borderRadius: 8, padding: "6px 0",
-              background: filled ? ACCENT_DIM : "rgba(255,255,255,0.035)",
+              background: filled ? ACCENT_DIM : "var(--surface-2)",
               border: `1px solid ${filled ? ACCENT_BD : "transparent"}`,
               display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
             }}>
-              <span style={{ fontSize: 8, fontWeight: 800, color: filled ? ACCENT : "rgba(255,255,255,0.25)" }}>{d}</span>
+              <span style={{ fontSize: 8, fontWeight: 800, color: filled ? ACCENT : "var(--text-muted)" }}>{d}</span>
               {filled && <div style={{ width: 4, height: 4, borderRadius: "50%", background: ACCENT }} />}
             </div>
           )
@@ -293,21 +287,21 @@ function ScheduleCard() {
       {/* Sample sessions */}
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {[
-          { label: "Push day", time: "Mon · 3 sets · 6 ex", color: ACCENT },
-          { label: "Rest", time: "Wed · Recovery", color: "rgba(255,255,255,0.2)" },
-          { label: "Lower body", time: "Fri · 4 sets · 5 ex", color: "#f59e0b" },
+          { label: "Push day",   time: "Mon · 3 sets · 6 ex", color: ACCENT },
+          { label: "Rest",       time: "Wed · Recovery",       color: "var(--border)" },
+          { label: "Lower body", time: "Fri · 4 sets · 5 ex",  color: "#f59e0b" },
         ].map((s, i) => (
           <div key={i} style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "7px 10px", borderRadius: 10,
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.05)",
+            background: "var(--surface-2)",
+            border: "1px solid var(--border)",
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ width: 3, height: 20, borderRadius: 2, background: s.color }} />
-              <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.75)" }}>{s.label}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text)" }}>{s.label}</span>
             </div>
-            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontWeight: 600 }}>{s.time}</span>
+            <span style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 600 }}>{s.time}</span>
           </div>
         ))}
       </div>
@@ -318,8 +312,8 @@ function ScheduleCard() {
 function StreakCard() {
   return (
     <div style={{
-      background: "rgba(255,255,255,0.032)",
-      border: `1px solid ${BORDER}`,
+      background: "var(--surface)",
+      border: "1px solid var(--border)",
       borderRadius: 28, padding: "24px",
       display: "flex", flexDirection: "column", gap: 16, height: "100%",
     }}>
@@ -340,9 +334,9 @@ function StreakCard() {
         <div style={{
           fontFamily: "var(--font-display)",
           fontSize: 52, fontWeight: 900, lineHeight: 1,
-          color: "rgba(255,255,255,0.94)", letterSpacing: "-0.04em",
+          color: "var(--text)", letterSpacing: "-0.04em",
         }}>23</div>
-        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", fontWeight: 600, marginTop: 4 }}>days in a row</div>
+        <div style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 600, marginTop: 4 }}>days in a row</div>
       </div>
 
       {/* Flame dots row */}
@@ -350,7 +344,7 @@ function StreakCard() {
         {Array.from({ length: 14 }).map((_, i) => (
           <div key={i} style={{
             flex: 1, height: 4, borderRadius: 2,
-            background: i < 11 ? "linear-gradient(90deg, #ff744d, #ffb64d)" : "rgba(255,255,255,0.08)",
+            background: i < 11 ? "linear-gradient(90deg, #ff744d, #ffb64d)" : "var(--surface-2)",
           }} />
         ))}
       </div>
@@ -370,8 +364,8 @@ function StreakCard() {
 function ProgressCard() {
   return (
     <div style={{
-      background: "rgba(255,255,255,0.032)",
-      border: `1px solid ${BORDER}`,
+      background: "var(--surface)",
+      border: "1px solid var(--border)",
       borderRadius: 28, padding: "24px",
       display: "flex", flexDirection: "column", gap: 16,
     }}>
@@ -388,7 +382,7 @@ function ProgressCard() {
             Progress
           </span>
         </div>
-        <span style={{ fontSize: 10, color: TEXT_MUTED, fontWeight: 600 }}>Last 10 days</span>
+        <span style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 600 }}>Last 10 days</span>
       </div>
 
       {/* Bar chart */}
@@ -404,22 +398,20 @@ function ProgressCard() {
               flex: 1, height: h, borderRadius: 4,
               background: i === 9
                 ? `linear-gradient(180deg, ${ACCENT}, #4aaa9d)`
-                : "rgba(255,255,255,0.1)",
+                : "var(--surface-2)",
               transformOrigin: "bottom",
             }}
           />
         ))}
       </div>
 
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-      }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
           <div style={{
             fontFamily: "var(--font-display)",
-            fontSize: 22, fontWeight: 900, color: "rgba(255,255,255,0.92)", letterSpacing: "-0.03em",
+            fontSize: 22, fontWeight: 900, color: "var(--text)", letterSpacing: "-0.03em",
           }}>7 / 10</div>
-          <div style={{ fontSize: 11, color: TEXT_MUTED, fontWeight: 600 }}>sessions completed</div>
+          <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>sessions completed</div>
         </div>
         <div style={{
           background: ACCENT_DIM, border: `1px solid ${ACCENT_BD}`,
@@ -457,7 +449,7 @@ function Navbar() {
         padding: "12px 16px 12px 20px",
         borderRadius: 999,
         background: "color-mix(in srgb, var(--panel) 92%, transparent)",
-        border: `1px solid ${BORDER}`,
+        border: "1px solid var(--border)",
         boxShadow: "var(--shadow-md)",
         backdropFilter: "blur(18px)",
       }}
@@ -474,7 +466,7 @@ function Navbar() {
         <span style={{
           fontFamily: "var(--font-display)",
           fontSize: 16, fontWeight: 800, letterSpacing: "-0.03em",
-          color: "rgba(255,255,255,0.92)",
+          color: "var(--text)",
         }}>FitSched</span>
       </div>
 
@@ -509,10 +501,10 @@ function Navbar() {
                 style={{
                   position: "absolute", top: 42, right: 0,
                   width: 150,
-                  background: "rgba(15,25,22,0.96)", backdropFilter: "blur(18px)",
-                  border: `1px solid ${BORDER}`,
+                  background: "var(--panel)", backdropFilter: "blur(18px)",
+                  border: "1px solid var(--border)",
                   borderRadius: 14, padding: 6,
-                  boxShadow: "0 16px 40px rgba(0,0,0,0.5)",
+                  boxShadow: "var(--shadow-lg)",
                   zIndex: 50,
                 }}
               >
@@ -525,7 +517,7 @@ function Navbar() {
                       style={{
                         width: "100%", background: active ? ACCENT_DIM : "transparent",
                         border: "none", borderRadius: 10, padding: "9px 10px",
-                        color: active ? ACCENT : "rgba(255,255,255,0.65)",
+                        color: active ? ACCENT : "var(--text-muted)",
                         display: "flex", alignItems: "center", justifyContent: "space-between",
                         fontSize: 12, fontWeight: active ? 800 : 600,
                         cursor: "pointer", fontFamily: "inherit",
@@ -602,7 +594,7 @@ function Hero() {
               fontSize: "clamp(38px, 5.5vw, 68px)",
               fontWeight: 900, lineHeight: 1.04,
               letterSpacing: "-0.035em",
-              color: "rgba(255,255,255,0.95)",
+              color: "var(--text)",
               margin: 0,
             }}
           >
@@ -616,7 +608,7 @@ function Hero() {
             transition={{ duration: 0.55, delay: 0.28, ease: [0.16, 1, 0.3, 1] }}
             style={{
               fontSize: 17, lineHeight: 1.6, fontWeight: 500,
-              color: "rgba(255,255,255,0.5)", maxWidth: 420, margin: 0,
+              color: "var(--text-muted)", maxWidth: 420, margin: 0,
             }}
           >
             {t.lpHeroBody}
@@ -641,9 +633,9 @@ function Hero() {
             </Link>
             <Link href="#features" style={{
               display: "inline-flex", alignItems: "center", gap: 6,
-              color: "rgba(255,255,255,0.55)", textDecoration: "none",
+              color: "var(--text-muted)", textDecoration: "none",
               fontSize: 14, fontWeight: 700, padding: "14px 4px",
-              borderBottom: "1px solid rgba(255,255,255,0.14)",
+              borderBottom: "1px solid var(--border)",
             }}>
               {t.lpSeeHow}
             </Link>
@@ -658,7 +650,7 @@ function Hero() {
             {[t.lpCheck1, t.lpCheck2, t.lpCheck3].map((item, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 9 }}>
                 <CheckCheck size={14} color={ACCENT} strokeWidth={2.5} />
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.46)", fontWeight: 600 }}>{item}</span>
+                <span style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 600 }}>{item}</span>
               </div>
             ))}
           </motion.div>
@@ -699,10 +691,10 @@ function Features() {
             fontFamily: "var(--font-display)",
             fontSize: "clamp(28px, 4vw, 46px)",
             fontWeight: 900, lineHeight: 1.08, letterSpacing: "-0.03em",
-            color: "rgba(255,255,255,0.92)", margin: 0,
+            color: "var(--text)", margin: 0,
           }}>
             Every tool you need.<br />
-            <span style={{ color: "rgba(255,255,255,0.42)" }}>Nothing you don&apos;t.</span>
+            <span style={{ color: "var(--text-muted)" }}>Nothing you don&apos;t.</span>
           </h2>
         </div>
       </FadeIn>
@@ -738,23 +730,21 @@ const STATS = [
 
 function StatsRow() {
   return (
-    <section style={{
-      padding: "0 20px 80px",
-      maxWidth: 1140, margin: "0 auto",
-    }}>
+    <section style={{ padding: "0 20px 80px", maxWidth: 1140, margin: "0 auto" }}>
       <FadeIn>
         <div style={{
           display: "grid",
           gridTemplateColumns: "repeat(4, 1fr)",
           gap: 1,
-          border: `1px solid ${BORDER}`,
+          border: "1px solid var(--border)",
           borderRadius: 24,
           overflow: "hidden",
+          background: "var(--surface)",
         }} className="stats-grid">
           {STATS.map(({ value, label, icon: Icon }, i) => (
             <div key={i} style={{
               padding: "28px 24px",
-              borderRight: i < 3 ? `1px solid ${BORDER}` : "none",
+              borderRight: i < 3 ? "1px solid var(--border)" : "none",
               display: "flex", flexDirection: "column", gap: 10,
             }}>
               <Icon size={18} color={ACCENT} strokeWidth={2} />
@@ -762,9 +752,9 @@ function StatsRow() {
                 <div style={{
                   fontFamily: "var(--font-display)",
                   fontSize: 30, fontWeight: 900, letterSpacing: "-0.04em",
-                  color: "rgba(255,255,255,0.92)", lineHeight: 1,
+                  color: "var(--text)", lineHeight: 1,
                 }}>{value}</div>
-                <div style={{ fontSize: 12, color: TEXT_MUTED, fontWeight: 600, marginTop: 4 }}>{label}</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600, marginTop: 4 }}>{label}</div>
               </div>
             </div>
           ))}
@@ -784,9 +774,9 @@ function CtaBlock() {
         <div style={{
           borderRadius: 32, overflow: "hidden",
           background: `
-            radial-gradient(ellipse at 30% 0%, rgba(107,191,184,0.28) 0%, transparent 55%),
-            radial-gradient(ellipse at 80% 100%, rgba(107,191,184,0.14) 0%, transparent 45%),
-            rgba(107,191,184,0.07)
+            radial-gradient(ellipse at 30% 0%, rgba(107,191,184,0.18) 0%, transparent 55%),
+            radial-gradient(ellipse at 80% 100%, rgba(107,191,184,0.09) 0%, transparent 45%),
+            var(--surface)
           `,
           border: `1px solid ${ACCENT_BD}`,
           padding: "clamp(40px, 6vw, 72px) clamp(28px, 5vw, 72px)",
@@ -804,12 +794,12 @@ function CtaBlock() {
               fontFamily: "var(--font-display)",
               fontSize: "clamp(26px, 4vw, 44px)",
               fontWeight: 900, lineHeight: 1.1, letterSpacing: "-0.03em",
-              color: "rgba(255,255,255,0.94)", margin: "0 0 14px",
+              color: "var(--text)", margin: "0 0 14px",
             }}>
               {t.lpCtaTitle}
             </h2>
             <p style={{
-              fontSize: 15, color: "rgba(255,255,255,0.45)",
+              fontSize: 15, color: "var(--text-muted)",
               fontWeight: 500, lineHeight: 1.6, margin: 0,
             }}>
               {t.lpCtaBody}
@@ -839,7 +829,7 @@ function CtaBlock() {
 function Footer() {
   return (
     <footer style={{
-      borderTop: `1px solid ${BORDER}`,
+      borderTop: "1px solid var(--border)",
       padding: "28px 20px",
       maxWidth: 1140, margin: "0 auto",
       display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -856,10 +846,10 @@ function Footer() {
         <span style={{
           fontFamily: "var(--font-display)",
           fontSize: 14, fontWeight: 800, letterSpacing: "-0.02em",
-          color: "rgba(255,255,255,0.7)",
+          color: "var(--text-muted)",
         }}>FitSched</span>
       </div>
-      <span style={{ fontSize: 12, color: TEXT_MUTED, fontWeight: 600 }}>
+      <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600 }}>
         Your fitness, scheduled.
       </span>
     </footer>
@@ -897,14 +887,14 @@ export function LandingPage() {
             grid-template-columns: repeat(2, 1fr) !important;
           }
           .stats-grid > *:nth-child(odd) {
-            border-right: 1px solid ${BORDER} !important;
+            border-right: 1px solid var(--border) !important;
           }
           .stats-grid > *:nth-child(even) {
             border-right: none !important;
           }
           .stats-grid > *:nth-child(1),
           .stats-grid > *:nth-child(2) {
-            border-bottom: 1px solid ${BORDER};
+            border-bottom: 1px solid var(--border);
           }
         }
       `}</style>
