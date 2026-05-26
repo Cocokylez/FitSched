@@ -49,6 +49,7 @@
     "react-globe.gl": "^2.38.0",
     "recharts": "^2.15.0",
     "resend": "^6.12.3",
+    "server-only": "^0.0.1",
     "tailwind-merge": "^2.5.0",
     "viem": "^2.51.0",
     "web-push": "^3.6.7",
