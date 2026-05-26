@@ -61,7 +61,12 @@ export default function HikePage() {
   const [pendingCount, setPendingCount] = useState(0)
 
   // FitToken reward toast
-  const [tokenReward, setTokenReward] = useState<{ amount: number; km: number } | null>(null)
+  const [tokenReward, setTokenReward] = useState<{
+    amount: number
+    rewardKm: number
+    totalKm: number
+    excluded: boolean
+  } | null>(null)
 
   // ── Hide nav bar ──────────────────────────────────────────────────────────────
 
@@ -120,8 +125,11 @@ export default function HikePage() {
         playSound("confirmation_002.ogg", 0.6)
         const data = await res.json().catch(() => null)
         if (data?.fitTokenReward?.awarded && data.fitTokenReward.amount > 0) {
-          setTokenReward({ amount: data.fitTokenReward.amount, km: r.distanceKm })
-          setTimeout(() => setTokenReward(null), 5000)
+          const rewardKm  = data.verification?.rewardKm  ?? r.distanceKm
+          const totalKm   = data.verification?.totalKm   ?? r.distanceKm
+          const excluded  = (data.verification?.excludedRatio ?? 0) > 0.05
+          setTokenReward({ amount: data.fitTokenReward.amount, rewardKm, totalKm, excluded })
+          setTimeout(() => setTokenReward(null), 6000)
         }
         setShowSave(false)
         setSaveName(""); setSaveLoc(""); setSaveNotes("")
@@ -298,32 +306,55 @@ export default function HikePage() {
             transition={{ type: "spring", stiffness: 300, damping: 26 }}
             style={{
               position: "fixed", bottom: 32, left: "50%", transform: "translateX(-50%)",
-              zIndex: 600, display: "flex", alignItems: "center", gap: 10,
-              background: "rgba(10,26,24,0.92)", backdropFilter: "blur(18px)",
+              zIndex: 600, display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+              background: "rgba(10,26,24,0.94)", backdropFilter: "blur(18px)",
               border: `1px solid ${ACCENT}40`,
-              borderRadius: 999, padding: "12px 20px",
-              boxShadow: `0 4px 28px rgba(107,191,184,0.22)`, whiteSpace: "nowrap",
+              borderRadius: 20, padding: "14px 22px",
+              boxShadow: `0 4px 28px rgba(107,191,184,0.22)`,
+              minWidth: 220, maxWidth: 310,
             }}
           >
-            {/* Coin icon */}
-            <div style={{
-              width: 26, height: 26, borderRadius: "50%",
-              background: `linear-gradient(135deg, ${ACCENT} 0%, #3d9b94 100%)`,
-              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-            }}>
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="none">
-                <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.7)" strokeWidth="1.2"/>
-                <text x="8" y="11.5" textAnchor="middle" fontSize="7" fontWeight="900" fill="white" fontFamily="sans-serif">FT</text>
-              </svg>
+            {/* Main reward row */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, whiteSpace: "nowrap" }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: "50%",
+                background: `linear-gradient(135deg, ${ACCENT} 0%, #3d9b94 100%)`,
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              }}>
+                <svg viewBox="0 0 18 18" width="14" height="14" fill="none">
+                  <circle cx="9" cy="9" r="7" stroke="rgba(255,255,255,0.65)" strokeWidth="1.4"/>
+                  <text x="9" y="13" textAnchor="middle" fontSize="6.5" fontWeight="900" fill="white" fontFamily="sans-serif">FT</text>
+                </svg>
+              </div>
+              <div>
+                <span style={{ fontSize: 15, fontWeight: 900, color: ACCENT }}>
+                  +{tokenReward.amount.toFixed(2)} FT earned
+                </span>
+                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginLeft: 8 }}>
+                  {tokenReward.rewardKm.toFixed(2)} km × 0.5
+                </span>
+              </div>
             </div>
-            <div>
-              <span style={{ fontSize: 14, fontWeight: 900, color: ACCENT }}>
-                +{tokenReward.amount.toFixed(2)} FT earned
-              </span>
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginLeft: 6 }}>
-                {tokenReward.km.toFixed(2)} km × 0.5
-              </span>
-            </div>
+
+            {/* Exclusion note — only shown when speed analysis filtered some km */}
+            {tokenReward.excluded && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                style={{
+                  display: "flex", alignItems: "center", gap: 7,
+                  background: "rgba(250,204,21,0.1)", border: "1px solid rgba(250,204,21,0.2)",
+                  borderRadius: 10, padding: "6px 10px", width: "100%",
+                }}
+              >
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#facc15" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>
+                </svg>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", lineHeight: 1.4 }}>
+                  {(tokenReward.totalKm - tokenReward.rewardKm).toFixed(2)} km excluded — speed too high for walking
+                </span>
+              </motion.div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
