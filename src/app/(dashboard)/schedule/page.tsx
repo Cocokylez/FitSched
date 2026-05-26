@@ -324,7 +324,7 @@ export default function SchedulePage() {
       {/* SC2 Header — date display */}
       <div style={{ padding: "16px 20px 8px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.14em", color: "var(--text-muted)", marginBottom: 2 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 2 }}>
             {dayOfWeekFull}
           </div>
           <div className="display-text" style={{ fontSize: 36, fontWeight: 950, color: "var(--text)", lineHeight: 1, letterSpacing: "-0.5px" }}>
@@ -366,9 +366,13 @@ export default function SchedulePage() {
                   />
                 ))}
               </div>
-              <span style={{ fontSize: 11, fontWeight: 800, color: weekWorkouts >= workoutsPerWeek ? ACCENT : "var(--text-muted)" }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: weekWorkouts >= workoutsPerWeek ? ACCENT : "var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}>
                 {weekWorkouts}/{workoutsPerWeek} this week
-                {weekWorkouts >= workoutsPerWeek && " ✓"}
+                {weekWorkouts >= workoutsPerWeek && (
+                  <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                )}
               </span>
             </div>
           </div>
@@ -455,8 +459,8 @@ export default function SchedulePage() {
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ background: "linear-gradient(145deg, rgba(107,191,184,0.10), rgba(107,191,184,0.05))", border: `1px solid rgba(107,191,184,0.38)`, borderRadius: 22, padding: "16px 18px", marginBottom: 20, boxShadow: `inset 0 1px 0 rgba(107,191,184,0.18), 0 8px 32px rgba(107,191,184,0.12)` }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <svg viewBox="0 0 24 24" width="11" height="11" fill={ACCENT} stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                      <div className="label-text" style={{ fontSize: 10, color: ACCENT }}>BEST WINDOW</div>
+                      <div style={{ width: 5, height: 5, borderRadius: "50%", background: ACCENT, flexShrink: 0 }} />
+                      <div style={{ fontSize: 10, fontWeight: 700, color: ACCENT, letterSpacing: "0.02em" }}>Best window</div>
                     </div>
                     <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)" }}>
                       {bestBlock.time ? `${to12h(bestBlock.time)} – ${to12h(addMins(bestBlock.time, 25))}` : ""}
@@ -493,8 +497,8 @@ export default function SchedulePage() {
                       return (
                         <div key={key} style={{ marginBottom: 18 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-                            <div className="label-text" style={{ fontSize: 10, color: "var(--text-muted)" }}>{label}</div>
-                            {sub && <span style={{ fontSize: 10, color: "var(--text-muted)", opacity: 0.48, fontWeight: 600 }}>· {sub}</span>}
+                            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.01em" }}>{label.charAt(0) + label.slice(1).toLowerCase()}</div>
+                            {sub && <span style={{ fontSize: 10, color: "var(--text-muted)", opacity: 0.45, fontWeight: 600 }}>· {sub}</span>}
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                             {groupBlocks.map(block => {
@@ -638,15 +642,15 @@ export default function SchedulePage() {
                 <button type="button" onClick={closeScheduleEditor} style={{ width: 34, height: 34, borderRadius: "999px", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", cursor: "pointer", fontSize: 20, lineHeight: 1 }}>×</button>
               </div>
               <label style={{ display: "block", marginBottom: 12 }}>
-                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.14em", color: "var(--text-muted)", marginBottom: 7 }}>{t.title}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 7 }}>{t.title}</div>
                 <input value={manualTitle} onChange={e => setManualTitle(e.target.value)} placeholder={t.classWorkAppointment} style={{ width: "100%", boxSizing: "border-box", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", borderRadius: 13, padding: "13px 14px", fontSize: 14, outline: "none" }} />
               </label>
               <label style={{ display: "block", marginBottom: 12 }}>
-                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.14em", color: "var(--text-muted)", marginBottom: 7 }}>{t.time}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 7 }}>{t.time}</div>
                 <input type="time" value={manualTime} onChange={e => setManualTime(e.target.value)} style={{ width: "100%", boxSizing: "border-box", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", borderRadius: 13, padding: "13px 14px", fontSize: 14, outline: "none" }} />
               </label>
               <label style={{ display: "block", marginBottom: 16 }}>
-                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.14em", color: "var(--text-muted)", marginBottom: 7 }}>{t.description}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 7 }}>{t.description}</div>
                 <textarea value={manualDescription} onChange={e => setManualDescription(e.target.value)} placeholder={t.optionalNotes} rows={3} style={{ width: "100%", boxSizing: "border-box", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", borderRadius: 13, padding: "13px 14px", fontSize: 14, outline: "none", resize: "vertical" }} />
               </label>
               <button type="button" onClick={saveManualSchedule} disabled={!manualTitle.trim() || savingManual} style={{ width: "100%", border: "none", borderRadius: 14, padding: 14, background: "var(--text)", color: "var(--bg)", fontSize: 14, fontWeight: 900, cursor: manualTitle.trim() && !savingManual ? "pointer" : "default", opacity: manualTitle.trim() && !savingManual ? 1 : 0.5 }}>

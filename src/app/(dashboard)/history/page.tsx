@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from "recharts"
-import { Calendar, Dumbbell, TrendingUp, Trophy, ChevronDown, Check, PenLine, Trash2 } from "lucide-react"
+import { Dumbbell, ChevronDown, Check, PenLine, Trash2 } from "lucide-react"
 import { getMuscleGroup } from "@/lib/exerciseData"
 import { motion, AnimatePresence } from "framer-motion"
 import { SkeletonCard } from "@/components/Skeleton"
@@ -194,29 +194,26 @@ export default function HistoryPage() {
             <>
               <motion.div
                 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-                style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}
+                style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 20 }}
               >
                 {[
-                  { icon: Calendar, label: t.totalWorkouts, value: totalSessions },
-                  { icon: Dumbbell, label: t.totalSets, value: totalSets },
-                  { icon: TrendingUp, label: t.totalExercises, value: totalExerciseSlots },
-                  { icon: Trophy, label: t.thisWeek, value: thisWeekCount },
+                  { label: t.totalWorkouts, value: totalSessions },
+                  { label: t.totalSets, value: totalSets },
+                  { label: t.totalExercises, value: totalExerciseSlots },
+                  { label: t.thisWeek, value: thisWeekCount },
                 ].map((stat, i) => (
                   <motion.div
                     key={i}
                     initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 + i * 0.04 }}
-                    style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "16px" }}
+                    style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "18px 16px" }}
                   >
-                    <div style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(107,191,184,0.12)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
-                      <stat.icon size={16} color={ACCENT} />
-                    </div>
-                    <div style={{ fontSize: 26, fontWeight: 900, color: "var(--text)", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.5px" }}>{stat.value}</div>
-                    <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600, marginTop: 3 }}>{stat.label}</div>
+                    <div style={{ fontFamily: "var(--font-display)", fontSize: 30, fontWeight: 900, color: "var(--text)", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.04em", lineHeight: 1 }}>{stat.value}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600, marginTop: 7 }}>{stat.label}</div>
                   </motion.div>
                 ))}
               </motion.div>
 
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-muted)", marginBottom: 10 }}>{t.recentActivity}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 10 }}>{t.recentActivity}</div>
 
               {/* Muscle group filter chips */}
               <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 10 }}>
@@ -415,9 +412,8 @@ export default function HistoryPage() {
           </div>
 
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "16px 12px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-              <TrendingUp size={14} color={ACCENT} />
-              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>Exercises per session</span>
+            <div style={{ marginBottom: 14 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text)" }}>Exercises per session</span>
             </div>
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={180}>
@@ -443,7 +439,7 @@ export default function HistoryPage() {
             <SkeletonCard height="120px" />
           ) : personalRecords.length === 0 ? (
             <div style={{ textAlign: "center", padding: "48px 16px" }}>
-              <Trophy size={32} color="var(--text-muted)" style={{ marginBottom: 12 }} />
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 12 }}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
               <p style={{ fontSize: 14, color: "var(--text-muted)", margin: 0 }}>Complete workouts with weights to track your PRs</p>
             </div>
           ) : (

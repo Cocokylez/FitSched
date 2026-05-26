@@ -675,7 +675,7 @@ export default function WorkoutPage() {
           style={{ marginBottom: 14 }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-            <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.12em", color: "var(--text-muted)" }}>WEEKLY GOAL</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)" }}>Weekly goal</span>
             <span style={{ fontSize: 11, fontWeight: 800, color: weeklyGoalMet ? ACCENT : "var(--text-muted)", fontVariantNumeric: "tabular-nums", display: "flex", alignItems: "center", gap: 4 }}>
               {weeklyDone} / {workoutsPerWeek}
               {weeklyGoalMet && (
@@ -1150,7 +1150,7 @@ export default function WorkoutPage() {
                       ))}
                     </div>
 
-                    <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.18em", color: ACCENT, textTransform: "uppercase" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT }}>
                       Up next
                     </div>
 

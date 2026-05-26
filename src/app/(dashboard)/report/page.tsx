@@ -33,12 +33,12 @@ const cardStyle = {
 }
 
 const sectionLabelStyle = {
-  fontSize: "10px",
-  fontWeight: "600",
-  letterSpacing: "0.12em",
+  fontSize: "11px",
+  fontWeight: "700",
+  letterSpacing: "0.01em",
   color: "var(--text-muted)",
   marginBottom: "8px",
-  marginTop: "20px",
+  marginTop: "24px",
 }
 
 const DAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"]
@@ -306,7 +306,7 @@ export default function ReportPage() {
 
         {/* Header */}
         <motion.div variants={fadeUp}>
-          <div style={{ fontSize: "22px", fontWeight: "bold", color: "var(--text)", marginBottom: "20px" }}>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: "26px", fontWeight: 900, letterSpacing: "-0.03em", color: "var(--text)", marginBottom: "20px" }}>
             <motion.span key={language} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
               {t.progress}
             </motion.span>
@@ -343,7 +343,7 @@ export default function ReportPage() {
                   { value: totalExercisesDone, label: t.totalExercises },
                 ].map((stat, i) => (
                   <div key={i} style={{ ...cardStyle, textAlign: "center", marginBottom: 0, padding: "14px 12px" }}>
-                    <div style={{ fontSize: "28px", fontWeight: "bold", color: "var(--text)" }}>{stat.value}</div>
+                    <div style={{ fontFamily: "var(--font-display)", fontSize: "28px", fontWeight: 900, letterSpacing: "-0.04em", color: "var(--text)" }}>{stat.value}</div>
                     <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>{stat.label}</div>
                   </div>
                 ))}
@@ -401,7 +401,7 @@ export default function ReportPage() {
 
                 {/* Numbers */}
                 <div style={{ position: "relative", padding: "20px 22px 14px" }}>
-                  <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.12em", color: ACCENT, marginBottom: 6 }}>CURRENT STREAK</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.01em", color: ACCENT, marginBottom: 6 }}>Current streak</div>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                     <span style={{ fontSize: "clamp(44px,12vw,58px)", fontWeight: 900, lineHeight: 1, color: isDark ? "#fff" : "#0d2926", fontVariantNumeric: "tabular-nums" }}>
                       {displayStreak}
@@ -462,13 +462,13 @@ export default function ReportPage() {
 
             {/* Recovery */}
             <motion.div variants={fadeUp}>
-              <div style={sectionLabelStyle}>RECOVERY</div>
+              <div style={sectionLabelStyle}>Recovery</div>
               <div style={cardStyle}><MuscleRecovery logs={logs} /></div>
             </motion.div>
 
             {/* Activity heatmap */}
             <motion.div variants={fadeUp}>
-              <div style={sectionLabelStyle}>ACTIVITY</div>
+              <div style={sectionLabelStyle}>Activity</div>
               <div style={cardStyle}><ActivityHeatmap logs={logs} weeks={16} /></div>
             </motion.div>
 
@@ -477,7 +477,7 @@ export default function ReportPage() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", ...sectionLabelStyle }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
                   <Wallet size={11} strokeWidth={2} style={{ color: ACCENT }} />
-                  FITTOKEN EARNINGS
+                  FitToken earnings
                 </span>
                 <span style={{ fontSize: 12, fontWeight: 900, color: ACCENT, letterSpacing: 0 }}>{formatFT(ftBalance)} FT</span>
               </div>
@@ -508,7 +508,7 @@ export default function ReportPage() {
             <motion.div variants={fadeUp}>
               <div style={{ ...sectionLabelStyle, display: "flex", alignItems: "center", gap: 5 }}>
                 <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke={ACCENT} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                FT STORE
+                FT Store
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
 

@@ -379,8 +379,8 @@ export default function ProfilePage() {
           </div>
         )}
         {joinDate && !email.endsWith("@fitsched.guest") && (
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.13em", color: "var(--text-muted)" }}>
-            JOINED {joinDate}
+          <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)" }}>
+            Joined {joinDate}
           </div>
         )}
 
@@ -423,7 +423,7 @@ export default function ProfilePage() {
 
       {/* Stats */}
       <div style={{ padding: "0 16px" }}>
-        <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.13em", color: "var(--text-muted)", marginBottom: 10 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 10 }}>
           {t.byTheNumbers}
         </div>
 
@@ -459,8 +459,8 @@ export default function ProfilePage() {
       {/* Body Stats */}
       {liveBmi !== null && (
         <div style={{ padding: "20px 16px 0" }}>
-          <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.13em", color: "var(--text-muted)", marginBottom: 10 }}>
-            BODY
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 10 }}>
+            Body
           </div>
           {(() => {
             const cat =
@@ -522,8 +522,8 @@ export default function ProfilePage() {
         const domain: [number, number] = [Math.floor(minW - 1), Math.ceil(maxW + 1)]
         return (
           <div style={{ padding: "20px 16px 0" }}>
-            <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.13em", color: "var(--text-muted)", marginBottom: 10 }}>
-              WEIGHT TREND
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 10 }}>
+              Weight trend
             </div>
             <div style={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 20, padding: "16px 18px 12px", boxShadow: "var(--shadow)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
@@ -646,8 +646,9 @@ export default function ProfilePage() {
 
       {/* Achievements */}
       <div style={{ padding: "20px 16px 0" }}>
-        <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.13em", color: "var(--text-muted)", marginBottom: 10 }}>
-          ACHIEVEMENTS · {achievements.length} / {ACHIEVEMENT_DEFS.length}
+        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+          Achievements
+          <span style={{ fontSize: 10, fontWeight: 600, opacity: 0.6 }}>{achievements.length} / {ACHIEVEMENT_DEFS.length}</span>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>

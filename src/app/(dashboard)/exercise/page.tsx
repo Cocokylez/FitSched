@@ -313,7 +313,7 @@ export default function ExerciseSessionPage() {
       <div style={{ padding: "14px 16px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <button type="button" onClick={() => router.push("/workout")} style={{ display: "flex", alignItems: "center", gap: 8, border: "none", background: "transparent", cursor: "pointer", padding: 0 }}>
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-          <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.14em", color: "var(--text-muted)" }}>WORKOUT · TODAY</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Today's workout</span>
         </button>
         {verifySettled && (
           <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 9px", borderRadius: 999, fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", background: verifyState === "active" ? "rgba(107,191,184,0.14)" : "rgba(255,255,255,0.06)", border: verifyState === "active" ? "1px solid rgba(107,191,184,0.3)" : "1px solid var(--border)", color: verifyState === "active" ? ACCENT : "var(--text-muted)" }}>
@@ -773,7 +773,7 @@ export default function ExerciseSessionPage() {
                 />
                 {noteSaved && (
                   <motion.div initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: 6, fontSize: 11, color: "rgba(107,191,184,0.9)", fontWeight: 800 }}>
-                    ✓ Note saved
+                    Saved
                   </motion.div>
                 )}
               </motion.div>

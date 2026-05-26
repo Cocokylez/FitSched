@@ -521,7 +521,7 @@ export default function WithdrawalPage() {
                   Claimable balance
                   {!loading && (data?.claimed ?? 0) > 0 && (
                     <span style={{ marginLeft: 8, color: "#4ade80", fontWeight: 700 }}>
-                      · {formatFT(data!.claimed)} FIT already claimed ✓
+                      · {formatFT(data!.claimed)} FIT already claimed
                     </span>
                   )}
                 </div>
@@ -585,8 +585,8 @@ export default function WithdrawalPage() {
           transition={{ duration: 0.32, delay: 0.10, ease: [0.16, 1, 0.3, 1] }}
           style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "18px 20px", marginBottom: 12 }}
         >
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-muted)", marginBottom: 14 }}>
-            HOW YOU EARN
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 14 }}>
+            How you earn
           </div>
           {[
             { icon: Dumbbell, color: ACCENT,    bg: "rgba(107,191,184,0.12)", title: "Complete a workout",  detail: "+1.00 FT per session" },
@@ -613,8 +613,8 @@ export default function WithdrawalPage() {
             transition={{ duration: 0.32, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
             style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, overflow: "hidden", marginBottom: 12 }}
           >
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-muted)", padding: "14px 18px 10px" }}>
-              CLAIM HISTORY
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", padding: "14px 18px 10px" }}>
+              Claim history
             </div>
             {data!.claimReceipts.map((receipt, i) => (
               <div
@@ -662,8 +662,8 @@ export default function WithdrawalPage() {
             transition={{ duration: 0.32, delay: 0.14, ease: [0.16, 1, 0.3, 1] }}
             style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, overflow: "hidden", marginBottom: 12 }}
           >
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-muted)", padding: "14px 18px 10px" }}>
-              RECENT EARNINGS
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", padding: "14px 18px 10px" }}>
+              Recent earnings
             </div>
             {data!.transactions.map((tx, i) => {
               const meta = REASON_META[tx.reason] ?? REASON_META.workout_complete
@@ -751,7 +751,7 @@ function ClaimButton({
       bg:     "rgba(107,191,184,0.08)", border: "rgba(107,191,184,0.22)", color: ACCENT,
     },
     success: {
-      label:  "Claimed ✓",
+      label:  "Claimed",
       bg:     "rgba(74,222,128,0.12)", border: "rgba(74,222,128,0.35)", color: "#4ade80",
     },
   }
