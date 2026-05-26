@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
@@ -16,6 +16,8 @@ import { ACCENT, ACCENT_DIM, ACCENT_BD } from "@/lib/theme"
 import { getCategory, CATEGORY_COLORS } from "@/lib/exerciseUtils"
 import { WorkoutTemplatesModal } from "@/components/WorkoutTemplatesModal"
 import { ExerciseDemoVisual } from "@/components/ExerciseDemoPanel"
+import { useWorkoutVerification } from "@/lib/workoutVerification"
+import type { ActiveChallenge } from "@/lib/workoutVerification"
 
 const DEFAULT_EXERCISES: Record<number, Array<[string, string]>> = {
   0: [],
@@ -209,10 +211,13 @@ export default function WorkoutPage() {
   const [muscleReadiness, setMuscleReadiness] = useState<Array<{ group: string; status: "fresh" | "recovering" | "sore" | "untrained" }> | null>(null)
   const [workoutsPerWeek, setWorkoutsPerWeek] = useState(3)
   // Exercise walkthrough flow
-  const [exMode, setExMode] = useState<"idle" | "countdown" | "active" | "done">("idle")
+  const [exMode, setExMode] = useState<"idle" | "verify" | "countdown" | "active" | "done">("idle")
   const [exIdx, setExIdx] = useState(0)
   const [cdCount, setCdCount] = useState(3)
   const [completing, setCompleting] = useState(false)
+  const [verifySettled, setVerifySettled] = useState(false)
+  const sessionStartRef = useRef<number>(0)
+  const { state: verifyState, challenge, start: startVerify, getResult, stop: stopVerify } = useWorkoutVerification()
   const dayNames = [t.days.sun, t.days.mon, t.days.tue, t.days.wed, t.days.thu, t.days.fri, t.days.sat]
   const DAY_ABBR = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
 
@@ -547,7 +552,24 @@ export default function WorkoutPage() {
   function startExFlow() {
     if (!todayExercises.length) return
     setExIdx(0)
+    setVerifySettled(false)
+    setExMode("verify")
+  }
+
+  function beginSession() {
+    sessionStartRef.current = Date.now()
     setExMode("countdown")
+  }
+
+  function handleEnableMic() {
+    startVerify()
+    setVerifySettled(true)
+    beginSession()
+  }
+
+  function handleSkipVerify() {
+    setVerifySettled(true)
+    beginSession()
   }
 
   function advanceEx() {
@@ -563,13 +585,21 @@ export default function WorkoutPage() {
     const selDate = weekDates[selectedDay]
     if (!selDate) return
     setCompleting(true)
+    const elapsedSec = Math.floor((Date.now() - sessionStartRef.current) / 1000)
+    const verifyResult = getResult(elapsedSec)
+    stopVerify()
     const dateStr = formatLocalDate(selDate)
     const exs = todayExercises.map(([name, reps]) => ({ name, ...parseSetsReps(reps) }))
     try {
       const res = await fetch("/api/workout-log", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: dateStr, workoutName: muscle, exercises: exs }),
+        body: JSON.stringify({
+          date: dateStr, workoutName: muscle, exercises: exs,
+          verificationScore: verifyResult.score,
+          verificationMultiplier: verifyResult.multiplier,
+          verificationMethod: verifyResult.method,
+        }),
       })
       if (res.ok) {
         window.dispatchEvent(new Event("fitsched:tokens-updated"))
@@ -878,25 +908,25 @@ export default function WorkoutPage() {
             )}
           </AnimatePresence>
 
-          {/* ── Fullscreen exercise walkthrough ─────────────────────────────── */}
+          {/* ── Fullscreen exercise walkthrough — always light ─────────────── */}
           <AnimatePresence>
             {exMode !== "idle" && (
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.22 }}
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 24 }}
+                transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
                 style={{
                   position: "fixed", inset: 0, zIndex: 9998,
-                  background: "#0b1715",
+                  background: "#f8fafc",
                   display: "flex", flexDirection: "column",
                   userSelect: "none",
                 }}
               >
                 {/* Top progress bar */}
-                <div style={{ height: 3, background: "rgba(255,255,255,0.07)", flexShrink: 0 }}>
+                <div style={{ height: 3, background: "rgba(0,0,0,0.07)", flexShrink: 0 }}>
                   <motion.div
-                    animate={{ width: `${((exIdx + (exMode === "done" ? 1 : 0)) / todayExercises.length) * 100}%` }}
+                    animate={{ width: `${((exIdx + (exMode === "done" ? 1 : 0)) / Math.max(todayExercises.length, 1)) * 100}%` }}
                     transition={{ duration: 0.4, ease: "easeOut" }}
                     style={{ height: "100%", background: ACCENT, borderRadius: 999 }}
                   />
@@ -904,44 +934,187 @@ export default function WorkoutPage() {
 
                 {/* Back/close */}
                 <button
-                  onClick={() => setExMode("idle")}
+                  onClick={() => { setExMode("idle"); stopVerify() }}
                   style={{
-                    position: "absolute", top: 18, left: 18, zIndex: 1,
+                    position: "absolute", top: 14, left: 14, zIndex: 10,
                     width: 36, height: 36, borderRadius: "50%",
-                    background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)",
-                    color: "rgba(255,255,255,0.65)", fontSize: 18,
+                    background: "rgba(0,0,0,0.06)", border: "1px solid rgba(0,0,0,0.08)",
+                    color: "#374151", fontSize: 16,
                     display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
                   }}
                 >
                   ←
                 </button>
 
+                {/* Mic status pill — top right, after verify is settled */}
+                {verifySettled && (
+                  <div style={{
+                    position: "absolute", top: 18, right: 18, zIndex: 10,
+                    display: "flex", alignItems: "center", gap: 5,
+                    background: verifyState === "active" ? ACCENT_DIM : "rgba(0,0,0,0.06)",
+                    border: `1px solid ${verifyState === "active" ? ACCENT_BD : "rgba(0,0,0,0.1)"}`,
+                    borderRadius: 999, padding: "5px 11px",
+                    fontSize: 10, fontWeight: 800,
+                    color: verifyState === "active" ? ACCENT : "#9ca3af",
+                    letterSpacing: "0.06em",
+                  }}>
+                    {verifyState === "active" ? (
+                      <>
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: ACCENT, animation: "appBreath 1.4s ease-in-out infinite" }} />
+                        MIC ON
+                      </>
+                    ) : (
+                      <>
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#9ca3af" }} />
+                        UNVERIFIED
+                      </>
+                    )}
+                  </div>
+                )}
+
                 {/* Exercise counter */}
-                <div style={{
-                  paddingTop: 22, textAlign: "center",
-                  fontSize: 10, fontWeight: 800, letterSpacing: "0.16em",
-                  color: "rgba(255,255,255,0.3)",
-                }}>
-                  {exMode !== "done"
-                    ? `${exIdx + 1} / ${todayExercises.length}`
-                    : `${todayExercises.length} / ${todayExercises.length}`}
-                </div>
+                {exMode !== "verify" && (
+                  <div style={{
+                    paddingTop: 20, textAlign: "center",
+                    fontSize: 10, fontWeight: 800, letterSpacing: "0.16em",
+                    color: "rgba(0,0,0,0.3)",
+                  }}>
+                    {exMode !== "done"
+                      ? `${exIdx + 1} / ${todayExercises.length}`
+                      : `${todayExercises.length} / ${todayExercises.length}`}
+                  </div>
+                )}
+
+                {/* ── Breath challenge banner (floats on top of whatever screen is active) */}
+                <AnimatePresence>
+                  {challenge && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -16 }}
+                      style={{
+                        position: "absolute", top: 54, left: 16, right: 16, zIndex: 20,
+                        borderRadius: 16, padding: "14px 18px",
+                        background: challenge.phase === "hold"
+                          ? "rgba(245,158,11,0.12)" : ACCENT_DIM,
+                        border: `1px solid ${challenge.phase === "hold" ? "rgba(245,158,11,0.35)" : ACCENT_BD}`,
+                        display: "flex", alignItems: "center", gap: 12,
+                      }}
+                    >
+                      <div style={{
+                        width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+                        background: challenge.phase === "hold" ? "rgba(245,158,11,0.15)" : ACCENT_DIM,
+                        border: `2px solid ${challenge.phase === "hold" ? "#f59e0b" : ACCENT}`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 18,
+                      }}>
+                        {challenge.phase === "hold" ? "🤫" : "😮‍💨"}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{
+                          fontSize: 13, fontWeight: 900,
+                          color: challenge.phase === "hold" ? "#92400e" : "#0f766e",
+                          marginBottom: 1,
+                        }}>
+                          {challenge.phase === "hold"
+                            ? `Hold still & breathe quietly — ${challenge.countdown}s`
+                            : `Breathe normally — ${challenge.countdown}s`}
+                        </div>
+                        <div style={{ fontSize: 10, color: "rgba(0,0,0,0.4)", fontWeight: 700 }}>
+                          Proof of workout check {challenge.ping}/{challenge.totalPings}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* ── Verify screen ─────────────────────────────────────────────── */}
+                {exMode === "verify" && (
+                  <div style={{
+                    flex: 1, display: "flex", flexDirection: "column",
+                    alignItems: "center", justifyContent: "center",
+                    padding: "0 28px", gap: 20,
+                  }}>
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 220, damping: 18 }}
+                      style={{
+                        width: 72, height: 72, borderRadius: "50%",
+                        background: ACCENT_DIM, border: `2px solid ${ACCENT_BD}`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke={ACCENT} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/>
+                      </svg>
+                    </motion.div>
+
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{
+                        fontFamily: "var(--font-display)",
+                        fontSize: 24, fontWeight: 900, color: "#111827",
+                        letterSpacing: "-0.025em", marginBottom: 8,
+                      }}>
+                        Verify your workout
+                      </div>
+                      <div style={{ fontSize: 14, color: "rgba(0,0,0,0.5)", lineHeight: 1.55, maxWidth: 280 }}>
+                        Enable mic to detect breathing and earn <strong style={{ color: ACCENT }}>full FitTokens</strong>. Skip = 50% tokens only.
+                      </div>
+                    </div>
+
+                    <div style={{
+                      width: "100%", background: "#fff",
+                      border: "1px solid rgba(0,0,0,0.08)",
+                      borderRadius: 16, padding: "14px 16px",
+                      fontSize: 12, color: "rgba(0,0,0,0.45)", lineHeight: 1.55,
+                    }}>
+                      🔒 Mic audio is <strong style={{ color: "#111827" }}>never recorded or sent</strong>. It's processed locally — only breathing rhythm is detected.
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
+                      <button
+                        onClick={handleEnableMic}
+                        style={{
+                          width: "100%", border: "none",
+                          background: ACCENT, color: "#0b1715",
+                          borderRadius: 16, padding: "15px 24px",
+                          fontSize: 15, fontWeight: 900, cursor: "pointer",
+                          fontFamily: "var(--font-display)",
+                          boxShadow: "0 4px 20px rgba(107,191,184,0.32)",
+                        }}
+                      >
+                        Enable mic & start →
+                      </button>
+                      <button
+                        onClick={handleSkipVerify}
+                        style={{
+                          width: "100%", border: "1px solid rgba(0,0,0,0.1)",
+                          background: "transparent", color: "rgba(0,0,0,0.45)",
+                          borderRadius: 16, padding: "13px 24px",
+                          fontSize: 14, fontWeight: 700, cursor: "pointer",
+                        }}
+                      >
+                        Skip — start without mic
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* ── Countdown screen ─────────────────────────────────────────── */}
                 {exMode === "countdown" && (
                   <div style={{
                     flex: 1, display: "flex", flexDirection: "column",
                     alignItems: "center", justifyContent: "center",
-                    padding: "0 28px", gap: 20,
+                    padding: "0 28px", gap: 18,
                   }}>
                     {/* Progress dots */}
-                    <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+                    <div style={{ display: "flex", gap: 6 }}>
                       {todayExercises.map((_, i) => (
                         <div key={i} style={{
                           width: i === exIdx ? 20 : 6, height: 6, borderRadius: 3,
-                          background: i < exIdx ? ACCENT : i === exIdx ? ACCENT : "rgba(255,255,255,0.15)",
+                          background: i <= exIdx ? ACCENT : "rgba(0,0,0,0.12)",
                           transition: "width 0.3s ease, background 0.3s ease",
-                          opacity: i > exIdx ? 0.5 : 1,
                         }} />
                       ))}
                     </div>
@@ -950,18 +1123,17 @@ export default function WorkoutPage() {
                       Up next
                     </div>
 
-                    {/* Animated countdown number */}
                     <AnimatePresence mode="wait">
                       <motion.div
                         key={cdCount}
-                        initial={{ opacity: 0, scale: 0.45, y: 20 }}
+                        initial={{ opacity: 0, scale: 0.45, y: 18 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 1.5, y: -20 }}
-                        transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                        exit={{ opacity: 0, scale: 1.5, y: -18 }}
+                        transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
                         style={{
                           fontFamily: "var(--font-display)",
                           fontSize: 120, fontWeight: 900, lineHeight: 1,
-                          color: "#fff", letterSpacing: "-0.05em",
+                          color: "#111827", letterSpacing: "-0.05em",
                         }}
                       >
                         {cdCount}
@@ -970,7 +1142,7 @@ export default function WorkoutPage() {
 
                     <div style={{
                       fontFamily: "var(--font-display)",
-                      fontSize: 26, fontWeight: 900, color: "#fff",
+                      fontSize: 26, fontWeight: 900, color: "#111827",
                       letterSpacing: "-0.025em", textAlign: "center", lineHeight: 1.2,
                     }}>
                       {todayExercises[exIdx]?.[0]}
@@ -991,35 +1163,29 @@ export default function WorkoutPage() {
                   const isLast = exIdx + 1 >= todayExercises.length
                   return (
                     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                      {/* Large demo visual */}
                       <div style={{
                         flex: 1, display: "flex", alignItems: "center",
-                        justifyContent: "center", padding: "12px 16px 4px",
-                        minHeight: 0,
+                        justifyContent: "center", padding: "12px 16px 4px", minHeight: 0,
                       }}>
                         <motion.div
                           key={exIdx}
-                          initial={{ opacity: 0, scale: 0.9 }}
+                          initial={{ opacity: 0, scale: 0.92 }}
                           animate={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
-                          style={{
-                            width: "min(100%, 340px)", aspectRatio: "1 / 1",
-                            borderRadius: 26, overflow: "hidden",
-                          }}
+                          transition={{ duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
+                          style={{ width: "min(100%, 340px)", aspectRatio: "1 / 1", borderRadius: 26, overflow: "hidden" }}
                         >
                           <ExerciseDemoVisual exerciseName={exName} compact={false} height={340} objectFit="contain" />
                         </motion.div>
                       </div>
 
-                      {/* Bottom info card */}
                       <motion.div
                         key={`info-${exIdx}`}
                         initial={{ y: 48, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
-                        transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+                        transition={{ duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
                         style={{
-                          background: "rgba(255,255,255,0.04)",
-                          borderTop: "1px solid rgba(255,255,255,0.07)",
+                          background: "#fff",
+                          borderTop: "1px solid rgba(0,0,0,0.07)",
                           borderRadius: "28px 28px 0 0",
                           padding: "22px 22px",
                           paddingBottom: "max(22px, env(safe-area-inset-bottom))",
@@ -1032,25 +1198,20 @@ export default function WorkoutPage() {
                               background: ACCENT_DIM, border: `1px solid ${ACCENT_BD}`,
                               borderRadius: 999, padding: "3px 12px",
                               fontSize: 11, fontWeight: 800, color: ACCENT,
-                            }}>
-                              {exSR}
-                            </span>
-                            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontWeight: 700, letterSpacing: "0.04em" }}>
+                            }}>{exSR}</span>
+                            <span style={{ fontSize: 10, color: "rgba(0,0,0,0.35)", fontWeight: 700, letterSpacing: "0.06em" }}>
                               {getMuscleGroup(exName).toUpperCase()}
                             </span>
                           </div>
                           <div style={{
                             fontFamily: "var(--font-display)",
-                            fontSize: 28, fontWeight: 900, color: "#fff",
+                            fontSize: 28, fontWeight: 900, color: "#111827",
                             letterSpacing: "-0.025em", lineHeight: 1.1, marginBottom: 6,
-                          }}>
-                            {exName}
-                          </div>
-                          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>
+                          }}>{exName}</div>
+                          <div style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", lineHeight: 1.55 }}>
                             {getExerciseDesc(exName)}
                           </div>
                         </div>
-
                         <button
                           onClick={advanceEx}
                           style={{
@@ -1059,7 +1220,7 @@ export default function WorkoutPage() {
                             borderRadius: 16, padding: "15px 24px",
                             fontSize: 15, fontWeight: 900, cursor: "pointer",
                             fontFamily: "var(--font-display)", letterSpacing: "-0.01em",
-                            boxShadow: "0 4px 20px rgba(107,191,184,0.35)",
+                            boxShadow: "0 4px 20px rgba(107,191,184,0.32)",
                           }}
                         >
                           {isLast ? "Finish ✓" : "Next →"}
@@ -1075,11 +1236,12 @@ export default function WorkoutPage() {
                     flex: 1, display: "flex", flexDirection: "column",
                     alignItems: "center", justifyContent: "center",
                     padding: "0 24px", gap: 20, overflowY: "auto",
+                    paddingBottom: "max(24px, env(safe-area-inset-bottom))",
                   }}>
                     <motion.div
                       initial={{ scale: 0, rotate: -30 }}
                       animate={{ scale: 1, rotate: 0 }}
-                      transition={{ type: "spring", stiffness: 220, damping: 16, delay: 0.1 }}
+                      transition={{ type: "spring", stiffness: 220, damping: 16, delay: 0.08 }}
                       style={{
                         width: 72, height: 72, borderRadius: "50%",
                         background: ACCENT_DIM, border: `2px solid ${ACCENT}`,
@@ -1091,54 +1253,50 @@ export default function WorkoutPage() {
                       </svg>
                     </motion.div>
 
-                    <motion.div
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.22 }}
-                      style={{ textAlign: "center" }}
-                    >
-                      <div style={{
-                        fontFamily: "var(--font-display)",
-                        fontSize: 32, fontWeight: 900, color: "#fff",
-                        letterSpacing: "-0.03em", marginBottom: 6,
-                      }}>
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} style={{ textAlign: "center" }}>
+                      <div style={{ fontFamily: "var(--font-display)", fontSize: 32, fontWeight: 900, color: "#111827", letterSpacing: "-0.03em", marginBottom: 6 }}>
                         All done! 💪
                       </div>
-                      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>
+                      <div style={{ fontSize: 13, color: "rgba(0,0,0,0.45)" }}>
                         {todayExercises.length} exercises · ~{Math.round(todayExercises.length * 4)} min
                       </div>
                     </motion.div>
 
-                    {/* Exercise summary list */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.32 }}
+                    {/* Verification badge */}
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}
                       style={{
-                        width: "100%", background: "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.07)",
-                        borderRadius: 18, padding: "4px 18px",
+                        display: "flex", alignItems: "center", gap: 8,
+                        background: verifyState === "active" ? ACCENT_DIM : "rgba(0,0,0,0.05)",
+                        border: `1px solid ${verifyState === "active" ? ACCENT_BD : "rgba(0,0,0,0.08)"}`,
+                        borderRadius: 999, padding: "7px 16px",
+                        fontSize: 12, fontWeight: 800,
+                        color: verifyState === "active" ? ACCENT : "rgba(0,0,0,0.4)",
                       }}
+                    >
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                      </svg>
+                      {verifyState === "active" ? "Mic verified — full FitTokens" : "Unverified — 50% FitTokens"}
+                    </motion.div>
+
+                    {/* Exercise recap list */}
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}
+                      style={{ width: "100%", background: "#fff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 18, padding: "4px 18px" }}
                     >
                       {todayExercises.map(([name, sr], i) => (
                         <div key={i} style={{
                           display: "flex", alignItems: "center", gap: 10, padding: "11px 0",
-                          borderBottom: i < todayExercises.length - 1
-                            ? "1px solid rgba(255,255,255,0.06)" : "none",
+                          borderBottom: i < todayExercises.length - 1 ? "1px solid rgba(0,0,0,0.06)" : "none",
                         }}>
-                          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                          <span style={{ flex: 1, fontSize: 13, color: "#fff", fontWeight: 700 }}>{name}</span>
-                          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontWeight: 600 }}>{sr}</span>
+                          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                          <span style={{ flex: 1, fontSize: 13, color: "#111827", fontWeight: 700 }}>{name}</span>
+                          <span style={{ fontSize: 11, color: "rgba(0,0,0,0.38)", fontWeight: 600 }}>{sr}</span>
                         </div>
                       ))}
                     </motion.div>
 
                     <motion.button
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.44 }}
+                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.42 }}
                       onClick={finishWorkout}
                       disabled={completing}
                       style={{
@@ -1148,7 +1306,7 @@ export default function WorkoutPage() {
                         fontSize: 16, fontWeight: 900,
                         cursor: completing ? "default" : "pointer",
                         fontFamily: "var(--font-display)", letterSpacing: "-0.01em",
-                        boxShadow: "0 4px 20px rgba(107,191,184,0.35)",
+                        boxShadow: "0 4px 20px rgba(107,191,184,0.32)",
                         opacity: completing ? 0.7 : 1,
                       }}
                     >
