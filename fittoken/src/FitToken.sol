@@ -10,10 +10,9 @@ import "@openzeppelin/contracts/access/Ownable2Step.sol";
  * @notice ERC-20 reward token for the FitSched fitness app, deployed on Base.
  *
  * ── Tokenomics ────────────────────────────────────────────────────────────────
- *   Total Supply Cap : 1,000,000,000 FIT
- *   Team + Reserve   :   500,000,000 FIT  (50%) — minted to owner at deploy
- *   Community/LP     :   100,000,000 FIT  (10%) — minted to owner at deploy
- *   Rewards Pool     :   400,000,000 FIT  (40%) — minted on-demand by distributor
+ *   Total Supply Cap : 10,000,000 FIT
+ *   Owner / Team     :  4,000,000 FIT  (40%) — minted to owner at deploy
+ *   Rewards Pool     :  6,000,000 FIT  (60%) — minted on-demand by distributor
  *
  * ── Earning (mirrors the app's off-chain logic) ───────────────────────────────
  *   • 1 FIT base per completed + verified workout
@@ -33,9 +32,9 @@ import "@openzeppelin/contracts/access/Ownable2Step.sol";
  */
 contract FitToken is ERC20, ERC20Burnable, Ownable2Step {
     // ── Supply constants ──────────────────────────────────────────────────────
-    uint256 public constant MAX_SUPPLY           = 1_000_000_000 * 1e18; // 1 billion
-    uint256 public constant REWARDS_POOL_CAP     =   400_000_000 * 1e18; // 400M — 40%
-    uint256 public constant INITIAL_MINT         =   600_000_000 * 1e18; // 600M — 60%
+    uint256 public constant MAX_SUPPLY       = 10_000_000 * 1e18; // 10 million hard cap
+    uint256 public constant REWARDS_POOL_CAP =  6_000_000 * 1e18; //  6M — 60% — rewards
+    uint256 public constant INITIAL_MINT     =  4_000_000 * 1e18; //  4M — 40% — owner
 
     // ── State ─────────────────────────────────────────────────────────────────
     address public rewardDistributor;
@@ -52,7 +51,7 @@ contract FitToken is ERC20, ERC20Burnable, Ownable2Step {
 
     // ── Constructor ───────────────────────────────────────────────────────────
     /**
-     * @param initialOwner   Multisig / deployer wallet. Receives the 600M initial mint.
+     * @param initialOwner   Multisig / deployer wallet. Receives the 4M initial mint (40%).
      * @param distributor    Hot wallet used by the FitSched backend to mint rewards.
      */
     constructor(address initialOwner, address distributor)
@@ -61,7 +60,7 @@ contract FitToken is ERC20, ERC20Burnable, Ownable2Step {
     {
         if (distributor == address(0)) revert ZeroAddress();
         rewardDistributor = distributor;
-        // Mint team + community + reserve to owner
+        // Mint owner / team allocation (40%) at deploy
         _mint(initialOwner, INITIAL_MINT);
         emit RewardDistributorUpdated(address(0), distributor);
     }

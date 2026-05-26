@@ -9,10 +9,11 @@ Built on [Base](https://base.org) — Coinbase's Ethereum L2.
 
 | Allocation | Amount | % | Notes |
 |---|---|---|---|
-| Team + Reserve | 500,000,000 FIT | 50% | Minted to owner at deploy |
-| Community / LP | 100,000,000 FIT | 10% | Minted to owner at deploy |
-| **Rewards Pool** | **400,000,000 FIT** | **40%** | Minted on-demand by distributor |
-| **Total** | **1,000,000,000 FIT** | **100%** | Hard cap — can never exceed |
+| Owner / Team | 4,000,000 FIT | 40% | Minted to owner at deploy |
+| **Rewards Pool** | **6,000,000 FIT** | **60%** | Minted on-demand by distributor |
+| **Total** | **10,000,000 FIT** | **100%** | Hard cap — can never exceed |
+
+> **Note:** Exact split can be adjusted before mainnet deploy — just change `INITIAL_MINT` and `REWARDS_POOL_CAP` in the contract. The only invariant is `INITIAL_MINT + REWARDS_POOL_CAP = MAX_SUPPLY`.
 
 ---
 

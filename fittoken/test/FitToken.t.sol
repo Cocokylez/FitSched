@@ -23,11 +23,11 @@ contract FitTokenTest is Test {
     // ── Deployment ────────────────────────────────────────────────────────────
 
     function test_InitialSupplyMintedToOwner() public {
-        assertEq(token.balanceOf(owner), 600_000_000 * 1e18);
+        assertEq(token.balanceOf(owner), 4_000_000 * 1e18);
     }
 
-    function test_TotalSupplyIs600M() public {
-        assertEq(token.totalSupply(), 600_000_000 * 1e18);
+    function test_TotalSupplyIs4M() public {
+        assertEq(token.totalSupply(), 4_000_000 * 1e18);
     }
 
     function test_NameAndSymbol() public {
@@ -45,7 +45,7 @@ contract FitTokenTest is Test {
     }
 
     function test_FullRewardsPoolAvailable() public {
-        assertEq(token.rewardsRemaining(), 400_000_000 * 1e18);
+        assertEq(token.rewardsRemaining(), 6_000_000 * 1e18);
     }
 
     // ── Mint rewards ──────────────────────────────────────────────────────────
@@ -84,7 +84,7 @@ contract FitTokenTest is Test {
     // ── Rewards pool cap ──────────────────────────────────────────────────────
 
     function test_CannotExceedRewardsPoolCap() public {
-        uint256 cap = 400_000_000 * 1e18;
+        uint256 cap = 6_000_000 * 1e18;
 
         // Mint the entire rewards pool in one shot
         vm.prank(distributor);
@@ -99,7 +99,7 @@ contract FitTokenTest is Test {
     }
 
     function test_MaxTotalSupplyNeverExceededAfterFullRewardsMint() public {
-        uint256 cap = 400_000_000 * 1e18;
+        uint256 cap = 6_000_000 * 1e18;
         vm.prank(distributor);
         token.mintReward(user1, cap, "bulk");
 
@@ -209,7 +209,7 @@ contract FitTokenTest is Test {
     }
 
     function test_RewardsUsedBpsAfterHalfMinted() public {
-        uint256 half = 200_000_000 * 1e18;
+        uint256 half = 3_000_000 * 1e18; // half of 6M rewards pool
         vm.prank(distributor);
         token.mintReward(user1, half, "bulk");
 
@@ -219,7 +219,7 @@ contract FitTokenTest is Test {
     // ── Fuzz ─────────────────────────────────────────────────────────────────
 
     function testFuzz_MintWithinPoolAlwaysSucceeds(uint256 amount) public {
-        uint256 cap = 400_000_000 * 1e18;
+        uint256 cap = 6_000_000 * 1e18;
         amount = bound(amount, 1, cap);
 
         vm.prank(distributor);
@@ -230,7 +230,7 @@ contract FitTokenTest is Test {
     }
 
     function testFuzz_MintExceedingPoolAlwaysReverts(uint256 excess) public {
-        uint256 cap = 400_000_000 * 1e18;
+        uint256 cap = 6_000_000 * 1e18;
         excess = bound(excess, 1, type(uint128).max);
 
         // Fill pool
