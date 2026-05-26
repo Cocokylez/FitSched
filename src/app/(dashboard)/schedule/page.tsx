@@ -339,36 +339,27 @@ export default function SchedulePage() {
       </div>
 
       <div data-dashboard-scroll style={{ flex: 1, overflowY: "auto", paddingBottom: 100 }}>
-        {/* Weekly goal progress pill */}
+        {/* Weekly goal progress bar */}
         {weekWorkouts > 0 && (
-          <div style={{ padding: "0 16px 4px", display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 7,
-              background: weekWorkouts >= workoutsPerWeek ? "rgba(107,191,184,0.12)" : "var(--surface-2)",
-              border: `1px solid ${weekWorkouts >= workoutsPerWeek ? "rgba(107,191,184,0.32)" : "var(--border)"}`,
-              borderRadius: 999, padding: "5px 12px",
-            }}>
-              {/* Mini progress dots */}
-              <div style={{ display: "flex", gap: 4 }}>
-                {Array.from({ length: workoutsPerWeek }, (_, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      width: 6, height: 6, borderRadius: "50%",
-                      background: idx < weekWorkouts ? ACCENT : "var(--border)",
-                      transition: "background 0.2s",
-                    }}
-                  />
-                ))}
-              </div>
+          <div style={{ padding: "4px 16px 8px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)" }}>Weekly goal</span>
               <span style={{ fontSize: 11, fontWeight: 800, color: weekWorkouts >= workoutsPerWeek ? ACCENT : "var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}>
-                {weekWorkouts}/{workoutsPerWeek} this week
+                {weekWorkouts} / {workoutsPerWeek}
                 {weekWorkouts >= workoutsPerWeek && (
                   <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
                 )}
               </span>
+            </div>
+            <div style={{ height: 4, background: "var(--border)", borderRadius: 999, overflow: "hidden" }}>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min(100, (weekWorkouts / workoutsPerWeek) * 100)}%` }}
+                transition={{ type: "spring", stiffness: 160, damping: 24, delay: 0.1 }}
+                style={{ height: "100%", background: ACCENT, borderRadius: 999 }}
+              />
             </div>
           </div>
         )}
@@ -654,7 +645,7 @@ export default function SchedulePage() {
             onClick={openAddSchedule}
             style={{
               position: "fixed", right: 20,
-              bottom: "max(90px, calc(env(safe-area-inset-bottom) + 80px))",
+              bottom: "max(160px, calc(env(safe-area-inset-bottom) + 150px))",
               zIndex: 60, width: 52, height: 52, borderRadius: "50%",
               background: ACCENT, border: "none", cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
