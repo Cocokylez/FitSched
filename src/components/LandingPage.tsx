@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { motion, useInView, AnimatePresence } from "framer-motion"
 import {
   ArrowRight, Flame, Zap, Navigation, BarChart2,
