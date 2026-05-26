@@ -584,13 +584,14 @@ export default function WorkoutPage() {
   }
 
   async function finishWorkout() {
-    const selDate = weekDates[selectedDay]
-    if (!selDate) return
     setCompleting(true)
     const elapsedSec = Math.floor((Date.now() - sessionStartRef.current) / 1000)
     const verifyResult = getResult(elapsedSec)
     stopVerify()
-    const dateStr = formatLocalDate(selDate)
+    // Always log against today — the walkthrough can only be started today,
+    // and the server validates against UTC±38h. Using weekDates[selectedDay]
+    // would fail silently if the user had a different day selected in the strip.
+    const dateStr = formatLocalDate(new Date())
     const exs = todayExercises.map(([name, reps]) => ({ name, ...parseSetsReps(reps) }))
     try {
       const res = await fetch("/api/workout-log", {
