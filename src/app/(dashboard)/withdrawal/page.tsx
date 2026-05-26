@@ -79,16 +79,17 @@ function isValidEvmAddress(addr: string) {
   return /^0x[0-9a-fA-F]{40}$/.test(addr)
 }
 
+// Use NEXT_PUBLIC_BASE_NETWORK=testnet in .env.local for local/staging dev.
+// Defaults to mainnet so production is always correct even if var is unset.
+const IS_TESTNET = process.env.NEXT_PUBLIC_BASE_NETWORK === "testnet"
+const BASESCAN   = IS_TESTNET ? "https://sepolia.basescan.org" : "https://basescan.org"
+
 function basescanTxUrl(txHash: string) {
-  return process.env.NODE_ENV !== "production"
-    ? `https://sepolia.basescan.org/tx/${txHash}`
-    : `https://basescan.org/tx/${txHash}`
+  return `${BASESCAN}/tx/${txHash}`
 }
 
 function basescanAddressUrl(addr: string) {
-  return process.env.NODE_ENV !== "production"
-    ? `https://sepolia.basescan.org/address/${addr}`
-    : `https://basescan.org/address/${addr}`
+  return `${BASESCAN}/address/${addr}`
 }
 
 // ── Reason metadata ───────────────────────────────────────────────────────────

@@ -43,10 +43,7 @@ export async function GET(req: Request) {
     // ── Live RPC call ───────────────────────────────────────────────────────────
     const balance = await getOnChainFitBalance(user.walletAddress)
 
-    return NextResponse.json({
-      balance,
-      walletAddress: user.walletAddress,
-    })
+    return NextResponse.json({ balance })
   } catch (err) {
     console.error("tokens-onchain GET error:", err)
     // Return null instead of 500 — the UI handles null gracefully
