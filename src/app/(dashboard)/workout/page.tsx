@@ -495,7 +495,9 @@ export default function WorkoutPage() {
     return (
       <div style={{ minHeight: "100vh", background: "transparent", display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "16px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.14em", color: "var(--text-muted)" }}>WORKOUT</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)" }}>
+            {new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+          </div>
           <button onClick={toggleTheme} style={{ width: 36, height: 36, borderRadius: "50%", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">{theme === "dark" ? (<><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></>) : (<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>)}</svg>
           </button>
@@ -633,7 +635,9 @@ export default function WorkoutPage() {
     <div style={{ minHeight: "100vh", background: "transparent", display: "flex", flexDirection: "column" }}>
       {/* W1 Header */}
       <div style={{ padding: "16px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.14em", color: "var(--text-muted)" }}>WORKOUT</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)" }}>
+          {new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+        </div>
         <button onClick={toggleTheme} style={{ width: 36, height: 36, borderRadius: "50%", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">{theme === "dark" ? (<><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></>) : (<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>)}</svg>
         </button>
@@ -672,9 +676,13 @@ export default function WorkoutPage() {
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
             <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.12em", color: "var(--text-muted)" }}>WEEKLY GOAL</span>
-            <span style={{ fontSize: 11, fontWeight: 800, color: weeklyGoalMet ? ACCENT : "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: weeklyGoalMet ? ACCENT : "var(--text-muted)", fontVariantNumeric: "tabular-nums", display: "flex", alignItems: "center", gap: 4 }}>
               {weeklyDone} / {workoutsPerWeek}
-              {weeklyGoalMet && " ✓"}
+              {weeklyGoalMet && (
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              )}
             </span>
           </div>
           <div style={{ height: 4, background: "var(--border)", borderRadius: 999, overflow: "hidden" }}>
@@ -746,22 +754,33 @@ export default function WorkoutPage() {
           const fresh = muscleReadiness.filter(m => m.status === "fresh" || m.status === "untrained").length
           let tip: string | null = null
           if (weeklyDone === workoutsPerWeek) {
-            tip = "✓ Weekly goal reached — any extra sets are a bonus!"
+            tip = "Weekly goal reached — any extra sets are a bonus."
           } else if (weeklyDone === workoutsPerWeek - 1) {
-            tip = "One more to hit your weekly goal 💪"
+            tip = "One more workout to hit your goal."
           } else if (soreMuscles.length >= 3) {
-            tip = "Most muscles still sore — focus on form over intensity today."
+            tip = "Most muscles still sore — keep intensity moderate today."
           } else if (fresh >= 4) {
-            tip = "Muscles are fresh — great day for a strong session! ⚡"
+            tip = "Muscles are fresh across the board — a good day to push."
           } else if (recovering > 0 && soreMuscles.length === 0) {
-            tip = "Recovering well — a moderate session is perfect today."
+            tip = "Recovering well — a steady session is the right call today."
           }
           if (!tip) return null
           return (
             <motion.div
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
-              style={{ marginBottom: 12, borderRadius: 12, padding: "9px 12px", background: "var(--surface)", border: "1px solid var(--border)", fontSize: 12, fontWeight: 700, color: "var(--text-muted)", lineHeight: 1.4 }}
+              style={{
+                marginBottom: 12,
+                borderRadius: "0 10px 10px 0",
+                padding: "9px 13px",
+                background: "var(--surface-2)",
+                borderTop: "1px solid var(--border)",
+                borderRight: "1px solid var(--border)",
+                borderBottom: "1px solid var(--border)",
+                borderLeft: "2px solid var(--border-strong)",
+                fontSize: 12, fontWeight: 600,
+                color: "var(--text-muted)", lineHeight: 1.5,
+              }}
             >
               {tip}
             </motion.div>
@@ -769,9 +788,11 @@ export default function WorkoutPage() {
         })()}
 
         {/* FT motivation strip */}
-        <div style={{ background: "rgba(107,191,184,0.08)", border: "1px solid rgba(107,191,184,0.28)", borderRadius: 14, padding: "10px 14px", display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 700, color: "#6bbfb8", marginBottom: 14 }}>
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          Complete to earn FitTokens
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14, padding: "0 2px" }}>
+          <div style={{ width: 6, height: 6, borderRadius: "50%", background: ACCENT, flexShrink: 0, opacity: 0.7 }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.01em" }}>
+            Complete this session to earn <span style={{ color: ACCENT }}>FitTokens</span>
+          </span>
         </div>
 
         {/* Blocked banner */}
@@ -866,31 +887,54 @@ export default function WorkoutPage() {
       </div>
 
       {/* Fixed bottom CTA */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "8px 16px", paddingBottom: "max(14px, env(safe-area-inset-bottom))", background: "var(--bg)", borderTop: "1px solid var(--border)" }}>
+      <div style={{
+        position: "fixed", bottom: 0, left: 0, right: 0,
+        padding: "10px 16px",
+        paddingBottom: "max(16px, env(safe-area-inset-bottom))",
+        background: "linear-gradient(to top, var(--bg) 72%, transparent)",
+      }}>
         {!workoutBlocked ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <button
-              onClick={async () => {
-                const selectedDate = weekDates[selectedDay]
-                if (!selectedDate) return
-                const dateStr = formatLocalDate(selectedDate)
-                const exercises = todayExercises.map(([name, reps]) => ({ name, ...parseSetsReps(reps) }))
-                const res = await fetch("/api/workout-schedule", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ date: dateStr, workoutName: muscle, exercises, source: "manual" }) })
-                if (res.ok) { setSaveSuccess(true); setTimeout(() => setSaveSuccess(false), 2000) }
-              }}
-              style={{ width: "100%", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", borderRadius: 14, padding: 12, fontSize: 13, fontWeight: 700, cursor: "pointer" }}
-            >
-              {saveSuccess ? t.savedToSchedule : t.saveToSchedule}
-            </button>
-            <button
+          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            <motion.button
               onClick={startExFlow}
-              style={{ width: "100%", border: "none", background: "#6bbfb8", color: "#0b1715", borderRadius: 14, padding: 13, fontSize: 14, fontWeight: 950, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px rgba(107,191,184,0.3)" }}
+              whileTap={{ scale: 0.985 }}
+              style={{
+                width: "100%", border: "none",
+                background: "linear-gradient(135deg, #6bbfb8 0%, #52a8a0 100%)",
+                color: "#0b1715",
+                borderRadius: 18, padding: "15px 24px",
+                fontSize: 15, fontWeight: 900,
+                letterSpacing: "-0.01em",
+                cursor: "pointer",
+                boxShadow: "0 4px 24px rgba(107,191,184,0.38), inset 0 1px 0 rgba(255,255,255,0.22)",
+              }}
             >
               {t.goExercise}
-            </button>
+            </motion.button>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "8px 0 0" }}>
+              <button
+                onClick={async () => {
+                  const selectedDate = weekDates[selectedDay]
+                  if (!selectedDate) return
+                  const dateStr = formatLocalDate(selectedDate)
+                  const exercises = todayExercises.map(([name, reps]) => ({ name, ...parseSetsReps(reps) }))
+                  const res = await fetch("/api/workout-schedule", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ date: dateStr, workoutName: muscle, exercises, source: "manual" }) })
+                  if (res.ok) { setSaveSuccess(true); setTimeout(() => setSaveSuccess(false), 2000) }
+                }}
+                style={{
+                  background: "none", border: "none",
+                  fontSize: 12, fontWeight: 700,
+                  color: saveSuccess ? ACCENT : "var(--text-muted)",
+                  cursor: "pointer", padding: "4px 8px",
+                  transition: "color 0.18s",
+                }}
+              >
+                {saveSuccess ? t.savedToSchedule : t.saveToSchedule}
+              </button>
+            </div>
           </div>
         ) : (
-          <div style={{ width: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: 13, fontSize: 14, color: "#65c97a", fontWeight: 600, textAlign: "center" }}>
+          <div style={{ width: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: 14, fontSize: 13, color: "#65c97a", fontWeight: 700, textAlign: "center" }}>
             {selectedDayBlocked ? t.todayOnly : t.workoutCompleted}
           </div>
         )}
@@ -1210,7 +1254,17 @@ export default function WorkoutPage() {
                             boxShadow: "0 4px 20px rgba(107,191,184,0.32)",
                           }}
                         >
-                          {isLast ? "Finish ✓" : "Next →"}
+                          {isLast ? (
+                            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                              Finish
+                              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            </span>
+                          ) : (
+                            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+                              Next
+                              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                            </span>
+                          )}
                         </button>
                       </motion.div>
                     </div>
@@ -1241,8 +1295,8 @@ export default function WorkoutPage() {
                     </motion.div>
 
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} style={{ textAlign: "center" }}>
-                      <div style={{ fontFamily: "var(--font-display)", fontSize: 32, fontWeight: 900, color: "#111827", letterSpacing: "-0.03em", marginBottom: 6 }}>
-                        All done! 💪
+                      <div style={{ fontFamily: "var(--font-display)", fontSize: 32, fontWeight: 900, color: "#111827", letterSpacing: "-0.04em", marginBottom: 6 }}>
+                        All done.
                       </div>
                       <div style={{ fontSize: 13, color: "rgba(0,0,0,0.45)" }}>
                         {todayExercises.length} exercises · ~{Math.round(todayExercises.length * 4)} min
