@@ -21,7 +21,7 @@ export async function GET(req: Request) {
 
     const user = await db.user.findUnique({
       where: { id: session.user.id },
-      select: { name: true, image: true, email: true, createdAt: true },
+      select: { name: true, image: true, email: true, createdAt: true, walletAddress: true },
     })
 
     return NextResponse.json(user)
@@ -42,7 +42,7 @@ export async function PATCH(req: Request) {
     if (limited) return limited
 
     const body = await readJsonBody(req)
-    const data: { name?: string; image?: string | null } = {}
+    const data: { name?: string; image?: string | null; walletAddress?: string | null } = {}
 
     if ("name" in body) {
       const name = cleanText(body.name, 100)
@@ -62,6 +62,19 @@ export async function PATCH(req: Request) {
           if (img.length > 220_000) return safeError("Image too large — max ~150 KB")
           data.image = img
         }
+      }
+    }
+
+    if ("walletAddress" in body) {
+      const addr = body.walletAddress
+      if (addr === null || addr === "") {
+        data.walletAddress = null
+      } else if (typeof addr === "string") {
+        // Validate EVM address: 0x + 40 hex chars
+        if (!/^0x[0-9a-fA-F]{40}$/.test(addr)) {
+          return safeError("Invalid wallet address — must be a valid EVM address (0x…)")
+        }
+        data.walletAddress = addr.toLowerCase()
       }
     }
 

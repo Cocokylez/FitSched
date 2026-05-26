@@ -1,11 +1,16 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { ArrowLeft, Dumbbell, Flame, Zap, Bell, BellOff, Gift, Trophy, ShoppingBag, CheckCircle2 } from "lucide-react"
+import {
+  ArrowLeft, CheckCircle2, Dumbbell, ExternalLink, Flame,
+  Loader2, Wallet, X, Zap,
+} from "lucide-react"
 import { ACCENT } from "@/lib/theme"
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 type Transaction = {
   id: string
@@ -15,6 +20,20 @@ type Transaction = {
   workoutName: string
 }
 
+type TokensData = {
+  balance:       number
+  claimable:     number
+  claimed:       number
+  transactions:  Transaction[]
+  ftBoostArmed:  boolean
+  walletAddress: string | null
+  tokenDeployed: boolean
+}
+
+type ClaimState = "idle" | "claiming" | "success" | "error"
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 function formatFT(n: number) {
   return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
@@ -23,101 +42,555 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" })
 }
 
-const REASON_META: Record<string, { label: string; icon: typeof Dumbbell; color: string }> = {
-  workout_complete:         { label: "Workout completed", icon: Dumbbell, color: ACCENT },
-  workout_complete_boosted: { label: "Workout (2× boost)", icon: Zap,     color: "#eab308" },
-  streak_bonus:             { label: "Streak bonus",       icon: Flame,    color: "#f97316" },
+function truncateAddress(addr: string) {
+  if (addr.length < 12) return addr
+  return `${addr.slice(0, 6)}…${addr.slice(-4)}`
 }
+
+function isValidEvmAddress(addr: string) {
+  return /^0x[0-9a-fA-F]{40}$/.test(addr)
+}
+
+function basescanTxUrl(txHash: string) {
+  const isTestnet = process.env.NODE_ENV !== "production"
+  return isTestnet
+    ? `https://sepolia.basescan.org/tx/${txHash}`
+    : `https://basescan.org/tx/${txHash}`
+}
+
+// ── Reason metadata ───────────────────────────────────────────────────────────
+
+const REASON_META: Record<string, { label: string; icon: typeof Dumbbell; color: string }> = {
+  workout_complete:         { label: "Workout completed",  icon: Dumbbell, color: ACCENT       },
+  workout_complete_boosted: { label: "Workout (2× boost)", icon: Zap,      color: "#eab308"    },
+  streak_bonus:             { label: "Streak bonus",       icon: Flame,    color: "#f97316"    },
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 
 export default function WithdrawalPage() {
   const { status } = useSession()
-  const router = useRouter()
-  const [balance, setBalance] = useState<number | null>(null)
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [loading, setLoading] = useState(true)
-  const [notifyOn, setNotifyOn] = useState(false)
-  const [justToggled, setJustToggled] = useState(false)
+  const router     = useRouter()
 
+  // data
+  const [data,    setData]    = useState<TokensData | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  // wallet input
+  const [walletInput,    setWalletInput]    = useState("")
+  const [editingWallet,  setEditingWallet]  = useState(false)
+  const [savingWallet,   setSavingWallet]   = useState(false)
+  const [walletSaved,    setWalletSaved]    = useState(false)
+  const [walletError,    setWalletError]    = useState<string | null>(null)
+  const walletInputRef = useRef<HTMLInputElement>(null)
+
+  // claim
+  const [claimState,   setClaimState]   = useState<ClaimState>("idle")
+  const [claimTxHash,  setClaimTxHash]  = useState<string | null>(null)
+  const [claimError,   setClaimError]   = useState<string | null>(null)
+  const [claimAmount,  setClaimAmount]  = useState<number>(0)
+
+  // redirect if not authed
   useEffect(() => {
     if (status === "unauthenticated") router.push("/register")
   }, [status, router])
 
-  useEffect(() => {
-    try {
-      setNotifyOn(localStorage.getItem("fitsched-withdrawal-notify") === "1")
-    } catch {}
-  }, [])
-
-  const toggleNotify = () => {
-    const next = !notifyOn
-    setNotifyOn(next)
-    setJustToggled(true)
-    setTimeout(() => setJustToggled(false), 2000)
-    try { localStorage.setItem("fitsched-withdrawal-notify", next ? "1" : "0") } catch {}
-  }
-
+  // load token data
   useEffect(() => {
     if (status !== "authenticated") return
     fetch("/api/tokens")
       .then((r) => r.ok ? r.json() : null)
-      .then((d) => {
-        if (d) { setBalance(d.balance); setTransactions(d.transactions || []) }
+      .then((d: TokensData | null) => {
+        if (!d) return
+        setData(d)
+        setWalletInput(d.walletAddress ?? "")
       })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [status])
 
+  // ── Wallet save ─────────────────────────────────────────────────────────────
+
+  async function saveWallet() {
+    const trimmed = walletInput.trim()
+    setWalletError(null)
+
+    if (trimmed === "" ) {
+      // Clear wallet
+      setSavingWallet(true)
+      try {
+        const r = await fetch("/api/profile", {
+          method:  "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ walletAddress: null }),
+        })
+        if (r.ok) {
+          setData((prev) => prev ? { ...prev, walletAddress: null } : prev)
+          setEditingWallet(false)
+        }
+      } catch {}
+      setSavingWallet(false)
+      return
+    }
+
+    if (!isValidEvmAddress(trimmed)) {
+      setWalletError("Must be a valid EVM address starting with 0x (42 characters)")
+      return
+    }
+
+    setSavingWallet(true)
+    try {
+      const r = await fetch("/api/profile", {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ walletAddress: trimmed }),
+      })
+      if (r.ok) {
+        setData((prev) => prev ? { ...prev, walletAddress: trimmed.toLowerCase() } : prev)
+        setEditingWallet(false)
+        setWalletSaved(true)
+        setTimeout(() => setWalletSaved(false), 3000)
+      } else {
+        const body = await r.json()
+        setWalletError(body.error ?? "Failed to save wallet address")
+      }
+    } catch {
+      setWalletError("Network error — please try again")
+    }
+    setSavingWallet(false)
+  }
+
+  // ── Claim ───────────────────────────────────────────────────────────────────
+
+  async function handleClaim() {
+    if (!data || claimState === "claiming") return
+    setClaimState("claiming")
+    setClaimError(null)
+
+    try {
+      const r = await fetch("/api/tokens/claim", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+      const body = await r.json()
+
+      if (r.ok && body.ok) {
+        setClaimAmount(body.claimedAmount)
+        setClaimTxHash(body.txHash ?? null)
+        setClaimState("success")
+        // Update local balance state
+        setData((prev) =>
+          prev
+            ? {
+                ...prev,
+                claimable: 0,
+                claimed: body.newClaimedTotal,
+              }
+            : prev,
+        )
+        window.dispatchEvent(new Event("fitsched:tokens-updated"))
+      } else if (r.status === 503 && body.status === "not_deployed") {
+        // Token not yet deployed — show "launching soon" state
+        setClaimState("idle")
+        setClaimError("launching_soon")
+      } else {
+        setClaimState("error")
+        setClaimError(body.error ?? "Something went wrong. Please try again.")
+      }
+    } catch {
+      setClaimState("error")
+      setClaimError("Network error — please try again")
+    }
+  }
+
+  // ── Derived claim button state ──────────────────────────────────────────────
+
+  const hasWallet  = Boolean(data?.walletAddress)
+  const claimable  = data?.claimable ?? 0
+  const hasBalance = claimable > 0
+
+  type ButtonMode = "no_wallet" | "no_balance" | "launching_soon" | "ready" | "claiming" | "success"
+
+  function getButtonMode(): ButtonMode {
+    if (claimState === "claiming") return "claiming"
+    if (claimState === "success")  return "success"
+    if (!hasWallet)                return "no_wallet"
+    if (!hasBalance)               return "no_balance"
+    if (!data?.tokenDeployed)      return "launching_soon"
+    return "ready"
+  }
+
+  const mode = getButtonMode()
+
+  // ── Render ──────────────────────────────────────────────────────────────────
+
   return (
-    <div style={{ minHeight: "100vh", padding: "18px 16px 80px" }}>
+    <div style={{ minHeight: "100vh", padding: "18px 16px 100px" }}>
       <div style={{ maxWidth: 520, margin: "0 auto" }}>
 
-        {/* Back */}
+        {/* ── Back nav ── */}
         <button
           type="button"
           onClick={() => router.push("/settings")}
-          style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "var(--text-muted)", fontSize: 14, fontWeight: 600, cursor: "pointer", padding: "0 0 20px" }}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            background: "none", border: "none", color: "var(--text-muted)",
+            fontSize: 14, fontWeight: 600, cursor: "pointer", padding: "0 0 20px",
+          }}
         >
           <ArrowLeft size={16} strokeWidth={2.2} />
           Settings
         </button>
 
-        {/* Balance card */}
+        {/* ── Page title ── */}
+        <div style={{ marginBottom: 20 }}>
+          <div
+            className="brand-wordmark"
+            style={{ fontSize: 28, fontWeight: 950, color: "var(--text)", letterSpacing: "-0.5px" }}
+          >
+            FitTokens
+          </div>
+          <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 3 }}>
+            Earn FIT by working out. Claim to your Base wallet.
+          </div>
+        </div>
+
+        {/* ══ WALLET CARD ═══════════════════════════════════════════════════════ */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-          style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 22, padding: "28px 24px 24px", marginBottom: 12 }}
+          style={{
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: 20,
+            padding: "20px 20px",
+            marginBottom: 12,
+          }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-            <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(107,191,184,0.12)", border: "1px solid rgba(107,191,184,0.28)", display: "flex", alignItems: "center", justifyContent: "center", color: ACCENT, fontSize: 13, fontWeight: 900, flexShrink: 0 }}>
-              FT
+          {/* Header row */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{
+                width: 34, height: 34, borderRadius: 10,
+                background: "rgba(107,191,184,0.12)",
+                border: "1px solid rgba(107,191,184,0.25)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
+              }}>
+                <Wallet size={16} strokeWidth={1.8} color={ACCENT} />
+              </div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Your Wallet</div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Base network (EVM)</div>
+              </div>
             </div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>FitTokens</div>
-              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Earned from workouts</div>
-            </div>
+
+            {/* Change / Cancel button — only when wallet is set */}
+            {data?.walletAddress && !editingWallet && (
+              <button
+                type="button"
+                onClick={() => { setEditingWallet(true); setWalletError(null); setTimeout(() => walletInputRef.current?.focus(), 50) }}
+                style={{
+                  background: "var(--surface-2)", border: "1px solid var(--border)",
+                  borderRadius: 8, padding: "6px 12px",
+                  fontSize: 12, fontWeight: 700, color: "var(--text-muted)", cursor: "pointer",
+                }}
+              >
+                Change
+              </button>
+            )}
+            {editingWallet && (
+              <button
+                type="button"
+                onClick={() => { setEditingWallet(false); setWalletInput(data?.walletAddress ?? ""); setWalletError(null) }}
+                style={{
+                  background: "none", border: "none",
+                  color: "var(--text-muted)", cursor: "pointer", padding: 4,
+                }}
+              >
+                <X size={16} strokeWidth={2} />
+              </button>
+            )}
           </div>
 
-          <div style={{ fontSize: 44, fontWeight: 950, color: "var(--text)", letterSpacing: "-1px", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-            {loading ? "—" : formatFT(balance ?? 0)}
-          </div>
-          <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>FT balance</div>
+          {/* Connected address pill — when set and not editing */}
+          {data?.walletAddress && !editingWallet && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{
+                flex: 1, background: "var(--surface-2)",
+                border: "1px solid var(--border)", borderRadius: 10,
+                padding: "10px 14px", fontFamily: "monospace",
+                fontSize: 13, fontWeight: 600, color: "var(--text)",
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              }}>
+                {data.walletAddress}
+              </div>
+              <AnimatePresence>
+                {walletSaved && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    style={{ display: "flex", alignItems: "center", gap: 5, color: "#4ade80", fontSize: 12, fontWeight: 700, flexShrink: 0 }}
+                  >
+                    <CheckCircle2 size={14} strokeWidth={2.5} />
+                    Saved
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* Input form — when editing or no wallet set */}
+          {(!data?.walletAddress || editingWallet) && !loading && (
+            <div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8, lineHeight: 1.5 }}>
+                {data?.walletAddress
+                  ? "Enter a new Base wallet address:"
+                  : "Paste your Base wallet address to receive FIT when you claim:"}
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  ref={walletInputRef}
+                  type="text"
+                  value={walletInput}
+                  onChange={(e) => { setWalletInput(e.target.value); setWalletError(null) }}
+                  onKeyDown={(e) => { if (e.key === "Enter") saveWallet() }}
+                  placeholder="0x…"
+                  spellCheck={false}
+                  style={{
+                    flex: 1,
+                    background: "var(--surface-2)",
+                    border: `1px solid ${walletError ? "#f87171" : "var(--border)"}`,
+                    borderRadius: 10, padding: "10px 12px",
+                    fontSize: 13, fontFamily: "monospace",
+                    color: "var(--text)", outline: "none",
+                    minWidth: 0,
+                  }}
+                />
+                <motion.button
+                  whileTap={{ scale: 0.94 }}
+                  type="button"
+                  onClick={saveWallet}
+                  disabled={savingWallet}
+                  style={{
+                    flexShrink: 0,
+                    background: isValidEvmAddress(walletInput.trim())
+                      ? `rgba(107,191,184,0.15)`
+                      : "var(--surface-2)",
+                    border: `1px solid ${isValidEvmAddress(walletInput.trim()) ? "rgba(107,191,184,0.4)" : "var(--border)"}`,
+                    color: isValidEvmAddress(walletInput.trim()) ? ACCENT : "var(--text-muted)",
+                    borderRadius: 10, padding: "10px 16px",
+                    fontSize: 13, fontWeight: 800,
+                    cursor: savingWallet ? "not-allowed" : "pointer",
+                    display: "flex", alignItems: "center", gap: 6,
+                    transition: "background 0.15s, color 0.15s, border-color 0.15s",
+                  }}
+                >
+                  {savingWallet ? <Loader2 size={14} className="animate-spin" /> : "Save"}
+                </motion.button>
+              </div>
+
+              {walletError && (
+                <div style={{ fontSize: 11, color: "#f87171", marginTop: 6, fontWeight: 600 }}>
+                  {walletError}
+                </div>
+              )}
+              <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8, lineHeight: 1.5 }}>
+                Only Base (chainId 8453) addresses are supported. Never share your private key.
+              </div>
+            </div>
+          )}
+
+          {/* Skeleton while loading */}
+          {loading && (
+            <div style={{ height: 40, background: "var(--surface-2)", borderRadius: 10, opacity: 0.5 }} />
+          )}
         </motion.div>
 
-        {/* How you earn */}
+        {/* ══ BALANCE + CLAIM CARD ══════════════════════════════════════════════ */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.32, delay: 0.06, ease: [0.16, 1, 0.3, 1] }}
-          style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "18px 20px", marginBottom: 12 }}
+          style={{
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: 20,
+            padding: "24px 20px",
+            marginBottom: 12,
+          }}
         >
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-muted)", marginBottom: 14 }}>HOW YOU EARN</div>
+          {/* Balance header */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: "50%",
+              background: "rgba(107,191,184,0.12)",
+              border: "1px solid rgba(107,191,184,0.28)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: ACCENT, fontSize: 13, fontWeight: 900, flexShrink: 0,
+            }}>
+              FT
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>FitToken Balance</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                {data?.tokenDeployed ? "Live on Base" : "Off-chain • Launching on Base"}
+              </div>
+            </div>
+            {data?.tokenDeployed && (
+              <div style={{
+                marginLeft: "auto",
+                background: "rgba(74,222,128,0.12)",
+                border: "1px solid rgba(74,222,128,0.28)",
+                borderRadius: 999, padding: "3px 10px",
+                fontSize: 10, fontWeight: 800, color: "#4ade80",
+                letterSpacing: "0.08em", flexShrink: 0,
+              }}>
+                LIVE
+              </div>
+            )}
+          </div>
+
+          {/* Success state — just claimed */}
+          <AnimatePresence mode="wait">
+            {claimState === "success" ? (
+              <motion.div
+                key="success"
+                initial={{ opacity: 0, scale: 0.94 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                style={{ textAlign: "center", padding: "12px 0 8px" }}
+              >
+                <div style={{ fontSize: 40, marginBottom: 10 }}>🎉</div>
+                <div style={{ fontSize: 22, fontWeight: 950, color: ACCENT, marginBottom: 4 }}>
+                  +{formatFT(claimAmount)} FIT claimed!
+                </div>
+                <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
+                  Tokens sent to your Base wallet.
+                </div>
+                {claimTxHash && (
+                  <a
+                    href={basescanTxUrl(claimTxHash)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                      color: ACCENT, fontSize: 13, fontWeight: 700,
+                      textDecoration: "none",
+                    }}
+                  >
+                    View on Basescan
+                    <ExternalLink size={13} strokeWidth={2} />
+                  </a>
+                )}
+              </motion.div>
+            ) : (
+              <motion.div key="balance" initial={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                {/* Big number */}
+                <div style={{ marginBottom: 6 }}>
+                  <span
+                    className="number-text"
+                    style={{
+                      fontSize: loading ? 36 : 48,
+                      fontWeight: 950,
+                      color: "var(--text)",
+                      letterSpacing: "-1.5px",
+                      fontVariantNumeric: "tabular-nums",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {loading ? "—" : formatFT(claimable)}
+                  </span>
+                  <span style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 700, marginLeft: 6 }}>
+                    FIT
+                  </span>
+                </div>
+
+                <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16 }}>
+                  Claimable balance
+                  {!loading && (data?.claimed ?? 0) > 0 && (
+                    <span style={{ marginLeft: 8, color: "#4ade80", fontWeight: 700 }}>
+                      · {formatFT(data!.claimed)} FIT already claimed ✓
+                    </span>
+                  )}
+                </div>
+
+                {/* Total earned breakdown */}
+                {!loading && (data?.balance ?? 0) > 0 && (
+                  <div style={{
+                    display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18,
+                  }}>
+                    <div style={{
+                      flex: 1, minWidth: 120,
+                      background: "var(--surface-2)", border: "1px solid var(--border)",
+                      borderRadius: 10, padding: "10px 14px",
+                    }}>
+                      <div className="number-text" style={{ fontSize: 18, fontWeight: 900, color: "var(--text)", letterSpacing: "-0.5px" }}>
+                        {formatFT(data!.balance)}
+                      </div>
+                      <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, marginTop: 2 }}>
+                        TOTAL EARNED
+                      </div>
+                    </div>
+                    <div style={{
+                      flex: 1, minWidth: 120,
+                      background: "var(--surface-2)", border: "1px solid var(--border)",
+                      borderRadius: 10, padding: "10px 14px",
+                    }}>
+                      <div className="number-text" style={{ fontSize: 18, fontWeight: 900, color: "#4ade80", letterSpacing: "-0.5px" }}>
+                        {formatFT(data?.claimed ?? 0)}
+                      </div>
+                      <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, marginTop: 2 }}>
+                        ON-CHAIN
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Claim button */}
+                <ClaimButton
+                  mode={mode}
+                  claimable={claimable}
+                  claimError={claimError}
+                  onClaim={handleClaim}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+
+        {/* ══ HOW YOU EARN ══════════════════════════════════════════════════════ */}
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.32, delay: 0.10, ease: [0.16, 1, 0.3, 1] }}
+          style={{
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: 18,
+            padding: "18px 20px",
+            marginBottom: 12,
+          }}
+        >
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-muted)", marginBottom: 14 }}>
+            HOW YOU EARN
+          </div>
           {[
-            { icon: Dumbbell, color: ACCENT, bg: "rgba(107,191,184,0.12)", title: "Complete a workout", detail: "+1.00 FT per session" },
-            { icon: Flame,    color: "#f97316", bg: "rgba(249,115,22,0.12)", title: "Streak bonus",        detail: "Up to +0.20 FT extra" },
-            { icon: Zap,      color: "#8ab4ff", bg: "rgba(138,180,255,0.12)", title: "Verification bonus", detail: "Full score = full reward" },
-          ].map(({ icon: Icon, color, bg, title, detail }) => (
-            <div key={title} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid var(--border)" }}>
+            { icon: Dumbbell, color: ACCENT,    bg: "rgba(107,191,184,0.12)", title: "Complete a workout",    detail: "+1.00 FT per session" },
+            { icon: Flame,    color: "#f97316", bg: "rgba(249,115,22,0.12)",  title: "Streak bonus",          detail: "Up to +0.20 FT extra" },
+            { icon: Zap,      color: "#8ab4ff", bg: "rgba(138,180,255,0.12)", title: "Verification score",    detail: "Full score = full reward" },
+          ].map(({ icon: Icon, color, bg, title, detail }, i, arr) => (
+            <div
+              key={title}
+              style={{
+                display: "flex", alignItems: "center", gap: 12,
+                padding: "10px 0",
+                borderBottom: i < arr.length - 1 ? "1px solid var(--border)" : "none",
+              }}
+            >
               <div style={{ width: 34, height: 34, borderRadius: 10, background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <Icon size={16} color={color} strokeWidth={2} />
               </div>
@@ -127,38 +600,60 @@ export default function WithdrawalPage() {
               </div>
             </div>
           ))}
-          <div style={{ paddingTop: 10 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 34, height: 34, flexShrink: 0 }} />
-              <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.5 }}>
-                Streak bonus decreases gradually as your streak grows — keeping things consistent matters more than big numbers.
-              </div>
-            </div>
-          </div>
         </motion.div>
 
-        {/* Recent earnings */}
-        {!loading && transactions.length > 0 && (
+        {/* ══ RECENT EARNINGS ═══════════════════════════════════════════════════ */}
+        {!loading && (data?.transactions?.length ?? 0) > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.32, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, overflow: "hidden", marginBottom: 12 }}
+            transition={{ duration: 0.32, delay: 0.14, ease: [0.16, 1, 0.3, 1] }}
+            style={{
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderRadius: 18,
+              overflow: "hidden",
+              marginBottom: 12,
+            }}
           >
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-muted)", padding: "14px 18px 10px" }}>RECENT EARNINGS</div>
-            {transactions.map((tx, i) => {
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-muted)", padding: "14px 18px 10px" }}>
+              RECENT EARNINGS
+            </div>
+            {data!.transactions.map((tx, i) => {
               const meta = REASON_META[tx.reason] ?? REASON_META.workout_complete
               const Icon = meta.icon
               return (
-                <div key={tx.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 18px", borderTop: i > 0 ? "1px solid var(--border)" : undefined }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 9, background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <div
+                  key={tx.id}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 12,
+                    padding: "10px 18px",
+                    borderTop: i > 0 ? "1px solid var(--border)" : undefined,
+                  }}
+                >
+                  <div style={{
+                    width: 32, height: 32, borderRadius: 9,
+                    background: "var(--surface-2)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    flexShrink: 0,
+                  }}>
                     <Icon size={14} color={meta.color} strokeWidth={2} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx.workoutName}</div>
-                    <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{meta.label} · {formatDate(tx.createdAt)}</div>
+                    <div style={{
+                      fontSize: 13, fontWeight: 600, color: "var(--text)",
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}>
+                      {tx.workoutName}
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                      {meta.label} · {formatDate(tx.createdAt)}
+                    </div>
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: ACCENT, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
+                  <div style={{
+                    fontSize: 14, fontWeight: 800, color: ACCENT,
+                    fontVariantNumeric: "tabular-nums", flexShrink: 0,
+                  }}>
                     +{formatFT(tx.amount)}
                   </div>
                 </div>
@@ -167,82 +662,154 @@ export default function WithdrawalPage() {
           </motion.div>
         )}
 
-        {/* What's coming */}
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.32, delay: 0.14, ease: [0.16, 1, 0.3, 1] }}
-          style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "18px 20px", marginBottom: 12 }}
-        >
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-muted)", marginBottom: 14 }}>COMING SOON</div>
-          {[
-            { icon: Gift,        color: "#c084fc", bg: "rgba(192,132,252,0.1)", title: "Redeem for rewards",     detail: "Exchange FT for gear, subscriptions & perks" },
-            { icon: Trophy,      color: "#eab308", bg: "rgba(234,179,8,0.1)",   title: "Challenge prizes",       detail: "Win FT in weekly community challenges" },
-            { icon: ShoppingBag, color: "#f97316", bg: "rgba(249,115,22,0.1)", title: "Partner discounts",      detail: "Use FT toward partner fitness brands" },
-          ].map(({ icon: Icon, color, bg, title, detail }) => (
-            <div key={title} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid var(--border)" }}>
-              <div style={{ width: 34, height: 34, borderRadius: 10, background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <Icon size={16} color={color} strokeWidth={2} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{title}</div>
-                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{detail}</div>
-              </div>
-            </div>
-          ))}
-          <div style={{ paddingTop: 12, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.55 }}>
-            Your FT balance is safe and will carry over when the reward store launches.
-          </div>
-        </motion.div>
-
-        {/* Notify me */}
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.32, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
-          style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "18px 20px" }}
-        >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 3 }}>Get early access</div>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.45 }}>
-                Be the first to know when FT redemption goes live.
-              </div>
-            </div>
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={toggleNotify}
-              style={{
-                display: "flex", alignItems: "center", gap: 7,
-                padding: "10px 16px", borderRadius: 12, border: "none",
-                background: notifyOn ? "rgba(107,191,184,0.15)" : "var(--surface-2)",
-                color: notifyOn ? ACCENT : "var(--text-muted)",
-                fontSize: 13, fontWeight: 800, cursor: "pointer",
-                flexShrink: 0, transition: "background 0.18s, color 0.18s",
-              }}
-            >
-              {notifyOn ? <Bell size={15} strokeWidth={2} /> : <BellOff size={15} strokeWidth={2} />}
-              {notifyOn ? "Opted in" : "Notify me"}
-            </motion.button>
-          </div>
-          <AnimatePresence>
-            {justToggled && notifyOn && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                style={{ overflow: "hidden" }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 7, paddingTop: 14, fontSize: 12, color: "#4ade80", fontWeight: 600 }}>
-                  <CheckCircle2 size={15} strokeWidth={2} />
-                  You&apos;re on the early access list!
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
-
       </div>
+    </div>
+  )
+}
+
+// ── Claim button component ────────────────────────────────────────────────────
+
+type ButtonMode = "no_wallet" | "no_balance" | "launching_soon" | "ready" | "claiming" | "success"
+
+function ClaimButton({
+  mode,
+  claimable,
+  claimError,
+  onClaim,
+}: {
+  mode:       ButtonMode
+  claimable:  number
+  claimError: string | null
+  onClaim:    () => void
+}) {
+  const isDisabled = mode === "no_wallet" || mode === "no_balance" || mode === "claiming"
+
+  const config: Record<ButtonMode, { label: React.ReactNode; bg: string; border: string; color: string }> = {
+    no_wallet: {
+      label:  "Set wallet address first",
+      bg:     "var(--surface-2)",
+      border: "var(--border)",
+      color:  "var(--text-muted)",
+    },
+    no_balance: {
+      label:  "No FIT to claim yet",
+      bg:     "var(--surface-2)",
+      border: "var(--border)",
+      color:  "var(--text-muted)",
+    },
+    launching_soon: {
+      label: (
+        <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          Claim {formatFT(claimable)} FIT
+          <span style={{
+            background: "rgba(234,179,8,0.18)",
+            border: "1px solid rgba(234,179,8,0.35)",
+            borderRadius: 999, padding: "2px 8px",
+            fontSize: 10, fontWeight: 900, color: "#eab308",
+            letterSpacing: "0.07em",
+          }}>
+            LAUNCHING SOON
+          </span>
+        </span>
+      ),
+      bg:     "rgba(107,191,184,0.08)",
+      border: "rgba(107,191,184,0.28)",
+      color:  ACCENT,
+    },
+    ready: {
+      label:  `Claim ${formatFT(claimable)} FIT →`,
+      bg:     "rgba(107,191,184,0.14)",
+      border: "rgba(107,191,184,0.45)",
+      color:  ACCENT,
+    },
+    claiming: {
+      label: (
+        <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Loader2 size={15} strokeWidth={2} className="animate-spin" />
+          Claiming…
+        </span>
+      ),
+      bg:     "rgba(107,191,184,0.08)",
+      border: "rgba(107,191,184,0.22)",
+      color:  ACCENT,
+    },
+    success: {
+      label:  "Claimed ✓",
+      bg:     "rgba(74,222,128,0.12)",
+      border: "rgba(74,222,128,0.35)",
+      color:  "#4ade80",
+    },
+  }
+
+  const { label, bg, border, color } = config[mode]
+
+  return (
+    <div>
+      <motion.button
+        whileTap={isDisabled ? {} : { scale: 0.97 }}
+        type="button"
+        onClick={isDisabled ? undefined : onClaim}
+        disabled={isDisabled}
+        style={{
+          width: "100%",
+          background: bg,
+          border: `1px solid ${border}`,
+          borderRadius: 14,
+          padding: "14px 20px",
+          fontSize: 14,
+          fontWeight: 800,
+          color,
+          cursor: isDisabled ? "not-allowed" : "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          transition: "background 0.15s, border-color 0.15s",
+          opacity: isDisabled && mode !== "no_wallet" && mode !== "no_balance" ? 0.7 : 1,
+        }}
+      >
+        {label}
+      </motion.button>
+
+      {/* Contextual help text */}
+      <AnimatePresence>
+        {mode === "launching_soon" && claimError === "launching_soon" && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            style={{ overflow: "hidden" }}
+          >
+            <div style={{
+              marginTop: 10, fontSize: 12, color: "#eab308",
+              fontWeight: 600, lineHeight: 1.5,
+            }}>
+              🚀 The FitToken contract is not yet live on Base. Your balance is safe and will be claimable once it launches!
+            </div>
+          </motion.div>
+        )}
+        {mode !== "claiming" && claimError && claimError !== "launching_soon" && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            style={{ overflow: "hidden" }}
+          >
+            <div style={{ marginTop: 10, fontSize: 12, color: "#f87171", fontWeight: 600 }}>
+              {claimError}
+            </div>
+          </motion.div>
+        )}
+        {mode === "launching_soon" && !claimError && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            style={{ marginTop: 8, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.5, textAlign: "center" }}
+          >
+            Your {formatFT(claimable)} FIT is safe and will be claimable once the contract is live on Base.
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
