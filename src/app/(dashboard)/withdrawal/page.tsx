@@ -345,10 +345,11 @@ export default function WithdrawalPage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 title={data.walletAddress}
+                className="mono-text"
                 style={{
                   flex: 1, background: "var(--surface-2)", border: "1px solid var(--border)",
-                  borderRadius: 10, padding: "10px 14px", fontFamily: "monospace",
-                  fontSize: 13, fontWeight: 600, color: "var(--text-muted)",
+                  borderRadius: 10, padding: "10px 14px",
+                  fontSize: 13, fontWeight: 500, color: "var(--text-muted)",
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   textDecoration: "none", gap: 8,
                 }}
@@ -387,10 +388,11 @@ export default function WithdrawalPage() {
                   onKeyDown={(e) => { if (e.key === "Enter") saveWallet() }}
                   placeholder="0x…"
                   spellCheck={false}
+                  className="mono-text"
                   style={{
                     flex: 1, background: "var(--surface-2)",
                     border: `1px solid ${walletError ? "#f87171" : "var(--border)"}`,
-                    borderRadius: 10, padding: "10px 12px", fontSize: 13, fontFamily: "monospace",
+                    borderRadius: 10, padding: "10px 12px", fontSize: 13,
                     color: "var(--text)", outline: "none", minWidth: 0,
                   }}
                 />
@@ -632,7 +634,7 @@ export default function WithdrawalPage() {
                   <div style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
                     <span>{formatDateTime(receipt.createdAt)}</span>
                     <span>·</span>
-                    <span style={{ fontFamily: "monospace" }}>{truncateAddress(receipt.walletAddress)}</span>
+                    <span className="mono-text">{truncateAddress(receipt.walletAddress)}</span>
                   </div>
                 </div>
 
@@ -644,7 +646,7 @@ export default function WithdrawalPage() {
                   title={receipt.txHash}
                   style={{ display: "flex", alignItems: "center", gap: 4, color: ACCENT, fontSize: 11, fontWeight: 700, textDecoration: "none", flexShrink: 0 }}
                 >
-                  <span style={{ fontFamily: "monospace", fontSize: 10 }}>{truncateTxHash(receipt.txHash)}</span>
+                  <span className="mono-text" style={{ fontSize: 10 }}>{truncateTxHash(receipt.txHash)}</span>
                   <ExternalLink size={11} strokeWidth={2} />
                 </a>
               </div>

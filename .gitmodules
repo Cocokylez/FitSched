@@ -1,0 +1,6 @@
+[submodule "fittoken/lib/forge-std"]
+	path = fittoken/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
+[submodule "fittoken/lib/openzeppelin-contracts"]
+	path = fittoken/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
