@@ -190,14 +190,8 @@ function PhoneMockup() {
 
 // ── Marquee strip ──────────────────────────────────────────────────────────────
 
-const MARQUEE_ITEMS = [
-  "Plan Generator", "Streak Tracking", "GPS Hike Tracking",
-  "Exercise Library", "Progress Reports", "FitTokens",
-  "Workout Plans", "80+ Exercises", "Google Calendar Sync",
-  "Session History", "Rest Day Logic", "Habit Tracking",
-]
-
 function MarqueeStrip() {
+  const { t } = useLanguage()
   return (
     <div style={{
       borderTop: "1px solid var(--border)",
@@ -210,7 +204,7 @@ function MarqueeStrip() {
         animation: "lp-marquee 30s linear infinite",
         whiteSpace: "nowrap",
       }}>
-        {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
+        {[...t.lpMarqueeItems, ...t.lpMarqueeItems].map((item, i) => (
           <span key={i} style={{
             display: "inline-flex", alignItems: "center", gap: 10,
             fontSize: 11, fontWeight: 800, letterSpacing: "0.09em",
@@ -234,6 +228,7 @@ function MarqueeStrip() {
 const BAR_HEIGHTS = [28, 44, 36, 52, 40, 62, 48, 70, 56, 66]
 
 function ScheduleCard() {
+  const { t } = useLanguage()
   return (
     <div style={{
       background: "var(--surface)",
@@ -253,7 +248,7 @@ function ScheduleCard() {
               <Zap size={15} color={ACCENT} strokeWidth={2.5} />
             </div>
             <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.09em", textTransform: "uppercase", color: ACCENT }}>
-              Plan Generator
+              {t.lpPlanGenerator}
             </span>
           </div>
           <div style={{
@@ -261,7 +256,7 @@ function ScheduleCard() {
             fontSize: 22, fontWeight: 800, lineHeight: 1.15,
             color: "var(--text)", letterSpacing: "-0.025em",
           }}>
-            One prompt.<br />A full week of training.
+            {t.lpPlanLine1}<br />{t.lpPlanLine2}
           </div>
         </div>
       </div>
@@ -287,9 +282,9 @@ function ScheduleCard() {
       {/* Sample sessions */}
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {[
-          { label: "Push day",   time: "Mon · 3 sets · 6 ex", color: ACCENT },
-          { label: "Rest",       time: "Wed · Recovery",       color: "var(--border)" },
-          { label: "Lower body", time: "Fri · 4 sets · 5 ex",  color: "#f59e0b" },
+          { label: t.lpSessionPush,  time: t.lpSessionPushTime,  color: ACCENT },
+          { label: t.lpSessionRest,  time: t.lpSessionRestTime,  color: "var(--border)" },
+          { label: t.lpSessionLower, time: t.lpSessionLowerTime, color: "#f59e0b" },
         ].map((s, i) => (
           <div key={i} style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -310,6 +305,7 @@ function ScheduleCard() {
 }
 
 function StreakCard() {
+  const { t } = useLanguage()
   return (
     <div style={{
       background: "var(--surface)",
@@ -326,7 +322,7 @@ function StreakCard() {
           <Flame size={15} color="#ff744d" strokeWidth={2.5} />
         </div>
         <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.09em", textTransform: "uppercase", color: "#ff9066" }}>
-          Streak
+          {t.lpStreakTitle}
         </span>
       </div>
 
@@ -336,7 +332,7 @@ function StreakCard() {
           fontSize: 52, fontWeight: 900, lineHeight: 1,
           color: "var(--text)", letterSpacing: "-0.04em",
         }}>23</div>
-        <div style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 600, marginTop: 4 }}>days in a row</div>
+        <div style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 600, marginTop: 4 }}>{t.lpDaysInARow}</div>
       </div>
 
       {/* Flame dots row */}
@@ -355,13 +351,14 @@ function StreakCard() {
         borderRadius: 12, padding: "8px 12px",
         fontSize: 11, fontWeight: 700, color: "#ff9066",
       }}>
-        Your longest run: 31 days
+        {t.lpLongestRun}
       </div>
     </div>
   )
 }
 
 function ProgressCard() {
+  const { t } = useLanguage()
   return (
     <div style={{
       background: "var(--surface)",
@@ -379,10 +376,10 @@ function ProgressCard() {
             <BarChart2 size={15} color="#818cf8" strokeWidth={2.5} />
           </div>
           <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.09em", textTransform: "uppercase", color: "#818cf8" }}>
-            Progress
+            {t.lpProgressLabel}
           </span>
         </div>
-        <span style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 600 }}>Last 10 days</span>
+        <span style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 600 }}>{t.lpLast10Days}</span>
       </div>
 
       {/* Bar chart */}
@@ -411,13 +408,13 @@ function ProgressCard() {
             fontFamily: "var(--font-display)",
             fontSize: 22, fontWeight: 900, color: "var(--text)", letterSpacing: "-0.03em",
           }}>7 / 10</div>
-          <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>sessions completed</div>
+          <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>{t.lpSessionsCompleted}</div>
         </div>
         <div style={{
           background: ACCENT_DIM, border: `1px solid ${ACCENT_BD}`,
           borderRadius: 10, padding: "6px 10px",
           fontSize: 11, fontWeight: 800, color: ACCENT,
-        }}>+12% vs last week</div>
+        }}>{t.lpVsLastWeek}</div>
       </div>
     </div>
   )
@@ -608,7 +605,7 @@ function Hero() {
             }}>
               <div style={{ width: 6, height: 6, borderRadius: "50%", background: ACCENT, animation: "appBreath 2s ease-in-out infinite" }} />
               <span style={{ fontSize: 11, fontWeight: 800, color: ACCENT, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                Fitness Scheduler
+                {t.lpFitnessScheduler}
               </span>
             </div>
           </motion.div>
@@ -702,6 +699,7 @@ function Hero() {
 // ── Feature bento ─────────────────────────────────────────────────────────────
 
 function Features() {
+  const { t } = useLanguage()
   return (
     <section id="features" style={{ padding: "80px 20px", maxWidth: 1140, margin: "0 auto" }}>
       <FadeIn>
@@ -712,7 +710,7 @@ function Features() {
             borderRadius: 999, padding: "5px 13px", marginBottom: 14,
           }}>
             <span style={{ fontSize: 10.5, fontWeight: 800, color: ACCENT, letterSpacing: "0.09em", textTransform: "uppercase" }}>
-              Built different
+              {t.lpBuiltDifferent}
             </span>
           </div>
           <h2 style={{
@@ -721,8 +719,8 @@ function Features() {
             fontWeight: 900, lineHeight: 1.08, letterSpacing: "-0.03em",
             color: "var(--text)", margin: 0,
           }}>
-            Every tool you need.<br />
-            <span style={{ color: "var(--text-muted)" }}>Nothing you don&apos;t.</span>
+            {t.lpEveryTool}<br />
+            <span style={{ color: "var(--text-muted)" }}>{t.lpNothingYouDont}</span>
           </h2>
         </div>
       </FadeIn>
@@ -749,14 +747,14 @@ function Features() {
 
 // ── Stats row ─────────────────────────────────────────────────────────────────
 
-const STATS = [
-  { value: "80+",   label: "exercises in the library",  icon: Dumbbell   },
-  { value: "7-day", label: "custom workout plans",      icon: Calendar   },
-  { value: "GPS",   label: "hike & route tracking",     icon: Navigation },
-  { value: "14+",   label: "average streak days",       icon: Flame      },
-]
-
 function StatsRow() {
+  const { t } = useLanguage()
+  const STATS = [
+    { value: "80+",   label: t.lpStatExercises, icon: Dumbbell   },
+    { value: "7-day", label: t.lpStatPlans,     icon: Calendar   },
+    { value: "GPS",   label: t.lpStatHike,      icon: Navigation },
+    { value: "14+",   label: t.lpStatStreak,    icon: Flame      },
+  ]
   return (
     <section style={{ padding: "0 20px 80px", maxWidth: 1140, margin: "0 auto" }}>
       <FadeIn>
@@ -815,7 +813,7 @@ function CtaBlock() {
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <Calendar size={16} color={ACCENT} strokeWidth={2} />
               <span style={{ fontSize: 12, fontWeight: 800, color: ACCENT, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                Start today
+                {t.lpStartToday}
               </span>
             </div>
             <h2 style={{
@@ -855,6 +853,7 @@ function CtaBlock() {
 // ── Footer ────────────────────────────────────────────────────────────────────
 
 function Footer() {
+  const { t } = useLanguage()
   return (
     <footer style={{
       borderTop: "1px solid var(--border)",
@@ -878,7 +877,7 @@ function Footer() {
         }}>FitSched</span>
       </div>
       <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600 }}>
-        Your fitness, scheduled.
+        {t.lpFooterTagline}
       </span>
     </footer>
   )
