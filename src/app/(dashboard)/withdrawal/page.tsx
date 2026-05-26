@@ -473,7 +473,12 @@ export default function WithdrawalPage() {
                 transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
                 style={{ textAlign: "center", padding: "12px 0 8px" }}
               >
-                <div style={{ fontSize: 40, marginBottom: 10 }}>🎉</div>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
+                  <svg viewBox="0 0 48 48" width="44" height="44" fill="none">
+                    <circle cx="24" cy="24" r="22" fill="rgba(107,191,184,0.15)" stroke="rgba(107,191,184,0.4)" strokeWidth="1.5"/>
+                    <path d="M16 24l6 6 10-12" stroke="#6bbfb8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
                 <div style={{ fontSize: 22, fontWeight: 950, color: ACCENT, marginBottom: 4 }}>
                   +{formatFT(claimAmount)} FIT claimed!
                 </div>
@@ -780,7 +785,7 @@ function ClaimButton({
         {mode === "launching_soon" && claimError === "launching_soon" && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} style={{ overflow: "hidden" }}>
             <div style={{ marginTop: 10, fontSize: 12, color: "#eab308", fontWeight: 600, lineHeight: 1.5 }}>
-              🚀 The FitToken contract is not yet live on Base. Your balance is safe and will be claimable once it launches!
+              The FitToken contract is not yet live on Base. Your balance is safe and will be claimable once it launches.
             </div>
           </motion.div>
         )}

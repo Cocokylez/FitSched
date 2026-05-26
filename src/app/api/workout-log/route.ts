@@ -284,7 +284,7 @@ export async function POST(req: Request) {
 
     const earned = Number(result.fitTokenReward?.amount ?? 1).toFixed(2)
     sendPushToUser(userId, {
-      title: "Workout complete! 💪",
+      title: "Workout complete!",
       body: `You earned +${earned} FT. Keep it up!`,
       url: "/schedule",
     }).catch(() => {})
