@@ -17,6 +17,7 @@ import { estimateCalories } from "@/lib/calorieEstimate"
 import FlameIcon from "@/components/FlameIcon"
 import { ACCENT } from "@/lib/theme"
 import { useTheme } from "@/context/ThemeContext"
+import { formatFT } from "@/lib/formatUtils"
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
@@ -67,10 +68,6 @@ const dayCellVariant = {
 function formatShortWeek(dateStr: string): string {
   const d = new Date(dateStr)
   return `${d.getMonth() + 1}/${d.getDate()}`
-}
-
-function formatFT(v: number) {
-  return v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 function formatTokenReason(reason: string, workoutName: string) {

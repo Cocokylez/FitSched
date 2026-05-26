@@ -8,7 +8,8 @@ import { useStore } from "@/store/useStore"
 import { useLanguage } from "@/context/LanguageContext"
 import { useTheme } from "@/context/ThemeContext"
 import { SkeletonExerciseRow } from "@/components/Skeleton"
-import { getSmartExercisePlan, parseSetsReps, toWorkoutExercises } from "@/lib/workoutRecommendations"
+import { getSmartExercisePlan, parseSetsReps, toWorkoutExercises, EXERCISE_LIBRARY, getAllowedExerciseAccess, getExerciseAccess } from "@/lib/workoutRecommendations"
+import type { ExerciseDef, WorkoutEnvironment, ExerciseAccess } from "@/lib/workoutRecommendations"
 import { getFeedbackAdjustedExperienceLevel } from "@/lib/workoutFeedback"
 import { MUSCLE_GROUPS, getMuscleGroup } from "@/lib/exerciseData"
 import { formatLocalDate } from "@/lib/dateUtils"
@@ -27,116 +28,6 @@ const DEFAULT_EXERCISES: Record<number, Array<[string, string]>> = {
   4: [["Pike Push-ups","3×12"],["Lateral Raises","3×15"],["Plank","3×45s"],["Russian Twist","3×20"],["Mountain Climbers","3×30s"]],
   5: [["Burpees","4×10"],["Jump Squats","4×15"],["High Knees","4×30s"],["Box Jumps","3×12"],["Sprint","4×20s"]],
   6: [["Curl to Press","3×12"],["Tricep Extension","3×12"],["Plank Reaches","3×10 each"],["Leg Raises","3×15"],["Bicycle Crunches","3×20"]],
-}
-
-interface ExerciseDef {
-  name: string
-  muscleGroup: string
-  difficulty: string
-  goalTypes: string[]
-}
-
-type WorkoutEnvironment = "home_bodyweight" | "home_dumbbells" | "gym"
-type ExerciseAccess = "BODYWEIGHT" | "DUMBBELLS" | "GYM"
-
-const EXERCISE_LIBRARY: ExerciseDef[] = [
-  { name: "Push-ups", muscleGroup: "CHEST", difficulty: "BEGINNER", goalTypes: ["stay_active", "lose_weight", "build_muscle", "improve_endurance"] },
-  { name: "Diamond Push-ups", muscleGroup: "CHEST", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
-  { name: "Wide Push-ups", muscleGroup: "CHEST", difficulty: "BEGINNER", goalTypes: ["stay_active", "lose_weight", "build_muscle"] },
-  { name: "Incline Push-ups", muscleGroup: "CHEST", difficulty: "BEGINNER", goalTypes: ["stay_active", "lose_weight"] },
-  { name: "Decline Push-ups", muscleGroup: "CHEST", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
-  { name: "Bench Press", muscleGroup: "CHEST", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
-  { name: "Dumbbell Fly", muscleGroup: "CHEST", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
-  { name: "Chest Dips", muscleGroup: "CHEST", difficulty: "ADVANCED", goalTypes: ["build_muscle"] },
-  { name: "Pull-ups", muscleGroup: "BACK", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
-  { name: "Chin-ups", muscleGroup: "BACK", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
-  { name: "Bent-over Row", muscleGroup: "BACK", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
-  { name: "Dumbbell Row", muscleGroup: "BACK", difficulty: "BEGINNER", goalTypes: ["stay_active", "build_muscle"] },
-  { name: "Superman Hold", muscleGroup: "BACK", difficulty: "BEGINNER", goalTypes: ["stay_active", "lose_weight"] },
-  { name: "Reverse Fly", muscleGroup: "BACK", difficulty: "BEGINNER", goalTypes: ["stay_active", "build_muscle"] },
-  { name: "Deadlift", muscleGroup: "BACK", difficulty: "ADVANCED", goalTypes: ["build_muscle"] },
-  { name: "Lat Pulldown", muscleGroup: "BACK", difficulty: "BEGINNER", goalTypes: ["build_muscle", "stay_active"] },
-  { name: "Pike Push-ups", muscleGroup: "SHOULDERS", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
-  { name: "Lateral Raises", muscleGroup: "SHOULDERS", difficulty: "BEGINNER", goalTypes: ["stay_active", "build_muscle"] },
-  { name: "Front Raises", muscleGroup: "SHOULDERS", difficulty: "BEGINNER", goalTypes: ["stay_active"] },
-  { name: "Overhead Press", muscleGroup: "SHOULDERS", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
-  { name: "Arnold Press", muscleGroup: "SHOULDERS", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
-  { name: "Face Pull", muscleGroup: "SHOULDERS", difficulty: "BEGINNER", goalTypes: ["stay_active", "build_muscle"] },
-  { name: "Shrugs", muscleGroup: "SHOULDERS", difficulty: "BEGINNER", goalTypes: ["stay_active", "build_muscle"] },
-  { name: "Bicep Curls", muscleGroup: "ARMS", difficulty: "BEGINNER", goalTypes: ["build_muscle", "stay_active"] },
-  { name: "Hammer Curls", muscleGroup: "ARMS", difficulty: "BEGINNER", goalTypes: ["build_muscle"] },
-  { name: "Tricep Dips", muscleGroup: "ARMS", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
-  { name: "Tricep Extension", muscleGroup: "ARMS", difficulty: "BEGINNER", goalTypes: ["build_muscle"] },
-  { name: "Close-grip Push-ups", muscleGroup: "ARMS", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
-  { name: "Preacher Curl", muscleGroup: "ARMS", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
-  { name: "Concentration Curl", muscleGroup: "ARMS", difficulty: "BEGINNER", goalTypes: ["build_muscle"] },
-  { name: "Bodyweight Squats", muscleGroup: "LEGS", difficulty: "BEGINNER", goalTypes: ["lose_weight", "stay_active", "build_muscle", "improve_endurance"] },
-  { name: "Walking Lunges", muscleGroup: "LEGS", difficulty: "BEGINNER", goalTypes: ["lose_weight", "stay_active"] },
-  { name: "Glute Bridges", muscleGroup: "LEGS", difficulty: "BEGINNER", goalTypes: ["stay_active"] },
-  { name: "Wall Sit", muscleGroup: "LEGS", difficulty: "BEGINNER", goalTypes: ["lose_weight", "stay_active"] },
-  { name: "Calf Raises", muscleGroup: "LEGS", difficulty: "BEGINNER", goalTypes: ["stay_active"] },
-  { name: "Bulgarian Split Squats", muscleGroup: "LEGS", difficulty: "ADVANCED", goalTypes: ["build_muscle"] },
-  { name: "Romanian Deadlift", muscleGroup: "LEGS", difficulty: "ADVANCED", goalTypes: ["build_muscle"] },
-  { name: "Goblet Squats", muscleGroup: "LEGS", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
-  { name: "Step-ups", muscleGroup: "LEGS", difficulty: "BEGINNER", goalTypes: ["lose_weight", "stay_active"] },
-  { name: "Jump Squats", muscleGroup: "LEGS", difficulty: "INTERMEDIATE", goalTypes: ["lose_weight", "improve_endurance"] },
-  { name: "Plank", muscleGroup: "CORE", difficulty: "BEGINNER", goalTypes: ["stay_active", "lose_weight"] },
-  { name: "Russian Twist", muscleGroup: "CORE", difficulty: "BEGINNER", goalTypes: ["stay_active", "lose_weight"] },
-  { name: "Leg Raises", muscleGroup: "CORE", difficulty: "BEGINNER", goalTypes: ["build_muscle", "stay_active"] },
-  { name: "Bicycle Crunches", muscleGroup: "CORE", difficulty: "BEGINNER", goalTypes: ["lose_weight", "stay_active"] },
-  { name: "Mountain Climbers", muscleGroup: "CORE", difficulty: "INTERMEDIATE", goalTypes: ["lose_weight", "improve_endurance"] },
-  { name: "Hanging Knee Raises", muscleGroup: "CORE", difficulty: "INTERMEDIATE", goalTypes: ["build_muscle"] },
-  { name: "Plank Reaches", muscleGroup: "CORE", difficulty: "BEGINNER", goalTypes: ["stay_active"] },
-  { name: "Dead Bug", muscleGroup: "CORE", difficulty: "BEGINNER", goalTypes: ["stay_active", "lose_weight"] },
-  { name: "Burpees", muscleGroup: "FULL_BODY", difficulty: "INTERMEDIATE", goalTypes: ["lose_weight", "improve_endurance"] },
-  { name: "Jumping Jacks", muscleGroup: "FULL_BODY", difficulty: "BEGINNER", goalTypes: ["lose_weight", "improve_endurance"] },
-  { name: "High Knees", muscleGroup: "FULL_BODY", difficulty: "BEGINNER", goalTypes: ["lose_weight", "improve_endurance"] },
-  { name: "Squat Thrusts", muscleGroup: "FULL_BODY", difficulty: "INTERMEDIATE", goalTypes: ["lose_weight", "improve_endurance"] },
-  { name: "Bear Crawl", muscleGroup: "FULL_BODY", difficulty: "INTERMEDIATE", goalTypes: ["stay_active"] },
-  { name: "Tuck Jumps", muscleGroup: "FULL_BODY", difficulty: "ADVANCED", goalTypes: ["improve_endurance", "lose_weight"] },
-  { name: "Box Jumps", muscleGroup: "FULL_BODY", difficulty: "ADVANCED", goalTypes: ["build_muscle", "improve_endurance"] },
-  { name: "Sprints", muscleGroup: "CARDIO", difficulty: "INTERMEDIATE", goalTypes: ["improve_endurance", "lose_weight"] },
-  { name: "Jump Rope", muscleGroup: "CARDIO", difficulty: "BEGINNER", goalTypes: ["lose_weight", "improve_endurance"] },
-  { name: "Battle Ropes", muscleGroup: "CARDIO", difficulty: "INTERMEDIATE", goalTypes: ["improve_endurance", "lose_weight"] },
-]
-
-const EXERCISE_ACCESS: Record<string, ExerciseAccess> = {
-  "Bench Press": "GYM",
-  "Chest Dips": "GYM",
-  "Pull-ups": "GYM",
-  "Chin-ups": "GYM",
-  "Deadlift": "GYM",
-  "Lat Pulldown": "GYM",
-  "Preacher Curl": "GYM",
-  "Hanging Knee Raises": "GYM",
-  "Face Pull": "GYM",
-  "Box Jumps": "GYM",
-  "Battle Ropes": "GYM",
-  "Bicep Curls": "DUMBBELLS",
-  "Hammer Curls": "DUMBBELLS",
-  "Bent-over Row": "DUMBBELLS",
-  "Dumbbell Row": "DUMBBELLS",
-  "Dumbbell Fly": "DUMBBELLS",
-  "Lateral Raises": "DUMBBELLS",
-  "Front Raises": "DUMBBELLS",
-  "Overhead Press": "DUMBBELLS",
-  "Arnold Press": "DUMBBELLS",
-  "Shrugs": "DUMBBELLS",
-  "Tricep Extension": "DUMBBELLS",
-  "Concentration Curl": "DUMBBELLS",
-  "Curl to Press": "DUMBBELLS",
-  "Romanian Deadlift": "DUMBBELLS",
-  "Goblet Squats": "DUMBBELLS",
-}
-
-function getAllowedExerciseAccess(environment: string): ExerciseAccess[] {
-  if (environment === "home_bodyweight") return ["BODYWEIGHT"]
-  if (environment === "home_dumbbells") return ["BODYWEIGHT", "DUMBBELLS"]
-  return ["BODYWEIGHT", "DUMBBELLS", "GYM"]
-}
-
-function getExerciseAccess(name: string): ExerciseAccess {
-  return EXERCISE_ACCESS[name] || "BODYWEIGHT"
 }
 
 function getStoredTargetMuscles(): string[] {
