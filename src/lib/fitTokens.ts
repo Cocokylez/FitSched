@@ -53,6 +53,44 @@ async function calculateCurrentStreak(tx: Prisma.TransactionClient, userId: stri
   return streak
 }
 
+// ── Hike reward: 0.5 FT per km, capped at 50 km per hike ─────────────────────
+export async function awardFitTokensForHikeTx(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  hikeLogId: string,
+  distanceKm: number,
+) {
+  // Idempotency guard
+  const existing = await tx.fitToken.findUnique({
+    where: { userId_hikeLogId_reason: { userId, hikeLogId, reason: "hike_complete" } },
+  })
+  if (existing) {
+    const balance = await tx.fitTokenBalance.findUnique({ where: { userId } })
+    return { awarded: false, amount: 0, balance: Number(balance?.amount ?? 0) }
+  }
+
+  // 0.5 FT per km; cap single-hike reward at 25 FT (50 km)
+  const clampedKm = Math.min(Math.max(distanceKm, 0), 50)
+  const award = new Prisma.Decimal(clampedKm * 0.5).toDecimalPlaces(2)
+
+  if (award.isZero()) {
+    const balance = await tx.fitTokenBalance.findUnique({ where: { userId } })
+    return { awarded: false, amount: 0, balance: Number(balance?.amount ?? 0) }
+  }
+
+  await tx.fitToken.create({
+    data: { userId, hikeLogId, amount: award, reason: "hike_complete" },
+  })
+
+  const balance = await tx.fitTokenBalance.upsert({
+    where: { userId },
+    create: { userId, amount: award },
+    update: { amount: { increment: award } },
+  })
+
+  return { awarded: true, amount: award.toNumber(), balance: Number(balance.amount) }
+}
+
 export async function awardFitTokensForWorkoutLogTx(
   tx: Prisma.TransactionClient,
   userId: string,

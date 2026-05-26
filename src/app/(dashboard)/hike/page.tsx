@@ -60,6 +60,9 @@ export default function HikePage() {
   const [savedOffline, setSavedOffline] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
 
+  // FitToken reward toast
+  const [tokenReward, setTokenReward] = useState<{ amount: number; km: number } | null>(null)
+
   // ── Hide nav bar ──────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -115,6 +118,11 @@ export default function HikePage() {
 
       if (res.ok) {
         playSound("confirmation_002.ogg", 0.6)
+        const data = await res.json().catch(() => null)
+        if (data?.fitTokenReward?.awarded && data.fitTokenReward.amount > 0) {
+          setTokenReward({ amount: data.fitTokenReward.amount, km: r.distanceKm })
+          setTimeout(() => setTokenReward(null), 5000)
+        }
         setShowSave(false)
         setSaveName(""); setSaveLoc(""); setSaveNotes("")
         pendingResultRef.current = null
@@ -276,6 +284,46 @@ export default function HikePage() {
             <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>
               Saved offline — will sync when connected
             </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── FitToken reward toast ───────────────────────────────────────────── */}
+      <AnimatePresence>
+        {tokenReward && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 300, damping: 26 }}
+            style={{
+              position: "fixed", bottom: 32, left: "50%", transform: "translateX(-50%)",
+              zIndex: 600, display: "flex", alignItems: "center", gap: 10,
+              background: "rgba(10,26,24,0.92)", backdropFilter: "blur(18px)",
+              border: `1px solid ${ACCENT}40`,
+              borderRadius: 999, padding: "12px 20px",
+              boxShadow: `0 4px 28px rgba(107,191,184,0.22)`, whiteSpace: "nowrap",
+            }}
+          >
+            {/* Coin icon */}
+            <div style={{
+              width: 26, height: 26, borderRadius: "50%",
+              background: `linear-gradient(135deg, ${ACCENT} 0%, #3d9b94 100%)`,
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}>
+              <svg viewBox="0 0 16 16" width="13" height="13" fill="none">
+                <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.7)" strokeWidth="1.2"/>
+                <text x="8" y="11.5" textAnchor="middle" fontSize="7" fontWeight="900" fill="white" fontFamily="sans-serif">FT</text>
+              </svg>
+            </div>
+            <div>
+              <span style={{ fontSize: 14, fontWeight: 900, color: ACCENT }}>
+                +{tokenReward.amount.toFixed(2)} FT earned
+              </span>
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginLeft: 6 }}>
+                {tokenReward.km.toFixed(2)} km × 0.5
+              </span>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

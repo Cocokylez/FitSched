@@ -222,15 +222,19 @@ model FitToken {
   userId       String
   amount       Decimal  @db.Decimal(10, 2)
   reason       String
-  workoutLogId String
+  workoutLogId String?
+  hikeLogId    String?
   createdAt    DateTime @default(now())
 
-  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workoutLog WorkoutSessionLog @relation(fields: [workoutLogId], references: [id], onDelete: Cascade)
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workoutLog WorkoutSessionLog? @relation(fields: [workoutLogId], references: [id], onDelete: Cascade)
+  hikeLog    HikeLog?           @relation(fields: [hikeLogId], references: [id], onDelete: Cascade)
 
   @@unique([userId, workoutLogId, reason])
+  @@unique([userId, hikeLogId, reason])
   @@index([userId])
   @@index([workoutLogId])
+  @@index([hikeLogId])
   @@index([createdAt])
   @@index([userId, createdAt])
 }
@@ -283,16 +287,17 @@ model EmailVerificationToken {
 }
 
 model HikeLog {
-  id           String   @id @default(cuid())
+  id           String     @id @default(cuid())
   userId       String
-  name         String   @default("Hike")
+  name         String     @default("Hike")
   distanceKm   Float
   durationMin  Int
   elevationM   Int?
   locationName String?
   routePoints  Json?
   notes        String?
-  loggedAt     DateTime @default(now())
+  loggedAt     DateTime   @default(now())
+  fitTokens    FitToken[]
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

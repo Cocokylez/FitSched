@@ -1,10 +1,15 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { awardFitTokensForHikeTx } from "@/lib/fitTokens"
+import { cleanText, rateLimitByUser, rateLimitPresets, readJsonBody, requestBodyErrorResponse, validateSameOrigin } from "@/lib/security"
+import { Prisma } from "@prisma/client"
 import { NextResponse } from "next/server"
 
-export async function GET() {
+export async function GET(req: Request) {
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.read, "hike:get")
+  if (limited) return limited
 
   const logs = await db.hikeLog.findMany({
     where: { userId: session.user.id },
@@ -16,30 +21,60 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  try {
+    const originError = validateSameOrigin(req)
+    if (originError) return originError
 
-  const body = await req.json()
-  const { name, distanceKm, durationMin, elevationM, locationName, routePoints, notes, loggedAt } = body
+    const session = await auth()
+    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.strictWrite, "hike:post")
+    if (limited) return limited
 
-  if (!distanceKm || Number(distanceKm) <= 0)
-    return NextResponse.json({ error: "Distance is required" }, { status: 400 })
-  if (!durationMin || Number(durationMin) <= 0)
-    return NextResponse.json({ error: "Duration is required" }, { status: 400 })
+    const body = await readJsonBody(req)
+    const { name, distanceKm, durationMin, elevationM, locationName, routePoints, notes, loggedAt } = body
 
-  const log = await db.hikeLog.create({
-    data: {
-      userId: session.user.id,
-      name: typeof name === "string" && name.trim() ? name.trim() : "Hike",
-      distanceKm: Number(distanceKm),
-      durationMin: Number(durationMin),
-      elevationM: elevationM ? Number(elevationM) : null,
-      locationName: typeof locationName === "string" && locationName.trim() ? locationName.trim() : null,
-      routePoints: Array.isArray(routePoints) ? routePoints : undefined,
-      notes: typeof notes === "string" && notes.trim() ? notes.trim() : null,
-      loggedAt: loggedAt ? new Date(loggedAt) : new Date(),
-    },
-  })
+    const distKm = Number(distanceKm)
+    const durMin = Number(durationMin)
 
-  return NextResponse.json(log, { status: 201 })
+    if (!distKm || distKm <= 0 || !isFinite(distKm))
+      return NextResponse.json({ error: "Distance is required" }, { status: 400 })
+    if (!durMin || durMin <= 0 || !isFinite(durMin))
+      return NextResponse.json({ error: "Duration is required" }, { status: 400 })
+    if (distKm > 200)
+      return NextResponse.json({ error: "Distance exceeds maximum (200 km)" }, { status: 400 })
+    if (durMin > 1440)
+      return NextResponse.json({ error: "Duration exceeds maximum (24 h)" }, { status: 400 })
+
+    const userId = session.user.id
+
+    const result = await db.$transaction(async (tx) => {
+      const log = await tx.hikeLog.create({
+        data: {
+          userId,
+          name: cleanText(name, 120) || "Hike",
+          distanceKm: Math.round(distKm * 100) / 100,
+          durationMin: Math.round(durMin),
+          elevationM: elevationM != null ? Math.round(Number(elevationM)) : null,
+          locationName: cleanText(locationName, 120) || null,
+          routePoints: Array.isArray(routePoints) ? routePoints : undefined,
+          notes: cleanText(notes, 500) || null,
+          loggedAt: loggedAt ? new Date(loggedAt) : new Date(),
+        },
+      })
+
+      const fitTokenReward = await awardFitTokensForHikeTx(tx, userId, log.id, distKm)
+
+      return { log, fitTokenReward }
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
+
+    return NextResponse.json(
+      { ...result.log, fitTokenReward: result.fitTokenReward },
+      { status: 201 },
+    )
+  } catch (error) {
+    const bodyError = requestBodyErrorResponse(error)
+    if (bodyError) return bodyError
+    console.error("Hike POST error:", error)
+    return NextResponse.json({ error: "Failed to save hike" }, { status: 500 })
+  }
 }
