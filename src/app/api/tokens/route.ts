@@ -28,7 +28,7 @@ export async function GET(req: Request) {
     const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.read, "tokens:get")
     if (limited) return limited
 
-    const [balance, transactions, user] = await Promise.all([
+    const [balance, transactions, user, receipts] = await Promise.all([
       db.fitTokenBalance.findUnique({
         where: { userId: session.user.id },
       }),
@@ -46,6 +46,11 @@ export async function GET(req: Request) {
         where: { id: session.user.id },
         select: { ftBoostArmed: true, walletAddress: true },
       }).catch(() => null),
+      db.claimReceipt.findMany({
+        where:   { userId: session.user.id },
+        orderBy: { createdAt: "desc" },
+        take:    10,
+      }).catch(() => []),
     ])
 
     const totalEarned  = Number(balance?.amount        || 0)
@@ -60,6 +65,13 @@ export async function GET(req: Request) {
       ftBoostArmed:  (user as any)?.ftBoostArmed  ?? false,
       walletAddress: (user as any)?.walletAddress ?? null,
       tokenDeployed: Boolean(process.env.FIT_TOKEN_ADDRESS),
+      claimReceipts: receipts.map((r) => ({
+        id:            r.id,
+        txHash:        r.txHash,
+        amount:        Number(r.amount),
+        walletAddress: r.walletAddress,
+        createdAt:     r.createdAt,
+      })),
     })
   } catch (error) {
     console.error("FitToken GET error:", error)

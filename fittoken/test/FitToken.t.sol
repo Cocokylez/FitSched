@@ -2,16 +2,17 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 import "../src/FitToken.sol";
 
 contract FitTokenTest is Test {
     FitToken public token;
 
-    address owner        = makeAddr("owner");
-    address distributor  = makeAddr("distributor");
-    address user1        = makeAddr("user1");
-    address user2        = makeAddr("user2");
-    address attacker     = makeAddr("attacker");
+    address owner       = makeAddr("owner");
+    address distributor = makeAddr("distributor");
+    address user1       = makeAddr("user1");
+    address user2       = makeAddr("user2");
+    address attacker    = makeAddr("attacker");
 
     // ── Setup ─────────────────────────────────────────────────────────────────
 
@@ -22,30 +23,40 @@ contract FitTokenTest is Test {
 
     // ── Deployment ────────────────────────────────────────────────────────────
 
-    function test_InitialSupplyMintedToOwner() public {
+    function test_InitialSupplyMintedToOwner() public view {
         assertEq(token.balanceOf(owner), 4_000_000 * 1e18);
     }
 
-    function test_TotalSupplyIs4M() public {
+    function test_TotalSupplyIs4M() public view {
         assertEq(token.totalSupply(), 4_000_000 * 1e18);
     }
 
-    function test_NameAndSymbol() public {
-        assertEq(token.name(), "FitToken");
-        assertEq(token.symbol(), "FIT");
+    function test_NameAndSymbol() public view {
+        assertEq(token.name(),     "FitToken");
+        assertEq(token.symbol(),   "FIT");
         assertEq(token.decimals(), 18);
     }
 
-    function test_DistributorSetOnDeploy() public {
+    function test_MaxSupplyConstant() public view {
+        assertEq(token.MAX_SUPPLY(),       10_000_000 * 1e18);
+        assertEq(token.REWARDS_POOL_CAP(),  6_000_000 * 1e18);
+        assertEq(token.INITIAL_MINT(),      4_000_000 * 1e18);
+    }
+
+    function test_DistributorSetOnDeploy() public view {
         assertEq(token.rewardDistributor(), distributor);
     }
 
-    function test_RewardsMintedStartsAtZero() public {
+    function test_RewardsMintedStartsAtZero() public view {
         assertEq(token.rewardsMinted(), 0);
     }
 
-    function test_FullRewardsPoolAvailable() public {
+    function test_FullRewardsPoolAvailable() public view {
         assertEq(token.rewardsRemaining(), 6_000_000 * 1e18);
+    }
+
+    function test_ContractNotPausedOnDeploy() public view {
+        assertFalse(token.paused());
     }
 
     // ── Mint rewards ──────────────────────────────────────────────────────────
@@ -56,7 +67,7 @@ contract FitTokenTest is Test {
         token.mintReward(user1, amount, "workout_complete");
 
         assertEq(token.balanceOf(user1), amount);
-        assertEq(token.rewardsMinted(), amount);
+        assertEq(token.rewardsMinted(),  amount);
     }
 
     function test_OwnerCanMintReward() public {
@@ -86,13 +97,11 @@ contract FitTokenTest is Test {
     function test_CannotExceedRewardsPoolCap() public {
         uint256 cap = 6_000_000 * 1e18;
 
-        // Mint the entire rewards pool in one shot
         vm.prank(distributor);
         token.mintReward(user1, cap, "bulk");
-        assertEq(token.rewardsMinted(), cap);
+        assertEq(token.rewardsMinted(),  cap);
         assertEq(token.rewardsRemaining(), 0);
 
-        // Next mint should revert
         vm.prank(distributor);
         vm.expectRevert(FitToken.RewardsPoolExhausted.selector);
         token.mintReward(user2, 1, "overflow");
@@ -109,13 +118,12 @@ contract FitTokenTest is Test {
     // ── Burn ──────────────────────────────────────────────────────────────────
 
     function test_UserCanBurnOwnTokens() public {
-        // Give user1 some tokens first
         vm.prank(distributor);
         token.mintReward(user1, 10e18, "workout_complete");
 
         uint256 balBefore = token.balanceOf(user1);
         vm.prank(user1);
-        token.burn(3e18); // spend 3 FIT to arm boost (mirrors app logic)
+        token.burn(3e18); // spend 3 FIT to arm boost
 
         assertEq(token.balanceOf(user1), balBefore - 3e18);
     }
@@ -129,6 +137,107 @@ contract FitTokenTest is Test {
         token.burn(5e18);
 
         assertEq(token.totalSupply(), supplyBefore - 5e18);
+    }
+
+    function test_BurnDoesNotAffectRewardsMinted() public {
+        vm.prank(distributor);
+        token.mintReward(user1, 10e18, "workout_complete");
+
+        uint256 mintedBefore = token.rewardsMinted();
+        vm.prank(user1);
+        token.burn(5e18);
+
+        // Burning doesn't free up rewards pool space — minted is permanent
+        assertEq(token.rewardsMinted(), mintedBefore);
+    }
+
+    // ── Pause / unpause ───────────────────────────────────────────────────────
+
+    function test_OwnerCanPause() public {
+        vm.prank(owner);
+        token.pause();
+        assertTrue(token.paused());
+    }
+
+    function test_OwnerCanUnpause() public {
+        vm.prank(owner);
+        token.pause();
+
+        vm.prank(owner);
+        token.unpause();
+        assertFalse(token.paused());
+    }
+
+    function test_MintRevertsWhenPaused() public {
+        vm.prank(owner);
+        token.pause();
+
+        vm.prank(distributor);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        token.mintReward(user1, 1e18, "workout_complete");
+    }
+
+    function test_OwnerMintAlsoRevertsWhenPaused() public {
+        vm.prank(owner);
+        token.pause();
+
+        vm.prank(owner);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        token.mintReward(user1, 1e18, "owner_mint");
+    }
+
+    function test_MintResumesAfterUnpause() public {
+        vm.prank(owner);
+        token.pause();
+
+        vm.prank(owner);
+        token.unpause();
+
+        // Mint should work again
+        vm.prank(distributor);
+        token.mintReward(user1, 1e18, "workout_complete");
+        assertEq(token.balanceOf(user1), 1e18);
+    }
+
+    function test_TransferStillWorksWhenPaused() public {
+        // Give user1 tokens via owner mint before pausing
+        vm.prank(distributor);
+        token.mintReward(user1, 5e18, "pre_pause");
+
+        vm.prank(owner);
+        token.pause();
+
+        // Transfer is NOT blocked by pause — only mintReward is
+        vm.prank(user1);
+        token.transfer(user2, 2e18);
+        assertEq(token.balanceOf(user2), 2e18);
+    }
+
+    function test_BurnStillWorksWhenPaused() public {
+        vm.prank(distributor);
+        token.mintReward(user1, 5e18, "pre_pause");
+
+        vm.prank(owner);
+        token.pause();
+
+        vm.prank(user1);
+        token.burn(3e18);
+        assertEq(token.balanceOf(user1), 2e18);
+    }
+
+    function test_NonOwnerCannotPause() public {
+        vm.prank(attacker);
+        vm.expectRevert();
+        token.pause();
+    }
+
+    function test_NonOwnerCannotUnpause() public {
+        vm.prank(owner);
+        token.pause();
+
+        vm.prank(attacker);
+        vm.expectRevert();
+        token.unpause();
     }
 
     // ── Distributor rotation ──────────────────────────────────────────────────
@@ -173,6 +282,14 @@ contract FitTokenTest is Test {
         token.setRewardDistributor(address(0));
     }
 
+    function test_DistributorRotationEmitsEvent() public {
+        address newDist = makeAddr("newDistributor");
+        vm.prank(owner);
+        vm.expectEmit(true, true, false, false);
+        emit FitToken.RewardDistributorUpdated(distributor, newDist);
+        token.setRewardDistributor(newDist);
+    }
+
     // ── Ownership transfer (Ownable2Step) ─────────────────────────────────────
 
     function test_OwnershipTransferRequiresAcceptance() public {
@@ -180,13 +297,24 @@ contract FitTokenTest is Test {
         vm.prank(owner);
         token.transferOwnership(newOwner);
 
-        // Still owner until accepted
-        assertEq(token.owner(), owner);
+        // Still old owner until accepted
+        assertEq(token.owner(),        owner);
         assertEq(token.pendingOwner(), newOwner);
 
         vm.prank(newOwner);
         token.acceptOwnership();
         assertEq(token.owner(), newOwner);
+    }
+
+    function test_PendingOwnerCannotMintBeforeAccepting() public {
+        address newOwner = makeAddr("newOwner");
+        vm.prank(owner);
+        token.transferOwnership(newOwner);
+
+        // newOwner is pending, not yet owner — cannot mint
+        vm.prank(newOwner);
+        vm.expectRevert(FitToken.NotAuthorized.selector);
+        token.mintReward(user1, 1e18, "pending_owner");
     }
 
     // ── Standard ERC-20 transfer ──────────────────────────────────────────────
@@ -204,7 +332,7 @@ contract FitTokenTest is Test {
 
     // ── View helpers ──────────────────────────────────────────────────────────
 
-    function test_RewardsUsedBpsStartsAtZero() public {
+    function test_RewardsUsedBpsStartsAtZero() public view {
         assertEq(token.rewardsUsedBps(), 0);
     }
 
@@ -214,6 +342,14 @@ contract FitTokenTest is Test {
         token.mintReward(user1, half, "bulk");
 
         assertEq(token.rewardsUsedBps(), 5000); // 50%
+    }
+
+    function test_RewardsUsedBpsAfterFullMint() public {
+        uint256 cap = 6_000_000 * 1e18;
+        vm.prank(distributor);
+        token.mintReward(user1, cap, "full");
+
+        assertEq(token.rewardsUsedBps(), 10_000); // 100%
     }
 
     // ── Fuzz ─────────────────────────────────────────────────────────────────
@@ -241,5 +377,16 @@ contract FitTokenTest is Test {
         vm.prank(distributor);
         vm.expectRevert(FitToken.RewardsPoolExhausted.selector);
         token.mintReward(user2, excess, "overflow");
+    }
+
+    function testFuzz_MintWhenPausedAlwaysReverts(uint256 amount) public {
+        amount = bound(amount, 1, 6_000_000 * 1e18);
+
+        vm.prank(owner);
+        token.pause();
+
+        vm.prank(distributor);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        token.mintReward(user1, amount, "fuzz_paused");
     }
 }

@@ -5,6 +5,10 @@ import { rateLimitByUser, rateLimitPresets, validateSameOrigin } from "@/lib/sec
 import { Prisma } from "@prisma/client"
 import { NextResponse } from "next/server"
 
+// Minimum FIT required to trigger a claim.
+// Prevents dust claims that waste gas and clog the distributor wallet.
+const MIN_CLAIM_FIT = 10
+
 export async function POST(req: Request) {
   // ── Origin check ────────────────────────────────────────────────────────────
   const originError = validateSameOrigin(req)
@@ -45,21 +49,33 @@ export async function POST(req: Request) {
     const totalEarned  = new Prisma.Decimal(balance?.amount        ?? 0)
     const totalClaimed = new Prisma.Decimal(balance?.claimedAmount ?? 0)
     const claimable    = totalEarned.minus(totalClaimed)
+    const claimableNum = claimable.toNumber()
 
     if (claimable.lessThanOrEqualTo(0)) {
       return NextResponse.json({ error: "No claimable FIT balance" }, { status: 422 })
     }
 
-    // ── Step 2: Optimistic lock — atomically reserve the claimable amount ──────
+    // ── Step 2: Minimum claim check ─────────────────────────────────────────────
+    // Protects users from burning gas on tiny claims.
+    // The minimum is enforced here (app layer) — the contract stays flexible.
+    if (claimableNum < MIN_CLAIM_FIT) {
+      return NextResponse.json(
+        {
+          error: `Minimum claim is ${MIN_CLAIM_FIT} FIT. You have ${claimableNum.toFixed(2)} FIT — keep earning!`,
+          code:  "BELOW_MINIMUM",
+          have:  claimableNum,
+          need:  MIN_CLAIM_FIT,
+        },
+        { status: 422 },
+      )
+    }
+
+    // ── Step 3: Optimistic lock — atomically reserve the claimable amount ──────
     //
-    // Uses a raw UPDATE with a WHERE condition that matches only if claimedAmount
-    // still equals the value we just read. If a concurrent request already
-    // updated it, 0 rows match and we abort — no double-mint.
-    //
-    // This runs OUTSIDE any db.$transaction() so the DB connection is released
-    // immediately, and no Prisma transaction is held open during the slow
-    // blockchain call that follows.
-    const claimableNum = claimable.toNumber()
+    // Raw UPDATE with a WHERE condition matching only the claimedAmount we just
+    // read. If a concurrent request already updated it, 0 rows match → abort.
+    // The contract call happens OUTSIDE any DB transaction so the connection is
+    // released immediately and not held during the slow blockchain round-trip.
     const expectedClaimedNum = totalClaimed.toNumber()
 
     const reservedRows = await db.$executeRaw`
@@ -72,24 +88,19 @@ export async function POST(req: Request) {
     `
 
     if (reservedRows === 0) {
-      // Another concurrent claim already updated claimedAmount — safe to retry
       return NextResponse.json(
         { error: "Another claim is in progress. Please try again in a moment." },
         { status: 409 },
       )
     }
 
-    // ── Step 3: Mint on-chain (outside any DB transaction) ─────────────────────
-    //
-    // If this fails, we compensate by rolling back the reservation.
-    // The compensation itself is a simple decrement — not wrapped in a
-    // transaction — so it won't deadlock even under high concurrency.
+    // ── Step 4: Mint on-chain (outside any DB transaction) ─────────────────────
     let txHash: `0x${string}`
     try {
       const result = await mintFitTokensOnChain(walletAddress, claimableNum, "app_claim")
       txHash = result.txHash
     } catch (contractErr) {
-      // ── Compensate: un-reserve the amount we just locked ────────────────────
+      // Compensate: roll back the reservation so user can retry
       await db.$executeRaw`
         UPDATE "FitTokenBalance"
         SET    "claimedAmount" = "claimedAmount" - ${claimableNum}::numeric,
@@ -103,7 +114,21 @@ export async function POST(req: Request) {
       )
     }
 
-    // ── Step 4: Return success ──────────────────────────────────────────────────
+    // ── Step 5: Store claim receipt (audit trail) ──────────────────────────────
+    // Non-fatal — tokens are already on-chain. Don't fail the response if this
+    // write fails; just log the error.
+    await db.claimReceipt.create({
+      data: {
+        userId,
+        txHash,
+        amount:        new Prisma.Decimal(claimableNum),
+        walletAddress,
+      },
+    }).catch((err) => {
+      console.error("tokens-claim: failed to write ClaimReceipt (tokens already minted):", err)
+    })
+
+    // ── Step 6: Return success ──────────────────────────────────────────────────
     const updatedBalance = await db.fitTokenBalance.findUnique({ where: { userId } })
 
     return NextResponse.json({

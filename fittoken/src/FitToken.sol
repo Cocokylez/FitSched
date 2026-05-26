@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title FitToken (FIT)
@@ -21,16 +22,17 @@ import "@openzeppelin/contracts/access/Ownable2Step.sol";
  *   • Verification score < 0.25 → 0 tokens, 0.25–0.55 → half, ≥0.55 → full
  *
  * ── Roles ────────────────────────────────────────────────────────────────────
- *   Owner            : Anthropic-style Ownable2Step — must accept transfer
- *   Reward Distributor: A hot wallet / backend signing key that mints rewards
+ *   Owner            : Ownable2Step — must accept transfer (prevents accidents)
+ *   Reward Distributor: Hot wallet used by the FitSched backend to mint rewards
  *
  * ── Design Notes ─────────────────────────────────────────────────────────────
  *   • Burnable: users / protocol can reduce supply over time
+ *   • Pausable: owner can pause/unpause mintReward() as an emergency stop
  *   • Rewards pool is capped — once exhausted, no more minting
  *   • Distributor can be rotated by owner (e.g., if key is compromised)
  *   • No governance or vesting in v1 — keep it simple and ship
  */
-contract FitToken is ERC20, ERC20Burnable, Ownable2Step {
+contract FitToken is ERC20, ERC20Burnable, Ownable2Step, Pausable {
     // ── Supply constants ──────────────────────────────────────────────────────
     uint256 public constant MAX_SUPPLY       = 10_000_000 * 1e18; // 10 million hard cap
     uint256 public constant REWARDS_POOL_CAP =  6_000_000 * 1e18; //  6M — 60% — rewards
@@ -70,11 +72,15 @@ contract FitToken is ERC20, ERC20Burnable, Ownable2Step {
     /**
      * @notice Mint reward tokens for a user.
      *         Only the rewardDistributor (app backend) or owner can call this.
+     *         Reverts if the contract is paused — use pause() as an emergency stop.
      * @param to     User wallet that earned the tokens.
      * @param amount Amount in wei (18 decimals). E.g., 1 FIT = 1e18.
      * @param reason Human-readable reason string for the event log.
      */
-    function mintReward(address to, uint256 amount, string calldata reason) external {
+    function mintReward(address to, uint256 amount, string calldata reason)
+        external
+        whenNotPaused
+    {
         if (msg.sender != rewardDistributor && msg.sender != owner()) revert NotAuthorized();
         if (rewardsMinted + amount > REWARDS_POOL_CAP) revert RewardsPoolExhausted();
 
@@ -82,6 +88,23 @@ contract FitToken is ERC20, ERC20Burnable, Ownable2Step {
         _mint(to, amount);
 
         emit RewardMinted(to, amount, reason);
+    }
+
+    // ── Emergency pause ───────────────────────────────────────────────────────
+
+    /**
+     * @notice Pause mintReward(). Use if a bug is found or distributor key is compromised.
+     *         Transfers and burns remain active — only minting is blocked.
+     */
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /**
+     * @notice Resume mintReward() after the issue has been resolved.
+     */
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
     // ── Admin ─────────────────────────────────────────────────────────────────
