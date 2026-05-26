@@ -10,6 +10,7 @@ import { useLanguage } from "@/context/LanguageContext"
 import { ACHIEVEMENT_DEFS, TIER_COLORS } from "@/lib/achievements"
 import { ACCENT } from "@/lib/theme"
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
+import { formatFT } from "@/lib/formatUtils"
 
 type Achievement = {
   type: string
@@ -54,10 +55,6 @@ async function compressImage(file: File): Promise<string> {
     reader.onerror = reject
     reader.readAsDataURL(file)
   })
-}
-
-function formatFT(n: number) {
-  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 function calculateCurrentStreak(logs: any[]) {

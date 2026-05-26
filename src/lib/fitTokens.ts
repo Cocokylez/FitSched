@@ -1,14 +1,11 @@
 import { Prisma } from "@prisma/client"
+import { toDateId } from "@/lib/dateUtils"
 
 const BASE_WORKOUT_REWARD = new Prisma.Decimal(1)
 
 type TokenTransaction = {
   amount: number
   reason: string
-}
-
-function toDateId(date: Date) {
-  return date.toISOString().split("T")[0]
 }
 
 function calculateStreakBonus(streak: number) {

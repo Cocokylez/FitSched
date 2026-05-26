@@ -9,6 +9,7 @@ import {
   Loader2, Wallet, X, Zap,
 } from "lucide-react"
 import { ACCENT } from "@/lib/theme"
+import { formatFT } from "@/lib/formatUtils"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -53,10 +54,6 @@ export type ButtonMode =
 const MIN_CLAIM_FIT = 10
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function formatFT(n: number) {
-  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" })

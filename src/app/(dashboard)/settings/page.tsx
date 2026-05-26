@@ -8,6 +8,7 @@ import { Activity, Building2, Dumbbell, Flame, Home, Zap } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
 import { useTheme } from "@/context/ThemeContext"
 import { ACCENT } from "@/lib/theme"
+import { formatFT, kgToLbs, lbsToKg } from "@/lib/formatUtils"
 
 type WorkoutEnvironment = "home_bodyweight" | "home_dumbbells" | "gym"
 
@@ -22,10 +23,6 @@ function getInitials(name?: string | null, email?: string | null) {
   const parts = source.split(/\s+/).filter(Boolean)
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
-}
-
-function formatFT(n: number) {
-  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 // ─── Small reusable pieces ─────────────────────────────────────
@@ -93,9 +90,6 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
     </div>
   )
 }
-
-function kgToLbs(kg: number) { return +(kg * 2.20462).toFixed(1) }
-function lbsToKg(lbs: number) { return +(lbs / 2.20462).toFixed(1) }
 
 // ─── Main page ─────────────────────────────────────────────────
 

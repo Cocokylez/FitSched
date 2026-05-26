@@ -10,6 +10,7 @@ import {
   ResponsiveContainer, ReferenceLine,
 } from "recharts"
 import { ACCENT } from "@/lib/theme"
+import { kgToLbs, lbsToKg } from "@/lib/formatUtils"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -31,9 +32,6 @@ function fmtDateLong(iso: string) {
     weekday: "short", month: "short", day: "numeric",
   })
 }
-
-function kgToLbs(kg: number) { return +(kg * 2.20462).toFixed(1) }
-function lbsToKg(lbs: number) { return +(lbs / 2.20462).toFixed(1) }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
