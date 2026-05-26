@@ -94,6 +94,9 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   )
 }
 
+function kgToLbs(kg: number) { return +(kg * 2.20462).toFixed(1) }
+function lbsToKg(lbs: number) { return +(lbs / 2.20462).toFixed(1) }
+
 // ─── Main page ─────────────────────────────────────────────────
 
 export default function SettingsPage() {
@@ -121,6 +124,7 @@ export default function SettingsPage() {
   const [weightKg, setWeightKg] = useState<number | null>(null)
   const [heightInput, setHeightInput] = useState("")
   const [weightInput, setWeightInput] = useState("")
+  const [weightUnit, setWeightUnit] = useState<"kg" | "lbs">("kg")
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState("")
   const [deleting, setDeleting] = useState(false)
@@ -178,7 +182,12 @@ export default function SettingsPage() {
           if (p.fitnessGoal) setFitnessGoal(p.fitnessGoal)
           if (p.experienceLevel) setExperienceLevel(p.experienceLevel)
           if (p.heightCm) { setHeightCm(p.heightCm); setHeightInput(String(p.heightCm)) }
-          if (p.weightKg) { setWeightKg(p.weightKg); setWeightInput(String(p.weightKg)) }
+          if (p.weightKg) {
+            setWeightKg(p.weightKg)
+            const savedUnit = localStorage.getItem("fitsched-weight-unit") === "lbs" ? "lbs" : "kg"
+            setWeightUnit(savedUnit)
+            setWeightInput(String(savedUnit === "lbs" ? kgToLbs(p.weightKg) : p.weightKg))
+          }
         }
         if (tokensRes.ok) {
           const t = await tokensRes.json()
@@ -262,13 +271,14 @@ export default function SettingsPage() {
   const saveBodyStat = async (field: "heightCm" | "weightKg", rawValue: string) => {
     const num = parseFloat(rawValue.replace(",", "."))
     if (!isFinite(num) || num <= 0) return
+    const dbValue = field === "weightKg" && weightUnit === "lbs" ? lbsToKg(num) : num
     if (field === "heightCm") setHeightCm(num)
-    if (field === "weightKg") setWeightKg(num)
+    if (field === "weightKg") setWeightKg(dbValue)
     try {
       await fetch("/api/onboarding", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ [field]: num }),
+        body: JSON.stringify({ [field]: dbValue }),
       })
     } catch {}
   }
@@ -487,8 +497,8 @@ export default function SettingsPage() {
           <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>Body stats</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {([
-              { label: "Height", field: "heightCm" as const, value: heightInput, setter: setHeightInput, unit: "cm", min: 100, max: 250, placeholder: "175" },
-              { label: "Weight", field: "weightKg" as const, value: weightInput, setter: setWeightInput, unit: "kg",  min: 20,  max: 500, placeholder: "70"  },
+              { label: "Height", field: "heightCm" as const, value: heightInput, setter: setHeightInput, unit: "cm",       min: 100, max: 250,  placeholder: "175"  },
+              { label: "Weight", field: "weightKg" as const, value: weightInput, setter: setWeightInput, unit: weightUnit, min: weightUnit === "lbs" ? 44 : 20, max: weightUnit === "lbs" ? 1100 : 500, placeholder: weightUnit === "lbs" ? "154" : "70" },
             ]).map(({ label, field, value, setter, unit, min, max, placeholder }) => (
               <div key={field}>
                 <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, marginBottom: 5 }}>{label}</div>

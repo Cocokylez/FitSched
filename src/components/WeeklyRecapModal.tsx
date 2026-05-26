@@ -49,10 +49,6 @@ export function WeeklyRecapModal() {
 
   useEffect(() => {
     const now = new Date()
-    const dow = now.getDay()
-    // Only show Monday (1), Tuesday (2), Wednesday (3)
-    if (dow < 1 || dow > 3) return
-
     const year = now.getFullYear()
     const week = isoWeekNumber(now)
     const storageKey = `fitsched-weekly-recap:${year}-W${week}`
