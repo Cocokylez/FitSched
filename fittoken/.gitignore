@@ -1,0 +1,13 @@
+# Foundry build artifacts
+/out
+/cache
+
+# Environment variables — NEVER commit
+.env
+
+# Dependency source
+/lib
+
+# Coverage
+lcov.info
+coverage/
