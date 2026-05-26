@@ -244,9 +244,13 @@ export function useWorkoutVerification() {
       else if (passRate < 0.5) challengeMultiplier = 0.45
     }
 
-    // Client-side time penalty (server also applies its own via session token)
-    const timeFactor =
-      elapsedSeconds >= 600 ? 1.0
+    // Client-side time penalty (server also applies its own via session token).
+    // Unverified sessions already carry a score of 0.5 (→ 50% multiplier) as their
+    // penalty. Applying the time factor on top would push them below the 0.25 threshold
+    // for any session under ~5 min, resulting in zero tokens — contradicting the UI
+    // which explicitly tells the user they will earn 50% FitTokens when skipping.
+    const timeFactor = (!mic && !motion) ? 1.0
+      : elapsedSeconds >= 600 ? 1.0
       : elapsedSeconds >= 300 ? 0.7
       : elapsedSeconds >= 120 ? 0.4
       : 0.15
