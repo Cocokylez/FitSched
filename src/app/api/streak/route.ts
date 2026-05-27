@@ -15,21 +15,25 @@ interface StreakData {
 
 function getLocalDateId(offsetDays = 0) {
   const timeZone = process.env.FITSCHED_TIME_ZONE || "Asia/Singapore"
-  const date = new Date()
-  date.setDate(date.getDate() + offsetDays)
 
+  // Project NOW into the target timezone first, THEN apply the day offset.
+  // Applying the offset on the UTC Date before timezone projection was wrong:
+  // for UTC+N timezones the UTC date can differ from the local date, causing
+  // the shifted result to land on the wrong local calendar day (e.g. just
+  // past midnight local time in a UTC+8 server env).
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).formatToParts(date)
+  }).formatToParts(new Date())
 
-  const year = parts.find((part) => part.type === "year")?.value
-  const month = parts.find((part) => part.type === "month")?.value
-  const day = parts.find((part) => part.type === "day")?.value
+  const year  = parts.find((p) => p.type === "year")?.value
+  const month = parts.find((p) => p.type === "month")?.value
+  const day   = parts.find((p) => p.type === "day")?.value
+  const todayId = `${year}-${month}-${day}`
 
-  return `${year}-${month}-${day}`
+  return offsetDays === 0 ? todayId : addDays(todayId, offsetDays)
 }
 
 function addDays(dateId: string, days: number) {

@@ -1,5 +1,4 @@
 import { Prisma } from "@prisma/client"
-import { toDateId } from "@/lib/dateUtils"
 
 const BASE_WORKOUT_REWARD = new Prisma.Decimal(1)
 
@@ -30,20 +29,30 @@ function calculateStreakBonus(streak: number) {
 async function calculateCurrentStreak(tx: Prisma.TransactionClient, userId: string) {
   const logs = await tx.workoutSessionLog.findMany({
     where: { userId },
-    select: { completedAt: true },
+    // Use the client-submitted `date` field (local YYYY-MM-DD) instead of
+    // `completedAt` (UTC timestamp). toDateId(completedAt) produces a UTC date
+    // that disagrees with the streak API for UTC+N users between midnight and
+    // UTC-offset local time (e.g. 00:00-08:00 SGT = prior UTC day).
+    select: { date: true },
     orderBy: { completedAt: "desc" },
     take: 370,
   })
 
-  const uniqueDates = new Set(logs.map((log) => toDateId(log.completedAt)))
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const uniqueDates = new Set(logs.map((log) => log.date))
+
+  // Build a UTC reference axis for "today" and walk backwards.
+  // The date strings in uniqueDates are local YYYY-MM-DD; because the client
+  // always submits the correct local date, comparing against UTC-based day keys
+  // is fine as long as we treat both as opaque YYYY-MM-DD strings.
+  const todayUTC = new Date()
+  todayUTC.setUTCHours(0, 0, 0, 0)
 
   let streak = 0
   for (let i = 0; i < 365; i++) {
-    const expected = new Date(today)
-    expected.setDate(today.getDate() - i)
-    if (!uniqueDates.has(toDateId(expected))) break
+    const expected = new Date(todayUTC)
+    expected.setUTCDate(todayUTC.getUTCDate() - i)
+    const key = expected.toISOString().split("T")[0]
+    if (!uniqueDates.has(key)) break
     streak++
   }
 
