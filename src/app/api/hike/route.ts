@@ -6,6 +6,15 @@ import { cleanText, rateLimitByUser, rateLimitPresets, readJsonBody, requestBody
 import { Prisma } from "@prisma/client"
 import { NextResponse } from "next/server"
 
+// Accept any date within ±38h of now — same window used for workout logs.
+// Prevents backdating hikes to farm tokens from past days.
+function isValidLoggedAt(raw: unknown): boolean {
+  if (!raw) return true // absent = use server time, always valid
+  const ms = new Date(raw as string).getTime()
+  if (isNaN(ms)) return false
+  return Math.abs(Date.now() - ms) < 38 * 60 * 60 * 1000
+}
+
 export async function GET(req: Request) {
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -47,7 +56,15 @@ export async function POST(req: Request) {
     if (durMin > 1440)
       return NextResponse.json({ error: "Duration exceeds maximum (24 h)" }, { status: 400 })
 
+    // Validate loggedAt is within ±38h — prevents backdating to farm old-day tokens
+    if (!isValidLoggedAt(loggedAt)) {
+      return NextResponse.json({ error: "Hike date must be today" }, { status: 400 })
+    }
+
     const userId = session.user.id
+    const hikeTimestamp = loggedAt ? new Date(loggedAt) : new Date()
+    // YYYY-MM-DD of the hike in UTC — used for daily uniqueness check
+    const hikeDate = hikeTimestamp.toISOString().split("T")[0]
 
     // ── Anti-cheat: analyze GPS route before any token award ─────────────────
     // verifyHikeRoute re-calculates distance from waypoints server-side,
@@ -59,6 +76,20 @@ export async function POST(req: Request) {
     )
 
     const result = await db.$transaction(async (tx) => {
+      // Daily uniqueness guard — one hike reward per UTC day
+      const existingToday = await tx.hikeLog.findFirst({
+        where: {
+          userId,
+          loggedAt: {
+            gte: new Date(`${hikeDate}T00:00:00.000Z`),
+            lt:  new Date(`${hikeDate}T24:00:00.000Z`),
+          },
+        },
+      })
+      if (existingToday) {
+        throw Object.assign(new Error("duplicate_hike"), { code: "DUPLICATE_HIKE" })
+      }
+
       const log = await tx.hikeLog.create({
         data: {
           userId,
@@ -69,7 +100,7 @@ export async function POST(req: Request) {
           locationName: cleanText(locationName, 120) || null,
           routePoints:  Array.isArray(routePoints) ? routePoints : undefined,
           notes:        cleanText(notes, 500) || null,
-          loggedAt:     loggedAt ? new Date(loggedAt) : new Date(),
+          loggedAt:     hikeTimestamp,
         },
       })
 
@@ -100,7 +131,10 @@ export async function POST(req: Request) {
       },
       { status: 201 },
     )
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === "DUPLICATE_HIKE") {
+      return NextResponse.json({ error: "A hike has already been logged for today" }, { status: 409 })
+    }
     const bodyError = requestBodyErrorResponse(error)
     if (bodyError) return bodyError
     console.error("Hike POST error:", error)
