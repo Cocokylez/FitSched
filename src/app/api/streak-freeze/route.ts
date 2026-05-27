@@ -30,8 +30,12 @@ export async function POST(req: Request) {
         throw Object.assign(new Error("already_armed"), { code: "ALREADY_ARMED" })
       }
 
-      const currentBalance = new Prisma.Decimal(balance?.amount ?? 0)
-      if (currentBalance.lessThan(FREEZE_COST)) {
+      // Check spendable balance (earned minus already-claimed on-chain) to prevent
+      // spending tokens that have already been withdrawn, which corrupts claimable.
+      const earned    = new Prisma.Decimal(balance?.amount        ?? 0)
+      const claimed   = new Prisma.Decimal(balance?.claimedAmount ?? 0)
+      const spendable = earned.minus(claimed)
+      if (spendable.lessThan(FREEZE_COST)) {
         throw Object.assign(new Error("insufficient_balance"), { code: "INSUFFICIENT_BALANCE" })
       }
 
