@@ -53,7 +53,7 @@ async function detectPersonalRecords(
     where: { userId },
     select: { exercises: true },
     orderBy: { completedAt: "desc" },
-    take: 300,
+    take: 50,
   })
 
   const maxWeightMap: Record<string, number> = {}
@@ -156,8 +156,26 @@ export async function DELETE(req: Request) {
     const id = searchParams.get("id")
     if (!id || id.length > 100) return safeError("Missing or invalid log id")
 
-    const deleted = await db.workoutSessionLog.deleteMany({
-      where: { id, userId: session.user.id },
+    const userId = session.user.id
+
+    // Decrement FitTokenBalance by the sum of tokens awarded for this log
+    // before the cascade delete so balance stays consistent.
+    const deleted = await db.$transaction(async (tx) => {
+      const tokens = await tx.fitToken.findMany({
+        where: { workoutLogId: id, userId },
+        select: { amount: true },
+      })
+      const totalToDeduct = tokens.reduce(
+        (sum, t) => sum.plus(new Prisma.Decimal(t.amount as unknown as string)),
+        new Prisma.Decimal(0)
+      )
+      if (totalToDeduct.greaterThan(0)) {
+        await tx.fitTokenBalance.updateMany({
+          where: { userId },
+          data: { amount: { decrement: totalToDeduct } },
+        })
+      }
+      return tx.workoutSessionLog.deleteMany({ where: { id, userId } })
     })
 
     if (deleted.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 })
@@ -186,12 +204,14 @@ export async function POST(req: Request) {
     const workoutName = cleanText(body.workoutName, 100)
     const exercises = normalizeCompletedExercises(body.exercises)
 
-    // Client-side verification score (0–1). Defaults to 1.0 when absent (desktop / old clients).
+    // Client-side verification score (0–1).
+    // Defaults to 0.5 when absent — no session token means no server-time check,
+    // so we apply the same half-reward as the in-app "skip verification" path.
     const rawScore = body.verificationScore
     let verificationScore =
       typeof rawScore === "number" && isFinite(rawScore) && rawScore >= 0 && rawScore <= 1
         ? rawScore
-        : 1.0
+        : 0.5
 
     if (!isDateId(date) || !workoutName || !exercises?.length) {
       return safeError("Missing or invalid workout log fields")
