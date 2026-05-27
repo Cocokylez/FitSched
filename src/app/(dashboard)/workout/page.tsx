@@ -53,10 +53,19 @@ function getMuscleGroupsForDay(day: number, workoutsPerWeek: number): { groups: 
   }
   if (workoutsPerWeek === 4) {
     const splits = [["CHEST", "BACK"], ["LEGS", "CORE"], ["SHOULDERS", "ARMS"], ["BACK", "ARMS"]]
-    return { groups: splits[workoutDayIndex], isRestDay: false }
+    return { groups: splits[workoutDayIndex] ?? [], isRestDay: false }
   }
-  const splits = [["CHEST"], ["BACK"], ["SHOULDERS"], ["ARMS"], ["LEGS", "CORE"]]
-  return { groups: splits[workoutDayIndex], isRestDay: false }
+  if (workoutsPerWeek === 5) {
+    const splits = [["CHEST", "SHOULDERS"], ["BACK", "ARMS"], ["LEGS", "CORE"], ["CHEST", "ARMS"], ["FULL_BODY"]]
+    return { groups: splits[workoutDayIndex] ?? [], isRestDay: false }
+  }
+  if (workoutsPerWeek === 6) {
+    const splits = [["CHEST"], ["BACK"], ["SHOULDERS"], ["ARMS"], ["LEGS", "CORE"], ["FULL_BODY"]]
+    return { groups: splits[workoutDayIndex] ?? [], isRestDay: false }
+  }
+  // 7+: same as 6-day split with fallback
+  const splits = [["CHEST"], ["BACK"], ["SHOULDERS"], ["ARMS"], ["LEGS", "CORE"], ["FULL_BODY"]]
+  return { groups: splits[workoutDayIndex] ?? [], isRestDay: false }
 }
 
 function getExerciseDesc(name: string): string {
@@ -89,8 +98,6 @@ export default function WorkoutPage() {
   const [savedWorkout, setSavedWorkout] = useState<any>(null)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [completed, setCompleted] = useState(false)
-  const [logging, setLogging] = useState(false)
-  const [loggedExercises, setLoggedExercises] = useState<Array<{name: string; sets: number; reps: number}>>([])
   const [loading, setLoading] = useState(true)
   const [completedDateIds, setCompletedDateIds] = useState<Set<string>>(new Set())
   const { t, language } = useLanguage()
@@ -106,6 +113,7 @@ export default function WorkoutPage() {
   const [exIdx, setExIdx] = useState(0)
   const [cdCount, setCdCount] = useState(3)
   const [completing, setCompleting] = useState(false)
+  const [saveError, setSaveError] = useState(false)
   const [verifySettled, setVerifySettled] = useState(false)
   const [verifyRequesting, setVerifyRequesting] = useState(false)
   const sessionStartRef = useRef<number>(0)
@@ -438,14 +446,6 @@ export default function WorkoutPage() {
 
   const currentExercises = toWorkoutExercises(todayExercises)
 
-  const updateLog = (index: number, field: string, value: string) => {
-    setLoggedExercises(prev => {
-      const updated = [...prev]
-      updated[index] = { ...updated[index], [field]: parseInt(value) }
-      return updated
-    })
-  }
-
   // ── Exercise flow handlers ──────────────────────────────────────────────────
   function startExFlow() {
     if (!todayExercises.length) return
@@ -486,6 +486,7 @@ export default function WorkoutPage() {
 
   async function finishWorkout() {
     setCompleting(true)
+    setSaveError(false)
     const elapsedSec = Math.floor((Date.now() - sessionStartRef.current) / 1000)
     const verifyResult = getResult(elapsedSec)
     stopVerify()
@@ -509,11 +510,18 @@ export default function WorkoutPage() {
         window.dispatchEvent(new Event("fitsched:tokens-updated"))
         window.dispatchEvent(new Event("fitsched:workout-completed"))
         setCompletedDateIds(prev => new Set([...prev, dateStr]))
+        setCompleting(false)
+        setExMode("idle")
+        setCompleted(true)
+        return
       }
-    } catch {}
+      // Non-2xx — surface to user so they can retry
+      setSaveError(true)
+    } catch {
+      setSaveError(true)
+    }
     setCompleting(false)
-    setExMode("idle")
-    setCompleted(true)
+    // Keep exMode as "done" so the user sees the retry banner
   }
 
   const modalStyle = {
@@ -1276,22 +1284,36 @@ export default function WorkoutPage() {
                       ))}
                     </motion.div>
 
+                    {saveError && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                        style={{
+                          width: "100%", borderRadius: 12, padding: "11px 14px",
+                          background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
+                          fontSize: 12, fontWeight: 700, color: "#dc2626",
+                          textAlign: "center", lineHeight: 1.4,
+                        }}
+                      >
+                        Save failed — check your connection and tap below to retry
+                      </motion.div>
+                    )}
+
                     <motion.button
                       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.42 }}
                       onClick={finishWorkout}
                       disabled={completing}
                       style={{
                         width: "100%", border: "none",
-                        background: ACCENT, color: "#0b1715",
+                        background: saveError ? "#ef4444" : ACCENT, color: "#fff",
                         borderRadius: 16, padding: "16px 24px",
                         fontSize: 16, fontWeight: 900,
                         cursor: completing ? "default" : "pointer",
                         fontFamily: "var(--font-display)", letterSpacing: "-0.01em",
-                        boxShadow: "0 4px 20px rgba(107,191,184,0.32)",
+                        boxShadow: saveError ? "0 4px 20px rgba(239,68,68,0.32)" : "0 4px 20px rgba(107,191,184,0.32)",
                         opacity: completing ? 0.7 : 1,
                       }}
                     >
-                      {completing ? "Saving…" : "Complete workout →"}
+                      {completing ? "Saving…" : saveError ? "Retry →" : "Complete workout →"}
                     </motion.button>
                   </div>
                 )}
@@ -1299,167 +1321,6 @@ export default function WorkoutPage() {
             )}
           </AnimatePresence>
 
-          <AnimatePresence>
-            {logging && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                style={{
-                  position: "fixed",
-                  inset: 0,
-                  background: "rgba(0,0,0,0.5)",
-                  zIndex: 9999,
-                  display: "flex",
-                  alignItems: "flex-end",
-                  justifyContent: "center",
-                }}
-                onClick={() => setLogging(false)}
-              >
-                <motion.div
-                  initial={{ y: 100 }}
-                  animate={{ y: 0 }}
-                  exit={{ y: 100 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
-                  onClick={e => e.stopPropagation()}
-                  style={modalStyle}
-                >
-                  <h3 style={{
-                    fontSize: "18px",
-                    fontWeight: 800,
-                    color: "var(--text)",
-                    marginBottom: "4px",
-                  }}>
-                    {t.logWorkout}
-                  </h3>
-                  <p style={{
-                    fontSize: "12px",
-                    color: "var(--text-muted)",
-                    marginBottom: "20px",
-                  }}>
-                    {t.adjustReps}
-                  </p>
-
-                  {loggedExercises.map((exercise, index) => (
-                    <div key={index} style={{
-                      background: theme === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
-                      border: theme === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
-                      borderLeft: "3px solid rgba(107,191,184,0.5)",
-                      borderRadius: "12px",
-                      padding: "14px 16px",
-                      marginBottom: "10px",
-                    }}>
-                      <div style={{
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        color: "var(--text)",
-                        marginBottom: "10px",
-                      }}>
-                        {exercise.name}
-                      </div>
-                      <div style={{
-                        display: "flex",
-                        gap: "12px",
-                        alignItems: "center",
-                      }}>
-                        <div style={{ flex: 1 }}>
-                          <label style={{
-                            fontSize: "10px",
-                            color: "var(--text-muted)",
-                            letterSpacing: "0.1em",
-                            fontWeight: 600,
-                          }}>
-                            {t.sets}
-                          </label>
-                          <input
-                            type="number"
-                            defaultValue={exercise.sets}
-                            onChange={e => updateLog(index, "sets", e.target.value)}
-                            style={{
-                              width: "100%",
-                              background: theme === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
-                              border: theme === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
-                              borderRadius: "8px",
-                              padding: "8px 10px",
-                              color: "var(--text)",
-                              fontSize: "14px",
-                              marginTop: "4px",
-                              outline: "none",
-                            }}
-                          />
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <label style={{
-                            fontSize: "10px",
-                            color: "var(--text-muted)",
-                            letterSpacing: "0.1em",
-                            fontWeight: 600,
-                          }}>
-                            {t.reps}
-                          </label>
-                          <input
-                            type="number"
-                            defaultValue={exercise.reps}
-                            onChange={e => updateLog(index, "reps", e.target.value)}
-                            style={{
-                              width: "100%",
-                              background: theme === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
-                              border: theme === "dark" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
-                              borderRadius: "8px",
-                              padding: "8px 10px",
-                              color: "var(--text)",
-                              fontSize: "14px",
-                              marginTop: "4px",
-                              outline: "none",
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  <button
-                    onClick={async () => {
-                      const selectedDate = weekDates[selectedDay]
-                      if (!selectedDate) return
-                      const dateStr = formatLocalDate(selectedDate)
-                      const response = await fetch("/api/workout-log", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          date: dateStr,
-                          workoutName: muscle,
-                          exercises: loggedExercises,
-                        }),
-                      })
-                      if (response.ok) {
-                        window.dispatchEvent(new Event("fitsched:tokens-updated"))
-                        window.dispatchEvent(new Event("fitsched:workout-completed"))
-                        setCompletedDateIds((current) => new Set([...current, dateStr]))
-                      }
-                      setLogging(false)
-                      setCompleted(true)
-                    }}
-                    style={{
-                      width: "100%",
-                      marginTop: "8px",
-                      background: "#6bbfb8",
-                      color: "#ffffff",
-                      border: "none",
-                      borderRadius: "12px",
-                      padding: "14px",
-                      fontSize: "14px",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      boxShadow: "0 4px 16px rgba(107,191,184,0.3)",
-                    }}
-                  >
-                    {t.saveWorkoutLog}
-                  </button>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
     </div>
   )
 }
