@@ -7,7 +7,10 @@ interface SessionPayload {
 }
 
 function secret() {
-  return process.env.NEXTAUTH_SECRET ?? "fitsched-session-fallback"
+  // SESSION_TOKEN_SECRET takes precedence; falls back to NEXTAUTH_SECRET so no
+  // deployment change is required. Returns "" if neither is set, which invalidates
+  // all tokens and removes the publicly-known literal fallback string.
+  return process.env.SESSION_TOKEN_SECRET || process.env.NEXTAUTH_SECRET || ""
 }
 
 export function signSessionToken(payload: SessionPayload): string {
