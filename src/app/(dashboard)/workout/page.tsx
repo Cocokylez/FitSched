@@ -117,6 +117,7 @@ export default function WorkoutPage() {
   const [verifySettled, setVerifySettled] = useState(false)
   const [verifyRequesting, setVerifyRequesting] = useState(false)
   const sessionStartRef = useRef<number>(0)
+  const sessionTokenRef = useRef<string | null>(null)
   const { state: verifyState, challenge, start: startVerify, getResult, stop: stopVerify } = useWorkoutVerification()
   const dayNames = [t.days.sun, t.days.mon, t.days.tue, t.days.wed, t.days.thu, t.days.fri, t.days.sat]
   const DAY_ABBR = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
@@ -451,7 +452,26 @@ export default function WorkoutPage() {
     if (!todayExercises.length) return
     setExIdx(0)
     setVerifySettled(false)
+    setSaveError(false)
+    sessionTokenRef.current = null
     setExMode("verify")
+  }
+
+  async function fetchAndStoreSessionToken() {
+    try {
+      const dateStr = formatLocalDate(new Date())
+      const res = await fetch("/api/workout-session/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: dateStr }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        sessionTokenRef.current = data.sessionToken ?? null
+      }
+    } catch {
+      // Best-effort — server will apply 0.5 default if absent
+    }
   }
 
   function beginSession() {
@@ -461,17 +481,23 @@ export default function WorkoutPage() {
 
   async function handleEnableMic() {
     setVerifyRequesting(true)
-    // Await so the browser permission dialog completes before we transition
-    // away — otherwise the dialog can be buried under the countdown screen
-    // on some browsers and silently dismissed.
-    await startVerify()
+    // Fetch session token + request mic in parallel — both are async and independent
+    const [, token] = await Promise.all([
+      startVerify(),
+      fetchAndStoreSessionToken().then(() => sessionTokenRef.current),
+    ])
+    // Promise.all doesn't return the ref value cleanly; ref is already set by the
+    // time we reach here since fetchAndStoreSessionToken awaited inside.
     setVerifyRequesting(false)
     setVerifySettled(true)
     beginSession()
   }
 
-  function handleSkipVerify() {
+  async function handleSkipVerify() {
     setVerifySettled(true)
+    // Fetch the server-signed token even when skipping mic — the HMAC elapsed-time
+    // check on the server is independent of mic verification.
+    fetchAndStoreSessionToken()
     beginSession()
   }
 
@@ -504,6 +530,7 @@ export default function WorkoutPage() {
           verificationScore: verifyResult.score,
           verificationMultiplier: verifyResult.multiplier,
           verificationMethod: verifyResult.method,
+          sessionToken: sessionTokenRef.current ?? undefined,
         }),
       })
       if (res.ok) {

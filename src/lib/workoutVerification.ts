@@ -119,8 +119,9 @@ export function useWorkoutVerification() {
       }
 
       function evaluateBothHolds() {
-        const passed1 = evaluateHold(rmsRef.current.slice(holdStartIdx1, holdStartIdx1 + Math.ceil(HOLD_SECONDS * 1000 / SAMPLE_MS)), baseline)
-        const passed2 = evaluateHold(rmsRef.current.slice(holdStartIdx2), baseline)
+        const floor = floorRef.current
+        const passed1 = evaluateHold(rmsRef.current.slice(holdStartIdx1, holdStartIdx1 + Math.ceil(HOLD_SECONDS * 1000 / SAMPLE_MS)), baseline, floor)
+        const passed2 = evaluateHold(rmsRef.current.slice(holdStartIdx2), baseline, floor)
 
         // Both must pass — two independent chances to catch an audio loop
         challengeResultsRef.current.push(passed1 && passed2)
@@ -277,19 +278,18 @@ export function useWorkoutVerification() {
 }
 
 // Evaluates a single hold window: did amplitude drop >55% below pre-hold baseline?
-function evaluateHold(samples: number[], baseline: number): boolean {
+// `floor` is the calibrated ambient noise level captured during session init.
+function evaluateHold(samples: number[], baseline: number, floor: number): boolean {
   if (samples.length === 0) return true  // no data — give benefit of doubt
   const holdAvg = samples.reduce((s, v) => s + v, 0) / samples.length
-  // Only testable if baseline was elevated above ambient noise
-  const testable = baseline > floorRef_global * 2.2
+  // Only testable if baseline was meaningfully elevated above ambient noise.
+  // Previously used a stale module-level default (0.008) which made quiet rooms
+  // appear testable when they weren't, causing false failures.
+  const testable = baseline > floor * 2.2
   return testable ? holdAvg < baseline * 0.45 : true
 }
 
-// Module-level ref share for evaluateHold — populated in start()
-let floorRef_global = 0.008
-
 function scoreBreath(history: number[], floor: number): number {
-  floorRef_global = floor
   if (history.length < 20) return 0.5
   const windowSize = Math.min(history.length, 200)
   const recent = history.slice(-windowSize)
