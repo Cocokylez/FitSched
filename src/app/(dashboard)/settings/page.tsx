@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
@@ -112,6 +112,9 @@ export default function SettingsPage() {
   const [experienceLevel, setExperienceLevel] = useState("intermediate")
   const [savingGoal, setSavingGoal] = useState(false)
   const [savingLevel, setSavingLevel] = useState(false)
+  // Track which fields the user has already changed so the initial page-load
+  // response can't race and overwrite them if it arrives late.
+  const userModifiedRef = useRef(new Set<string>())
   const [fitTokenBalance, setFitTokenBalance] = useState(0)
   const [loading, setLoading] = useState(true)
   const [heightCm, setHeightCm] = useState<number | null>(null)
@@ -171,12 +174,13 @@ export default function SettingsPage() {
         }
         if (profileRes.ok) {
           const p = await profileRes.json()
-          if (p.workoutsPerWeek) setWorkoutsPerWeek(p.workoutsPerWeek)
-          if (p.workoutEnvironment) setWorkoutEnvironment(p.workoutEnvironment)
-          if (p.fitnessGoal) setFitnessGoal(p.fitnessGoal)
-          if (p.experienceLevel) setExperienceLevel(p.experienceLevel)
-          if (p.heightCm) { setHeightCm(p.heightCm); setHeightInput(String(p.heightCm)) }
-          if (p.weightKg) {
+          const mod = userModifiedRef.current
+          if (p.workoutsPerWeek && !mod.has("workoutsPerWeek")) setWorkoutsPerWeek(p.workoutsPerWeek)
+          if (p.workoutEnvironment && !mod.has("workoutEnvironment")) setWorkoutEnvironment(p.workoutEnvironment)
+          if (p.fitnessGoal && !mod.has("fitnessGoal")) setFitnessGoal(p.fitnessGoal)
+          if (p.experienceLevel && !mod.has("experienceLevel")) setExperienceLevel(p.experienceLevel)
+          if (p.heightCm && !mod.has("heightCm")) { setHeightCm(p.heightCm); setHeightInput(String(p.heightCm)) }
+          if (p.weightKg && !mod.has("weightKg")) {
             setWeightKg(p.weightKg)
             const savedUnit = localStorage.getItem("fitsched-weight-unit") === "lbs" ? "lbs" : "kg"
             setWeightUnit(savedUnit)
@@ -219,46 +223,52 @@ export default function SettingsPage() {
   }
 
   const saveWorkoutEnvironment = async (next: WorkoutEnvironment) => {
+    userModifiedRef.current.add("workoutEnvironment")
     const prev = workoutEnvironment
     setWorkoutEnvironment(next)
     setSavingEnvironment(true)
     try {
       const res = await fetch("/api/onboarding", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workoutEnvironment: next }) })
-      if (!res.ok) setWorkoutEnvironment(prev)
-    } catch { setWorkoutEnvironment(prev) }
+      if (!res.ok) { setWorkoutEnvironment(prev); userModifiedRef.current.delete("workoutEnvironment") }
+    } catch { setWorkoutEnvironment(prev); userModifiedRef.current.delete("workoutEnvironment") }
     setSavingEnvironment(false)
   }
 
   const changeWorkoutsPerWeek = async (delta: number) => {
     const next = Math.max(1, Math.min(6, workoutsPerWeek + delta))
     if (next === workoutsPerWeek) return
+    userModifiedRef.current.add("workoutsPerWeek")
+    const prev = workoutsPerWeek
     setWorkoutsPerWeek(next)
     setSavingPerWeek(true)
     try {
-      await fetch("/api/onboarding", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workoutsPerWeek: next }) })
-    } catch {}
+      const res = await fetch("/api/onboarding", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workoutsPerWeek: next }) })
+      if (!res.ok) { setWorkoutsPerWeek(prev); userModifiedRef.current.delete("workoutsPerWeek") }
+    } catch { setWorkoutsPerWeek(prev); userModifiedRef.current.delete("workoutsPerWeek") }
     setSavingPerWeek(false)
   }
 
   const saveFitnessGoal = async (next: string) => {
+    userModifiedRef.current.add("fitnessGoal")
     const prev = fitnessGoal
     setFitnessGoal(next)
     setSavingGoal(true)
     try {
       const res = await fetch("/api/onboarding", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fitnessGoal: next }) })
-      if (!res.ok) setFitnessGoal(prev)
-    } catch { setFitnessGoal(prev) }
+      if (!res.ok) { setFitnessGoal(prev); userModifiedRef.current.delete("fitnessGoal") }
+    } catch { setFitnessGoal(prev); userModifiedRef.current.delete("fitnessGoal") }
     setSavingGoal(false)
   }
 
   const saveExperienceLevel = async (next: string) => {
+    userModifiedRef.current.add("experienceLevel")
     const prev = experienceLevel
     setExperienceLevel(next)
     setSavingLevel(true)
     try {
       const res = await fetch("/api/onboarding", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ experienceLevel: next }) })
-      if (!res.ok) setExperienceLevel(prev)
-    } catch { setExperienceLevel(prev) }
+      if (!res.ok) { setExperienceLevel(prev); userModifiedRef.current.delete("experienceLevel") }
+    } catch { setExperienceLevel(prev); userModifiedRef.current.delete("experienceLevel") }
     setSavingLevel(false)
   }
 
@@ -266,15 +276,27 @@ export default function SettingsPage() {
     const num = parseFloat(rawValue.replace(",", "."))
     if (!isFinite(num) || num <= 0) return
     const dbValue = field === "weightKg" && weightUnit === "lbs" ? lbsToKg(num) : num
+    userModifiedRef.current.add(field)
+    const prevHeight = heightCm
+    const prevWeight = weightKg
     if (field === "heightCm") setHeightCm(num)
     if (field === "weightKg") setWeightKg(dbValue)
     try {
-      await fetch("/api/onboarding", {
+      const res = await fetch("/api/onboarding", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ [field]: dbValue }),
       })
-    } catch {}
+      if (!res.ok) {
+        if (field === "heightCm") setHeightCm(prevHeight)
+        if (field === "weightKg") setWeightKg(prevWeight)
+        userModifiedRef.current.delete(field)
+      }
+    } catch {
+      if (field === "heightCm") setHeightCm(prevHeight)
+      if (field === "weightKg") setWeightKg(prevWeight)
+      userModifiedRef.current.delete(field)
+    }
   }
 
   const togglePush = async () => {

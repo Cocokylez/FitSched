@@ -104,6 +104,22 @@ export async function PATCH(req: Request) {
     if (Number.isFinite(h) && h >= 50 && h <= 260) data.heightCm = h
   }
 
+  if ("weightKg" in body) {
+    const w = Number(body.weightKg)
+    if (Number.isFinite(w) && w >= 20 && w <= 400) {
+      data.weightKg = w
+      // Recalculate BMI if we already have a height
+      const existingUser = await db.user.findUnique({
+        where: { id: session.user.id },
+        select: { heightCm: true },
+      })
+      const h = existingUser?.heightCm
+      if (h && h > 0) {
+        data.bmi = Math.round((w / ((h / 100) ** 2)) * 10) / 10
+      }
+    }
+  }
+
   if ("workoutsPerWeek" in body) {
     data.workoutsPerWeek = clampInt(body.workoutsPerWeek, 1, 6, 3)
   }
@@ -124,6 +140,7 @@ export async function PATCH(req: Request) {
       experienceLevel: true,
       workoutsPerWeek: true,
       heightCm: true,
+      weightKg: true,
       hasInjury: true,
     },
   })
