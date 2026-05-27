@@ -7,12 +7,12 @@ export async function unlockAchievementsForUser(
   tx: Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">,
   userId: string
 ): Promise<string[]> {
-  // Load everything we need in parallel
+  // Load everything we need in parallel (take limits prevent unbounded scans)
   const [sessionLogs, hikeLogs, tokenBalance, weightLogs, existing] = await Promise.all([
-    tx.workoutSessionLog.findMany({ where: { userId }, select: { completedAt: true } }),
-    tx.hikeLog.findMany({ where: { userId }, select: { distanceKm: true } }),
+    tx.workoutSessionLog.findMany({ where: { userId }, select: { date: true }, take: 500 }),
+    tx.hikeLog.findMany({ where: { userId }, select: { distanceKm: true }, take: 1000 }),
     tx.fitTokenBalance.findUnique({ where: { userId }, select: { amount: true } }),
-    tx.weightLog.findMany({ where: { userId }, select: { id: true } }),
+    tx.weightLog.findMany({ where: { userId }, select: { id: true }, take: 500 }),
     tx.userAchievement.findMany({ where: { userId }, select: { type: true } }),
   ])
 
@@ -22,17 +22,17 @@ export async function unlockAchievementsForUser(
   const totalTokens = Number(tokenBalance?.amount ?? 0)
   const totalWeightLogs = weightLogs.length
 
-  // Calculate current streak from completedAt dates
-  const uniqueDates = new Set(
-    sessionLogs.map((l) => l.completedAt.toISOString().slice(0, 10))
-  )
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  // Calculate current streak using the client-submitted `date` field (local YYYY-MM-DD).
+  // completedAt is a UTC timestamp, which disagrees with the user's local date for
+  // UTC+N timezones between midnight and the UTC offset (e.g. 00:00-08:00 for SGT).
+  const uniqueDates = new Set(sessionLogs.map((l) => l.date))
+  const todayUTC = new Date()
+  todayUTC.setUTCHours(0, 0, 0, 0)
   let currentStreak = 0
   for (let i = 0; i < 400; i++) {
-    const d = new Date(today)
-    d.setDate(today.getDate() - i)
-    const key = d.toISOString().slice(0, 10)
+    const d = new Date(todayUTC)
+    d.setUTCDate(todayUTC.getUTCDate() - i)
+    const key = d.toISOString().split("T")[0]
     if (!uniqueDates.has(key)) break
     currentStreak++
   }
