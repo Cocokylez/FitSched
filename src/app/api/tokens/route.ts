@@ -9,13 +9,19 @@ function formatTransaction(transaction: {
   reason: string
   createdAt: Date
   workoutLog: { workoutName: string } | null
+  hikeLog: { name: string } | null
 }) {
+  const label =
+    transaction.workoutLog?.workoutName ||
+    (transaction.hikeLog
+      ? `Hike${transaction.hikeLog.name ? `: ${transaction.hikeLog.name}` : ""}`
+      : "Workout")
   return {
     id: transaction.id,
     amount: Number(transaction.amount),
     reason: transaction.reason,
     createdAt: transaction.createdAt,
-    workoutName: transaction.workoutLog?.workoutName || "Workout",
+    workoutName: label,
   }
 }
 
@@ -35,9 +41,8 @@ export async function GET(req: Request) {
       db.fitToken.findMany({
         where: { userId: session.user.id },
         include: {
-          workoutLog: {
-            select: { workoutName: true },
-          },
+          workoutLog: { select: { workoutName: true } },
+          hikeLog:    { select: { name: true } },
         },
         orderBy: { createdAt: "desc" },
         take: 20,
