@@ -83,10 +83,26 @@ function Row({
   return inner
 }
 
-function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+function Toggle({ on, onToggle, loading }: { on: boolean; onToggle: () => void; loading?: boolean }) {
   return (
-    <div onClick={onToggle} style={{ width: 44, height: 26, borderRadius: 13, background: on ? ACCENT : "var(--border)", position: "relative", cursor: "pointer", flexShrink: 0, transition: "background 0.2s" }}>
-      <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, transition: "transform 0.2s", transform: on ? "translateX(21px)" : "translateX(3px)", boxShadow: "0 1px 4px rgba(0,0,0,0.3)" }} />
+    <div
+      onClick={loading ? undefined : onToggle}
+      style={{
+        width: 44, height: 26, borderRadius: 13,
+        background: on ? ACCENT : "var(--border)",
+        position: "relative",
+        cursor: loading ? "default" : "pointer",
+        flexShrink: 0,
+        transition: "background 0.2s, opacity 0.2s",
+        opacity: loading ? 0.55 : 1,
+      }}
+    >
+      <div style={{
+        width: 20, height: 20, borderRadius: "50%", background: "#fff",
+        position: "absolute", top: 3, transition: "transform 0.2s",
+        transform: on ? "translateX(21px)" : "translateX(3px)",
+        boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
+      }} />
     </div>
   )
 }
@@ -316,7 +332,7 @@ export default function SettingsPage() {
     if (!("Notification" in window)) return
 
     if (pushEnabled) {
-      // Flip immediately for responsive feel, clean up in background
+      // Flip immediately — user sees feedback right away
       setPushEnabled(false)
       setPushLoading(true)
       try {
@@ -337,14 +353,22 @@ export default function SettingsPage() {
       return
     }
 
-    // Enable — must request permission first (user gesture required)
-    const perm = await Notification.requestPermission()
-    if (perm !== "granted") return   // denied or dismissed — leave toggle off
-
-    // Flip on then subscribe
+    // ENABLE — flip optimistically first so the toggle moves immediately
     setPushEnabled(true)
     setPushLoading(true)
+
     try {
+      // If permission is still "default", ask now (still within the user-gesture chain)
+      let perm = Notification.permission
+      if (perm === "default") {
+        perm = await Notification.requestPermission()
+      }
+      if (perm !== "granted") {
+        setPushEnabled(false)   // denied / dismissed — revert
+        setPushLoading(false)
+        return
+      }
+
       if ("serviceWorker" in navigator) {
         const reg = await navigator.serviceWorker.register("/sw.js")
         const sub = await reg.pushManager.subscribe({
@@ -358,8 +382,7 @@ export default function SettingsPage() {
         })
       }
     } catch {
-      // Subscribe failed — revert
-      setPushEnabled(false)
+      setPushEnabled(false)   // subscribe failed — revert
     }
     setPushLoading(false)
   }
@@ -670,7 +693,7 @@ export default function SettingsPage() {
         <Row
           label="Notifications"
           sublabel={pushLoading ? "Updating…" : pushEnabled ? "Enabled" : t.workoutReminders}
-          right={<Toggle on={pushEnabled} onToggle={togglePush} />}
+          right={<Toggle on={pushEnabled} onToggle={togglePush} loading={pushLoading} />}
         />
         <Row
           divider
