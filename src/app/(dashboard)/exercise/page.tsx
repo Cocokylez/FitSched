@@ -90,11 +90,13 @@ export default function ExerciseSessionPage() {
   const [verifySettled, setVerifySettled] = useState(false)
   const { state: verifyState, start: startVerify, getResult } = useWorkoutVerification()
   const sessionTokenRef = useRef<string | null>(null)
+  const afterRestRef    = useRef<(() => void) | null>(null)
   const workoutRef      = useRef<ActiveWorkout | null>(null)
   const sessionDoneRef  = useRef(false)   // true once celebration fires
   const quitRef         = useRef(false)   // true once user explicitly quits
   const [restSeconds, setRestSeconds] = useState<number | null>(null)
   const [restDuration, setRestDuration] = useState(60)
+  const [currentExIdx, setCurrentExIdx] = useState(0)
   const [workoutNote, setWorkoutNote] = useState("")
   const [noteSaved, setNoteSaved] = useState(false)
   const [swapIdx, setSwapIdx] = useState<number | null>(null)
@@ -177,11 +179,16 @@ export default function ExerciseSessionPage() {
     return () => window.clearInterval(timer)
   }, [])
 
-  // Rest timer countdown
+  // Rest timer countdown — calls afterRestRef.current when it hits zero
   useEffect(() => {
     if (restSeconds === null) return
     if (restSeconds <= 0) {
       setRestSeconds(null)
+      if (afterRestRef.current) {
+        const fn = afterRestRef.current
+        afterRestRef.current = null
+        fn()
+      }
       return
     }
     const t = window.setTimeout(() => setRestSeconds(v => (v !== null && v > 0) ? v - 1 : null), 1000)
@@ -206,41 +213,6 @@ export default function ExerciseSessionPage() {
   const doneSets = useMemo(() => Object.values(completedSets).reduce((s, v) => s + v, 0), [completedSets])
   const allDone = Boolean(workout && doneSets === totalSets && totalSets > 0)
 
-  // Circuit-style: one set per exercise per round before cycling back
-  const activeExIdx = useMemo(() => {
-    if (!workout) return 0
-    // Find the current round = minimum sets done among exercises that still have sets left
-    let minSets = Infinity
-    for (let i = 0; i < workout.exercises.length; i++) {
-      const done = completedSets[i] || 0
-      if (done < workout.exercises[i].sets) minSets = Math.min(minSets, done)
-    }
-    if (minSets === Infinity) return workout.exercises.length // all done
-    // First exercise in this round that hasn't done their set yet
-    for (let i = 0; i < workout.exercises.length; i++) {
-      const done = completedSets[i] || 0
-      if (done === minSets && done < workout.exercises[i].sets) return i
-    }
-    return workout.exercises.length
-  }, [workout, completedSets])
-
-  // Next exercise in circuit order after active
-  const nextExIdx = useMemo(() => {
-    if (!workout || activeExIdx >= workout.exercises.length) return -1
-    const currentRound = completedSets[activeExIdx] || 0
-    // Next in same round
-    for (let i = activeExIdx + 1; i < workout.exercises.length; i++) {
-      const done = completedSets[i] || 0
-      if (done === currentRound && done < workout.exercises[i].sets) return i
-    }
-    // Wrap to next round — first exercise with sets remaining
-    for (let i = 0; i < workout.exercises.length; i++) {
-      const done = completedSets[i] || 0
-      if (done < workout.exercises[i].sets) return i
-    }
-    return -1
-  }, [workout, completedSets, activeExIdx])
-
   function handleQuit() {
     quitRef.current = true
     try {
@@ -258,11 +230,17 @@ export default function ExerciseSessionPage() {
     const newCount = Math.min((completedSets[exIdx] || 0) + 1, ex.sets)
     const newCompleted = { ...completedSets, [exIdx]: newCount }
     setCompletedSets(newCompleted)
-    // Start rest timer unless this was the very last set of the session
-    const newDone = Object.values(newCompleted).reduce((s, v) => s + v, 0)
-    if (newDone < totalSets) {
+    // Rest between individual sets, but not after the last set of this exercise
+    // (pressing "Next Exercise" triggers the rest before advancing to the next one)
+    const justFinishedAllSetsForThisEx = newCount >= ex.sets
+    if (!justFinishedAllSetsForThisEx) {
       setRestSeconds(restDuration)
     }
+  }
+
+  function handleNextExercise() {
+    afterRestRef.current = () => setCurrentExIdx(i => i + 1)
+    setRestSeconds(restDuration)
   }
 
   function saveSessionFeedback(value: SessionFeedback) {
@@ -437,134 +415,118 @@ export default function ExerciseSessionPage() {
         </motion.div>
       )}
 
-      {/* W1 Exercise card list */}
+      {/* W1 Fullscreen single exercise display */}
       <div data-dashboard-scroll style={{ flex: 1, overflowY: "auto", padding: "0 16px", paddingBottom: 120 }}>
-        {workout.exercises.map((ex, i) => {
-          const done = completedSets[i] || 0
-          const category = getCategory(ex.name, i)
+        {(() => {
+          const ex = workout.exercises[currentExIdx]
+          if (!ex) return null
+          const done = completedSets[currentExIdx] || 0
+          const category = getCategory(ex.name, currentExIdx)
           const catStyle = CATEGORY_COLORS[category] || CATEGORY_COLORS.CORE
-          const allSetsDone = done >= ex.sets
-          const isActive  = i === activeExIdx
-          const isFuture  = !allSetsDone && i !== activeExIdx
+          const allSetsDoneForCurrent = done >= ex.sets
+          const currentWeight = exerciseWeights[currentExIdx]
+          const histWeight = exerciseHistory[ex.name]?.weight
+          const isPRAttempt = currentWeight != null && currentWeight > 0 && (histWeight == null || currentWeight > histWeight)
+          const suggested = histWeight != null ? Math.round((histWeight + 2.5) * 10) / 10 : null
 
           return (
-            <motion.div
-              key={`${ex.name}-${i}`}
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.06, duration: 0.28, ease: "easeOut" }}
-              style={{
-                background: allSetsDone ? "rgba(18,101,254,0.04)" : isActive ? "var(--panel)" : "var(--panel)",
-                borderTop: allSetsDone ? "1px solid rgba(18,101,254,0.28)" : isActive ? "1px solid rgba(18,101,254,0.18)" : "1px solid var(--border)",
-                borderRight: allSetsDone ? "1px solid rgba(18,101,254,0.28)" : isActive ? "1px solid rgba(18,101,254,0.18)" : "1px solid var(--border)",
-                borderBottom: allSetsDone ? "1px solid rgba(18,101,254,0.28)" : isActive ? "1px solid rgba(18,101,254,0.18)" : "1px solid var(--border)",
-                borderLeft: `3px solid ${allSetsDone ? catStyle.color : isActive ? catStyle.color : "var(--border)"}`,
-                borderRadius: 20,
-                marginBottom: 12,
-                overflow: "hidden",
-                transition: "border-color 0.25s, background 0.25s, opacity 0.25s",
-                opacity: isFuture ? 0.38 : 1,
-                pointerEvents: isFuture ? "none" : "auto",
-              }}
-            >
-              {/* "UP NEXT" label for the next exercise in circuit order */}
-              {i === nextExIdx && !allDone && (
-                <div style={{ padding: "6px 14px 0", fontSize: 9, fontWeight: 900, letterSpacing: "0.14em", color: "var(--text-muted)", textTransform: "uppercase" }}>Up next</div>
-              )}
-              {/* ── Card header: category · muscle group ── exercise # + sets×reps + done check */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px 0 13px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: catStyle.color, flexShrink: 0 }} />
-                  <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.11em", color: catStyle.color }}>{category}</span>
-                  <span style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 600 }}>· {getMuscleGroup(ex.name)}</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                  <span style={{ fontSize: 10, fontWeight: 800, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>#{String(i + 1).padStart(2, "0")}</span>
-                  <div style={{ background: allSetsDone ? "rgba(18,101,254,0.18)" : "var(--surface-2)", border: allSetsDone ? "1px solid rgba(18,101,254,0.35)" : "1px solid var(--border)", borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 800, color: allSetsDone ? ACCENT : "var(--text-muted)", transition: "all 0.2s" }}>
-                    {ex.sets}×{ex.reps}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`ex-${currentExIdx}`}
+                initial={{ opacity: 0, x: 60 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -60 }}
+                transition={{ type: "spring", stiffness: 320, damping: 30 }}
+                style={{ display: "flex", flexDirection: "column", gap: 14 }}
+              >
+                {/* Category + exercise counter */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: catStyle.color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.1em", color: catStyle.color }}>{category}</span>
+                    <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>· {getMuscleGroup(ex.name)}</span>
                   </div>
-                  <AnimatePresence>
-                    {allSetsDone && (
-                      <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }} style={{ width: 20, height: 20, borderRadius: "50%", background: ACCENT, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#0b1715" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-
-              {/* ── Body: 1:1 square demo + exercise details side by side */}
-              <div style={{ display: "flex", padding: "8px 12px 10px 12px", gap: 12 }}>
-
-                {/* 1:1 Square demo */}
-                <div style={{ position: "relative", flexShrink: 0 }}>
-                  <div style={{ width: 130, height: 130, borderRadius: 16, overflow: "hidden" }}>
-                    <ExerciseDemoVisual exerciseName={ex.name} compact height={130} objectFit="contain" />
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>
+                    {currentExIdx + 1} / {workout.exercises.length}
                   </div>
+                </div>
+
+                {/* Exercise name + description */}
+                <div>
+                  <div style={{ fontSize: 28, fontWeight: 950, color: "var(--text)", letterSpacing: "-0.5px", lineHeight: 1.1, marginBottom: 5 }}>{ex.name}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.4 }}>{getExerciseDesc(ex.name)}</div>
+                </div>
+
+                {/* Large demo visual */}
+                <div style={{ position: "relative", width: "100%", borderRadius: 20, overflow: "hidden", background: "var(--panel)", border: "1px solid var(--border)" }}>
+                  <ExerciseDemoVisual exerciseName={ex.name} height={260} objectFit="contain" />
                   <AnimatePresence>
-                    {allSetsDone && (
+                    {allSetsDoneForCurrent && (
                       <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        style={{
-                          position: "absolute", inset: 0, borderRadius: 16,
-                          background: "rgba(18,101,254,0.28)",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          backdropFilter: "blur(1px)",
-                        }}
+                        style={{ position: "absolute", inset: 0, borderRadius: 20, background: "rgba(18,101,254,0.22)", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(1px)" }}
                       >
-                        <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        <svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke={ACCENT} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                       </motion.div>
                     )}
                   </AnimatePresence>
+                  {!allSetsDoneForCurrent && (
+                    <button
+                      type="button"
+                      onClick={() => setSwapIdx(currentExIdx)}
+                      style={{ position: "absolute", top: 10, right: 10, border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.45)", borderRadius: 10, padding: "5px 10px", fontSize: 11, fontWeight: 800, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}
+                    >
+                      <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                      </svg>
+                      Swap
+                    </button>
+                  )}
                 </div>
 
-                {/* Right: name, desc, history, sets, weight */}
-                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 0 }}>
-                  <div style={{ fontSize: 17, fontWeight: 950, color: "var(--text)", letterSpacing: "-0.3px", marginBottom: 4, lineHeight: 1.15 }}>{ex.name}</div>
-                  <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.4, marginBottom: exerciseHistory[ex.name] ? 6 : 8 }}>
-                    {getExerciseDesc(ex.name)}
+                {/* Last session hint */}
+                {exerciseHistory[ex.name] && (
+                  <div style={{ display: "inline-flex", alignSelf: "flex-start", alignItems: "center", gap: 4, borderRadius: 999, padding: "3px 10px", background: "rgba(18,101,254,0.08)", border: "1px solid rgba(18,101,254,0.2)", fontSize: 11, fontWeight: 800, color: ACCENT }}>
+                    <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    {exerciseHistory[ex.name].weight != null && `${exerciseHistory[ex.name].weight}kg · `}Last: {exerciseHistory[ex.name].sets}×{exerciseHistory[ex.name].reps} · {daysAgoLabel(exerciseHistory[ex.name].completedAt)}
                   </div>
+                )}
 
-                  {/* Last session hint */}
-                  {exerciseHistory[ex.name] && (
-                    <div style={{ display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 8, borderRadius: 999, padding: "2px 8px", background: "rgba(18,101,254,0.08)", border: "1px solid rgba(18,101,254,0.2)", fontSize: 10, fontWeight: 800, color: ACCENT }}>
-                      <svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                      {exerciseHistory[ex.name].weight != null && `${exerciseHistory[ex.name].weight}kg · `}Last: {exerciseHistory[ex.name].sets}×{exerciseHistory[ex.name].reps} · {daysAgoLabel(exerciseHistory[ex.name].completedAt)}
-                    </div>
-                  )}
-
-                  {/* Set buttons + swap */}
-                  <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
+                {/* Set buttons */}
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.14em", color: "var(--text-muted)", marginBottom: 8 }}>
+                    SETS — {ex.sets} × {ex.reps} reps
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
                     {Array.from({ length: ex.sets }, (_, setIdx) => {
                       const setDone = setIdx < done
-                      const isCurrent = setIdx === done && isActive
+                      const isCurrent = setIdx === done && !allSetsDoneForCurrent
                       return (
                         <motion.button
                           key={setIdx}
                           type="button"
-                          whileTap={isCurrent ? { scale: 0.9 } : {}}
-                          onClick={() => isCurrent ? completeSet(i) : undefined}
+                          whileTap={isCurrent ? { scale: 0.88 } : {}}
+                          onClick={() => isCurrent ? completeSet(currentExIdx) : undefined}
                           style={{
                             flex: 1,
-                            border: setDone ? `1px solid ${catStyle.color}55` : isCurrent ? `1px solid ${catStyle.color}88` : "1px solid var(--border)",
-                            background: setDone ? `${catStyle.color}22` : isCurrent ? `${catStyle.color}18` : "var(--surface-2)",
+                            border: setDone ? `1.5px solid ${catStyle.color}66` : isCurrent ? `1.5px solid ${catStyle.color}` : "1.5px solid var(--border)",
+                            background: setDone ? `${catStyle.color}22` : isCurrent ? `${catStyle.color}14` : "var(--surface-2)",
                             color: setDone ? catStyle.color : isCurrent ? catStyle.color : "var(--text-muted)",
-                            borderRadius: 10,
-                            padding: "7px 4px",
-                            fontSize: 10,
+                            borderRadius: 14,
+                            padding: "16px 8px",
+                            fontSize: 16,
                             fontWeight: 900,
                             cursor: isCurrent ? "pointer" : "default",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            gap: 3,
                             transition: "all 0.18s",
                           }}
                         >
                           {setDone
-                            ? <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            ? <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                             : isCurrent
                               ? <motion.span animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}>{setIdx + 1}</motion.span>
                               : <span>{setIdx + 1}</span>
@@ -572,125 +534,116 @@ export default function ExerciseSessionPage() {
                         </motion.button>
                       )
                     })}
-                    {/* Swap button */}
-                    {!allSetsDone && (
-                      <button
-                        type="button"
-                        onClick={() => setSwapIdx(i)}
-                        style={{ flexShrink: 0, width: 32, height: 32, border: "1px solid var(--border)", background: "var(--surface-2)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-muted)" }}
-                        title="Swap exercise"
-                      >
-                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-                        </svg>
-                      </button>
+                  </div>
+                </div>
+
+                {/* Weight input */}
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.14em", color: "var(--text-muted)", marginBottom: 6 }}>WEIGHT (optional)</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min={0} max={999} step={0.5}
+                      placeholder={histWeight != null ? String(histWeight) : "0"}
+                      value={currentWeight ?? ""}
+                      onChange={(e) => {
+                        const v = parseFloat(e.target.value)
+                        setExerciseWeights(prev => ({ ...prev, [currentExIdx]: isNaN(v) ? null : v }))
+                      }}
+                      style={{
+                        flex: 1, background: isPRAttempt ? "rgba(18,101,254,0.08)" : "var(--surface-2)",
+                        border: isPRAttempt ? "1px solid rgba(18,101,254,0.4)" : "1px solid var(--border)",
+                        borderRadius: 12, padding: "10px 12px", color: "var(--text)", fontSize: 14, fontWeight: 700,
+                        outline: "none", fontFamily: "inherit", transition: "border-color 0.2s, background 0.2s",
+                      }}
+                    />
+                    <span style={{ fontSize: 13, fontWeight: 800, color: isPRAttempt ? ACCENT : "var(--text-muted)", flexShrink: 0, minWidth: 24 }}>kg</span>
+                    {isPRAttempt && (
+                      <motion.span initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 900, color: ACCENT, flexShrink: 0 }}>
+                        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
+                        PR
+                      </motion.span>
                     )}
                   </div>
+                  {suggested != null && currentWeight == null && (
+                    <motion.button
+                      type="button"
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      onClick={() => setExerciseWeights(prev => ({ ...prev, [currentExIdx]: suggested }))}
+                      style={{ marginTop: 6, border: "1px dashed rgba(18,101,254,0.45)", background: "rgba(18,101,254,0.06)", borderRadius: 8, padding: "5px 11px", color: ACCENT, fontSize: 11, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
+                    >
+                      <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                      Try {suggested} kg (+2.5)
+                    </motion.button>
+                  )}
+                </div>
 
-                  {/* Weight input row */}
-                  {(() => {
-                    const currentWeight = exerciseWeights[i]
-                    const histWeight = exerciseHistory[ex.name]?.weight
-                    const isPRAttempt = currentWeight != null && currentWeight > 0 && (histWeight == null || currentWeight > histWeight)
-                    const suggested = histWeight != null ? Math.round((histWeight + 2.5) * 10) / 10 : null
+                {/* Progress dots */}
+                <div style={{ display: "flex", justifyContent: "center", gap: 6, paddingBottom: 4 }}>
+                  {workout.exercises.map((_, dotIdx) => {
+                    const dotDone = (completedSets[dotIdx] || 0) >= workout.exercises[dotIdx].sets
+                    const isCurrent = dotIdx === currentExIdx
                     return (
-                      <div style={{ marginTop: 8 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <input
-                            type="number"
-                            inputMode="decimal"
-                            min={0}
-                            max={999}
-                            step={0.5}
-                            placeholder={histWeight != null ? String(histWeight) : "0"}
-                            value={currentWeight ?? ""}
-                            onChange={(e) => {
-                              const v = parseFloat(e.target.value)
-                              setExerciseWeights((prev) => ({ ...prev, [i]: isNaN(v) ? null : v }))
-                            }}
-                            style={{
-                              flex: 1,
-                              background: isPRAttempt ? "rgba(18,101,254,0.08)" : "var(--surface-2)",
-                              border: isPRAttempt ? "1px solid rgba(18,101,254,0.4)" : "1px solid var(--border)",
-                              borderRadius: 10,
-                              padding: "6px 10px",
-                              color: "var(--text)",
-                              fontSize: 13,
-                              fontWeight: 700,
-                              outline: "none",
-                              fontFamily: "inherit",
-                              transition: "border-color 0.2s, background 0.2s",
-                            }}
-                          />
-                          <span style={{ fontSize: 11, fontWeight: 800, color: isPRAttempt ? ACCENT : "var(--text-muted)", flexShrink: 0, minWidth: 20 }}>kg</span>
-                          {isPRAttempt && (
-                            <motion.span initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 900, color: ACCENT, flexShrink: 0 }}>
-                              <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
-                              PR
-                            </motion.span>
-                          )}
-                        </div>
-                        {suggested != null && currentWeight == null && (
-                          <motion.button
-                            type="button"
-                            initial={{ opacity: 0, y: -4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            onClick={() => setExerciseWeights((prev) => ({ ...prev, [i]: suggested }))}
-                            style={{ marginTop: 5, border: "1px dashed rgba(18,101,254,0.45)", background: "rgba(18,101,254,0.06)", borderRadius: 8, padding: "4px 9px", color: ACCENT, fontSize: 10, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
-                          >
-                            <svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
-                            Try {suggested} kg (+2.5)
-                          </motion.button>
-                        )}
-                      </div>
+                      <div
+                        key={dotIdx}
+                        style={{
+                          width: isCurrent ? 22 : 7,
+                          height: 7,
+                          borderRadius: 4,
+                          background: dotDone ? catStyle.color : isCurrent ? ACCENT : "var(--border)",
+                          transition: "all 0.3s ease",
+                        }}
+                      />
                     )
-                  })()}
-                </div>{/* end right column */}
-              </div>{/* end body flex */}
-
-              {/* ── Progress bar — animates as sets complete */}
-              <div style={{ height: 3, background: "var(--border)", margin: "0 13px 11px" }}>
-                <motion.div
-                  style={{ height: "100%", borderRadius: 2, background: catStyle.color }}
-                  animate={{ width: ex.sets > 0 ? `${(done / ex.sets) * 100}%` : "0%" }}
-                  transition={{ duration: 0.35, ease: "easeOut" }}
-                />
-              </div>
-            </motion.div>
+                  })}
+                </div>
+              </motion.div>
+            </AnimatePresence>
           )
-        })}
+        })()}
       </div>
 
-      {/* W1 Sticky bottom CTA */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "12px 16px", paddingBottom: "max(12px, env(safe-area-inset-bottom))", background: "var(--bg)", borderTop: "1px solid var(--border)" }}>
-        <button
-          type="button"
-          onClick={allDone ? finishWorkout : undefined}
-          disabled={saving}
-          style={{
-            width: "100%",
-            border: "none",
-            borderRadius: 16,
-            padding: 15,
-            background: allDone ? ACCENT : "var(--surface-2)",
-            color: allDone ? "#0b1715" : "var(--text-muted)",
-            fontSize: 15,
-            fontWeight: 950,
-            cursor: allDone && !saving ? "pointer" : "default",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-            transition: "background 0.2s, color 0.2s",
-            opacity: saving ? 0.6 : 1,
-          }}
-        >
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6.5 6.5h11"/><path d="M6.5 17.5h11"/><path d="M3 9.5h2v5H3z"/><path d="M19 9.5h2v5h-2z"/><path d="M5 12h14"/>
-          </svg>
-          {saving ? t.saving : allDone ? t.finishWorkout : `${doneSets} / ${totalSets} sets done`}
-        </button>
-      </div>
+      {/* W1 Sticky bottom CTA — appears only when all sets for current exercise are done */}
+      {(() => {
+        const ex = workout.exercises[currentExIdx]
+        if (!ex) return null
+        const done = completedSets[currentExIdx] || 0
+        const allSetsDoneForCurrent = done >= ex.sets
+        const isLastExercise = currentExIdx >= workout.exercises.length - 1
+        if (!allSetsDoneForCurrent) return null
+        return (
+          <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "12px 16px", paddingBottom: "max(12px, env(safe-area-inset-bottom))", background: "var(--bg)", borderTop: "1px solid var(--border)" }}>
+            <AnimatePresence mode="wait">
+              <motion.button
+                key={isLastExercise ? "finish" : `next-${currentExIdx}`}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                type="button"
+                onClick={isLastExercise ? finishWorkout : handleNextExercise}
+                disabled={saving}
+                style={{
+                  width: "100%", border: "none", borderRadius: 16, padding: 15,
+                  background: ACCENT, color: "#fff", fontSize: 15, fontWeight: 950,
+                  cursor: saving ? "default" : "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  opacity: saving ? 0.6 : 1,
+                  boxShadow: "0 8px 24px rgba(18,101,254,0.28)",
+                }}
+              >
+                {saving ? t.saving : isLastExercise ? t.finishWorkout : "Next Exercise →"}
+                {!saving && (
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                )}
+              </motion.button>
+            </AnimatePresence>
+          </div>
+        )
+      })()}
 
       {/* Exercise swap sheet */}
       <AnimatePresence>
