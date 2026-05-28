@@ -60,6 +60,9 @@ export default function HikePage() {
   const [saveError, setSaveError]       = useState<string | null>(null)
   const [pendingCount, setPendingCount] = useState(0)
 
+  // Hike tracker phase — hide Logs button while lobby is showing
+  const [hikePhase, setHikePhase] = useState<"lobby" | "active">("lobby")
+
   // FitToken reward toast
   const [tokenReward, setTokenReward] = useState<{
     amount: number
@@ -241,11 +244,12 @@ export default function HikePage() {
         key={trackerKey}
         onFinish={handleTrackerFinish}
         onClose={() => router.back()}
+        onPhaseChange={setHikePhase}
         disableNavEvent
       />
 
-      {/* ── Logs button ────────────────────────────────────────────────────── */}
-      {!showSave && !showLogs && (
+      {/* ── Logs button — hidden during lobby so it doesn't bleed over the overlay ── */}
+      {!showSave && !showLogs && hikePhase === "active" && (
         <div style={{ position: "fixed", bottom: 110, left: 16, zIndex: 400, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
           <motion.button
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
