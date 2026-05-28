@@ -142,6 +142,10 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
     if (m === "track") {
       followRef.current = true
       setFollowing(true)
+      // Auto-start GPS when switching back to track mode in active phase
+      if (phaseRef.current === "active" && watchRef.current === null) {
+        enableGPS()
+      }
     }
     if (m === "plan") {
       // Reset plan step when entering plan mode
@@ -400,9 +404,9 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
     navigator.permissions.query({ name: "geolocation" }).then(result => {
       perm = result
       permRef.current = result
-      if (result.state === "granted") startWatching()
+      // Don't auto-start GPS — wait for user to press Begin Hike
       result.onchange = () => {
-        if (result.state === "granted" && !startedRef.current) {
+        if (result.state === "granted" && beginPressedRef.current && !startedRef.current) {
           setError(null)
           startWatching()
         }
@@ -480,6 +484,19 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
   const canPause  = trackStatus === "tracking" || trackStatus === "paused"
   const canFinish = trackStatus === "tracking" || trackStatus === "paused"
 
+  // ── Lobby handlers ──────────────────────────────────────────────────────────
+
+  function handleBeginHike() {
+    beginPressedRef.current = true
+    setPhase("active")
+    enableGPS()
+  }
+
+  function handlePlanMode() {
+    setPhase("active")
+    setMode("plan")
+  }
+
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
@@ -499,30 +516,36 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
         padding: "10px 12px", flexShrink: 0,
         background: "var(--panel)", borderBottom: "1px solid var(--border)",
       }}>
-        {/* Mode toggle — centered */}
-        <div style={{
-          flex: 1, display: "flex",
-          background: "var(--surface)", borderRadius: 10, padding: 3, gap: 2,
-        }}>
-          {(["track", "plan"] as const).map(m => (
-            <button
-              key={m}
-              onClick={() => setMode(m)}
-              style={{
-                flex: 1, border: "none", borderRadius: 8, padding: "7px 0",
-                background: mode === m ? "var(--panel)" : "transparent",
-                color: mode === m ? "var(--text)" : "var(--text-muted)",
-                fontWeight: 800, fontSize: 12, fontFamily: "inherit",
-                cursor: "pointer", transition: "background 0.15s, color 0.15s",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
-              }}
-            >
-              {m === "track"
-                ? <><Navigation size={12} strokeWidth={2.5} /> Track GPS</>
-                : <><MapPin     size={12} strokeWidth={2.5} /> Plan route</>}
-            </button>
-          ))}
-        </div>
+        {/* Mode toggle — only visible in active phase */}
+        {phase === "active" ? (
+          <div style={{
+            flex: 1, display: "flex",
+            background: "var(--surface)", borderRadius: 10, padding: 3, gap: 2,
+          }}>
+            {(["track", "plan"] as const).map(m => (
+              <button
+                key={m}
+                onClick={() => setMode(m)}
+                style={{
+                  flex: 1, border: "none", borderRadius: 8, padding: "7px 0",
+                  background: mode === m ? "var(--panel)" : "transparent",
+                  color: mode === m ? "var(--text)" : "var(--text-muted)",
+                  fontWeight: 800, fontSize: 12, fontFamily: "inherit",
+                  cursor: "pointer", transition: "background 0.15s, color 0.15s",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+                }}
+              >
+                {m === "track"
+                  ? <><Navigation size={12} strokeWidth={2.5} /> Track GPS</>
+                  : <><MapPin     size={12} strokeWidth={2.5} /> Plan route</>}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div style={{ flex: 1, display: "flex", alignItems: "center", paddingLeft: 6 }}>
+            <span style={{ fontSize: 15, fontWeight: 800, color: "var(--text)" }}>Hike</span>
+          </div>
+        )}
 
         {/* Close */}
         <button
@@ -536,38 +559,46 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
       {/* ── Map (full height) ───────────────────────────────────────────── */}
       <div ref={mapDivRef} style={{ flex: 1, minHeight: 0, position: "relative" }}>
 
-        {/* TRACK: enable GPS prompt */}
-        {mode === "track" && trackStatus === "idle" && !error && (
+        {/* LOBBY: pre-hike choice screen */}
+        {phase === "lobby" && (
           <div style={{
             position: "absolute", inset: 0, zIndex: 999,
-            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-            background: "rgba(0,0,0,0.52)", backdropFilter: "blur(8px)", gap: 16, padding: 32,
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end",
+            padding: "0 20px",
           }}>
             <div style={{
-              width: 64, height: 64, borderRadius: "50%",
-              background: "rgba(107,191,184,0.18)", border: `2px solid ${ACCENT}`,
-              display: "flex", alignItems: "center", justifyContent: "center",
+              display: "flex", flexDirection: "column", gap: 10, width: "100%", maxWidth: 400,
+              paddingBottom: "max(28px, env(safe-area-inset-bottom))",
             }}>
-              <Navigation size={28} strokeWidth={2} color={ACCENT} />
+              <motion.button
+                onClick={handleBeginHike}
+                whileTap={{ scale: 0.96 }}
+                style={{
+                  border: "none", borderRadius: 18, padding: "16px",
+                  background: ACCENT, color: "#0d1f1e",
+                  fontWeight: 900, fontSize: 16, fontFamily: "inherit",
+                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  boxShadow: "0 0 32px rgba(107,191,184,0.4)",
+                }}
+              >
+                <Navigation size={18} strokeWidth={2.5} />
+                Begin Hike
+              </motion.button>
+              <motion.button
+                onClick={handlePlanMode}
+                whileTap={{ scale: 0.96 }}
+                style={{
+                  border: "1px solid rgba(255,255,255,0.22)", borderRadius: 18, padding: "14px",
+                  background: "rgba(10,20,18,0.62)", backdropFilter: "blur(12px)",
+                  color: "#fff",
+                  fontWeight: 800, fontSize: 15, fontFamily: "inherit",
+                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                }}
+              >
+                <MapPin size={16} strokeWidth={2.5} />
+                Plan Mode
+              </motion.button>
             </div>
-            <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-              <span style={{ color: "#fff", fontWeight: 900, fontSize: 17 }}>Enable GPS</span>
-              <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, lineHeight: 1.5, maxWidth: 260 }}>
-                Your browser will ask for location permission.
-              </span>
-            </div>
-            <motion.button
-              onClick={enableGPS} whileTap={{ scale: 0.96 }}
-              style={{
-                border: "none", borderRadius: 16, padding: "14px 32px",
-                background: ACCENT, color: "#0d1f1e",
-                fontWeight: 900, fontSize: 15, fontFamily: "inherit",
-                cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
-              }}
-            >
-              <Navigation size={16} strokeWidth={2.5} />
-              Allow location
-            </motion.button>
           </div>
         )}
 

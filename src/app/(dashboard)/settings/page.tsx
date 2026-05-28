@@ -83,6 +83,16 @@ function Row({
   return inner
 }
 
+function Skeleton({ width, height = 14, radius = 7 }: { width: number | string; height?: number; radius?: number }) {
+  return (
+    <motion.div
+      animate={{ opacity: [0.35, 0.65, 0.35] }}
+      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+      style={{ width, height, borderRadius: radius, background: "var(--border)", flexShrink: 0 }}
+    />
+  )
+}
+
 function Toggle({ on, onToggle, loading }: { on: boolean; onToggle: () => void; loading?: boolean }) {
   return (
     <div
@@ -465,15 +475,19 @@ export default function SettingsPage() {
             )}
           </div>
           <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: "var(--text)" }}>{profileName}</div>
-            {profileEmail.endsWith("@fitsched.guest") ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
-                <span style={{ fontSize: 9, background: "rgba(107,191,184,0.18)", border: "1px solid rgba(107,191,184,0.3)", color: ACCENT, borderRadius: 999, padding: "2px 7px", fontWeight: 800, letterSpacing: "0.08em" }}>GUEST</span>
-                <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Temporary account</span>
-              </div>
-            ) : (
-              <div style={{ fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{profileEmail}</div>
-            )}
+            {loading
+              ? <Skeleton width={130} height={16} />
+              : <div style={{ fontSize: 16, fontWeight: 800, color: "var(--text)" }}>{profileName}</div>}
+            {loading
+              ? <div style={{ marginTop: 5 }}><Skeleton width={170} height={11} /></div>
+              : profileEmail.endsWith("@fitsched.guest") ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
+                    <span style={{ fontSize: 9, background: "rgba(107,191,184,0.18)", border: "1px solid rgba(107,191,184,0.3)", color: ACCENT, borderRadius: 999, padding: "2px 7px", fontWeight: 800, letterSpacing: "0.08em" }}>GUEST</span>
+                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Temporary account</span>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{profileEmail}</div>
+                )}
           </div>
           <Chevron />
         </motion.button>
@@ -487,7 +501,7 @@ export default function SettingsPage() {
           sublabel="Earned from workouts"
           right={
             <span style={{ fontSize: 16, fontWeight: 800, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>
-              {loading ? "—" : formatFT(fitTokenBalance)}
+              {loading ? <Skeleton width={48} height={16} radius={5} /> : formatFT(fitTokenBalance)}
             </span>
           }
         />
@@ -541,68 +555,80 @@ export default function SettingsPage() {
       <SectionCard>
         <div style={{ padding: "12px 14px" }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>Goal</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
-            {([
-              { id: "lose_weight",       label: "Lose Weight", Icon: Flame,    color: "#f97316" },
-              { id: "build_muscle",      label: "Build Muscle", Icon: Dumbbell, color: ACCENT   },
-              { id: "stay_active",       label: "Stay Active",  Icon: Activity, color: "#60a5fa" },
-              { id: "improve_endurance", label: "Endurance",    Icon: Zap,      color: "#eab308" },
-            ] as const).map((opt) => {
-              const selected = fitnessGoal === opt.id
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => saveFitnessGoal(opt.id)}
-                  disabled={savingGoal}
-                  style={{
-                    border: `1px solid ${selected ? "rgba(107,191,184,0.72)" : "var(--border)"}`,
-                    background: selected ? "rgba(107,191,184,0.12)" : "var(--surface-2)",
-                    color: selected ? ACCENT : "var(--text)",
-                    borderRadius: 12, padding: "10px 8px",
-                    display: "flex", alignItems: "center", gap: 7,
-                    cursor: savingGoal ? "default" : "pointer",
-                    fontSize: 12, fontWeight: 700,
-                  }}
-                >
-                  <opt.Icon size={15} strokeWidth={1.9} color={selected ? ACCENT : opt.color} />
-                  {opt.label}
-                </button>
-              )
-            })}
-          </div>
+          {loading ? (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
+              {[0,1,2,3].map(i => <Skeleton key={i} width="100%" height={44} radius={12} />)}
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
+              {([
+                { id: "lose_weight",       label: "Lose Weight", Icon: Flame,    color: "#f97316" },
+                { id: "build_muscle",      label: "Build Muscle", Icon: Dumbbell, color: ACCENT   },
+                { id: "stay_active",       label: "Stay Active",  Icon: Activity, color: "#60a5fa" },
+                { id: "improve_endurance", label: "Endurance",    Icon: Zap,      color: "#eab308" },
+              ] as const).map((opt) => {
+                const selected = fitnessGoal === opt.id
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => saveFitnessGoal(opt.id)}
+                    disabled={savingGoal}
+                    style={{
+                      border: `1px solid ${selected ? "rgba(107,191,184,0.72)" : "var(--border)"}`,
+                      background: selected ? "rgba(107,191,184,0.12)" : "var(--surface-2)",
+                      color: selected ? ACCENT : "var(--text)",
+                      borderRadius: 12, padding: "10px 8px",
+                      display: "flex", alignItems: "center", gap: 7,
+                      cursor: savingGoal ? "default" : "pointer",
+                      fontSize: 12, fontWeight: 700,
+                    }}
+                  >
+                    <opt.Icon size={15} strokeWidth={1.9} color={selected ? ACCENT : opt.color} />
+                    {opt.label}
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
         <div style={{ borderTop: "1px solid var(--border)", padding: "12px 14px" }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>Experience level</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 7 }}>
-            {([
-              { id: "beginner",     label: "Beginner",     sub: "Just starting" },
-              { id: "intermediate", label: "Intermediate", sub: "Some experience" },
-              { id: "advanced",     label: "Advanced",     sub: "Well-trained" },
-            ] as const).map((opt) => {
-              const selected = experienceLevel === opt.id
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => saveExperienceLevel(opt.id)}
-                  disabled={savingLevel}
-                  style={{
-                    border: `1px solid ${selected ? "rgba(107,191,184,0.72)" : "var(--border)"}`,
-                    background: selected ? "rgba(107,191,184,0.12)" : "var(--surface-2)",
-                    color: selected ? ACCENT : "var(--text)",
-                    borderRadius: 12, padding: "10px 6px",
-                    display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-                    cursor: savingLevel ? "default" : "pointer",
-                    minHeight: 66,
-                  }}
-                >
-                  <span style={{ fontSize: 12, fontWeight: 800, color: selected ? ACCENT : "var(--text)", lineHeight: 1.1, textAlign: "center" }}>{opt.label}</span>
-                  <span style={{ fontSize: 9, color: "var(--text-muted)", fontWeight: 600, textAlign: "center" }}>{opt.sub}</span>
-                </button>
-              )
-            })}
-          </div>
+          {loading ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 7 }}>
+              {[0,1,2].map(i => <Skeleton key={i} width="100%" height={66} radius={12} />)}
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 7 }}>
+              {([
+                { id: "beginner",     label: "Beginner",     sub: "Just starting" },
+                { id: "intermediate", label: "Intermediate", sub: "Some experience" },
+                { id: "advanced",     label: "Advanced",     sub: "Well-trained" },
+              ] as const).map((opt) => {
+                const selected = experienceLevel === opt.id
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => saveExperienceLevel(opt.id)}
+                    disabled={savingLevel}
+                    style={{
+                      border: `1px solid ${selected ? "rgba(107,191,184,0.72)" : "var(--border)"}`,
+                      background: selected ? "rgba(107,191,184,0.12)" : "var(--surface-2)",
+                      color: selected ? ACCENT : "var(--text)",
+                      borderRadius: 12, padding: "10px 6px",
+                      display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                      cursor: savingLevel ? "default" : "pointer",
+                      minHeight: 66,
+                    }}
+                  >
+                    <span style={{ fontSize: 12, fontWeight: 800, color: selected ? ACCENT : "var(--text)", lineHeight: 1.1, textAlign: "center" }}>{opt.label}</span>
+                    <span style={{ fontSize: 9, color: "var(--text-muted)", fontWeight: 600, textAlign: "center" }}>{opt.sub}</span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* Body stats */}
@@ -647,37 +673,43 @@ export default function SettingsPage() {
       <SectionLabel>WORKOUT SETUP</SectionLabel>
       <SectionCard>
         <div style={{ padding: "12px 14px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-            {ENV_OPTIONS.map((opt) => {
-              const selected = workoutEnvironment === opt.id
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => saveWorkoutEnvironment(opt.id)}
-                  disabled={savingEnvironment}
-                  style={{
-                    border: `1px solid ${selected ? "rgba(107,191,184,0.72)" : "var(--border)"}`,
-                    background: selected ? "rgba(107,191,184,0.12)" : "var(--surface-2)",
-                    color: selected ? ACCENT : "var(--text)",
-                    borderRadius: 14, padding: "11px 8px",
-                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                    gap: 6, cursor: savingEnvironment ? "default" : "pointer",
-                    minHeight: 80,
-                  }}
-                >
-                  <opt.Icon size={18} strokeWidth={1.8} />
-                  <span style={{ fontSize: 12, fontWeight: 800, lineHeight: 1.1 }}>{opt.label}</span>
-                  <span style={{ color: "var(--text-muted)", fontSize: 10 }}>{opt.sub}</span>
-                </button>
-              )
-            })}
-          </div>
+          {loading ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+              {[0,1,2].map(i => <Skeleton key={i} width="100%" height={80} radius={14} />)}
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+              {ENV_OPTIONS.map((opt) => {
+                const selected = workoutEnvironment === opt.id
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => saveWorkoutEnvironment(opt.id)}
+                    disabled={savingEnvironment}
+                    style={{
+                      border: `1px solid ${selected ? "rgba(107,191,184,0.72)" : "var(--border)"}`,
+                      background: selected ? "rgba(107,191,184,0.12)" : "var(--surface-2)",
+                      color: selected ? ACCENT : "var(--text)",
+                      borderRadius: 14, padding: "11px 8px",
+                      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                      gap: 6, cursor: savingEnvironment ? "default" : "pointer",
+                      minHeight: 80,
+                    }}
+                  >
+                    <opt.Icon size={18} strokeWidth={1.8} />
+                    <span style={{ fontSize: 12, fontWeight: 800, lineHeight: 1.1 }}>{opt.label}</span>
+                    <span style={{ color: "var(--text-muted)", fontSize: 10 }}>{opt.sub}</span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
         <Row
           divider
           label="Workouts per week"
-          right={
+          right={loading ? <Skeleton width={90} height={22} radius={8} /> : (
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <button
                 type="button"
@@ -699,7 +731,7 @@ export default function SettingsPage() {
                 +
               </button>
             </div>
-          }
+          )}
         />
         <Row
           divider
