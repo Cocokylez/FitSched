@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState, useRef, useCallback } from "react"
 import { usePathname, useRouter } from "next/navigation"
@@ -200,9 +200,9 @@ export function DashboardNav() {
                   left: 6,
                   width: `calc((100% - 12px) / ${navItems.length})`,
                   borderRadius: "20px",
-                  background: "linear-gradient(180deg, rgba(107,191,184,0.2), rgba(107,191,184,0.08))",
-                  border: "1px solid rgba(107,191,184,0.25)",
-                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 10px 28px rgba(107,191,184,0.12)",
+                  background: "linear-gradient(180deg, rgba(18,101,254,0.2), rgba(18,101,254,0.08))",
+                  border: "1px solid rgba(18,101,254,0.25)",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 10px 28px rgba(18,101,254,0.12)",
                   pointerEvents: "none",
                 }}
               />

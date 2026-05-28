@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState, useCallback, useRef } from "react"
 import { useSession } from "next-auth/react"
@@ -93,14 +93,14 @@ function getTimeGroup(time: string): "morning" | "afternoon" | "evening" | "unsc
 
 const KIND_ACCENT: Record<string, string> = {
   cls: "rgba(99,161,255,0.75)",
-  free: "rgba(107,191,184,0.7)",
+  free: "rgba(18,101,254,0.7)",
   wrk: ACCENT,
   rst: "rgba(255,255,255,0.14)",
 }
 
 const KIND_DOT: Record<string, string> = {
   cls: "#63a1ff",
-  free: "#6bbfb8",
+  free: "#1265fe",
   wrk: "#4ec9c0",
   rst: "rgba(255,255,255,0.18)",
 }
@@ -382,9 +382,9 @@ export default function SchedulePage() {
                     layoutId="schedule-week-pill"
                     style={{
                       position: "absolute", inset: 0, borderRadius: 12, pointerEvents: "none",
-                      background: "linear-gradient(180deg, rgba(107,191,184,0.22) 0%, rgba(107,191,184,0.08) 100%)",
-                      border: "1px solid rgba(107,191,184,0.32)",
-                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 6px 18px rgba(107,191,184,0.18)",
+                      background: "linear-gradient(180deg, rgba(18,101,254,0.22) 0%, rgba(18,101,254,0.08) 100%)",
+                      border: "1px solid rgba(18,101,254,0.32)",
+                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 6px 18px rgba(18,101,254,0.18)",
                     }}
                     transition={{ type: "spring", stiffness: 350, damping: 28, mass: 0.78 }}
                   />
@@ -428,7 +428,7 @@ export default function SchedulePage() {
             <>
               {/* SC2 Best window hero card */}
               {bestBlock && selectedDay !== 0 && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ background: "linear-gradient(145deg, rgba(107,191,184,0.10), rgba(107,191,184,0.05))", border: `1px solid rgba(107,191,184,0.38)`, borderRadius: 22, padding: "16px 18px", marginBottom: 20, boxShadow: `inset 0 1px 0 rgba(107,191,184,0.18), 0 8px 32px rgba(107,191,184,0.12)` }}>
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ background: "linear-gradient(145deg, rgba(18,101,254,0.10), rgba(18,101,254,0.05))", border: `1px solid rgba(18,101,254,0.38)`, borderRadius: 22, padding: "16px 18px", marginBottom: 20, boxShadow: `inset 0 1px 0 rgba(18,101,254,0.18), 0 8px 32px rgba(18,101,254,0.12)` }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <div style={{ width: 5, height: 5, borderRadius: "50%", background: ACCENT, flexShrink: 0 }} />
@@ -517,7 +517,7 @@ export default function SchedulePage() {
                                       </div>
                                       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
                                         {block.duration && !block.duration.includes("best") && (
-                                          <div style={{ background: isFree ? "rgba(107,191,184,0.15)" : "var(--surface-2)", border: isFree ? "1px solid rgba(107,191,184,0.3)" : "1px solid var(--border)", borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 800, color: isFree ? ACCENT : "var(--text-muted)" }}>
+                                          <div style={{ background: isFree ? "rgba(18,101,254,0.15)" : "var(--surface-2)", border: isFree ? "1px solid rgba(18,101,254,0.3)" : "1px solid var(--border)", borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 800, color: isFree ? ACCENT : "var(--text-muted)" }}>
                                             {block.duration.replace(" — best window", "").replace(" — best", "")}
                                           </div>
                                         )}
@@ -532,7 +532,7 @@ export default function SchedulePage() {
                                     {canDelete && (
                                       <div style={{ flexShrink: 0, width: SLIDE_W, display: "flex", gap: 6, padding: "8px", alignItems: "stretch", background: "var(--panel)" }}>
                                         {canEdit && (
-                                          <button type="button" onClick={() => editScheduleBlock(block)} style={{ flex: 1, border: "1px solid rgba(107,191,184,0.36)", background: "rgba(107,191,184,0.16)", color: ACCENT, borderRadius: 10, fontSize: 12, fontWeight: 900, cursor: "pointer" }}>Edit</button>
+                                          <button type="button" onClick={() => editScheduleBlock(block)} style={{ flex: 1, border: "1px solid rgba(18,101,254,0.36)", background: "rgba(18,101,254,0.16)", color: ACCENT, borderRadius: 10, fontSize: 12, fontWeight: 900, cursor: "pointer" }}>Edit</button>
                                         )}
                                         <button type="button" onClick={() => block.id && deleteScheduleBlock(block.id)} disabled={deletingId === block.id} style={{ flex: 1, border: "1px solid rgba(255,92,92,0.35)", background: "rgba(255,92,92,0.18)", color: "#ff6b6b", borderRadius: 10, fontSize: 12, fontWeight: 900, cursor: "pointer" }}>
                                           {deletingId === block.id ? "…" : "Delete"}
@@ -563,7 +563,7 @@ export default function SchedulePage() {
 
               {selectedDay === 0 && (
                 <div className="ios-inset-grouped" style={{ padding: "32px 24px", textAlign: "center" }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 14, background: "rgba(107,191,184,0.1)", border: `1px solid rgba(107,191,184,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 14, background: "rgba(18,101,254,0.1)", border: `1px solid rgba(18,101,254,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke={ACCENT} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
                   </div>
                   <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text)", marginBottom: 6 }}>{t.restDay}</div>
@@ -587,7 +587,7 @@ export default function SchedulePage() {
                         }))
                         router.push("/exercise")
                       }}
-                      style={{ border: `1px solid rgba(107,191,184,0.4)`, background: "rgba(107,191,184,0.12)", color: ACCENT, borderRadius: 999, padding: "10px 22px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}
+                      style={{ border: `1px solid rgba(18,101,254,0.4)`, background: "rgba(18,101,254,0.12)", color: ACCENT, borderRadius: 999, padding: "10px 22px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}
                     >
                       {t.lightWorkoutBtn}
                     </motion.button>
@@ -649,7 +649,7 @@ export default function SchedulePage() {
               zIndex: 60, width: 52, height: 52, borderRadius: "50%",
               background: ACCENT, border: "none", cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 4px 20px rgba(107,191,184,0.45), 0 2px 8px rgba(0,0,0,0.12)",
+              boxShadow: "0 4px 20px rgba(18,101,254,0.45), 0 2px 8px rgba(0,0,0,0.12)",
               color: "#0d1f1e",
             }}
           >

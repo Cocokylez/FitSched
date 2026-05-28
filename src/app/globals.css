@@ -1,10 +1,10 @@
-@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=DM+Mono:wght@400;500&display=swap");
+﻿@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=DM+Mono:wght@400;500&display=swap");
 @import "tailwindcss";
 
 @theme {
-  --color-brand: #6bbfb8;
-  --color-brand-bg: rgba(107, 191, 184, 0.12);
-  --color-brand-bd: rgba(107, 191, 184, 0.26);
+  --color-brand: #1265fe;
+  --color-brand-bg: rgba(18,101,254, 0.12);
+  --color-brand-bd: rgba(18,101,254, 0.26);
   --color-green: #10b981;
   --color-green-bg: rgba(16, 185, 129, 0.10);
   --color-green-bd: rgba(16, 185, 129, 0.20);
@@ -42,12 +42,12 @@ html {
   --surface-hover: rgba(255, 255, 255, 0.082);
   --panel: rgba(18, 22, 21, 0.76);
   --border: rgba(255, 255, 255, 0.085);
-  --border-strong: rgba(107, 191, 184, 0.28);
+  --border-strong: rgba(18,101,254, 0.28);
   --text: #f0f4f2;
   --text-muted: #8d9996;
-  --accent: #6bbfb8;
+  --accent: #1265fe;
   --accent-strong: #78d2cb;
-  --accent-soft: rgba(107, 191, 184, 0.13);
+  --accent-soft: rgba(18,101,254, 0.13);
   --danger: #f06c6c;
   --shadow: 0 10px 34px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.035);
   --shadow-md: 0 18px 56px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.045);
@@ -82,7 +82,7 @@ body {
   font-synthesis-weight: none;
   letter-spacing: -0.008em;
   background:
-    linear-gradient(180deg, rgba(107, 191, 184, 0.055), transparent 26rem),
+    linear-gradient(180deg, rgba(18,101,254, 0.055), transparent 26rem),
     var(--bg) !important;
   color: var(--text) !important;
 }
@@ -425,8 +425,8 @@ textarea::placeholder {
 
 .dashboard-shell-bg {
   background:
-    radial-gradient(circle at 18% -10%, rgba(107, 191, 184, 0.13), transparent 28rem),
-    radial-gradient(circle at 100% 18%, rgba(107, 191, 184, 0.055), transparent 22rem),
+    radial-gradient(circle at 18% -10%, rgba(18,101,254, 0.13), transparent 28rem),
+    radial-gradient(circle at 100% 18%, rgba(18,101,254, 0.055), transparent 22rem),
     var(--bg);
 }
 

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -345,7 +345,7 @@ export default function HikePage() {
               background: "rgba(10,26,24,0.94)", backdropFilter: "blur(18px)",
               border: `1px solid ${ACCENT}40`,
               borderRadius: 20, padding: "14px 22px",
-              boxShadow: `0 4px 28px rgba(107,191,184,0.22)`,
+              boxShadow: `0 4px 28px rgba(18,101,254,0.22)`,
               minWidth: 220, maxWidth: 310,
             }}
           >
@@ -461,10 +461,10 @@ export default function HikePage() {
                   whileTap={!saving ? { scale: 0.97 } : {}}
                   style={{
                     border: "none", borderRadius: 16, padding: "14px",
-                    background: saving ? "rgba(107,191,184,0.5)" : ACCENT,
+                    background: saving ? "rgba(18,101,254,0.5)" : ACCENT,
                     color: "#0d1f1e", fontWeight: 900, fontSize: 14,
                     fontFamily: "inherit", cursor: saving ? "default" : "pointer",
-                    boxShadow: saving ? "none" : `0 0 20px rgba(107,191,184,0.3)`,
+                    boxShadow: saving ? "none" : `0 0 20px rgba(18,101,254,0.3)`,
                   }}
                 >
                   {saving ? "Saving…" : "Save hike"}
@@ -521,7 +521,7 @@ export default function HikePage() {
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 7, marginBottom: 16 }}>
                     {chips.map(chip => (
                       <div key={chip.label} style={{
-                        background: "rgba(107,191,184,0.07)", border: "1px solid rgba(107,191,184,0.18)",
+                        background: "rgba(18,101,254,0.07)", border: "1px solid rgba(18,101,254,0.18)",
                         borderRadius: 12, padding: "9px 8px", textAlign: "center",
                       }}>
                         <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text)", lineHeight: 1.1 }}>{chip.value}</div>
@@ -555,7 +555,7 @@ export default function HikePage() {
                       {/* Route icon */}
                       <div style={{
                         width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                        background: "rgba(107,191,184,0.12)", border: "1px solid rgba(107,191,184,0.25)",
+                        background: "rgba(18,101,254,0.12)", border: "1px solid rgba(18,101,254,0.25)",
                         display: "flex", alignItems: "center", justifyContent: "center",
                       }}>
                         {detailLoading === log.id

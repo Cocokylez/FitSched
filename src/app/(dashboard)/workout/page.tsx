@@ -414,7 +414,7 @@ export default function WorkoutPage() {
                   {isActive && (
                     <motion.span
                       layoutId="workout-week-pill"
-                      style={{ position: "absolute", inset: 0, borderRadius: 12, pointerEvents: "none", background: "linear-gradient(180deg, rgba(107,191,184,0.22) 0%, rgba(107,191,184,0.08) 100%)", border: "1px solid rgba(107,191,184,0.32)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 6px 18px rgba(107,191,184,0.18)" }}
+                      style={{ position: "absolute", inset: 0, borderRadius: 12, pointerEvents: "none", background: "linear-gradient(180deg, rgba(18,101,254,0.22) 0%, rgba(18,101,254,0.08) 100%)", border: "1px solid rgba(18,101,254,0.32)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 6px 18px rgba(18,101,254,0.18)" }}
                       transition={{ type: "spring", stiffness: 350, damping: 28, mass: 0.78 }}
                     />
                   )}
@@ -430,8 +430,8 @@ export default function WorkoutPage() {
             })}
           </div>
           <div className="ios-inset-grouped" style={{ padding: "32px 24px", textAlign: "center" }}>
-            <div style={{ width: 44, height: 44, borderRadius: 14, background: "rgba(107,191,184,0.1)", border: "1px solid rgba(107,191,184,0.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#6bbfb8" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+            <div style={{ width: 44, height: 44, borderRadius: 14, background: "rgba(18,101,254,0.1)", border: "1px solid rgba(18,101,254,0.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1265fe" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
             </div>
             <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text)", marginBottom: 6 }}>{t.restDay}</div>
             <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.55 }}>{t.restBody}</p>
@@ -590,7 +590,7 @@ export default function WorkoutPage() {
                 {isActive && (
                   <motion.span
                     layoutId="workout-week-pill"
-                    style={{ position: "absolute", inset: 0, borderRadius: 12, pointerEvents: "none", background: "linear-gradient(180deg, rgba(107,191,184,0.22) 0%, rgba(107,191,184,0.08) 100%)", border: "1px solid rgba(107,191,184,0.32)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 6px 18px rgba(107,191,184,0.18)" }}
+                    style={{ position: "absolute", inset: 0, borderRadius: 12, pointerEvents: "none", background: "linear-gradient(180deg, rgba(18,101,254,0.22) 0%, rgba(18,101,254,0.08) 100%)", border: "1px solid rgba(18,101,254,0.32)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 6px 18px rgba(18,101,254,0.18)" }}
                     transition={{ type: "spring", stiffness: 350, damping: 28, mass: 0.78 }}
                   />
                 )}
@@ -735,7 +735,7 @@ export default function WorkoutPage() {
 
         {/* Blocked banner */}
         {workoutBlocked && (
-          <div style={{ background: "rgba(107,191,184,0.1)", border: "1px solid rgba(107,191,184,0.28)", borderRadius: 14, padding: "12px 14px", marginBottom: 14 }}>
+          <div style={{ background: "rgba(18,101,254,0.1)", border: "1px solid rgba(18,101,254,0.28)", borderRadius: 14, padding: "12px 14px", marginBottom: 14 }}>
             <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text)", marginBottom: 3 }}>{selectedDayBlocked ? t.todayWorkoutOnlyTitle : t.workoutLockedTitle}</div>
             <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.4 }}>{selectedDayBlocked ? t.todayWorkoutOnlyBody : t.workoutLockedBody}</div>
           </div>
@@ -745,7 +745,7 @@ export default function WorkoutPage() {
         {templateExercises && (
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
-            background: "rgba(107,191,184,0.08)", border: "1px solid rgba(107,191,184,0.28)",
+            background: "rgba(18,101,254,0.08)", border: "1px solid rgba(18,101,254,0.28)",
             borderRadius: 14, padding: "9px 14px", marginBottom: 14,
             fontSize: 12, fontWeight: 700, color: ACCENT,
           }}>
@@ -838,13 +838,13 @@ export default function WorkoutPage() {
               whileTap={{ scale: 0.985 }}
               style={{
                 width: "100%", border: "none",
-                background: "linear-gradient(135deg, #6bbfb8 0%, #52a8a0 100%)",
+                background: "linear-gradient(135deg, #1265fe 0%, #52a8a0 100%)",
                 color: "#0b1715",
                 borderRadius: 18, padding: "15px 24px",
                 fontSize: 15, fontWeight: 900,
                 letterSpacing: "-0.01em",
                 cursor: "pointer",
-                boxShadow: "0 4px 24px rgba(107,191,184,0.38), inset 0 1px 0 rgba(255,255,255,0.22)",
+                boxShadow: "0 4px 24px rgba(18,101,254,0.38), inset 0 1px 0 rgba(255,255,255,0.22)",
               }}
             >
               {t.goExercise}
@@ -1008,13 +1008,13 @@ export default function WorkoutPage() {
                         disabled={verifyRequesting}
                         style={{
                           width: "100%", border: "none",
-                          background: verifyRequesting ? "rgba(107,191,184,0.55)" : ACCENT,
+                          background: verifyRequesting ? "rgba(18,101,254,0.55)" : ACCENT,
                           color: "#0b1715",
                           borderRadius: 16, padding: "15px 24px",
                           fontSize: 15, fontWeight: 900,
                           cursor: verifyRequesting ? "default" : "pointer",
                           fontFamily: "var(--font-display)",
-                          boxShadow: verifyRequesting ? "none" : "0 4px 20px rgba(107,191,184,0.32)",
+                          boxShadow: verifyRequesting ? "none" : "0 4px 20px rgba(18,101,254,0.32)",
                           transition: "background 0.2s, box-shadow 0.2s",
                           display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                         }}
@@ -1171,7 +1171,7 @@ export default function WorkoutPage() {
                             borderRadius: 16, padding: "15px 24px",
                             fontSize: 15, fontWeight: 900, cursor: "pointer",
                             fontFamily: "var(--font-display)", letterSpacing: "-0.01em",
-                            boxShadow: "0 4px 20px rgba(107,191,184,0.32)",
+                            boxShadow: "0 4px 20px rgba(18,101,254,0.32)",
                           }}
                         >
                           {isLast ? (
@@ -1281,7 +1281,7 @@ export default function WorkoutPage() {
                         fontSize: 16, fontWeight: 900,
                         cursor: completing ? "default" : "pointer",
                         fontFamily: "var(--font-display)", letterSpacing: "-0.01em",
-                        boxShadow: saveError ? "0 4px 20px rgba(239,68,68,0.32)" : "0 4px 20px rgba(107,191,184,0.32)",
+                        boxShadow: saveError ? "0 4px 20px rgba(239,68,68,0.32)" : "0 4px 20px rgba(18,101,254,0.32)",
                         opacity: completing ? 0.7 : 1,
                       }}
                     >

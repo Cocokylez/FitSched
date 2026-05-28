@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useMemo, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
@@ -175,7 +175,7 @@ export function WeeklyRecapModal() {
                 width: 280,
                 height: 200,
                 background:
-                  "radial-gradient(ellipse, rgba(107,191,184,0.22) 0%, transparent 68%)",
+                  "radial-gradient(ellipse, rgba(18,101,254,0.22) 0%, transparent 68%)",
                 pointerEvents: "none",
               }}
             />

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useSession, signOut } from "next-auth/react"
@@ -469,7 +469,7 @@ export default function SettingsPage() {
               /* eslint-disable-next-line @next/next/no-img-element */
               <img src={localPhoto} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
-              <div style={{ width: 48, height: 48, borderRadius: "50%", background: "linear-gradient(135deg, rgba(107,191,184,0.96), rgba(40,73,70,0.92))", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 15, fontWeight: 800 }}>
+              <div style={{ width: 48, height: 48, borderRadius: "50%", background: "linear-gradient(135deg, rgba(18,101,254,0.96), rgba(40,73,70,0.92))", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 15, fontWeight: 800 }}>
                 {initials}
               </div>
             )}
@@ -482,7 +482,7 @@ export default function SettingsPage() {
               ? <div style={{ marginTop: 5 }}><Skeleton width={170} height={11} /></div>
               : profileEmail.endsWith("@fitsched.guest") ? (
                   <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
-                    <span style={{ fontSize: 9, background: "rgba(107,191,184,0.18)", border: "1px solid rgba(107,191,184,0.3)", color: ACCENT, borderRadius: 999, padding: "2px 7px", fontWeight: 800, letterSpacing: "0.08em" }}>GUEST</span>
+                    <span style={{ fontSize: 9, background: "rgba(18,101,254,0.18)", border: "1px solid rgba(18,101,254,0.3)", color: ACCENT, borderRadius: 999, padding: "2px 7px", fontWeight: 800, letterSpacing: "0.08em" }}>GUEST</span>
                     <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Temporary account</span>
                   </div>
                 ) : (
@@ -575,8 +575,8 @@ export default function SettingsPage() {
                     onClick={() => saveFitnessGoal(opt.id)}
                     disabled={savingGoal}
                     style={{
-                      border: `1px solid ${selected ? "rgba(107,191,184,0.72)" : "var(--border)"}`,
-                      background: selected ? "rgba(107,191,184,0.12)" : "var(--surface-2)",
+                      border: `1px solid ${selected ? "rgba(18,101,254,0.72)" : "var(--border)"}`,
+                      background: selected ? "rgba(18,101,254,0.12)" : "var(--surface-2)",
                       color: selected ? ACCENT : "var(--text)",
                       borderRadius: 12, padding: "10px 8px",
                       display: "flex", alignItems: "center", gap: 7,
@@ -613,8 +613,8 @@ export default function SettingsPage() {
                     onClick={() => saveExperienceLevel(opt.id)}
                     disabled={savingLevel}
                     style={{
-                      border: `1px solid ${selected ? "rgba(107,191,184,0.72)" : "var(--border)"}`,
-                      background: selected ? "rgba(107,191,184,0.12)" : "var(--surface-2)",
+                      border: `1px solid ${selected ? "rgba(18,101,254,0.72)" : "var(--border)"}`,
+                      background: selected ? "rgba(18,101,254,0.12)" : "var(--surface-2)",
                       color: selected ? ACCENT : "var(--text)",
                       borderRadius: 12, padding: "10px 6px",
                       display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
@@ -688,8 +688,8 @@ export default function SettingsPage() {
                     onClick={() => saveWorkoutEnvironment(opt.id)}
                     disabled={savingEnvironment}
                     style={{
-                      border: `1px solid ${selected ? "rgba(107,191,184,0.72)" : "var(--border)"}`,
-                      background: selected ? "rgba(107,191,184,0.12)" : "var(--surface-2)",
+                      border: `1px solid ${selected ? "rgba(18,101,254,0.72)" : "var(--border)"}`,
+                      background: selected ? "rgba(18,101,254,0.12)" : "var(--surface-2)",
                       color: selected ? ACCENT : "var(--text)",
                       borderRadius: 14, padding: "11px 8px",
                       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -786,7 +786,7 @@ export default function SettingsPage() {
       {/* Guest sign-up prompt */}
       {profileEmail.endsWith("@fitsched.guest") && (
         <div style={{ padding: "20px 16px 0" }}>
-          <div style={{ background: "rgba(107,191,184,0.08)", border: "1px solid rgba(107,191,184,0.25)", borderRadius: 16, padding: "16px 18px" }}>
+          <div style={{ background: "rgba(18,101,254,0.08)", border: "1px solid rgba(18,101,254,0.25)", borderRadius: 16, padding: "16px 18px" }}>
             <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text)", marginBottom: 4 }}>Your progress is temporary</div>
             <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.55, marginBottom: 12 }}>
               Guest accounts are not saved. Create a free account to keep your streak, workouts, and FitTokens.

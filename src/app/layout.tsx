@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+﻿import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { SessionProvider } from "@/components/SessionProvider";
 import { ThemeProvider } from "@/context/ThemeContext";
@@ -60,7 +60,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#6bbfb8",
+  themeColor: "#1265fe",
 };
 
 export default async function RootLayout({

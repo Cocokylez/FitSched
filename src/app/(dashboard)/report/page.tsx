@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useSession } from "next-auth/react"
@@ -49,9 +49,9 @@ const MUSCLE_GROUP_COLORS: Record<string, string> = {
   Chest:      "#e85555",
   Back:       "#a064ff",
   Legs:       "#5b8fff",
-  Shoulders:  "#6bbfb8",
+  Shoulders:  "#1265fe",
   Arms:       "#e08010",
-  Core:       "#6bbfb8",
+  Core:       "#1265fe",
   "Full Body":"#8d9996",
   Cardio:     "#e08010",
 }
@@ -360,18 +360,18 @@ export default function ReportPage() {
                 background: isDark
                   ? "linear-gradient(148deg, #193d35 0%, #0c1e1b 100%)"
                   : "linear-gradient(148deg, #d4f0ed 0%, #eaf8f7 100%)",
-                border: `1px solid ${isDark ? "rgba(107,191,184,0.24)" : "rgba(107,191,184,0.35)"}`,
+                border: `1px solid ${isDark ? "rgba(18,101,254,0.24)" : "rgba(18,101,254,0.35)"}`,
                 boxShadow: isDark
                   ? "inset 0 0 0 1px rgba(255,255,255,0.05), 0 20px 48px rgba(0,0,0,0.4)"
-                  : "0 8px 32px rgba(107,191,184,0.18)",
+                  : "0 8px 32px rgba(18,101,254,0.18)",
               }}>
                 {/* top shimmer line */}
-                <div style={{ position: "absolute", inset: "0 0 auto", height: 1, background: "linear-gradient(90deg, transparent, rgba(107,191,184,0.52), transparent)", pointerEvents: "none" }} />
+                <div style={{ position: "absolute", inset: "0 0 auto", height: 1, background: "linear-gradient(90deg, transparent, rgba(18,101,254,0.52), transparent)", pointerEvents: "none" }} />
                 {/* radial glow */}
-                <div style={{ position: "absolute", inset: 0, background: isDark ? "radial-gradient(ellipse at 12% -10%, rgba(107,191,184,0.2), transparent 52%)" : "radial-gradient(ellipse at 12% -10%, rgba(107,191,184,0.25), transparent 52%)", pointerEvents: "none" }} />
+                <div style={{ position: "absolute", inset: 0, background: isDark ? "radial-gradient(ellipse at 12% -10%, rgba(18,101,254,0.2), transparent 52%)" : "radial-gradient(ellipse at 12% -10%, rgba(18,101,254,0.25), transparent 52%)", pointerEvents: "none" }} />
                 {/* shimmer sweep */}
                 <motion.div
-                  style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "linear-gradient(108deg, transparent 25%, rgba(107,191,184,0.07) 50%, transparent 75%)" }}
+                  style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "linear-gradient(108deg, transparent 25%, rgba(18,101,254,0.07) 50%, transparent 75%)" }}
                   animate={{ x: ["-110%", "210%"] }}
                   transition={{ duration: 3.4, repeat: Infinity, repeatDelay: 5.5, ease: "easeInOut" }}
                 />
@@ -493,7 +493,7 @@ export default function ReportPage() {
                 )}
 
                 {/* Week strip */}
-                <div style={{ borderTop: `1px solid ${isDark ? "rgba(107,191,184,0.15)" : "rgba(107,191,184,0.25)"}`, padding: "12px 22px 18px" }}>
+                <div style={{ borderTop: `1px solid ${isDark ? "rgba(18,101,254,0.15)" : "rgba(18,101,254,0.25)"}`, padding: "12px 22px 18px" }}>
                   <motion.div
                     initial="hidden" animate="visible"
                     variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
@@ -507,9 +507,9 @@ export default function ReportPage() {
                         <motion.div key={dateId} variants={dayCellVariant} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                           <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.06em", color: isToday ? ACCENT : isDark ? "rgba(255,255,255,0.26)" : "rgba(13,41,38,0.35)" }}>{DAY_LETTERS[i]}</span>
                           <motion.div
-                            animate={isToday ? { boxShadow: ["0 0 8px rgba(107,191,184,0.28)", "0 0 18px rgba(107,191,184,0.52)", "0 0 8px rgba(107,191,184,0.28)"] } : {}}
+                            animate={isToday ? { boxShadow: ["0 0 8px rgba(18,101,254,0.28)", "0 0 18px rgba(18,101,254,0.52)", "0 0 8px rgba(18,101,254,0.28)"] } : {}}
                             transition={isToday ? { duration: 2.2, repeat: Infinity, ease: "easeInOut" } : {}}
-                            style={{ width: "100%", height: 34, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 9, background: isToday ? ACCENT : done ? "rgba(107,191,184,0.22)" : isDark ? "rgba(255,255,255,0.05)" : "rgba(13,41,38,0.06)", border: isToday ? "none" : done ? "1px solid rgba(107,191,184,0.4)" : `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(13,41,38,0.1)"}` }}
+                            style={{ width: "100%", height: 34, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 9, background: isToday ? ACCENT : done ? "rgba(18,101,254,0.22)" : isDark ? "rgba(255,255,255,0.05)" : "rgba(13,41,38,0.06)", border: isToday ? "none" : done ? "1px solid rgba(18,101,254,0.4)" : `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(13,41,38,0.1)"}` }}
                           >
                             {(isToday || done) ? (
                               <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3 + i * 0.06, type: "spring", stiffness: 350, damping: 18 }}>
@@ -685,8 +685,8 @@ export default function ReportPage() {
                     key={group ?? "all"}
                     onClick={() => { setHistoryMuscleFilter(group); setShowAllHistory(false) }}
                     style={{
-                      border: historyMuscleFilter === group ? "1px solid rgba(107,191,184,0.6)" : "1px solid var(--border)",
-                      background: historyMuscleFilter === group ? "rgba(107,191,184,0.12)" : "var(--surface)",
+                      border: historyMuscleFilter === group ? "1px solid rgba(18,101,254,0.6)" : "1px solid var(--border)",
+                      background: historyMuscleFilter === group ? "rgba(18,101,254,0.12)" : "var(--surface)",
                       color: historyMuscleFilter === group ? ACCENT : "var(--text-muted)",
                       borderRadius: 999, padding: "4px 10px", fontSize: 11, fontWeight: 800,
                       cursor: "pointer", whiteSpace: "nowrap",
@@ -736,7 +736,7 @@ export default function ReportPage() {
                           <span style={{ background: "var(--surface-2)", borderRadius: "20px", padding: "4px 10px", fontSize: "11px", color: "var(--text-muted)" }}>
                             {log.exercises.length} {t.exercises}
                           </span>
-                          <span style={{ background: "rgba(107,191,184,0.10)", border: "1px solid rgba(107,191,184,0.28)", borderRadius: "20px", padding: "4px 9px", fontSize: "11px", fontWeight: 700, color: "var(--accent, #6bbfb8)" }}>
+                          <span style={{ background: "rgba(18,101,254,0.10)", border: "1px solid rgba(18,101,254,0.28)", borderRadius: "20px", padding: "4px 9px", fontSize: "11px", fontWeight: 700, color: "var(--accent, #1265fe)" }}>
                             ~{estimateCalories(log.exercises)} kcal
                           </span>
                           {isExpanded ? <ChevronDown size={16} color="var(--text-muted)" /> : <ChevronRight size={16} color="var(--text-muted)" />}

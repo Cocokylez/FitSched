@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 
 const EFFECTIVE_DATE = "May 23, 2026"
@@ -23,7 +23,7 @@ export default function PrivacyPage() {
     <div style={{
       minHeight: "100vh",
       background: [
-        "radial-gradient(circle at 18% -8rem, rgba(107,191,184,0.14), transparent 28rem)",
+        "radial-gradient(circle at 18% -8rem, rgba(18,101,254,0.14), transparent 28rem)",
         "var(--bg)",
       ].join(", "),
       padding: "0 20px 64px",
