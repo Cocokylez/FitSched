@@ -18,11 +18,6 @@ export async function POST(req: Request) {
         email,
         name: "Guest",
         password: hashed,
-        onboardingCompleted: true,
-        fitnessGoal: "stay_active",
-        experienceLevel: "beginner",
-        workoutsPerWeek: 3,
-        workoutEnvironment: "gym",
       },
     })
 
