@@ -58,3 +58,45 @@ export async function requestSync(): Promise<void> {
     // Ignore — the SW will pick it up on the next page load / online event
   }
 }
+
+/**
+ * Directly flush queued hikes from the page (no SW needed).
+ * Call this when the network comes back online.
+ * Returns the number of hikes successfully synced.
+ */
+export async function flushPendingHikes(): Promise<number> {
+  let synced = 0
+  try {
+    const db = await openDB()
+    const all: Array<{ id: number; data: Record<string, unknown> }> = await new Promise((res, rej) => {
+      const tx  = db.transaction(STORE, "readonly")
+      const req = tx.objectStore(STORE).getAll()
+      req.onsuccess = () => res(req.result as any)
+      req.onerror   = () => rej(req.error)
+    })
+
+    for (const item of all) {
+      try {
+        const response = await fetch("/api/hike", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify(item.data),
+        })
+        if (response.ok) {
+          await new Promise<void>((res, rej) => {
+            const tx  = db.transaction(STORE, "readwrite")
+            const req = tx.objectStore(STORE).delete(item.id)
+            req.onsuccess = () => res()
+            req.onerror   = () => rej(req.error)
+          })
+          synced++
+        }
+      } catch {
+        break // still offline — stop and retry later
+      }
+    }
+  } catch {
+    // IndexedDB unavailable
+  }
+  return synced
+}

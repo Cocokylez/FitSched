@@ -8,7 +8,7 @@ import { HikeTracker } from "@/components/HikeTracker"
 import type { TrackerResult } from "@/components/HikeTracker"
 import { HikeRouteDetail } from "@/components/HikeRouteDetail"
 import type { HikeDetail } from "@/components/HikeRouteDetail"
-import { getPendingHikeCount, queueHike, requestSync } from "@/lib/hikeOfflineQueue"
+import { getPendingHikeCount, queueHike, requestSync, flushPendingHikes } from "@/lib/hikeOfflineQueue"
 import { playSound } from "@/lib/sound"
 import { ACCENT } from "@/lib/theme"
 import { fmtDuration } from "@/lib/hikeUtils"
@@ -81,12 +81,30 @@ export default function HikePage() {
   useEffect(() => {
     getPendingHikeCount().then(setPendingCount).catch(() => {})
 
-    // When SW flushes the queue, refresh pending count + logs list
-    const onSynced = () => {
-      getPendingHikeCount().then(setPendingCount).catch(() => {})
+    // SW uses postMessage — NOT a DOM CustomEvent. Listen on serviceWorker directly.
+    const onSwMessage = (event: MessageEvent) => {
+      if (event.data?.type === "hike-synced") {
+        getPendingHikeCount().then(setPendingCount).catch(() => {})
+      }
     }
-    window.addEventListener("hike-synced", onSynced)
-    return () => window.removeEventListener("hike-synced", onSynced)
+    navigator.serviceWorker?.addEventListener("message", onSwMessage)
+
+    // When WiFi comes back, flush immediately from the page (BG Sync is unreliable)
+    const onOnline = async () => {
+      const synced = await flushPendingHikes().catch(() => 0)
+      if (synced > 0) {
+        getPendingHikeCount().then(setPendingCount).catch(() => {})
+      } else {
+        // Nothing flushed yet — still register BG Sync as a fallback
+        requestSync().catch(() => {})
+      }
+    }
+    window.addEventListener("online", onOnline)
+
+    return () => {
+      navigator.serviceWorker?.removeEventListener("message", onSwMessage)
+      window.removeEventListener("online", onOnline)
+    }
   }, [])
 
   // ── Tracker callbacks ─────────────────────────────────────────────────────────
