@@ -1,189 +1,201 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState } from "react"
+import { motion } from "framer-motion"
+import FlameIcon from "@/components/FlameIcon"
+
+// ── Full-screen dashboard splash ────────────────────────────────────────────
 
 export function LoadingScreen({ onDone }: { onDone: () => void }) {
-  const [exiting, setExiting] = useState(false);
+  const [exiting, setExiting] = useState(false)
 
   useEffect(() => {
-    const activeTimers = [
+    const timers = [
       setTimeout(() => setExiting(true), 1250),
       setTimeout(() => onDone(), 1650),
-    ];
-
-    return () => activeTimers.forEach(clearTimeout);
-  }, [onDone]);
+    ]
+    return () => timers.forEach(clearTimeout)
+  }, [onDone])
 
   return (
     <motion.div
-      initial={{ opacity: 1 }}
+      initial={{ opacity: 0 }}
       animate={{ opacity: exiting ? 0 : 1 }}
-      transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+      transition={
+        exiting
+          ? { duration: 0.4, ease: "easeIn" }
+          : { duration: 0.25, ease: "easeOut" }
+      }
       style={{
-        position: "fixed", inset: 0, zIndex: 9999,
-        background: "linear-gradient(180deg, rgba(107,191,184,0.045), var(--bg) 46%)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: 24,
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
+        background: "var(--bg)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
         pointerEvents: exiting ? "none" : "auto",
       }}
     >
-      <FitSchedLoader compact={false} />
-    </motion.div>
-  );
-}
-
-export function FitSchedLoader({ compact = true }: { compact?: boolean }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
-      style={{
-        width: compact ? 220 : 244,
-        maxWidth: "100%",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "stretch",
-        gap: 14,
-      }}
-    >
+      {/* Ambient radial glow behind the flame */}
       <div
         style={{
-          background: "var(--panel)",
-          border: "1px solid var(--border)",
-          borderRadius: 28,
-          padding: compact ? 14 : 16,
-          boxShadow: "var(--shadow-lg)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          overflow: "hidden",
+          position: "absolute",
+          width: 360,
+          height: 360,
+          borderRadius: "50%",
+          background:
+            "radial-gradient(circle, rgba(107,191,184,0.11) 0%, transparent 68%)",
+          pointerEvents: "none",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -58%)",
         }}
-        className="shine-surface"
+      />
+
+      {/* Flame — wrapped in pointer-events:none so clicks don't fire sounds */}
+      <motion.div
+        initial={{ scale: 0.55, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1, y: [0, -6, 0] }}
+        transition={{
+          scale:   { type: "spring", stiffness: 270, damping: 20, delay: 0.1 },
+          opacity: { duration: 0.3,  ease: "easeOut",     delay: 0.1 },
+          y:       { duration: 2.8,  repeat: Infinity,    ease: "easeInOut", delay: 0.55 },
+        }}
+        style={{ marginBottom: 2, pointerEvents: "none" }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-          <div
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 15,
-              background: "var(--accent-soft)",
-              border: "1px solid var(--border-strong)",
-              color: "var(--accent-strong)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontFamily: "var(--font-display)",
-              fontSize: 13,
-              fontWeight: 900,
-              letterSpacing: "0.02em",
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
-            }}
-          >
-            FS
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div className="brand-wordmark" style={{ color: "var(--text)", fontSize: 19, fontWeight: 900, lineHeight: 1 }}>
-              FitSched
-            </div>
-            <div style={{ color: "var(--text-muted)", fontSize: 11, fontWeight: 650, marginTop: 5 }}>
-              Preparing your workout
-            </div>
-          </div>
-        </div>
+        <FlameIcon size={68} streak={0} />
+      </motion.div>
 
-        <div style={{ display: "grid", gap: 8 }}>
-          {[
-            { width: "74%", delay: "0s" },
-            { width: "92%", delay: "0.18s" },
-            { width: "58%", delay: "0.36s" },
-          ].map((item, index) => (
-            <div
-              key={index}
-              style={{
-                height: 30,
-                borderRadius: 14,
-                background: "var(--surface-2)",
-                border: "1px solid var(--border)",
-                display: "flex",
-                alignItems: "center",
-                gap: 9,
-                padding: "0 10px",
-              }}
-            >
-              <span
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 999,
-                  background: index === 1 ? "#6bbfb8" : "rgba(107,191,184,0.44)",
-                  animation: "loaderPulse 1.4s ease-in-out infinite",
-                  animationDelay: item.delay,
-                  flexShrink: 0,
-                }}
-              />
-              <span
-                style={{
-                  height: 7,
-                  width: item.width,
-                  borderRadius: 999,
-                  background: "linear-gradient(90deg, rgba(255,255,255,0.08), rgba(107,191,184,0.32), rgba(255,255,255,0.08))",
-                  backgroundSize: "220% 100%",
-                  animation: "loaderSweep 1.35s ease-in-out infinite",
-                  animationDelay: item.delay,
-                }}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div
+      {/* Wordmark */}
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.42, ease: [0.23, 1, 0.32, 1], delay: 0.3 }}
         style={{
-          height: 5,
+          fontFamily: "var(--font-display)",
+          fontSize: 32,
+          fontWeight: 900,
+          letterSpacing: "-0.03em",
+          color: "var(--text)",
+          lineHeight: 1,
+        }}
+      >
+        FitSched
+      </motion.div>
+
+      {/* Tagline */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.35, delay: 0.52 }}
+        style={{
+          fontSize: 12,
+          fontWeight: 600,
+          color: "var(--text-muted)",
+          marginTop: 7,
+          letterSpacing: "0.005em",
+        }}
+      >
+        Your schedule. Your pace.
+      </motion.div>
+
+      {/* Progress bar */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.2, delay: 0.2 }}
+        style={{
+          marginTop: 36,
+          width: 110,
+          height: 3,
           borderRadius: 999,
-          background: "rgba(255,255,255,0.07)",
+          background: "rgba(255,255,255,0.06)",
           overflow: "hidden",
-          border: "1px solid rgba(255,255,255,0.04)",
+          border: "1px solid rgba(255,255,255,0.03)",
         }}
       >
-        <div
+        <motion.div
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ duration: 1.1, ease: [0.4, 0, 0.2, 1], delay: 0.2 }}
           style={{
-            width: "46%",
             height: "100%",
+            width: "100%",
             borderRadius: 999,
-            background: "linear-gradient(90deg, rgba(107,191,184,0.15), #6bbfb8, rgba(107,191,184,0.25))",
-            animation: "loaderTrack 1.18s cubic-bezier(0.65, 0, 0.35, 1) infinite",
+            background:
+              "linear-gradient(90deg, rgba(107,191,184,0.45) 0%, #6bbfb8 60%, rgba(107,191,184,0.7) 100%)",
+            transformOrigin: "left center",
           }}
         />
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// ── Compact spinner used by Next.js loading.tsx ──────────────────────────────
+
+export function FitSchedLoader({ compact = true }: { compact?: boolean }) {
+  const size = compact ? 42 : 56
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 8,
+      }}
+    >
+      {/* Flame */}
+      <motion.div
+        animate={{ y: [0, -5, 0] }}
+        transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+        style={{ pointerEvents: "none" }}
+      >
+        <FlameIcon size={size} streak={0} />
+      </motion.div>
+
+      {/* Wordmark */}
+      <div
+        style={{
+          fontFamily: "var(--font-display)",
+          fontSize: compact ? 15 : 20,
+          fontWeight: 900,
+          letterSpacing: "-0.03em",
+          color: "var(--text)",
+          lineHeight: 1,
+        }}
+      >
+        FitSched
+      </div>
+
+      {/* Dot pulse */}
+      <div style={{ display: "flex", gap: 5, marginTop: 2 }}>
+        {[0, 1, 2].map((i) => (
+          <motion.div
+            key={i}
+            animate={{ opacity: [0.25, 1, 0.25], scale: [0.75, 1.15, 0.75] }}
+            transition={{
+              duration: 1.1,
+              repeat: Infinity,
+              delay: i * 0.18,
+              ease: "easeInOut",
+            }}
+            style={{
+              width: 5,
+              height: 5,
+              borderRadius: "50%",
+              background: "#6bbfb8",
+            }}
+          />
+        ))}
       </div>
     </motion.div>
-  );
-}
-
-export function SkeletonBlock({ style: customStyle = {} }: { style?: React.CSSProperties }) {
-  return (
-    <div
-      style={{
-        animation: "shimmer 1.5s ease-in-out infinite",
-        background: "linear-gradient(90deg, var(--bg3) 25%, var(--bg2) 50%, var(--bg3) 75%)",
-        backgroundSize: "200% 100%",
-        borderRadius: 12,
-        ...customStyle,
-      }}
-    />
-  );
-}
-
-export function SkeletonCard() {
-  return (
-    <div style={{ background: "var(--bg1)", border: "1px solid var(--border)", borderRadius: 16, padding: 16 }}>
-      <SkeletonBlock style={{ height: 16, width: "60%", marginBottom: 8 }} />
-      <SkeletonBlock style={{ height: 12, width: "40%", marginBottom: 12 }} />
-      <div style={{ display: "flex", gap: 8 }}>
-        <SkeletonBlock style={{ height: 22, width: 60, borderRadius: 20 }} />
-        <SkeletonBlock style={{ height: 22, width: 80, borderRadius: 20 }} />
-      </div>
-    </div>
-  );
+  )
 }

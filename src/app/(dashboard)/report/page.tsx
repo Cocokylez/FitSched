@@ -414,10 +414,74 @@ export default function ReportPage() {
 
                 {/* Freeze status pill */}
                 {streakFreezeArmed && (
-                  <div style={{ padding: "0 22px 14px" }}>
+                  <div style={{ padding: "0 22px 6px" }}>
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 20, padding: "6px 12px", background: "rgba(99,179,237,0.15)", border: "1px solid rgba(99,179,237,0.38)", fontSize: 11, fontWeight: 800, color: "#63b3ed" }}>
                       <Snowflake size={12} strokeWidth={2.5} />
                       Freeze armed — one miss protected
+                    </div>
+                  </div>
+                )}
+
+                {/* Inline store chips — compact buy row */}
+                {(!streakFreezeArmed || !ftBoostArmed) && (
+                  <div style={{ padding: `${streakFreezeArmed ? "0" : "0"} 22px 14px`, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {!streakFreezeArmed && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                        <button
+                          onClick={buyFreeze}
+                          disabled={buyingFreeze || ftBalance < 2 || streak === 0}
+                          style={{
+                            display: "inline-flex", alignItems: "center", gap: 5,
+                            borderRadius: 20, padding: "5px 12px",
+                            background: ftBalance >= 2 && streak > 0 ? "rgba(99,179,237,0.1)" : "rgba(255,255,255,0.04)",
+                            border: `1px solid ${ftBalance >= 2 && streak > 0 ? "rgba(99,179,237,0.35)" : "rgba(255,255,255,0.08)"}`,
+                            color: ftBalance >= 2 && streak > 0 ? "#63b3ed" : "var(--text-muted)",
+                            fontSize: 11, fontWeight: 800,
+                            cursor: ftBalance >= 2 && streak > 0 ? "pointer" : "not-allowed",
+                            opacity: buyingFreeze ? 0.6 : 1,
+                            transition: "opacity 0.15s",
+                          }}
+                        >
+                          <Snowflake size={10} strokeWidth={2.5} />
+                          {buyingFreeze ? "Activating…" : streak === 0 ? "Freeze · need streak" : "Freeze · 2 FT"}
+                        </button>
+                        {freezeError && <span style={{ fontSize: 10, color: "#fc8181", fontWeight: 700, paddingLeft: 4 }}>{freezeError}</span>}
+                      </div>
+                    )}
+                    {!ftBoostArmed && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                        <button
+                          onClick={buyBoost}
+                          disabled={buyingBoost || ftBalance < 3}
+                          style={{
+                            display: "inline-flex", alignItems: "center", gap: 5,
+                            borderRadius: 20, padding: "5px 12px",
+                            background: ftBalance >= 3 ? "rgba(246,211,101,0.1)" : "rgba(255,255,255,0.04)",
+                            border: `1px solid ${ftBalance >= 3 ? "rgba(246,211,101,0.35)" : "rgba(255,255,255,0.08)"}`,
+                            color: ftBalance >= 3 ? "#c8a832" : "var(--text-muted)",
+                            fontSize: 11, fontWeight: 800,
+                            cursor: ftBalance >= 3 ? "pointer" : "not-allowed",
+                            opacity: buyingBoost ? 0.6 : 1,
+                            transition: "opacity 0.15s",
+                          }}
+                        >
+                          <Zap size={10} strokeWidth={2.5} />
+                          {buyingBoost ? "Activating…" : "Boost · 3 FT"}
+                        </button>
+                        {boostError && <span style={{ fontSize: 10, color: "#fc8181", fontWeight: 700, paddingLeft: 4 }}>{boostError}</span>}
+                      </div>
+                    )}
+                    {ftBoostArmed && !streakFreezeArmed && (
+                      <div style={{ display: "inline-flex", alignItems: "center", gap: 5, borderRadius: 20, padding: "5px 12px", background: "rgba(246,211,101,0.1)", border: "1px solid rgba(246,211,101,0.35)", fontSize: 11, fontWeight: 800, color: "#c8a832" }}>
+                        <Zap size={10} strokeWidth={2.5} /> Boost active
+                      </div>
+                    )}
+                  </div>
+                )}
+                {(streakFreezeArmed && ftBoostArmed) && (
+                  <div style={{ padding: "0 22px 14px", display: "flex", gap: 8 }}>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 5, borderRadius: 20, padding: "5px 12px", background: "rgba(246,211,101,0.1)", border: "1px solid rgba(246,211,101,0.35)", fontSize: 11, fontWeight: 800, color: "#c8a832" }}>
+                      <Zap size={10} strokeWidth={2.5} /> Boost active
                     </div>
                   </div>
                 )}
@@ -498,96 +562,6 @@ export default function ReportPage() {
                     </div>
                   </div>
                 ))}
-              </div>
-            </motion.div>
-
-            {/* ── FitToken Store ────────────────────────────────────── */}
-            <motion.div variants={fadeUp}>
-              <div style={{ ...sectionLabelStyle, display: "flex", alignItems: "center", gap: 5 }}>
-                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke={ACCENT} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                FT Store
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-
-                {/* Streak Freeze card */}
-                <div style={{
-                  ...cardStyle, marginBottom: 0,
-                  background: streakFreezeArmed
-                    ? (isDark ? "rgba(99,179,237,0.12)" : "rgba(99,179,237,0.08)")
-                    : "var(--surface)",
-                  border: streakFreezeArmed ? "1px solid rgba(99,179,237,0.45)" : "1px solid var(--border)",
-                }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(99,179,237,0.12)", border: "1px solid rgba(99,179,237,0.28)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
-                    <Snowflake size={18} strokeWidth={1.8} color="#63b3ed" />
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text)", marginBottom: 3 }}>Streak Freeze</div>
-                  <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.4, marginBottom: 12 }}>
-                    Protect your streak from one missed day
-                  </div>
-                  {streakFreezeArmed ? (
-                    <div style={{ fontSize: 11, fontWeight: 900, color: "#63b3ed", display: "flex", alignItems: "center", gap: 4 }}>
-                      <Snowflake size={11} strokeWidth={2.5} /> Armed
-                    </div>
-                  ) : (
-                    <>
-                      <button
-                        onClick={buyFreeze}
-                        disabled={buyingFreeze || ftBalance < 2 || streak === 0}
-                        style={{
-                          width: "100%", border: "none", borderRadius: 10, padding: "8px 0",
-                          background: ftBalance >= 2 && streak > 0 ? "rgba(99,179,237,0.15)" : "var(--surface-2)",
-                          color: ftBalance >= 2 && streak > 0 ? "#63b3ed" : "var(--text-muted)",
-                          fontSize: 11, fontWeight: 900, cursor: ftBalance >= 2 && streak > 0 ? "pointer" : "not-allowed",
-                          opacity: buyingFreeze ? 0.6 : 1,
-                        }}
-                      >
-                        {buyingFreeze ? "Activating…" : "2 FT"}
-                      </button>
-                      {freezeError && <div style={{ marginTop: 4, fontSize: 10, color: "#fc8181", fontWeight: 700 }}>{freezeError}</div>}
-                      {streak === 0 && <div style={{ marginTop: 4, fontSize: 10, color: "var(--text-muted)", fontWeight: 700 }}>Start a streak first</div>}
-                    </>
-                  )}
-                </div>
-
-                {/* Double Tokens Boost card */}
-                <div style={{
-                  ...cardStyle, marginBottom: 0,
-                  background: ftBoostArmed
-                    ? (isDark ? "rgba(246,211,101,0.1)" : "rgba(246,211,101,0.08)")
-                    : "var(--surface)",
-                  border: ftBoostArmed ? "1px solid rgba(246,211,101,0.45)" : "1px solid var(--border)",
-                }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(246,211,101,0.12)", border: "1px solid rgba(246,211,101,0.28)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
-                    <Zap size={18} strokeWidth={1.8} color="#c8a832" />
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text)", marginBottom: 3 }}>Token Boost</div>
-                  <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.4, marginBottom: 12 }}>
-                    Earn 2× FitTokens on your next workout
-                  </div>
-                  {ftBoostArmed ? (
-                    <div style={{ fontSize: 11, fontWeight: 900, color: "#c8a832", display: "flex", alignItems: "center", gap: 4 }}>
-                      <Zap size={11} strokeWidth={2.5} /> Active for next session
-                    </div>
-                  ) : (
-                    <>
-                      <button
-                        onClick={buyBoost}
-                        disabled={buyingBoost || ftBalance < 3}
-                        style={{
-                          width: "100%", border: "none", borderRadius: 10, padding: "8px 0",
-                          background: ftBalance >= 3 ? "rgba(246,211,101,0.15)" : "var(--surface-2)",
-                          color: ftBalance >= 3 ? "#c8a832" : "var(--text-muted)",
-                          fontSize: 11, fontWeight: 900, cursor: ftBalance >= 3 ? "pointer" : "not-allowed",
-                          opacity: buyingBoost ? 0.6 : 1,
-                        }}
-                      >
-                        {buyingBoost ? "Activating…" : "3 FT"}
-                      </button>
-                      {boostError && <div style={{ marginTop: 4, fontSize: 10, color: "#fc8181", fontWeight: 700 }}>{boostError}</div>}
-                    </>
-                  )}
-                </div>
-
               </div>
             </motion.div>
 
