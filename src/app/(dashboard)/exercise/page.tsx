@@ -206,14 +206,40 @@ export default function ExerciseSessionPage() {
   const doneSets = useMemo(() => Object.values(completedSets).reduce((s, v) => s + v, 0), [completedSets])
   const allDone = Boolean(workout && doneSets === totalSets && totalSets > 0)
 
-  // Index of the first exercise that still has sets to complete
+  // Circuit-style: one set per exercise per round before cycling back
   const activeExIdx = useMemo(() => {
     if (!workout) return 0
+    // Find the current round = minimum sets done among exercises that still have sets left
+    let minSets = Infinity
     for (let i = 0; i < workout.exercises.length; i++) {
-      if ((completedSets[i] || 0) < workout.exercises[i].sets) return i
+      const done = completedSets[i] || 0
+      if (done < workout.exercises[i].sets) minSets = Math.min(minSets, done)
     }
-    return workout.exercises.length // all done
+    if (minSets === Infinity) return workout.exercises.length // all done
+    // First exercise in this round that hasn't done their set yet
+    for (let i = 0; i < workout.exercises.length; i++) {
+      const done = completedSets[i] || 0
+      if (done === minSets && done < workout.exercises[i].sets) return i
+    }
+    return workout.exercises.length
   }, [workout, completedSets])
+
+  // Next exercise in circuit order after active
+  const nextExIdx = useMemo(() => {
+    if (!workout || activeExIdx >= workout.exercises.length) return -1
+    const currentRound = completedSets[activeExIdx] || 0
+    // Next in same round
+    for (let i = activeExIdx + 1; i < workout.exercises.length; i++) {
+      const done = completedSets[i] || 0
+      if (done === currentRound && done < workout.exercises[i].sets) return i
+    }
+    // Wrap to next round — first exercise with sets remaining
+    for (let i = 0; i < workout.exercises.length; i++) {
+      const done = completedSets[i] || 0
+      if (done < workout.exercises[i].sets) return i
+    }
+    return -1
+  }, [workout, completedSets, activeExIdx])
 
   function handleQuit() {
     quitRef.current = true
@@ -411,7 +437,7 @@ export default function ExerciseSessionPage() {
           const catStyle = CATEGORY_COLORS[category] || CATEGORY_COLORS.CORE
           const allSetsDone = done >= ex.sets
           const isActive  = i === activeExIdx
-          const isFuture  = i > activeExIdx
+          const isFuture  = !allSetsDone && i !== activeExIdx
 
           return (
             <motion.div
@@ -433,8 +459,8 @@ export default function ExerciseSessionPage() {
                 pointerEvents: isFuture ? "none" : "auto",
               }}
             >
-              {/* "UP NEXT" label for the exercise right after active */}
-              {i === activeExIdx + 1 && !allDone && (
+              {/* "UP NEXT" label for the next exercise in circuit order */}
+              {i === nextExIdx && !allDone && (
                 <div style={{ padding: "6px 14px 0", fontSize: 9, fontWeight: 900, letterSpacing: "0.14em", color: "var(--text-muted)", textTransform: "uppercase" }}>Up next</div>
               )}
               {/* ── Card header: category · muscle group ── exercise # + sets×reps + done check */}
