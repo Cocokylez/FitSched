@@ -89,7 +89,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     signIn: "/register",
   },
   session: {
-    strategy: "jwt",
+    // database strategy: cookie is just a short random token — no JWT bloat.
+    // Eliminates the 494 REQUEST_HEADER_TOO_LARGE error caused by NextAuth
+    // chunking large JWTs across multiple cookies.  Sessions are stored in
+    // the Prisma Session table (PrismaAdapter handles this automatically).
+    strategy: "database",
     maxAge: 30 * 24 * 60 * 60,
   },
   callbacks: {
@@ -110,38 +114,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return true
     },
-    async session({ session, token }: any) {
-      if (token && session.user) {
-        session.user.id = token.sub
+    async session({ session, user }: any) {
+      // With database strategy, `user` is the DB record — attach id directly.
+      if (session?.user && user?.id) {
+        session.user.id = user.id
       }
       return session
-    },
-    async jwt({ token, user }: any) {
-      if (user) {
-        // Initial sign-in — fetch tokenVersion from DB because OAuth user
-        // objects don't carry custom fields.
-        token.sub = user.id
-        const fresh = await db.user.findUnique({
-          where: { id: user.id },
-          select: { tokenVersion: true },
-        })
-        token.tokenVersion = fresh?.tokenVersion ?? 0
-        return token
-      }
-
-      // Subsequent requests — verify tokenVersion still matches DB.
-      // Increment User.tokenVersion to instantly invalidate a user's JWTs.
-      if (token.sub) {
-        const dbUser = await db.user.findUnique({
-          where: { id: token.sub },
-          select: { tokenVersion: true },
-        })
-        if (!dbUser || dbUser.tokenVersion !== token.tokenVersion) {
-          return null
-        }
-      }
-
-      return token
     },
   },
 })
