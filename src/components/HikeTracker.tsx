@@ -135,6 +135,17 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
   const [safetyAcknowledged, setSafetyAcknowledged] = useState(false)
   const [isOnline, setIsOnline]                   = useState(typeof navigator !== "undefined" ? navigator.onLine : true)
 
+  // "lobby" = pre-hike screen (Begin Hike / Plan Mode choice)
+  // "active" = user has pressed a button; full tracker UI shown
+  const [phase, setPhaseState]  = useState<"lobby" | "active">("lobby")
+  const phaseRef                = useRef<"lobby" | "active">("lobby")
+  const beginPressedRef         = useRef(false)   // gates GPS auto-start on permission change
+
+  function setPhase(p: "lobby" | "active") {
+    phaseRef.current = p
+    setPhaseState(p)
+  }
+
   function setMode(m: "track" | "plan") {
     modeRef.current = m
     setModeState(m)
