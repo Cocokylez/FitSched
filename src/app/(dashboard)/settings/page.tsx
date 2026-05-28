@@ -312,32 +312,40 @@ export default function SettingsPage() {
   }
 
   const togglePush = async () => {
-    if (!("Notification" in window) || !("serviceWorker" in navigator) || pushLoading) return
-    setPushLoading(true)
+    if (pushLoading) return
+    if (!("Notification" in window)) return
 
     if (pushEnabled) {
-      // Actually unsubscribe — don't just flip local state
+      // Flip immediately for responsive feel, clean up in background
+      setPushEnabled(false)
+      setPushLoading(true)
       try {
-        const reg = await navigator.serviceWorker.ready
-        const sub = await reg.pushManager.getSubscription()
-        if (sub) {
-          await fetch("/api/push/unsubscribe", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ endpoint: sub.endpoint }),
-          }).catch(() => {})
-          await sub.unsubscribe()
+        if ("serviceWorker" in navigator) {
+          const reg = await navigator.serviceWorker.ready
+          const sub = await reg.pushManager.getSubscription()
+          if (sub) {
+            await fetch("/api/push/unsubscribe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ endpoint: sub.endpoint }),
+            }).catch(() => {})
+            await sub.unsubscribe()
+          }
         }
       } catch {}
-      setPushEnabled(false)
       setPushLoading(false)
       return
     }
 
-    // Enable — request permission then subscribe
+    // Enable — must request permission first (user gesture required)
     const perm = await Notification.requestPermission()
-    if (perm === "granted") {
-      try {
+    if (perm !== "granted") return   // denied or dismissed — leave toggle off
+
+    // Flip on then subscribe
+    setPushEnabled(true)
+    setPushLoading(true)
+    try {
+      if ("serviceWorker" in navigator) {
         const reg = await navigator.serviceWorker.register("/sw.js")
         const sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
@@ -348,8 +356,10 @@ export default function SettingsPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(sub),
         })
-        setPushEnabled(true)
-      } catch {}
+      }
+    } catch {
+      // Subscribe failed — revert
+      setPushEnabled(false)
     }
     setPushLoading(false)
   }
