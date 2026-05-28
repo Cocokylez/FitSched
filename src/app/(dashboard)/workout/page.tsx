@@ -18,7 +18,6 @@ import { getCategory, CATEGORY_COLORS } from "@/lib/exerciseUtils"
 import { WorkoutTemplatesModal } from "@/components/WorkoutTemplatesModal"
 import { ExerciseDemoVisual } from "@/components/ExerciseDemoPanel"
 import { useWorkoutVerification } from "@/lib/workoutVerification"
-import type { ActiveChallenge } from "@/lib/workoutVerification"
 
 const DEFAULT_EXERCISES: Record<number, Array<[string, string]>> = {
   0: [],
@@ -118,7 +117,7 @@ export default function WorkoutPage() {
   const [verifyRequesting, setVerifyRequesting] = useState(false)
   const sessionStartRef = useRef<number>(0)
   const sessionTokenRef = useRef<string | null>(null)
-  const { state: verifyState, challenge, start: startVerify, getResult, stop: stopVerify } = useWorkoutVerification()
+  const { state: verifyState, start: startVerify, getResult, stop: stopVerify } = useWorkoutVerification()
   const dayNames = [t.days.sun, t.days.mon, t.days.tue, t.days.wed, t.days.thu, t.days.fri, t.days.sat]
   const DAY_ABBR = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
 
@@ -479,15 +478,13 @@ export default function WorkoutPage() {
     setExMode("countdown")
   }
 
-  async function handleEnableMic() {
+  async function handleStartVerified() {
     setVerifyRequesting(true)
-    // Fetch session token + request mic in parallel — both are async and independent
-    const [, token] = await Promise.all([
+    // Fetch session token and start motion verification in parallel.
+    await Promise.all([
       startVerify(),
       fetchAndStoreSessionToken().then(() => sessionTokenRef.current),
     ])
-    // Promise.all doesn't return the ref value cleanly; ref is already set by the
-    // time we reach here since fetchAndStoreSessionToken awaited inside.
     setVerifyRequesting(false)
     setVerifySettled(true)
     beginSession()
@@ -495,8 +492,8 @@ export default function WorkoutPage() {
 
   async function handleSkipVerify() {
     setVerifySettled(true)
-    // Fetch the server-signed token even when skipping mic — the HMAC elapsed-time
-    // check on the server is independent of mic verification.
+    // Fetch the server-signed token even when skipping verification; the HMAC elapsed-time
+    // check on the server is independent of client-side verification.
     fetchAndStoreSessionToken()
     beginSession()
   }
@@ -918,7 +915,7 @@ export default function WorkoutPage() {
                 </div>
 
 
-                {/* Mic status pill — top right, after verify is settled */}
+                {/* Verification status pill — top right, after verify is settled */}
                 {verifySettled && (
                   <div style={{
                     position: "absolute", top: 18, right: 18, zIndex: 10,
@@ -932,8 +929,8 @@ export default function WorkoutPage() {
                   }}>
                     {verifyState === "active" ? (
                       <>
-                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: ACCENT, animation: "appBreath 1.4s ease-in-out infinite" }} />
-                        MIC ON
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: ACCENT }} />
+                        VERIFIED
                       </>
                     ) : (
                       <>
@@ -956,58 +953,6 @@ export default function WorkoutPage() {
                       : `${todayExercises.length} / ${todayExercises.length}`}
                   </div>
                 )}
-
-                {/* ── Breath challenge banner (floats on top of whatever screen is active) */}
-                <AnimatePresence>
-                  {challenge && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -16 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -16 }}
-                      style={{
-                        position: "absolute", top: 54, left: 16, right: 16, zIndex: 20,
-                        borderRadius: 16, padding: "14px 18px",
-                        background: challenge.phase === "hold"
-                          ? "rgba(245,158,11,0.12)" : ACCENT_DIM,
-                        border: `1px solid ${challenge.phase === "hold" ? "rgba(245,158,11,0.35)" : ACCENT_BD}`,
-                        display: "flex", alignItems: "center", gap: 12,
-                      }}
-                    >
-                      <div style={{
-                        width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
-                        background: challenge.phase === "hold" ? "rgba(245,158,11,0.15)" : ACCENT_DIM,
-                        border: `2px solid ${challenge.phase === "hold" ? "#f59e0b" : ACCENT}`,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                      }}>
-                        {challenge.phase === "hold" ? (
-                          /* mute / quiet icon */
-                          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="22"/>
-                          </svg>
-                        ) : (
-                          /* mic / breathe icon */
-                          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={ACCENT} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/>
-                          </svg>
-                        )}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{
-                          fontSize: 13, fontWeight: 900,
-                          color: challenge.phase === "hold" ? "#92400e" : "#0f766e",
-                          marginBottom: 1,
-                        }}>
-                          {challenge.phase === "hold"
-                            ? `Hold still & breathe quietly — ${challenge.countdown}s`
-                            : `Breathe normally — ${challenge.countdown}s`}
-                        </div>
-                        <div style={{ fontSize: 10, color: "rgba(0,0,0,0.4)", fontWeight: 700 }}>
-                          Proof of workout check {challenge.ping}/{challenge.totalPings}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
 
                 {/* ── Verify screen ─────────────────────────────────────────────── */}
                 {exMode === "verify" && (
@@ -1040,7 +985,7 @@ export default function WorkoutPage() {
                         Verify your workout
                       </div>
                       <div style={{ fontSize: 14, color: "rgba(0,0,0,0.5)", lineHeight: 1.55, maxWidth: 280 }}>
-                        Enable mic to detect breathing and earn <strong style={{ color: ACCENT }}>full FitTokens</strong>. Skip = 50% tokens only.
+                        Use motion verification to earn <strong style={{ color: ACCENT }}>full FitTokens</strong>. Skip = 50% tokens only.
                       </div>
                     </div>
 
@@ -1054,12 +999,12 @@ export default function WorkoutPage() {
                       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="rgba(0,0,0,0.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                       </svg>
-                      <span>Mic audio is <strong style={{ color: "#111827" }}>never recorded or sent</strong>. It's processed locally — only breathing rhythm is detected.</span>
+                      <span>No microphone or audio access is used. Verification relies on movement signals only.</span>
                     </div>
 
                     <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
                       <button
-                        onClick={handleEnableMic}
+                        onClick={handleStartVerified}
                         disabled={verifyRequesting}
                         style={{
                           width: "100%", border: "none",
@@ -1083,7 +1028,7 @@ export default function WorkoutPage() {
                             />
                             Requesting access…
                           </>
-                        ) : "Enable mic & start →"}
+                        ) : "Start verified workout ->"}
                       </button>
                       <button
                         onClick={handleSkipVerify}
@@ -1098,7 +1043,7 @@ export default function WorkoutPage() {
                           transition: "opacity 0.2s",
                         }}
                       >
-                        Skip — start without mic
+                        Skip - start unverified
                       </button>
                     </div>
                   </div>
@@ -1292,7 +1237,7 @@ export default function WorkoutPage() {
                       <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
                       </svg>
-                      {verifyState === "active" ? "Mic verified — full FitTokens" : "Unverified — 50% FitTokens"}
+                      {verifyState === "active" ? "Verified — full FitTokens" : "Unverified — 50% FitTokens"}
                     </motion.div>
 
                     {/* Exercise recap list */}

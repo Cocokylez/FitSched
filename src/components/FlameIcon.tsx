@@ -1,7 +1,5 @@
 "use client"
 
-import { playSound } from "@/lib/sound"
-
 type FlameIconProps = {
   size?:   number
   streak?: number
@@ -65,8 +63,7 @@ export default function FlameIcon({ size = 120, streak = 0 }: FlameIconProps) {
       viewBox="0 0 120 134"
       width={size}
       height={h}
-      onClick={() => playSound("pluck_001.ogg", 0.65)}
-      style={{ display: "block", overflow: "visible", background: "transparent", cursor: "pointer" }}
+      style={{ display: "block", overflow: "visible", background: "transparent" }}
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>

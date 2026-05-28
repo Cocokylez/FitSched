@@ -5,7 +5,6 @@ import type L from "leaflet"
 import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { CheckCircle, Flag, Locate, MapPin, Navigation, Pause, Play, RotateCcw, X } from "lucide-react"
-import { playSound } from "@/lib/sound"
 import { ACCENT, GREEN, RED, BLUE, YELLOW } from "@/lib/theme"
 import { haversineKm } from "@/lib/hikeUtils"
 
@@ -135,6 +134,17 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
   const [showLegend, setShowLegend]               = useState(false)
   const [safetyAcknowledged, setSafetyAcknowledged] = useState(false)
   const [isOnline, setIsOnline]                   = useState(typeof navigator !== "undefined" ? navigator.onLine : true)
+
+  // "lobby" = pre-hike screen (Begin Hike / Plan Mode choice)
+  // "active" = user has pressed a button; full tracker UI shown
+  const [phase, setPhaseState]  = useState<"lobby" | "active">("lobby")
+  const phaseRef                = useRef<"lobby" | "active">("lobby")
+  const beginPressedRef         = useRef(false)   // gates GPS auto-start on permission change
+
+  function setPhase(p: "lobby" | "active") {
+    phaseRef.current = p
+    setPhaseState(p)
+  }
 
   function setMode(m: "track" | "plan") {
     modeRef.current = m
@@ -452,7 +462,6 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
   function finish() {
     if (watchRef.current !== null) navigator.geolocation.clearWatch(watchRef.current)
     if (timerRef.current) clearInterval(timerRef.current)
-    playSound("confirmation_001.ogg", 0.65)
 
     // Subsample to ≤ 400 waypoints so the JSON body stays under the server's
     // 100 KB limit. 400 evenly-spaced points are more than enough for anti-cheat

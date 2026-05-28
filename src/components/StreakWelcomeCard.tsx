@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { ArrowRight, Dumbbell, Snowflake, X } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 
-import { playSound, playSoundLoop } from "@/lib/sound"
+import { playSoundLoop } from "@/lib/sound"
 
 type StreakWelcomeCardProps = {
   streak: number
@@ -95,9 +95,8 @@ function FireBurst({ broken, streak = 0, introPhase = false }: { broken: boolean
 
   return (
     <motion.div
-      style={{ position: "relative", width: 200, height: 210, margin: "0 auto 14px", display: "flex", alignItems: "center", justifyContent: "center", cursor: broken ? "default" : "pointer" }}
-      onClick={broken ? undefined : () => playSound("pluck_001.ogg", 0.65)}
-      whileTap={broken ? {} : { scale: 0.93 }}
+      style={{ position: "relative", width: 200, height: 210, margin: "0 auto 14px", display: "flex", alignItems: "center", justifyContent: "center" }}
+      whileTap={{}}
       transition={{ type: "spring", stiffness: 380, damping: 22 }}
     >
       <motion.svg
@@ -323,8 +322,6 @@ export function StreakWelcomeCard({
     setFreezing(false)
     setIntroPhase(true)
     setOpen(true)
-    playSound("pluck_001.ogg", 0.42)
-    playSound("confirmation_001.ogg", 0.45)
     window.setTimeout(() => setIntroPhase(false), 1200)
   }, [displayStreak, hasActiveStreak, showMoment])
 
@@ -338,15 +335,13 @@ export function StreakWelcomeCard({
   if (!showMoment) return null
 
   const stopFire = () => { fireStopRef.current?.(); fireStopRef.current = null }
-  const close = () => { playSound("close_001.ogg", 0.52); stopFire(); setOpen(false) }
+  const close = () => { stopFire(); setOpen(false) }
   const goWorkout = () => {
-    playSound("confirmation_002.ogg", 0.68)
     stopFire()
     setOpen(false)
     onGoWorkout()
   }
   const useFreeze = () => {
-    playSound("switch_001.ogg", 0.6)
     setFreezing(true)
     window.setTimeout(() => {
       setFreezeUsed(true)
