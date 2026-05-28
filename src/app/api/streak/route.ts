@@ -45,19 +45,23 @@ function addDays(dateId: string, days: number) {
 function countStreakFrom(sortedDates: string[], startDate: string, freezeArmed: boolean) {
   let streak = 0
   let freezeUsed = false
+  // Tracks the extra calendar day consumed by the freeze so the expected-date
+  // calculation stays in sync with the array index after the gap is covered.
+  let freezeOffset = 0
 
   for (let i = 0; i < sortedDates.length; i++) {
-    const expected = addDays(startDate, -i)
+    const expected = addDays(startDate, -(i + freezeOffset))
     if (sortedDates[i] === expected) {
       streak++
     } else if (!freezeUsed && freezeArmed) {
-      // Gap of 1 day — freeze covers it, skip ahead and continue counting
-      const afterGap = addDays(startDate, -(i + 1))
+      // Gap of 1 day — freeze covers it; check that the next real date follows
+      const afterGap = addDays(startDate, -(i + freezeOffset + 1))
       if (sortedDates[i] === afterGap) {
         freezeUsed = true
-        streak++
-        i++ // the date at i was for the gap, next iteration checks i+1
-        streak++ // count afterGap date too (already matched above)
+        freezeOffset++ // shift expected-date window forward by 1 for the gap
+        streak++       // count the frozen (gap) day
+        streak++       // count the afterGap day (sortedDates[i])
+        // do NOT manually increment i — the for loop will advance it naturally
       } else {
         break
       }
