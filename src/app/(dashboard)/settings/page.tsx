@@ -372,7 +372,7 @@ export default function SettingsPage() {
     setPushLoading(true)
 
     try {
-      let perm = currentPerm
+      let perm: NotificationPermission = currentPerm
       if (perm === "default") {
         perm = await Notification.requestPermission()
       }
