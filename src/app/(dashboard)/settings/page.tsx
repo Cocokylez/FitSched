@@ -103,7 +103,8 @@ export default function SettingsPage() {
   const [connecting, setConnecting] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [lastSynced, setLastSynced] = useState<string | null>(null)
-  const [pushEnabled, setPushEnabled] = useState(false)
+  const [pushEnabled, setPushEnabled]   = useState(false)
+  const [pushLoading, setPushLoading]   = useState(false)
   const [workoutsPerWeek, setWorkoutsPerWeek] = useState(3)
   const [workoutEnvironment, setWorkoutEnvironment] = useState<WorkoutEnvironment>("gym")
   const [savingEnvironment, setSavingEnvironment] = useState(false)
@@ -190,6 +191,17 @@ export default function SettingsPage() {
         if (tokensRes.ok) {
           const t = await tokensRes.json()
           setFitTokenBalance(t.balance || 0)
+        }
+
+        // Sync the toggle with the real browser permission + active subscription
+        if (typeof window !== "undefined" && "Notification" in window && "serviceWorker" in navigator) {
+          if (Notification.permission === "granted") {
+            try {
+              const reg = await navigator.serviceWorker.ready
+              const sub = await reg.pushManager.getSubscription()
+              if (sub) setPushEnabled(true)
+            } catch {}
+          }
         }
       } catch {}
       setLoading(false)
@@ -300,17 +312,46 @@ export default function SettingsPage() {
   }
 
   const togglePush = async () => {
-    if (!("Notification" in window)) return
-    if (pushEnabled) { setPushEnabled(false); return }
+    if (!("Notification" in window) || !("serviceWorker" in navigator) || pushLoading) return
+    setPushLoading(true)
+
+    if (pushEnabled) {
+      // Actually unsubscribe — don't just flip local state
+      try {
+        const reg = await navigator.serviceWorker.ready
+        const sub = await reg.pushManager.getSubscription()
+        if (sub) {
+          await fetch("/api/push/unsubscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ endpoint: sub.endpoint }),
+          }).catch(() => {})
+          await sub.unsubscribe()
+        }
+      } catch {}
+      setPushEnabled(false)
+      setPushLoading(false)
+      return
+    }
+
+    // Enable — request permission then subscribe
     const perm = await Notification.requestPermission()
     if (perm === "granted") {
-      setPushEnabled(true)
       try {
         const reg = await navigator.serviceWorker.register("/sw.js")
-        const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "") })
-        await fetch("/api/push/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(sub) })
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || ""),
+        })
+        await fetch("/api/push/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(sub),
+        })
+        setPushEnabled(true)
       } catch {}
     }
+    setPushLoading(false)
   }
 
   const deleteAccount = async () => {
@@ -618,7 +659,7 @@ export default function SettingsPage() {
       <SectionCard>
         <Row
           label="Notifications"
-          sublabel={pushEnabled ? "Enabled" : t.workoutReminders}
+          sublabel={pushLoading ? "Updating…" : pushEnabled ? "Enabled" : t.workoutReminders}
           right={<Toggle on={pushEnabled} onToggle={togglePush} />}
         />
         <Row
