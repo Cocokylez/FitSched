@@ -9,7 +9,6 @@ import type { TrackerResult } from "@/components/HikeTracker"
 import { HikeRouteDetail } from "@/components/HikeRouteDetail"
 import type { HikeDetail } from "@/components/HikeRouteDetail"
 import { getPendingHikeCount, queueHike, requestSync, flushPendingHikes } from "@/lib/hikeOfflineQueue"
-import { playSound } from "@/lib/sound"
 import { ACCENT } from "@/lib/theme"
 import { fmtDuration } from "@/lib/hikeUtils"
 
@@ -110,7 +109,6 @@ export default function HikePage() {
   // ── Tracker callbacks ─────────────────────────────────────────────────────────
 
   function handleTrackerFinish(result: TrackerResult) {
-    playSound("confirmation_001.ogg", 0.65)
     pendingResultRef.current = result
     setShowSave(true)
   }
@@ -143,7 +141,6 @@ export default function HikePage() {
       })
 
       if (res.ok) {
-        playSound("confirmation_002.ogg", 0.6)
         const data = await res.json().catch(() => null)
         if (data?.fitTokenReward?.awarded && data.fitTokenReward.amount > 0) {
           const rewardKm  = data.verification?.rewardKm  ?? r.distanceKm
@@ -180,7 +177,6 @@ export default function HikePage() {
       setPendingCount(newCount)
     } catch { /* IndexedDB unavailable */ }
 
-    playSound("confirmation_002.ogg", 0.5)
     setSavedOffline(true)
     setTimeout(() => setSavedOffline(false), 4000)
     setSaving(false)
@@ -211,7 +207,6 @@ export default function HikePage() {
     try {
       await fetch(`/api/hike/${id}`, { method: "DELETE" })
       setLogs(prev => prev.filter(l => l.id !== id))
-      playSound("close_001.ogg", 0.4)
     } finally { setDeletingId(null) }
   }
 
@@ -330,14 +325,19 @@ export default function HikePage() {
       {/* ── FitToken reward toast ───────────────────────────────────────────── */}
       <AnimatePresence>
         {tokenReward && (
+          // Outer div owns the fixed centering so Framer Motion's transform
+          // on the inner element doesn't clobber the translateX(-50%).
+          <div style={{
+            position: "fixed", bottom: 32, left: "50%", transform: "translateX(-50%)",
+            zIndex: 600,
+          }}>
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: "spring", stiffness: 300, damping: 26 }}
             style={{
-              position: "fixed", bottom: 32, left: "50%", transform: "translateX(-50%)",
-              zIndex: 600, display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
               background: "rgba(10,26,24,0.94)", backdropFilter: "blur(18px)",
               border: `1px solid ${ACCENT}40`,
               borderRadius: 20, padding: "14px 22px",
@@ -387,6 +387,7 @@ export default function HikePage() {
               </motion.div>
             )}
           </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
