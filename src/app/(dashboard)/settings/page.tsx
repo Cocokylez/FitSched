@@ -121,6 +121,7 @@ export default function SettingsPage() {
   const [lastSynced, setLastSynced] = useState<string | null>(null)
   const [pushEnabled, setPushEnabled]   = useState(false)
   const [pushLoading, setPushLoading]   = useState(false)
+  const [pushError, setPushError]       = useState<string | null>(null)
   const [workoutsPerWeek, setWorkoutsPerWeek] = useState(3)
   const [workoutEnvironment, setWorkoutEnvironment] = useState<WorkoutEnvironment>("gym")
   const [savingEnvironment, setSavingEnvironment] = useState(false)
@@ -329,60 +330,82 @@ export default function SettingsPage() {
 
   const togglePush = async () => {
     if (pushLoading) return
-    if (!("Notification" in window)) return
+    setPushError(null)
+
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+      setPushError("Push notifications aren't supported in this browser.")
+      return
+    }
 
     if (pushEnabled) {
       // Flip immediately — user sees feedback right away
       setPushEnabled(false)
       setPushLoading(true)
       try {
-        if ("serviceWorker" in navigator) {
-          const reg = await navigator.serviceWorker.ready
-          const sub = await reg.pushManager.getSubscription()
-          if (sub) {
-            await fetch("/api/push/unsubscribe", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ endpoint: sub.endpoint }),
-            }).catch(() => {})
-            await sub.unsubscribe()
-          }
+        const reg = await navigator.serviceWorker.ready
+        const sub = await reg.pushManager.getSubscription()
+        if (sub) {
+          await fetch("/api/push/unsubscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ endpoint: sub.endpoint }),
+          }).catch(() => {})
+          await sub.unsubscribe()
         }
       } catch {}
       setPushLoading(false)
       return
     }
 
-    // ENABLE — flip optimistically first so the toggle moves immediately
+    // ── ENABLE ───────────────────────────────────────────────────────────────
+    // Check permission BEFORE optimistic flip so the toggle doesn't flicker
+    // back if the browser already has it blocked.
+    const currentPerm = Notification.permission
+
+    if (currentPerm === "denied") {
+      setPushError("Notifications are blocked. Open your browser / OS settings and allow them for this site.")
+      return   // ← don't flip — user needs to change settings first
+    }
+
+    // Flip now; we're confident we can at least ask for permission
     setPushEnabled(true)
     setPushLoading(true)
 
     try {
-      // If permission is still "default", ask now (still within the user-gesture chain)
-      let perm = Notification.permission
+      let perm = currentPerm
       if (perm === "default") {
         perm = await Notification.requestPermission()
       }
       if (perm !== "granted") {
-        setPushEnabled(false)   // denied / dismissed — revert
+        // User dismissed the dialog
+        setPushEnabled(false)
         setPushLoading(false)
         return
       }
 
-      if ("serviceWorker" in navigator) {
-        const reg = await navigator.serviceWorker.register("/sw.js")
-        const sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || ""),
-        })
-        await fetch("/api/push/subscribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(sub),
-        })
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+      if (!vapidKey) {
+        throw new Error("VAPID key not configured")
       }
-    } catch {
-      setPushEnabled(false)   // subscribe failed — revert
+
+      const reg = await navigator.serviceWorker.register("/sw.js")
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
+      })
+      await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(sub),
+      })
+    } catch (err) {
+      setPushEnabled(false)
+      const msg = err instanceof Error ? err.message : ""
+      setPushError(
+        msg === "VAPID key not configured"
+          ? "Push notifications aren't set up yet."
+          : "Couldn't enable notifications — try again."
+      )
     }
     setPushLoading(false)
   }
@@ -692,7 +715,12 @@ export default function SettingsPage() {
       <SectionCard>
         <Row
           label="Notifications"
-          sublabel={pushLoading ? "Updating…" : pushEnabled ? "Enabled" : t.workoutReminders}
+          sublabel={
+            pushLoading ? "Updating…"
+            : pushError  ? pushError
+            : pushEnabled ? "Enabled"
+            : t.workoutReminders
+          }
           right={<Toggle on={pushEnabled} onToggle={togglePush} loading={pushLoading} />}
         />
         <Row
