@@ -581,20 +581,6 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
               paddingBottom: "max(28px, env(safe-area-inset-bottom))",
             }}>
               <motion.button
-                onClick={handleBeginHike}
-                whileTap={{ scale: 0.96 }}
-                style={{
-                  border: "none", borderRadius: 18, padding: "16px",
-                  background: ACCENT, color: "#0d1f1e",
-                  fontWeight: 900, fontSize: 16, fontFamily: "inherit",
-                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  boxShadow: "0 0 32px rgba(107,191,184,0.4)",
-                }}
-              >
-                <Navigation size={18} strokeWidth={2.5} />
-                Begin Hike
-              </motion.button>
-              <motion.button
                 onClick={handlePlanMode}
                 whileTap={{ scale: 0.96 }}
                 style={{
@@ -607,6 +593,20 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
               >
                 <MapPin size={16} strokeWidth={2.5} />
                 Plan Mode
+              </motion.button>
+              <motion.button
+                onClick={handleBeginHike}
+                whileTap={{ scale: 0.96 }}
+                style={{
+                  border: "none", borderRadius: 18, padding: "16px",
+                  background: ACCENT, color: "#0d1f1e",
+                  fontWeight: 900, fontSize: 16, fontFamily: "inherit",
+                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  boxShadow: "0 0 32px rgba(107,191,184,0.4)",
+                }}
+              >
+                <Navigation size={18} strokeWidth={2.5} />
+                Begin Hike
               </motion.button>
             </div>
           </div>
