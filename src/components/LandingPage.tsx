@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
@@ -59,7 +59,7 @@ function PhoneMockup() {
           "0 64px 120px rgba(0,0,0,0.7)",
           "0 0 0 1px rgba(255,255,255,0.04)",
           "inset 0 1px 0 rgba(255,255,255,0.06)",
-          `0 0 80px -20px rgba(107,191,184,0.18)`,
+          `0 0 80px -20px rgba(18,101,254,0.18)`,
         ].join(", "),
         overflow: "hidden",
         position: "relative",
@@ -101,7 +101,7 @@ function PhoneMockup() {
               background: active
                 ? "linear-gradient(145deg, #7dd4cc, #5aaea7)"
                 : "rgba(255,255,255,0.045)",
-              boxShadow: active ? "0 3px 10px rgba(107,191,184,0.3)" : "none",
+              boxShadow: active ? "0 3px 10px rgba(18,101,254,0.3)" : "none",
             }}>
               <span style={{
                 fontSize: 6.5, fontWeight: 800, letterSpacing: "0.04em",
@@ -471,7 +471,7 @@ function Navbar() {
           width: 30, height: 30, borderRadius: 9,
           background: `linear-gradient(135deg, ${ACCENT}, #4aaa9d)`,
           display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "0 2px 8px rgba(107,191,184,0.35)",
+          boxShadow: "0 2px 8px rgba(18,101,254,0.35)",
         }}>
           <Dumbbell size={15} color="#0d1f1e" strokeWidth={2.5} />
         </div>
@@ -564,7 +564,7 @@ function Navbar() {
           borderRadius: 999, padding: "8px 16px",
           fontSize: 13, fontWeight: 800, textDecoration: "none",
           fontFamily: "var(--font-display)",
-          boxShadow: "0 2px 10px rgba(107,191,184,0.28)",
+          boxShadow: "0 2px 10px rgba(18,101,254,0.28)",
         }}>
           {t.createAccount}
           <ArrowRight size={14} strokeWidth={2.5} />
@@ -651,7 +651,7 @@ function Hero() {
               borderRadius: 16, padding: "14px 24px",
               fontSize: 15, fontWeight: 900, textDecoration: "none",
               fontFamily: "var(--font-display)", letterSpacing: "-0.01em",
-              boxShadow: "0 4px 20px rgba(107,191,184,0.32)",
+              boxShadow: "0 4px 20px rgba(18,101,254,0.32)",
             }}>
               {t.createAccount}
               <ArrowRight size={16} strokeWidth={2.5} />
@@ -800,8 +800,8 @@ function CtaBlock() {
         <div style={{
           borderRadius: 32, overflow: "hidden",
           background: `
-            radial-gradient(ellipse at 30% 0%, rgba(107,191,184,0.18) 0%, transparent 55%),
-            radial-gradient(ellipse at 80% 100%, rgba(107,191,184,0.09) 0%, transparent 45%),
+            radial-gradient(ellipse at 30% 0%, rgba(18,101,254,0.18) 0%, transparent 55%),
+            radial-gradient(ellipse at 80% 100%, rgba(18,101,254,0.09) 0%, transparent 45%),
             var(--surface)
           `,
           border: `1px solid ${ACCENT_BD}`,
@@ -838,7 +838,7 @@ function CtaBlock() {
             borderRadius: 18, padding: "16px 28px",
             fontSize: 16, fontWeight: 900, textDecoration: "none",
             fontFamily: "var(--font-display)", letterSpacing: "-0.01em",
-            boxShadow: "0 6px 24px rgba(107,191,184,0.3)",
+            boxShadow: "0 6px 24px rgba(18,101,254,0.3)",
             whiteSpace: "nowrap",
           }}>
             {t.lpGetStartedFree}

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import "leaflet/dist/leaflet.css"
 import type L from "leaflet"
@@ -604,7 +604,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent, onPhaseChange 
                   background: ACCENT, color: "#0d1f1e",
                   fontWeight: 900, fontSize: 16, fontFamily: "inherit",
                   cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  boxShadow: "0 0 32px rgba(107,191,184,0.4)",
+                  boxShadow: "0 0 32px rgba(18,101,254,0.4)",
                 }}
               >
                 <Navigation size={18} strokeWidth={2.5} />
@@ -642,7 +642,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent, onPhaseChange 
                 display: "flex", alignItems: "center", gap: 10,
                 background: "rgba(10,20,18,0.72)", backdropFilter: "blur(14px)",
                 borderRadius: 999, padding: "9px 20px",
-                border: "1px solid rgba(107,191,184,0.22)",
+                border: "1px solid rgba(18,101,254,0.22)",
                 boxShadow: "0 4px 24px rgba(0,0,0,0.28)",
               }}
             >
@@ -721,7 +721,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent, onPhaseChange 
                 background: "rgba(10,20,18,0.82)", backdropFilter: "blur(14px)",
                 border: `1.5px solid ${ACCENT}`, cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: `0 0 16px rgba(107,191,184,0.3)`,
+                boxShadow: `0 0 16px rgba(18,101,254,0.3)`,
               }}
             >
               <Locate size={18} color={ACCENT} strokeWidth={2.5} />
@@ -747,13 +747,13 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent, onPhaseChange 
                 whileTap={canFinish ? { scale: 0.95 } : {}}
                 style={{
                   flex: 1, border: "none", borderRadius: 18, padding: "15px",
-                  background: canFinish ? ACCENT : "rgba(107,191,184,0.18)",
-                  color: canFinish ? "#0d1f1e" : "rgba(107,191,184,0.4)",
+                  background: canFinish ? ACCENT : "rgba(18,101,254,0.18)",
+                  color: canFinish ? "#0d1f1e" : "rgba(18,101,254,0.4)",
                   cursor: canFinish ? "pointer" : "default",
                   fontWeight: 900, fontSize: 14, fontFamily: "inherit",
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                   transition: "background 0.2s, color 0.2s",
-                  boxShadow: canFinish ? "0 0 28px rgba(107,191,184,0.35)" : "none",
+                  boxShadow: canFinish ? "0 0 28px rgba(18,101,254,0.35)" : "none",
                 }}
               >
                 <CheckCircle size={16} strokeWidth={2.5} />
@@ -890,7 +890,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent, onPhaseChange 
               style={{
                 position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 999,
                 background: "rgba(10,20,18,0.82)", backdropFilter: "blur(18px)",
-                borderTop: "1px solid rgba(107,191,184,0.18)",
+                borderTop: "1px solid rgba(18,101,254,0.18)",
                 padding: "16px 18px",
                 paddingBottom: "max(18px, env(safe-area-inset-bottom))",
                 display: "flex", flexDirection: "column", gap: 12,
@@ -939,7 +939,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent, onPhaseChange 
                 <motion.button onClick={resetPlan} whileTap={{ scale: 0.95 }} style={{ flex: 1, border: "1px solid rgba(255,255,255,0.15)", borderRadius: 14, padding: "12px", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.8)", fontWeight: 800, fontSize: 13, fontFamily: "inherit", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                   <RotateCcw size={14} strokeWidth={2.5} /> Reset
                 </motion.button>
-                <motion.button onClick={() => { setMode("track"); enableGPS() }} whileTap={{ scale: 0.95 }} style={{ flex: 2, border: isStraightLine ? "1px solid rgba(239,68,68,0.5)" : "none", borderRadius: 14, padding: "12px", background: isStraightLine ? "rgba(239,68,68,0.18)" : ACCENT, color: isStraightLine ? "#f87171" : "#0d1f1e", fontWeight: 900, fontSize: 13, fontFamily: "inherit", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: isStraightLine ? "none" : "0 0 20px rgba(107,191,184,0.3)" }}>
+                <motion.button onClick={() => { setMode("track"); enableGPS() }} whileTap={{ scale: 0.95 }} style={{ flex: 2, border: isStraightLine ? "1px solid rgba(239,68,68,0.5)" : "none", borderRadius: 14, padding: "12px", background: isStraightLine ? "rgba(239,68,68,0.18)" : ACCENT, color: isStraightLine ? "#f87171" : "#0d1f1e", fontWeight: 900, fontSize: 13, fontFamily: "inherit", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: isStraightLine ? "none" : "0 0 20px rgba(18,101,254,0.3)" }}>
                   <Navigation size={14} strokeWidth={2.5} /> {isStraightLine ? "Begin anyway" : "Begin hike"}
                 </motion.button>
               </div>

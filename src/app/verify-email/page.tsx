@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
@@ -46,7 +46,7 @@ function VerifyEmailContent() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: ["linear-gradient(180deg, rgba(107,191,184,0.12) 0%, transparent 38vh)", "radial-gradient(circle at 18% -8rem, rgba(107,191,184,0.18), transparent 28rem)", "radial-gradient(circle at 88% 65%, rgba(107,191,184,0.07), transparent 22rem)", "var(--bg)"].join(", "), display: "flex", flexDirection: "column", position: "relative", padding: "0 16px 24px" }}>
+    <div style={{ minHeight: "100vh", background: ["linear-gradient(180deg, rgba(18,101,254,0.12) 0%, transparent 38vh)", "radial-gradient(circle at 18% -8rem, rgba(18,101,254,0.18), transparent 28rem)", "radial-gradient(circle at 88% 65%, rgba(18,101,254,0.07), transparent 22rem)", "var(--bg)"].join(", "), display: "flex", flexDirection: "column", position: "relative", padding: "0 16px 24px" }}>
       <AuthTopControls />
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}
@@ -69,8 +69,8 @@ function VerifyEmailContent() {
           {status === "success" && (
             <>
               <motion.div variants={fadeIn}>
-                <div style={{ width: 52, height: 52, borderRadius: 16, background: "rgba(107,191,184,0.12)", border: "1px solid rgba(107,191,184,0.3)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
-                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#6bbfb8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <div style={{ width: 52, height: 52, borderRadius: 16, background: "rgba(18,101,254,0.12)", border: "1px solid rgba(18,101,254,0.3)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#1265fe" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
                 <div className="display-text" style={{ fontSize: "22px", fontWeight: 800, color: "var(--text)", marginBottom: 8 }}>Email verified!</div>
                 <div style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 28 }}>Your email address has been confirmed. You&apos;re all set.</div>
@@ -94,7 +94,7 @@ function VerifyEmailContent() {
               </motion.div>
               <motion.div variants={fadeIn}>
                 {resent ? (
-                  <div style={{ background: "rgba(107,191,184,0.08)", border: "1px solid rgba(107,191,184,0.25)", borderRadius: 12, padding: "14px 16px", color: "#6bbfb8", fontSize: "13px", textAlign: "center" }}>
+                  <div style={{ background: "rgba(18,101,254,0.08)", border: "1px solid rgba(18,101,254,0.25)", borderRadius: 12, padding: "14px 16px", color: "#1265fe", fontSize: "13px", textAlign: "center" }}>
                     New verification email sent. Check your inbox.
                   </div>
                 ) : (

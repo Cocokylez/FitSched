@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
@@ -229,7 +229,7 @@ export function WorkoutTemplatesModal({ currentExercises, onLoad, onClose }: Pro
                   onClick={() => { setSaveName(""); setView("save") }}
                   style={{
                     width: "100%", display: "flex", alignItems: "center", gap: 10,
-                    background: "rgba(107,191,184,0.08)", border: `1px solid rgba(107,191,184,0.28)`,
+                    background: "rgba(18,101,254,0.08)", border: `1px solid rgba(18,101,254,0.28)`,
                     borderRadius: 16, padding: "13px 16px", cursor: "pointer",
                     marginBottom: 14, textAlign: "left",
                   }}

@@ -1,11 +1,11 @@
-{
+﻿{
   "name": "FitSched",
   "short_name": "FitSched",
   "description": "AI-powered workout scheduler that fits your workout into your day automatically",
   "start_url": "/schedule",
   "display": "standalone",
   "background_color": "#111514",
-  "theme_color": "#6bbfb8",
+  "theme_color": "#1265fe",
   "orientation": "portrait",
   "icons": [
     {

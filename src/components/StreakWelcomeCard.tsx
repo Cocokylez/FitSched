@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ArrowRight, Dumbbell, Snowflake, X } from "lucide-react"
@@ -454,7 +454,7 @@ export function StreakWelcomeCard({
                 border: "none",
                 borderRadius: 16,
                 padding: "14px 15px",
-                background: hasActiveStreak || freezeUsed ? "#6bbfb8" : "rgba(147, 225, 250, 0.16)",
+                background: hasActiveStreak || freezeUsed ? "#1265fe" : "rgba(147, 225, 250, 0.16)",
                 color: hasActiveStreak || freezeUsed ? "#10201f" : "#dff8ff",
                 display: "flex",
                 alignItems: "center",

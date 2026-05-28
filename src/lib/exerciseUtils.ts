@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Exercise category utilities shared between the workout plan view and the
  * live exercise session page.
  */
@@ -18,10 +18,10 @@ export function getCategory(name: string, index: number): string {
 
 export const CATEGORY_COLORS: Record<string, { bg: string; color: string }> = {
   WARM:     { bg: "rgba(246,211,101,0.18)", color: "#c8960a" },
-  CORE:     { bg: "rgba(107,191,184,0.18)", color: ACCENT },
+  CORE:     { bg: "rgba(18,101,254,0.18)", color: ACCENT },
   LEGS:     { bg: "rgba(138,180,255,0.18)", color: "#5b8fff" },
   PULL:     { bg: "rgba(160,100,255,0.18)", color: "#a064ff" },
   PUSH:     { bg: "rgba(249,115,115,0.18)", color: "#e85555" },
   CARDIO:   { bg: "rgba(255,165,50,0.18)",  color: "#e08010" },
-  SHOULDER: { bg: "rgba(107,191,184,0.14)", color: ACCENT },
+  SHOULDER: { bg: "rgba(18,101,254,0.14)", color: ACCENT },
 }

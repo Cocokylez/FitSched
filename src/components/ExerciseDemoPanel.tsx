@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { getExerciseDemo } from "@/lib/exerciseDemos"
@@ -196,7 +196,7 @@ function DemoFrame({
             borderRadius: "999px",
             padding: paused ? "5px 8px" : "6px 9px",
             background: "rgba(15, 18, 18, 0.74)",
-            border: "1px solid rgba(107, 191, 184, 0.32)",
+            border: "1px solid rgba(18,101,254, 0.32)",
             color: "#7fd8d1",
             fontSize: paused ? "11px" : "13px",
             fontWeight: 950,
@@ -249,8 +249,8 @@ export function ExerciseDemoVisual({
         height: typeof frameHeight === "number" ? `${frameHeight}px` : frameHeight,
         borderRadius: compact ? "11px" : "14px",
         overflow: "hidden",
-        border: "1px solid rgba(107, 191, 184, 0.22)",
-        background: "linear-gradient(135deg, rgba(107,191,184,0.14), rgba(255,255,255,0.04))",
+        border: "1px solid rgba(18,101,254, 0.22)",
+        background: "linear-gradient(135deg, rgba(18,101,254,0.14), rgba(255,255,255,0.04))",
         contain: "layout paint style",
       }}
     >
@@ -320,8 +320,8 @@ export function ExerciseDemoPanel({
                 style={{
                   borderRadius: "999px",
                   padding: "4px 8px",
-                  background: "rgba(107, 191, 184, 0.12)",
-                  color: "#6bbfb8",
+                  background: "rgba(18,101,254, 0.12)",
+                  color: "#1265fe",
                   fontSize: "10px",
                   fontWeight: 850,
                 }}

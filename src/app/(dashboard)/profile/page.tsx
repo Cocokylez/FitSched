@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSession } from "next-auth/react"
@@ -266,7 +266,7 @@ export default function ProfilePage() {
         <div style={{ position: "relative", width: 104, height: 104, marginBottom: 14 }}>
           {/* Streak ring */}
           <svg width="104" height="104" style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)" }} aria-hidden>
-            <circle cx="52" cy="52" r={RING_RADIUS} fill="none" stroke="rgba(107,191,184,0.14)" strokeWidth="3.5" />
+            <circle cx="52" cy="52" r={RING_RADIUS} fill="none" stroke="rgba(18,101,254,0.14)" strokeWidth="3.5" />
             {streak > 0 && (
               <motion.circle
                 cx="52" cy="52" r={RING_RADIUS}
@@ -291,7 +291,7 @@ export default function ProfilePage() {
             ) : (
               <div style={{
                 width: "100%", height: "100%",
-                background: "linear-gradient(135deg, rgba(107,191,184,0.96), rgba(40,73,70,0.92))",
+                background: "linear-gradient(135deg, rgba(18,101,254,0.96), rgba(40,73,70,0.92))",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 color: "#fff", fontSize: "24px", fontWeight: 800,
               }}>
@@ -371,7 +371,7 @@ export default function ProfilePage() {
         )}
         {email.endsWith("@fitsched.guest") && (
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4, display: "flex", alignItems: "center", gap: 5 }}>
-            <span style={{ fontSize: 9, background: "rgba(107,191,184,0.18)", border: "1px solid rgba(107,191,184,0.3)", color: ACCENT, borderRadius: 999, padding: "2px 8px", fontWeight: 800, letterSpacing: "0.08em" }}>GUEST</span>
+            <span style={{ fontSize: 9, background: "rgba(18,101,254,0.18)", border: "1px solid rgba(18,101,254,0.3)", color: ACCENT, borderRadius: 999, padding: "2px 8px", fontWeight: 800, letterSpacing: "0.08em" }}>GUEST</span>
             Progress is temporary
           </div>
         )}
@@ -386,7 +386,7 @@ export default function ProfilePage() {
           <motion.button
             whileTap={{ scale: 0.96 }}
             onClick={async () => { await import("next-auth/react").then(m => m.signOut({ redirect: false })); router.push("/register") }}
-            style={{ marginTop: 14, border: "1px solid rgba(107,191,184,0.4)", background: "rgba(107,191,184,0.08)", borderRadius: 14, padding: "10px 20px", color: ACCENT, fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+            style={{ marginTop: 14, border: "1px solid rgba(18,101,254,0.4)", background: "rgba(18,101,254,0.08)", borderRadius: 14, padding: "10px 20px", color: ACCENT, fontSize: 13, fontWeight: 700, cursor: "pointer" }}
           >
             Create a free account to save your progress →
           </motion.button>
@@ -397,10 +397,10 @@ export default function ProfilePage() {
         <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 7,
-            background: "rgba(107,191,184,0.12)", border: "1px solid rgba(107,191,184,0.32)",
+            background: "rgba(18,101,254,0.12)", border: "1px solid rgba(18,101,254,0.32)",
             borderRadius: 999, padding: "9px 16px", fontSize: 13, fontWeight: 800, color: ACCENT,
           }}>
-            <span style={{ width: 18, height: 18, borderRadius: "50%", border: "1px solid rgba(107,191,184,0.4)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 900 }}>FT</span>
+            <span style={{ width: 18, height: 18, borderRadius: "50%", border: "1px solid rgba(18,101,254,0.4)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 900 }}>FT</span>
             FitTokens · {formatFT(fitTokenBalance)}
           </div>
           <button
@@ -589,7 +589,7 @@ export default function ProfilePage() {
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{
               width: 34, height: 34, borderRadius: 10,
-              background: "rgba(107,191,184,0.1)", border: "1px solid rgba(107,191,184,0.22)",
+              background: "rgba(18,101,254,0.1)", border: "1px solid rgba(18,101,254,0.22)",
               display: "flex", alignItems: "center", justifyContent: "center",
               flexShrink: 0,
             }}>

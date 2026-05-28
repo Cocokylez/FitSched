@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useRef, useState } from "react"
 import { useSession } from "next-auth/react"
@@ -304,7 +304,7 @@ export default function WithdrawalPage() {
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{
                 width: 34, height: 34, borderRadius: 10,
-                background: "rgba(107,191,184,0.12)", border: "1px solid rgba(107,191,184,0.25)",
+                background: "rgba(18,101,254,0.12)", border: "1px solid rgba(18,101,254,0.25)",
                 display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
               }}>
                 <Wallet size={16} strokeWidth={1.8} color={ACCENT} />
@@ -400,8 +400,8 @@ export default function WithdrawalPage() {
                   disabled={savingWallet}
                   style={{
                     flexShrink: 0,
-                    background: isValidEvmAddress(walletInput.trim()) ? "rgba(107,191,184,0.15)" : "var(--surface-2)",
-                    border: `1px solid ${isValidEvmAddress(walletInput.trim()) ? "rgba(107,191,184,0.4)" : "var(--border)"}`,
+                    background: isValidEvmAddress(walletInput.trim()) ? "rgba(18,101,254,0.15)" : "var(--surface-2)",
+                    border: `1px solid ${isValidEvmAddress(walletInput.trim()) ? "rgba(18,101,254,0.4)" : "var(--border)"}`,
                     color: isValidEvmAddress(walletInput.trim()) ? ACCENT : "var(--text-muted)",
                     borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 800,
                     cursor: savingWallet ? "not-allowed" : "pointer",
@@ -435,7 +435,7 @@ export default function WithdrawalPage() {
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
             <div style={{
               width: 40, height: 40, borderRadius: "50%",
-              background: "rgba(107,191,184,0.12)", border: "1px solid rgba(107,191,184,0.28)",
+              background: "rgba(18,101,254,0.12)", border: "1px solid rgba(18,101,254,0.28)",
               display: "flex", alignItems: "center", justifyContent: "center",
               color: ACCENT, fontSize: 13, fontWeight: 900, flexShrink: 0,
             }}>
@@ -472,8 +472,8 @@ export default function WithdrawalPage() {
               >
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
                   <svg viewBox="0 0 48 48" width="44" height="44" fill="none">
-                    <circle cx="24" cy="24" r="22" fill="rgba(107,191,184,0.15)" stroke="rgba(107,191,184,0.4)" strokeWidth="1.5"/>
-                    <path d="M16 24l6 6 10-12" stroke="#6bbfb8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <circle cx="24" cy="24" r="22" fill="rgba(18,101,254,0.15)" stroke="rgba(18,101,254,0.4)" strokeWidth="1.5"/>
+                    <path d="M16 24l6 6 10-12" stroke="#1265fe" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
                 <div style={{ fontSize: 22, fontWeight: 950, color: ACCENT, marginBottom: 4 }}>
@@ -564,7 +564,7 @@ export default function WithdrawalPage() {
                         initial={{ width: 0 }}
                         animate={{ width: `${Math.min(100, (claimable / MIN_CLAIM_FIT) * 100)}%` }}
                         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                        style={{ height: "100%", background: `linear-gradient(90deg, ${ACCENT}, rgba(107,191,184,0.6))`, borderRadius: 999 }}
+                        style={{ height: "100%", background: `linear-gradient(90deg, ${ACCENT}, rgba(18,101,254,0.6))`, borderRadius: 999 }}
                       />
                     </div>
                     <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 5 }}>
@@ -591,7 +591,7 @@ export default function WithdrawalPage() {
             How you earn
           </div>
           {[
-            { icon: Dumbbell, color: ACCENT,    bg: "rgba(107,191,184,0.12)", title: "Complete a workout",  detail: "+1.00 FT per session" },
+            { icon: Dumbbell, color: ACCENT,    bg: "rgba(18,101,254,0.12)", title: "Complete a workout",  detail: "+1.00 FT per session" },
             { icon: Flame,    color: "#f97316", bg: "rgba(249,115,22,0.12)",  title: "Streak bonus",        detail: "Up to +0.20 FT extra" },
             { icon: Zap,      color: "#8ab4ff", bg: "rgba(138,180,255,0.12)", title: "Verification score",  detail: "Full score = full reward" },
           ].map(({ icon: Icon, color, bg, title, detail }, i, arr) => (
@@ -721,7 +721,7 @@ function ClaimButton({
       label: (
         <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
           Need {MIN_CLAIM_FIT} FIT minimum
-          <span style={{ background: "rgba(107,191,184,0.12)", border: "1px solid rgba(107,191,184,0.25)", borderRadius: 999, padding: "2px 8px", fontSize: 10, fontWeight: 900, color: ACCENT, letterSpacing: "0.07em" }}>
+          <span style={{ background: "rgba(18,101,254,0.12)", border: "1px solid rgba(18,101,254,0.25)", borderRadius: 999, padding: "2px 8px", fontSize: 10, fontWeight: 900, color: ACCENT, letterSpacing: "0.07em" }}>
             {formatFT(claimable)} / {MIN_CLAIM_FIT}
           </span>
         </span>
@@ -737,11 +737,11 @@ function ClaimButton({
           </span>
         </span>
       ),
-      bg:     "rgba(107,191,184,0.08)", border: "rgba(107,191,184,0.28)", color: ACCENT,
+      bg:     "rgba(18,101,254,0.08)", border: "rgba(18,101,254,0.28)", color: ACCENT,
     },
     ready: {
       label:  `Claim ${formatFT(claimable)} FIT →`,
-      bg:     "rgba(107,191,184,0.14)", border: "rgba(107,191,184,0.45)", color: ACCENT,
+      bg:     "rgba(18,101,254,0.14)", border: "rgba(18,101,254,0.45)", color: ACCENT,
     },
     claiming: {
       label: (
@@ -750,7 +750,7 @@ function ClaimButton({
           Claiming…
         </span>
       ),
-      bg:     "rgba(107,191,184,0.08)", border: "rgba(107,191,184,0.22)", color: ACCENT,
+      bg:     "rgba(18,101,254,0.08)", border: "rgba(18,101,254,0.22)", color: ACCENT,
     },
     success: {
       label:  "Claimed",

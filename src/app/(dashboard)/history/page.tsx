@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { useSession } from "next-auth/react"
@@ -222,8 +222,8 @@ export default function HistoryPage() {
                     key={group ?? "all"}
                     onClick={() => { setHistoryMuscleFilter(group); setShowAll(false) }}
                     style={{
-                      border: historyMuscleFilter === group ? "1px solid rgba(107,191,184,0.6)" : "1px solid var(--border)",
-                      background: historyMuscleFilter === group ? "rgba(107,191,184,0.12)" : "var(--surface)",
+                      border: historyMuscleFilter === group ? "1px solid rgba(18,101,254,0.6)" : "1px solid var(--border)",
+                      background: historyMuscleFilter === group ? "rgba(18,101,254,0.12)" : "var(--surface)",
                       color: historyMuscleFilter === group ? ACCENT : "var(--text-muted)",
                       borderRadius: 999, padding: "4px 10px", fontSize: 11, fontWeight: 800,
                       cursor: "pointer", whiteSpace: "nowrap",
@@ -450,7 +450,7 @@ export default function HistoryPage() {
                 <motion.div
                   key={pr.name}
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                  style={{ background: "var(--surface)", border: `1px solid ${pr.isRecent ? "rgba(107,191,184,0.4)" : "var(--border)"}`, borderRadius: 16, marginBottom: 10, overflow: "hidden" }}
+                  style={{ background: "var(--surface)", border: `1px solid ${pr.isRecent ? "rgba(18,101,254,0.4)" : "var(--border)"}`, borderRadius: 16, marginBottom: 10, overflow: "hidden" }}
                 >
                   <button
                     onClick={() => setExpandedPr(isExpanded ? null : pr.name)}

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState, useCallback } from "react"
 import { useSession } from "next-auth/react"
@@ -251,7 +251,7 @@ export default function ExercisesPage() {
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 12, flex: 1, minWidth: 0 }}>
                       <div style={{
                         width: 36, height: 36, borderRadius: 9, flexShrink: 0, marginTop: 1,
-                        background: "rgba(107,191,184,0.1)", border: "1px solid rgba(107,191,184,0.18)",
+                        background: "rgba(18,101,254,0.1)", border: "1px solid rgba(18,101,254,0.18)",
                         display: "flex", alignItems: "center", justifyContent: "center",
                       }}>
                         <Dumbbell size={16} strokeWidth={2} color={ACCENT} />
@@ -277,7 +277,7 @@ export default function ExercisesPage() {
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 7 }}>
                           <span style={{
                             fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 999,
-                            background: "rgba(107,191,184,0.1)", color: ACCENT,
+                            background: "rgba(18,101,254,0.1)", color: ACCENT,
                           }}>
                             {formatLabel(ex.muscleGroup)}
                           </span>

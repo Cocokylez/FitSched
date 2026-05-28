@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -271,8 +271,8 @@ export default function ExerciseSessionPage() {
   if (locked) {
     return (
       <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)", padding: "24px 16px" }}>
-        <div style={{ maxWidth: 520, margin: "0 auto", background: "var(--surface)", border: "1px solid rgba(107,191,184,0.32)", borderRadius: 20, padding: 24, textAlign: "center" }}>
-          <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(107,191,184,0.14)", color: ACCENT, display: "grid", placeItems: "center", margin: "0 auto 14px", fontSize: 16, fontWeight: 950 }}>OK</div>
+        <div style={{ maxWidth: 520, margin: "0 auto", background: "var(--surface)", border: "1px solid rgba(18,101,254,0.32)", borderRadius: 20, padding: 24, textAlign: "center" }}>
+          <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(18,101,254,0.14)", color: ACCENT, display: "grid", placeItems: "center", margin: "0 auto 14px", fontSize: 16, fontWeight: 950 }}>OK</div>
           <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 8 }}>{lockReason === "date" ? t.todayWorkoutOnlyTitle : t.workoutAlreadyComplete}</div>
           <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 18, lineHeight: 1.5 }}>{lockReason === "date" ? t.todayWorkoutOnlyBody : t.workoutAlreadyCompleteBody}</div>
           <button onClick={() => router.push("/workout")} style={{ border: "none", borderRadius: 14, padding: "13px 18px", background: ACCENT, color: "#fff", fontWeight: 900, cursor: "pointer" }}>{t.backToWorkout}</button>
@@ -302,7 +302,7 @@ export default function ExerciseSessionPage() {
           <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Today&apos;s workout</span>
         </button>
         {verifySettled && (
-          <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 9px", borderRadius: 999, fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", background: verifyState === "active" ? "rgba(107,191,184,0.14)" : "rgba(255,255,255,0.06)", border: verifyState === "active" ? "1px solid rgba(107,191,184,0.3)" : "1px solid var(--border)", color: verifyState === "active" ? ACCENT : "var(--text-muted)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 9px", borderRadius: 999, fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", background: verifyState === "active" ? "rgba(18,101,254,0.14)" : "rgba(255,255,255,0.06)", border: verifyState === "active" ? "1px solid rgba(18,101,254,0.3)" : "1px solid var(--border)", color: verifyState === "active" ? ACCENT : "var(--text-muted)" }}>
             <span style={{ width: 5, height: 5, borderRadius: "50%", background: verifyState === "active" ? ACCENT : "var(--text-muted)", flexShrink: 0 }} />
             {verifyState === "active" ? "VERIFIED" : "UNVERIFIED"}
           </div>
@@ -318,7 +318,7 @@ export default function ExerciseSessionPage() {
       </div>
 
       {/* W1 FT earn strip */}
-      <div style={{ margin: "0 16px 14px", background: "rgba(107,191,184,0.08)", border: "1px solid rgba(107,191,184,0.28)", borderRadius: 14, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ margin: "0 16px 14px", background: "rgba(18,101,254,0.08)", border: "1px solid rgba(18,101,254,0.28)", borderRadius: 14, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 700, color: ACCENT }}>
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
           Finish to earn +0.2 FT
@@ -357,10 +357,10 @@ export default function ExerciseSessionPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06, duration: 0.28, ease: "easeOut" }}
               style={{
-                background: allSetsDone ? "rgba(107,191,184,0.04)" : "var(--panel)",
-                borderTop: allSetsDone ? "1px solid rgba(107,191,184,0.28)" : "1px solid var(--border)",
-                borderRight: allSetsDone ? "1px solid rgba(107,191,184,0.28)" : "1px solid var(--border)",
-                borderBottom: allSetsDone ? "1px solid rgba(107,191,184,0.28)" : "1px solid var(--border)",
+                background: allSetsDone ? "rgba(18,101,254,0.04)" : "var(--panel)",
+                borderTop: allSetsDone ? "1px solid rgba(18,101,254,0.28)" : "1px solid var(--border)",
+                borderRight: allSetsDone ? "1px solid rgba(18,101,254,0.28)" : "1px solid var(--border)",
+                borderBottom: allSetsDone ? "1px solid rgba(18,101,254,0.28)" : "1px solid var(--border)",
                 borderLeft: `3px solid ${catStyle.color}`,
                 borderRadius: 20,
                 marginBottom: 12,
@@ -377,7 +377,7 @@ export default function ExerciseSessionPage() {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
                   <span style={{ fontSize: 10, fontWeight: 800, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>#{String(i + 1).padStart(2, "0")}</span>
-                  <div style={{ background: allSetsDone ? "rgba(107,191,184,0.18)" : "var(--surface-2)", border: allSetsDone ? "1px solid rgba(107,191,184,0.35)" : "1px solid var(--border)", borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 800, color: allSetsDone ? ACCENT : "var(--text-muted)", transition: "all 0.2s" }}>
+                  <div style={{ background: allSetsDone ? "rgba(18,101,254,0.18)" : "var(--surface-2)", border: allSetsDone ? "1px solid rgba(18,101,254,0.35)" : "1px solid var(--border)", borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 800, color: allSetsDone ? ACCENT : "var(--text-muted)", transition: "all 0.2s" }}>
                     {ex.sets}×{ex.reps}
                   </div>
                   <AnimatePresence>
@@ -406,7 +406,7 @@ export default function ExerciseSessionPage() {
                         exit={{ opacity: 0 }}
                         style={{
                           position: "absolute", inset: 0, borderRadius: 16,
-                          background: "rgba(107,191,184,0.28)",
+                          background: "rgba(18,101,254,0.28)",
                           display: "flex", alignItems: "center", justifyContent: "center",
                           backdropFilter: "blur(1px)",
                         }}
@@ -426,7 +426,7 @@ export default function ExerciseSessionPage() {
 
                   {/* Last session hint */}
                   {exerciseHistory[ex.name] && (
-                    <div style={{ display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 8, borderRadius: 999, padding: "2px 8px", background: "rgba(107,191,184,0.08)", border: "1px solid rgba(107,191,184,0.2)", fontSize: 10, fontWeight: 800, color: ACCENT }}>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 8, borderRadius: 999, padding: "2px 8px", background: "rgba(18,101,254,0.08)", border: "1px solid rgba(18,101,254,0.2)", fontSize: 10, fontWeight: 800, color: ACCENT }}>
                       <svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                       {exerciseHistory[ex.name].weight != null && `${exerciseHistory[ex.name].weight}kg · `}Last: {exerciseHistory[ex.name].sets}×{exerciseHistory[ex.name].reps} · {daysAgoLabel(exerciseHistory[ex.name].completedAt)}
                     </div>
@@ -505,8 +505,8 @@ export default function ExerciseSessionPage() {
                             }}
                             style={{
                               flex: 1,
-                              background: isPRAttempt ? "rgba(107,191,184,0.08)" : "var(--surface-2)",
-                              border: isPRAttempt ? "1px solid rgba(107,191,184,0.4)" : "1px solid var(--border)",
+                              background: isPRAttempt ? "rgba(18,101,254,0.08)" : "var(--surface-2)",
+                              border: isPRAttempt ? "1px solid rgba(18,101,254,0.4)" : "1px solid var(--border)",
                               borderRadius: 10,
                               padding: "6px 10px",
                               color: "var(--text)",
@@ -531,7 +531,7 @@ export default function ExerciseSessionPage() {
                             initial={{ opacity: 0, y: -4 }}
                             animate={{ opacity: 1, y: 0 }}
                             onClick={() => setExerciseWeights((prev) => ({ ...prev, [i]: suggested }))}
-                            style={{ marginTop: 5, border: "1px dashed rgba(107,191,184,0.45)", background: "rgba(107,191,184,0.06)", borderRadius: 8, padding: "4px 9px", color: ACCENT, fontSize: 10, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
+                            style={{ marginTop: 5, border: "1px dashed rgba(18,101,254,0.45)", background: "rgba(18,101,254,0.06)", borderRadius: 8, padding: "4px 9px", color: ACCENT, fontSize: 10, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
                           >
                             <svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
                             Try {suggested} kg (+2.5)
@@ -649,12 +649,12 @@ export default function ExerciseSessionPage() {
       {/* Celebration overlay */}
       <AnimatePresence>
         {celebrating && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: "fixed", inset: 0, zIndex: 60, overflow: "hidden", background: "radial-gradient(circle at 50% 18%, rgba(107,191,184,0.22), rgba(0,0,0,0.76) 58%)", backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", display: "grid", placeItems: "center", padding: 22 }}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: "fixed", inset: 0, zIndex: 60, overflow: "hidden", background: "radial-gradient(circle at 50% 18%, rgba(18,101,254,0.22), rgba(0,0,0,0.76) 58%)", backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", display: "grid", placeItems: "center", padding: 22 }}>
             {CONFETTI.map(p => (
               <motion.div key={p.id} initial={{ y: -80, x: 0, rotate: 0, opacity: 0 }} animate={{ y: "110vh", x: p.drift, rotate: p.rotate, opacity: [0, 1, 1, 0] }} transition={{ duration: 2.8 + (p.id % 5) * 0.18, delay: p.delay, ease: "easeOut", repeat: Infinity, repeatDelay: 0.6 }} style={{ position: "absolute", top: 0, left: `${p.left}%`, width: p.id % 3 === 0 ? 6 : 9, height: p.id % 3 === 0 ? 18 : 9, borderRadius: p.id % 3 === 0 ? 999 : 3, background: p.color }} />
             ))}
             <motion.div initial={{ opacity: 0, y: 24, scale: 0.92 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 220, damping: 18 }} style={{ width: "100%", maxWidth: 430, border: "1px solid rgba(255,255,255,0.14)", background: "rgba(26,26,26,0.82)", color: "#fff", borderRadius: 28, padding: "28px 22px 22px", textAlign: "center", boxShadow: "0 30px 90px rgba(0,0,0,0.45)", position: "relative", maxHeight: "calc(100dvh - 44px)", overflowY: "auto" }}>
-              <motion.div initial={{ scale: 0.5, rotate: -18 }} animate={{ scale: [0.5, 1.15, 1], rotate: [-18, 8, 0] }} transition={{ duration: 0.75, ease: "easeOut" }} style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 16px", display: "grid", placeItems: "center", background: "rgba(107,191,184,0.16)", border: "1px solid rgba(107,191,184,0.42)", color: ACCENT, fontSize: 26, fontWeight: 950 }}>FT</motion.div>
+              <motion.div initial={{ scale: 0.5, rotate: -18 }} animate={{ scale: [0.5, 1.15, 1], rotate: [-18, 8, 0] }} transition={{ duration: 0.75, ease: "easeOut" }} style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 16px", display: "grid", placeItems: "center", background: "rgba(18,101,254,0.16)", border: "1px solid rgba(18,101,254,0.42)", color: ACCENT, fontSize: 26, fontWeight: 950 }}>FT</motion.div>
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} style={{ fontSize: 30, fontWeight: 950, letterSpacing: "-0.5px", marginBottom: 6 }}>{t.workoutCompleteTitle}</motion.div>
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} style={{ color: "rgba(255,255,255,0.64)", fontSize: 14, lineHeight: 1.45, marginBottom: 18 }}>{t.workoutCompleteBody}</motion.div>
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
@@ -665,7 +665,7 @@ export default function ExerciseSessionPage() {
                   </div>
                 ))}
               </motion.div>
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }} style={{ borderRadius: 14, padding: "10px 14px", background: "rgba(107,191,184,0.10)", border: "1px solid rgba(107,191,184,0.28)", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }} style={{ borderRadius: 14, padding: "10px 14px", background: "rgba(18,101,254,0.10)", border: "1px solid rgba(18,101,254,0.28)", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                 <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", fontWeight: 800, letterSpacing: "0.1em" }}>EST. CALORIES</div>
                 <div style={{ fontSize: 18, fontWeight: 950, color: ACCENT, fontVariantNumeric: "tabular-nums" }}>~{estimateCalories(workout?.exercises ?? [])} kcal</div>
               </motion.div>
@@ -673,7 +673,7 @@ export default function ExerciseSessionPage() {
                 <span style={{ color: "rgba(255,255,255,0.68)", fontSize: 13, fontWeight: 800 }}>{t.streakLabel}</span>
                 <span style={{ fontSize: 16, fontWeight: 950, color: ACCENT }}>{streakDay} {t.dayStreak}</span>
               </motion.div>
-              <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.50 }} style={{ borderRadius: 18, padding: 16, background: "linear-gradient(135deg, rgba(107,191,184,0.2), rgba(107,191,184,0.06))", border: "1px solid rgba(107,191,184,0.32)", marginBottom: 18 }}>
+              <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.50 }} style={{ borderRadius: 18, padding: 16, background: "linear-gradient(135deg, rgba(18,101,254,0.2), rgba(18,101,254,0.06))", border: "1px solid rgba(18,101,254,0.32)", marginBottom: 18 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
                   <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.12em" }}>{t.receiveFitToken}</div>
                   {fitTokenReward?.boosted && (
@@ -728,14 +728,14 @@ export default function ExerciseSessionPage() {
                   {FEEDBACK_OPTIONS.map(o => {
                     const sel = sessionFeedback === o.value
                     return (
-                      <button key={o.value} type="button" onClick={() => saveSessionFeedback(o.value)} style={{ minWidth: 0, border: sel ? "1px solid rgba(107,191,184,0.7)" : "1px solid rgba(255,255,255,0.1)", borderRadius: 14, padding: "10px 8px", background: sel ? "rgba(107,191,184,0.18)" : "rgba(255,255,255,0.055)", color: sel ? ACCENT : "#fff", cursor: "pointer", textAlign: "center" }}>
+                      <button key={o.value} type="button" onClick={() => saveSessionFeedback(o.value)} style={{ minWidth: 0, border: sel ? "1px solid rgba(18,101,254,0.7)" : "1px solid rgba(255,255,255,0.1)", borderRadius: 14, padding: "10px 8px", background: sel ? "rgba(18,101,254,0.18)" : "rgba(255,255,255,0.055)", color: sel ? ACCENT : "#fff", cursor: "pointer", textAlign: "center" }}>
                         <span style={{ display: "block", fontSize: 12, fontWeight: 950, marginBottom: 3 }}>{o.label}</span>
-                        <span style={{ display: "block", fontSize: 10, color: sel ? "rgba(107,191,184,0.82)" : "rgba(255,255,255,0.48)", fontWeight: 750 }}>{o.detail}</span>
+                        <span style={{ display: "block", fontSize: 10, color: sel ? "rgba(18,101,254,0.82)" : "rgba(255,255,255,0.48)", fontWeight: 750 }}>{o.detail}</span>
                       </button>
                     )
                   })}
                 </div>
-                {feedbackSaved && <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: 9, fontSize: 11, color: "rgba(107,191,184,0.92)", fontWeight: 800, textAlign: "center" }}>Feedback saved for future recommendations.</motion.div>}
+                {feedbackSaved && <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: 9, fontSize: 11, color: "rgba(18,101,254,0.92)", fontWeight: 800, textAlign: "center" }}>Feedback saved for future recommendations.</motion.div>}
               </motion.div>
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.58 }} style={{ borderRadius: 20, padding: 14, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", marginBottom: 18, textAlign: "left" }}>
                 <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.11em", marginBottom: 10 }}>SESSION NOTES</div>
@@ -753,7 +753,7 @@ export default function ExerciseSessionPage() {
                   }}
                 />
                 {noteSaved && (
-                  <motion.div initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: 6, fontSize: 11, color: "rgba(107,191,184,0.9)", fontWeight: 800 }}>
+                  <motion.div initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: 6, fontSize: 11, color: "rgba(18,101,254,0.9)", fontWeight: 800 }}>
                     Saved
                   </motion.div>
                 )}
@@ -787,7 +787,7 @@ export default function ExerciseSessionPage() {
                 </motion.div>
               )}
 
-              <button type="button" onClick={() => router.push("/workout")} style={{ width: "100%", border: "none", borderRadius: 16, padding: 15, background: ACCENT, color: "#fff", fontSize: 15, fontWeight: 950, cursor: "pointer", boxShadow: "0 12px 28px rgba(107,191,184,0.3)" }}>{t.continueLabel}</button>
+              <button type="button" onClick={() => router.push("/workout")} style={{ width: "100%", border: "none", borderRadius: 16, padding: 15, background: ACCENT, color: "#fff", fontSize: 15, fontWeight: 950, cursor: "pointer", boxShadow: "0 12px 28px rgba(18,101,254,0.3)" }}>{t.continueLabel}</button>
             </motion.div>
           </motion.div>
         )}
@@ -858,7 +858,7 @@ function RestTimerOverlay({
         transition={{ type: "spring", stiffness: 280, damping: 26 }}
         style={{
           background: "var(--panel)",
-          border: "1px solid rgba(107,191,184,0.28)",
+          border: "1px solid rgba(18,101,254,0.28)",
           borderRadius: 28,
           padding: "28px 24px 22px",
           width: "100%", maxWidth: 330,
@@ -879,7 +879,7 @@ function RestTimerOverlay({
         <div style={{ position: "relative", width: 148, height: 148 }}>
           <svg width={148} height={148} style={{ transform: "rotate(-90deg)" }}>
             {/* background track */}
-            <circle cx={74} cy={74} r={REST_RING_R} fill="none" stroke="rgba(107,191,184,0.12)" strokeWidth={8} />
+            <circle cx={74} cy={74} r={REST_RING_R} fill="none" stroke="rgba(18,101,254,0.12)" strokeWidth={8} />
             {/* progress arc */}
             <circle
               cx={74} cy={74} r={REST_RING_R}
@@ -922,7 +922,7 @@ function RestTimerOverlay({
               onClick={() => onChangeDuration(d)}
               style={{
                 border: total === d ? `1px solid ${ACCENT}` : "1px solid var(--border)",
-                background: total === d ? "rgba(107,191,184,0.14)" : "var(--surface-2)",
+                background: total === d ? "rgba(18,101,254,0.14)" : "var(--surface-2)",
                 color: total === d ? ACCENT : "var(--text-muted)",
                 borderRadius: 10, padding: "5px 11px",
                 fontSize: 11, fontWeight: 900,
@@ -955,8 +955,8 @@ function RestTimerOverlay({
             onClick={onAddTime}
             style={{
               flex: 1,
-              border: `1px solid rgba(107,191,184,0.35)`,
-              background: "rgba(107,191,184,0.1)",
+              border: `1px solid rgba(18,101,254,0.35)`,
+              background: "rgba(18,101,254,0.1)",
               color: ACCENT,
               borderRadius: 14, padding: "13px 0",
               fontSize: 13, fontWeight: 900, cursor: "pointer",

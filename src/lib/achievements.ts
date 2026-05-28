@@ -1,4 +1,4 @@
-// ── Achievement definitions ────────────────────────────────────────────────────
+﻿// ── Achievement definitions ────────────────────────────────────────────────────
 //
 // Each achievement has:
 //   type        — unique string key stored in UserAchievement.type
@@ -188,5 +188,5 @@ export const TIER_COLORS: Record<AchievementTier, { bg: string; border: string; 
   bronze:   { bg: "rgba(180,112,60,0.14)",  border: "rgba(180,112,60,0.35)",  color: "#b4703c" },
   silver:   { bg: "rgba(148,158,170,0.14)", border: "rgba(148,158,170,0.35)", color: "#8a9aa8" },
   gold:     { bg: "rgba(212,180,80,0.14)",  border: "rgba(212,180,80,0.35)",  color: "#c8a832" },
-  platinum: { bg: "rgba(107,191,184,0.14)", border: "rgba(107,191,184,0.35)", color: "#6bbfb8" },
+  platinum: { bg: "rgba(18,101,254,0.14)", border: "rgba(18,101,254,0.35)", color: "#1265fe" },
 }

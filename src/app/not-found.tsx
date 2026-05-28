@@ -1,11 +1,11 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 
 export default function NotFound() {
   return (
     <div style={{
       minHeight: "100vh",
       background: [
-        "radial-gradient(circle at 18% -8rem, rgba(107,191,184,0.16), transparent 28rem)",
+        "radial-gradient(circle at 18% -8rem, rgba(18,101,254,0.16), transparent 28rem)",
         "var(--bg)",
       ].join(", "),
       display: "flex",
@@ -18,7 +18,7 @@ export default function NotFound() {
       <div style={{
         fontSize: "72px",
         fontWeight: 900,
-        color: "rgba(107,191,184,0.18)",
+        color: "rgba(18,101,254,0.18)",
         lineHeight: 1,
         marginBottom: "16px",
         fontFamily: "var(--font-display)",

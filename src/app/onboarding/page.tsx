@@ -207,8 +207,8 @@ export default function OnboardingPage() {
     <div style={{
       minHeight: "100vh",
       background: [
-        "radial-gradient(circle at 18% -8rem, rgba(107,191,184,0.22), transparent 30rem)",
-        "radial-gradient(circle at 85% 65%, rgba(107,191,184,0.10), transparent 22rem)",
+        "radial-gradient(circle at 18% -8rem, rgba(18,101,254,0.22), transparent 30rem)",
+        "radial-gradient(circle at 85% 65%, rgba(18,101,254,0.10), transparent 22rem)",
         "var(--bg)",
       ].join(", "),
     }}>
