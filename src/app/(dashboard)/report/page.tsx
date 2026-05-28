@@ -13,6 +13,7 @@ import { getMuscleGroup } from "@/lib/exerciseData"
 import { getWeekId, formatLocalDate, toDateId, addDays, calculateLongestStreak } from "@/lib/dateUtils"
 import { ActivityHeatmap } from "@/components/ActivityHeatmap"
 import { MuscleRecovery } from "@/components/MuscleRecovery"
+import { updateWidget } from "@/lib/widgetBridge"
 import { estimateCalories } from "@/lib/calorieEstimate"
 import FlameIcon from "@/components/FlameIcon"
 import { ACCENT } from "@/lib/theme"
@@ -179,14 +180,19 @@ export default function ReportPage() {
           fetch("/api/hike"),
         ])
         if (logRes.ok) setLogs(await logRes.json())
-        if (streakRes.ok) { const d = await streakRes.json(); setStreak(d.streak ?? 0); setStreakFreezeArmed(d.streakFreezeArmed ?? false) }
+        let latestStreak = 0
+        let latestTokens = 0
+        if (streakRes.ok) { const d = await streakRes.json(); latestStreak = d.streak ?? 0; setStreak(latestStreak); setStreakFreezeArmed(d.streakFreezeArmed ?? false) }
         if (profileRes.ok) { const d = await profileRes.json(); if (d.workoutsPerWeek) setWorkoutsPerWeek(d.workoutsPerWeek) }
         if (tokenRes.ok) {
           const d = await tokenRes.json()
-          setFtBalance(d.balance ?? 0)
+          latestTokens = d.balance ?? 0
+          setFtBalance(latestTokens)
           setFtTxs(d.transactions ?? [])
           setFtBoostArmed(d.ftBoostArmed ?? false)
         }
+        // Push fresh data to Android home-screen widget (no-op on web / iOS)
+        updateWidget(latestStreak, latestTokens)
         if (hikeRes.ok) {
           const hikes: Array<{ distanceKm: number; durationMin: number }> = await hikeRes.json()
           if (hikes.length > 0) {
