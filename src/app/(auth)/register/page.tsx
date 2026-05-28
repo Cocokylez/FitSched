@@ -81,6 +81,7 @@ export default function RegisterPage() {
           flexDirection: "column",
         }}
       >
+        <img src="/logo.png" alt="FitSched" style={{ width: 60, height: 60, objectFit: "contain", marginBottom: 10 }} />
         <div className="brand-wordmark" style={{ fontSize: "34px", fontWeight: 900, color: "var(--text)" }}>{t.fitSched}</div>
         <div style={{ fontSize: "13px", color: "var(--text-muted)", marginTop: "6px" }}>{t.startJourney}</div>
       </motion.div>

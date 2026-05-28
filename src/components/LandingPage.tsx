@@ -467,14 +467,7 @@ function Navbar() {
     >
       {/* Brand */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{
-          width: 30, height: 30, borderRadius: 9,
-          background: `linear-gradient(135deg, ${ACCENT}, #4aaa9d)`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "0 2px 8px rgba(18,101,254,0.35)",
-        }}>
-          <Dumbbell size={15} color="#0d1f1e" strokeWidth={2.5} />
-        </div>
+        <img src="/logo.png" alt="FitSched" style={{ width: 30, height: 30, objectFit: "contain", borderRadius: 8 }} />
         <span style={{
           fontFamily: "var(--font-display)",
           fontSize: 16, fontWeight: 800, letterSpacing: "-0.03em",
@@ -863,13 +856,7 @@ function Footer() {
       flexWrap: "wrap", gap: 12,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-        <div style={{
-          width: 26, height: 26, borderRadius: 8,
-          background: `linear-gradient(135deg, ${ACCENT}, #4aaa9d)`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <Dumbbell size={13} color="#0d1f1e" strokeWidth={2.5} />
-        </div>
+        <img src="/logo.png" alt="FitSched" style={{ width: 26, height: 26, objectFit: "contain", borderRadius: 7, opacity: 0.72 }} />
         <span style={{
           fontFamily: "var(--font-display)",
           fontSize: 14, fontWeight: 800, letterSpacing: "-0.02em",
