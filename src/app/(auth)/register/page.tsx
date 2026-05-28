@@ -7,6 +7,7 @@ import { motion } from "framer-motion"
 import { useLanguage } from "@/context/LanguageContext"
 import { AuthTopControls } from "@/components/AuthTopControls"
 import { AuthGoogleButton } from "@/components/AuthGoogleButton"
+import { createGuestAndSignIn } from "@/app/actions/guest"
 import Link from "next/link"
 
 const fadeIn = {
@@ -53,10 +54,7 @@ export default function RegisterPage() {
     setGuestLoading(true)
     setError("")
     try {
-      const res = await fetch("/api/auth/guest", { method: "POST" })
-      if (!res.ok) throw new Error()
-      const { email, password } = await res.json()
-      await signIn("credentials", { email, password, callbackUrl: "/onboarding" })
+      await createGuestAndSignIn()
     } catch {
       setError("Could not start guest session. Please try again.")
       setGuestLoading(false)
