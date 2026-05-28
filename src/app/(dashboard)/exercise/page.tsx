@@ -81,7 +81,8 @@ export default function ExerciseSessionPage() {
   const [fitTokenReward, setFitTokenReward] = useState<FitTokenReward | null>(null)
   const [checkingLock, setCheckingLock] = useState(true)
   const [locked, setLocked] = useState(false)
-  const [lockReason, setLockReason] = useState<"completed" | "date">("completed")
+  const [lockReason, setLockReason] = useState<"completed" | "date" | "quit">("completed")
+  const [quitConfirm, setQuitConfirm] = useState(false)
   const [streakDay, setStreakDay] = useState(1)
   const [savedWorkoutLogId, setSavedWorkoutLogId] = useState<string | null>(null)
   const [sessionFeedback, setSessionFeedback] = useState<SessionFeedback | null>(null)
@@ -89,6 +90,9 @@ export default function ExerciseSessionPage() {
   const [verifySettled, setVerifySettled] = useState(false)
   const { state: verifyState, start: startVerify, getResult } = useWorkoutVerification()
   const sessionTokenRef = useRef<string | null>(null)
+  const workoutRef      = useRef<ActiveWorkout | null>(null)
+  const sessionDoneRef  = useRef(false)   // true once celebration fires
+  const quitRef         = useRef(false)   // true once user explicitly quits
   const [restSeconds, setRestSeconds] = useState<number | null>(null)
   const [restDuration, setRestDuration] = useState(60)
   const [workoutNote, setWorkoutNote] = useState("")
@@ -106,7 +110,21 @@ export default function ExerciseSessionPage() {
       let parsed: ActiveWorkout | null = null
       try { const raw = sessionStorage.getItem("fitsched-active-workout"); if (raw) parsed = JSON.parse(raw) as ActiveWorkout } catch {}
       if (!active) return
+      // Check if today's session was already abandoned
+      if (parsed?.date) {
+        try {
+          const abandonedDate = localStorage.getItem("fitsched-session-abandoned-date")
+          if (abandonedDate === parsed.date) {
+            setLockReason("quit")
+            setLocked(true)
+            sessionStorage.removeItem("fitsched-active-workout")
+            if (active) setCheckingLock(false)
+            return
+          }
+        } catch {}
+      }
       setWorkout(parsed)
+      workoutRef.current = parsed
       if (!parsed?.date) { setCheckingLock(false); return }
       try {
         const response = await fetch(`/api/workout-log?date=${encodeURIComponent(parsed.date)}`)
@@ -170,9 +188,43 @@ export default function ExerciseSessionPage() {
     return () => window.clearTimeout(t)
   }, [restSeconds])
 
+  // Abandon session on tab close or SPA navigation away (if not finished/quit explicitly)
+  useEffect(() => {
+    const markAbandoned = () => {
+      if (!sessionDoneRef.current && !quitRef.current && workoutRef.current?.date) {
+        try { localStorage.setItem("fitsched-session-abandoned-date", workoutRef.current.date) } catch {}
+      }
+    }
+    window.addEventListener("beforeunload", markAbandoned)
+    return () => {
+      window.removeEventListener("beforeunload", markAbandoned)
+      markAbandoned() // fires on SPA unmount too
+    }
+  }, [])
+
   const totalSets = useMemo(() => workout?.exercises.reduce((s, e) => s + e.sets, 0) ?? 0, [workout])
   const doneSets = useMemo(() => Object.values(completedSets).reduce((s, v) => s + v, 0), [completedSets])
   const allDone = Boolean(workout && doneSets === totalSets && totalSets > 0)
+
+  // Index of the first exercise that still has sets to complete
+  const activeExIdx = useMemo(() => {
+    if (!workout) return 0
+    for (let i = 0; i < workout.exercises.length; i++) {
+      if ((completedSets[i] || 0) < workout.exercises[i].sets) return i
+    }
+    return workout.exercises.length // all done
+  }, [workout, completedSets])
+
+  function handleQuit() {
+    quitRef.current = true
+    try {
+      if (workoutRef.current?.date) {
+        localStorage.setItem("fitsched-session-abandoned-date", workoutRef.current.date)
+      }
+      sessionStorage.removeItem("fitsched-active-workout")
+    } catch {}
+    router.push("/workout")
+  }
 
   function completeSet(exIdx: number) {
     if (!workout) return
@@ -255,7 +307,10 @@ export default function ExerciseSessionPage() {
         window.dispatchEvent(new Event("fitsched:tokens-updated"))
         window.dispatchEvent(new Event("fitsched:workout-completed"))
         sessionStorage.removeItem("fitsched-active-workout")
+        // Clear any abandoned flag for today (they finished properly)
+        try { localStorage.removeItem("fitsched-session-abandoned-date") } catch {}
         try { const sr = await fetch("/api/streak"); if (sr.ok) { const sd = await sr.json(); setStreakDay(Number(sd.streak) || 1) } } catch {}
+        sessionDoneRef.current = true
         setCelebrating(true)
         return
       }
@@ -272,9 +327,15 @@ export default function ExerciseSessionPage() {
     return (
       <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)", padding: "24px 16px" }}>
         <div style={{ maxWidth: 520, margin: "0 auto", background: "var(--surface)", border: "1px solid rgba(18,101,254,0.32)", borderRadius: 20, padding: 24, textAlign: "center" }}>
-          <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(18,101,254,0.14)", color: ACCENT, display: "grid", placeItems: "center", margin: "0 auto 14px", fontSize: 16, fontWeight: 950 }}>OK</div>
-          <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 8 }}>{lockReason === "date" ? t.todayWorkoutOnlyTitle : t.workoutAlreadyComplete}</div>
-          <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 18, lineHeight: 1.5 }}>{lockReason === "date" ? t.todayWorkoutOnlyBody : t.workoutAlreadyCompleteBody}</div>
+          <div style={{ width: 52, height: 52, borderRadius: "50%", background: lockReason === "quit" ? "rgba(255,80,80,0.12)" : "rgba(18,101,254,0.14)", color: lockReason === "quit" ? "#ff5050" : ACCENT, display: "grid", placeItems: "center", margin: "0 auto 14px", fontSize: 22 }}>
+            {lockReason === "quit" ? "✗" : "✓"}
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 8 }}>
+            {lockReason === "date" ? t.todayWorkoutOnlyTitle : lockReason === "quit" ? "Session Lost" : t.workoutAlreadyComplete}
+          </div>
+          <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 18, lineHeight: 1.5 }}>
+            {lockReason === "date" ? t.todayWorkoutOnlyBody : lockReason === "quit" ? "You left today's workout before finishing. No FitTokens earned today — come back tomorrow for a fresh session." : t.workoutAlreadyCompleteBody}
+          </div>
           <button onClick={() => router.push("/workout")} style={{ border: "none", borderRadius: 14, padding: "13px 18px", background: ACCENT, color: "#fff", fontWeight: 900, cursor: "pointer" }}>{t.backToWorkout}</button>
         </div>
       </div>
@@ -297,7 +358,7 @@ export default function ExerciseSessionPage() {
     <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)", display: "flex", flexDirection: "column" }}>
       {/* W1 Header — breadcrumb style */}
       <div style={{ padding: "14px 16px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <button type="button" onClick={() => router.push("/workout")} style={{ display: "flex", alignItems: "center", gap: 8, border: "none", background: "transparent", cursor: "pointer", padding: 0 }}>
+        <button type="button" onClick={() => setQuitConfirm(true)} style={{ display: "flex", alignItems: "center", gap: 8, border: "none", background: "transparent", cursor: "pointer", padding: 0 }}>
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Today&apos;s workout</span>
         </button>
@@ -349,6 +410,8 @@ export default function ExerciseSessionPage() {
           const category = getCategory(ex.name, i)
           const catStyle = CATEGORY_COLORS[category] || CATEGORY_COLORS.CORE
           const allSetsDone = done >= ex.sets
+          const isActive  = i === activeExIdx
+          const isFuture  = i > activeExIdx
 
           return (
             <motion.div
@@ -357,17 +420,23 @@ export default function ExerciseSessionPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06, duration: 0.28, ease: "easeOut" }}
               style={{
-                background: allSetsDone ? "rgba(18,101,254,0.04)" : "var(--panel)",
-                borderTop: allSetsDone ? "1px solid rgba(18,101,254,0.28)" : "1px solid var(--border)",
-                borderRight: allSetsDone ? "1px solid rgba(18,101,254,0.28)" : "1px solid var(--border)",
-                borderBottom: allSetsDone ? "1px solid rgba(18,101,254,0.28)" : "1px solid var(--border)",
-                borderLeft: `3px solid ${catStyle.color}`,
+                background: allSetsDone ? "rgba(18,101,254,0.04)" : isActive ? "var(--panel)" : "var(--panel)",
+                borderTop: allSetsDone ? "1px solid rgba(18,101,254,0.28)" : isActive ? "1px solid rgba(18,101,254,0.18)" : "1px solid var(--border)",
+                borderRight: allSetsDone ? "1px solid rgba(18,101,254,0.28)" : isActive ? "1px solid rgba(18,101,254,0.18)" : "1px solid var(--border)",
+                borderBottom: allSetsDone ? "1px solid rgba(18,101,254,0.28)" : isActive ? "1px solid rgba(18,101,254,0.18)" : "1px solid var(--border)",
+                borderLeft: `3px solid ${allSetsDone ? catStyle.color : isActive ? catStyle.color : "var(--border)"}`,
                 borderRadius: 20,
                 marginBottom: 12,
                 overflow: "hidden",
-                transition: "border-color 0.25s, background 0.25s",
+                transition: "border-color 0.25s, background 0.25s, opacity 0.25s",
+                opacity: isFuture ? 0.38 : 1,
+                pointerEvents: isFuture ? "none" : "auto",
               }}
             >
+              {/* "UP NEXT" label for the exercise right after active */}
+              {i === activeExIdx + 1 && !allDone && (
+                <div style={{ padding: "6px 14px 0", fontSize: 9, fontWeight: 900, letterSpacing: "0.14em", color: "var(--text-muted)", textTransform: "uppercase" }}>Up next</div>
+              )}
               {/* ── Card header: category · muscle group ── exercise # + sets×reps + done check */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px 0 13px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
@@ -436,17 +505,17 @@ export default function ExerciseSessionPage() {
                   <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
                     {Array.from({ length: ex.sets }, (_, setIdx) => {
                       const setDone = setIdx < done
-                      const isCurrent = setIdx === done
+                      const isCurrent = setIdx === done && isActive
                       return (
                         <motion.button
                           key={setIdx}
                           type="button"
-                          whileTap={{ scale: 0.9 }}
+                          whileTap={isCurrent ? { scale: 0.9 } : {}}
                           onClick={() => isCurrent ? completeSet(i) : undefined}
                           style={{
                             flex: 1,
-                            border: setDone ? `1px solid ${catStyle.color}55` : isCurrent ? `1px solid ${catStyle.color}66` : "1px solid var(--border)",
-                            background: setDone ? `${catStyle.color}22` : isCurrent ? `${catStyle.color}11` : "var(--surface-2)",
+                            border: setDone ? `1px solid ${catStyle.color}55` : isCurrent ? `1px solid ${catStyle.color}88` : "1px solid var(--border)",
+                            background: setDone ? `${catStyle.color}22` : isCurrent ? `${catStyle.color}18` : "var(--surface-2)",
                             color: setDone ? catStyle.color : isCurrent ? catStyle.color : "var(--text-muted)",
                             borderRadius: 10,
                             padding: "7px 4px",
@@ -462,7 +531,9 @@ export default function ExerciseSessionPage() {
                         >
                           {setDone
                             ? <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            : <span>{setIdx + 1}</span>
+                            : isCurrent
+                              ? <motion.span animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}>{setIdx + 1}</motion.span>
+                              : <span>{setIdx + 1}</span>
                           }
                         </motion.button>
                       )
@@ -631,6 +702,49 @@ export default function ExerciseSessionPage() {
             </motion.div>
           )
         })()}
+      </AnimatePresence>
+
+      {/* Quit confirmation overlay */}
+      <AnimatePresence>
+        {quitConfirm && (
+          <motion.div
+            key="quit-confirm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.72)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 16px max(28px, calc(env(safe-area-inset-bottom) + 20px))" }}
+          >
+            <motion.div
+              initial={{ y: 60, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 60, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 320, damping: 30 }}
+              style={{ width: "100%", maxWidth: 480, background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 28, padding: "26px 22px 22px", boxShadow: "0 30px 80px rgba(0,0,0,0.5)" }}
+            >
+              <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,80,80,0.12)", border: "1px solid rgba(255,80,80,0.28)", color: "#ff5050", fontSize: 20, display: "grid", placeItems: "center", margin: "0 auto 16px" }}>✗</div>
+              <div style={{ fontSize: 20, fontWeight: 950, color: "var(--text)", textAlign: "center", marginBottom: 8 }}>Quit workout?</div>
+              <div style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", lineHeight: 1.55, marginBottom: 22 }}>
+                You only get <strong style={{ color: "var(--text)" }}>one chance per day</strong>. Leaving now means no FitTokens today and no re-entry until tomorrow.
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setQuitConfirm(false)}
+                  style={{ flex: 1, border: "1px solid var(--border)", background: "transparent", color: "var(--text)", borderRadius: 16, padding: "14px 0", fontSize: 14, fontWeight: 900, cursor: "pointer" }}
+                >
+                  Keep going
+                </button>
+                <button
+                  type="button"
+                  onClick={handleQuit}
+                  style={{ flex: 1, border: "none", background: "rgba(255,80,80,0.18)", color: "#ff5050", borderRadius: 16, padding: "14px 0", fontSize: 14, fontWeight: 900, cursor: "pointer" }}
+                >
+                  Quit & lose it
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {/* Rest timer overlay */}
