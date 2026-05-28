@@ -229,8 +229,8 @@ export async function POST(req: Request) {
       const minExpectedSec = exercises.reduce((sum, ex) => sum + ex.sets * 25, 0)
 
       if (serverElapsedSec < 60) {
-        // Under 1 minute total — near-certain instant-complete cheat
-        verificationScore = Math.min(verificationScore, 0.1)
+        // Under 1 minute — reduce but keep above 0.25 so user still earns 50%
+        verificationScore = Math.min(verificationScore, 0.26)
       } else if (minExpectedSec > 0 && serverElapsedSec < minExpectedSec * 0.5) {
         // Finished in less than half the minimum plausible time for this exercise set
         verificationScore = Math.min(verificationScore, 0.3)

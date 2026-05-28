@@ -408,7 +408,7 @@ export default function ExerciseSessionPage() {
       <div style={{ margin: "0 16px 14px", background: "rgba(18,101,254,0.08)", border: "1px solid rgba(18,101,254,0.28)", borderRadius: 14, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 700, color: ACCENT }}>
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          Finish to earn +0.2 FT
+          Finish to earn +1.0 FT
         </div>
         <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>
           {doneSets} of {totalSets}
@@ -823,7 +823,7 @@ export default function ExerciseSessionPage() {
               </motion.div>
               <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.50 }} style={{ borderRadius: 18, padding: 16, background: "linear-gradient(135deg, rgba(18,101,254,0.2), rgba(18,101,254,0.06))", border: "1px solid rgba(18,101,254,0.32)", marginBottom: 18 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.12em" }}>{t.receiveFitToken}</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.12em" }}>YOU RECEIVED</div>
                   {fitTokenReward?.boosted && (
                     <motion.span
                       initial={{ scale: 0 }}
@@ -836,7 +836,20 @@ export default function ExerciseSessionPage() {
                     </motion.span>
                   )}
                 </div>
-                <div style={{ fontSize: 34, fontWeight: 950, color: ACCENT, fontVariantNumeric: "tabular-nums" }}>+{Number(fitTokenReward?.amount ?? fitTokenReward?.totalAwarded ?? 1).toFixed(2)} FT</div>
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 18, delay: 0.55 }}
+                  style={{ fontSize: 44, fontWeight: 950, color: ACCENT, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}
+                >
+                  +{fitTokenReward ? Number(fitTokenReward.amount ?? 0).toFixed(2) : "—"} FT
+                </motion.div>
+                {fitTokenReward && Number(fitTokenReward.amount) < 1 && Number(fitTokenReward.amount) > 0 && (
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 6 }}>Partial reward — tap Verify next time for full +1.0 FT</div>
+                )}
+                {fitTokenReward && Number(fitTokenReward.amount) === 0 && (
+                  <div style={{ fontSize: 11, color: "rgba(255,80,80,0.8)", marginTop: 6 }}>No tokens this session — workout was too fast to verify</div>
+                )}
               </motion.div>
 
               {/* PRs section */}
