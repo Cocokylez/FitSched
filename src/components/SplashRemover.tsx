@@ -7,7 +7,7 @@ import { useEffect } from "react"
 // this component dismisses it once the app is actually ready to show content.
 // A minimum display time (700ms) prevents an invisible flash on super-fast loads.
 
-const MIN_MS = 700   // always visible for at least this long
+const MIN_MS = 3000  // always visible for at least this long
 const FADE_MS = 380  // fade-out duration (must match the CSS transition below)
 
 export function SplashRemover() {
