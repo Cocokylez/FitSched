@@ -415,6 +415,14 @@ export default function ExerciseSessionPage() {
         </div>
       </div>
 
+      {/* One-shot warning banner */}
+      <div style={{ margin: "0 16px 14px", background: "rgba(255,160,0,0.08)", border: "1px solid rgba(255,160,0,0.32)", borderRadius: 14, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ffa000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#ffa000", lineHeight: 1.45 }}>
+          One shot only — if you exit or quit, you <strong>cannot return</strong> and lose today&apos;s FitToken reward.
+        </span>
+      </div>
+
       {/* Verification prompt */}
       {!verifySettled && (
         <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} style={{ margin: "0 16px 14px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "12px 14px", display: "flex", alignItems: "center", gap: 12 }}>
