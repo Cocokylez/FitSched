@@ -8,7 +8,6 @@ import { NativeShell } from "@/components/NativeShell";
 import { SwRegistration } from "@/components/SwRegistration";
 import { auth } from "@/lib/auth";
 import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/react";
 
 const APP_URL = "https://fitsched.vercel.app";
 
@@ -85,7 +84,6 @@ export default async function RootLayout({
           </SessionProvider>
         </ThemeProvider>
         <Analytics />
-        <SpeedInsights />
       </body>
     </html>
   );
