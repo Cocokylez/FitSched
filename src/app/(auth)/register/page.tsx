@@ -56,9 +56,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/guest", { method: "POST" })
       if (!res.ok) throw new Error()
       const { email, password } = await res.json()
-      const result = await signIn("credentials", { email, password, redirect: false })
-      if (result?.error) throw new Error()
-      window.location.href = "/onboarding"
+      await signIn("credentials", { email, password, callbackUrl: "/onboarding" })
     } catch {
       setError("Could not start guest session. Please try again.")
       setGuestLoading(false)
