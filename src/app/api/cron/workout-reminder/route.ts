@@ -50,32 +50,33 @@ export async function GET(req: Request) {
     const toRemind = userIds.filter((id) => !doneToday.has(id))
     if (toRemind.length === 0) return NextResponse.json({ sent: 0 })
 
-    // Fetch streak info to personalise the message
-    const streaks = await db.streak.findMany({
-      where: { userId: { in: toRemind } },
-      select: { userId: true, current: true },
+    // Personalise by last activity date — users who haven't worked out in a while
+    // get a slightly different nudge
+    const recentLogs = await db.workoutSessionLog.findMany({
+      where: {
+        userId: { in: toRemind },
+        completedAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+      },
+      select: { userId: true },
+      distinct: ["userId"],
     })
-    const streakMap = new Map(streaks.map((s) => [s.userId, s.current]))
+    const activeRecently = new Set(recentLogs.map((r) => r.userId))
+
+    const messages = [
+      { title: "Time to move 💪", body: "Your workout is waiting. Let's get it done!" },
+      { title: "Stay consistent 🔥", body: "Every session counts. Log one today!" },
+      { title: "You've got this 🏃", body: "Don't let today slip by — a quick workout is all it takes." },
+    ]
 
     let sent = 0
     await Promise.allSettled(
       toRemind.map(async (userId) => {
-        const streak = streakMap.get(userId) ?? 0
+        const isActive = activeRecently.has(userId)
+        const msg = isActive
+          ? { title: "Keep the streak alive 🔥", body: "You've been on a roll — don't stop now!" }
+          : messages[Math.floor(Math.random() * messages.length)]
 
-        let title = "Time to move 💪"
-        let body: string
-
-        if (streak >= 7) {
-          body = `${streak}-day streak on the line — don't break the chain!`
-        } else if (streak >= 3) {
-          body = `You're on a ${streak}-day streak. Keep it going today!`
-        } else if (streak === 0) {
-          body = "Start fresh today — every streak begins with one workout."
-        } else {
-          body = "Your workout is waiting. Let's get it done!"
-        }
-
-        await sendPushToUser(userId, { title, body, url: "/workout" })
+        await sendPushToUser(userId, { title: msg.title, body: msg.body, url: "/workout" })
         sent++
       })
     )
