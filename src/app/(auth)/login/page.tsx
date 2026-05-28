@@ -62,8 +62,7 @@ export default function LoginPage() {
       const { email, password } = await res.json()
       const result = await signIn('credentials', { email, password, redirect: false })
       if (result?.error) throw new Error()
-      router.refresh()
-      router.push('/onboarding')
+      window.location.href = '/onboarding'
     } catch {
       setError('Could not start guest session. Please try again.')
       setGuestLoading(false)
