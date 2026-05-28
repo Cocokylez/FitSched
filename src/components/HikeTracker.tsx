@@ -81,12 +81,13 @@ function fmtRouteTime(sec: number): string {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 type Props = {
-  onFinish:        (result: TrackerResult) => void
-  onClose:         () => void
+  onFinish:         (result: TrackerResult) => void
+  onClose:          () => void
   disableNavEvent?: boolean
+  onPhaseChange?:   (phase: "lobby" | "active") => void
 }
 
-export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
+export function HikeTracker({ onFinish, onClose, disableNavEvent, onPhaseChange }: Props) {
   // Leaflet refs
   const mapDivRef    = useRef<HTMLDivElement>(null)
   const mapRef       = useRef<L.Map | null>(null)
@@ -144,6 +145,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
   function setPhase(p: "lobby" | "active") {
     phaseRef.current = p
     setPhaseState(p)
+    onPhaseChange?.(p)
   }
 
   function setMode(m: "track" | "plan") {
