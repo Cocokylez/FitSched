@@ -497,6 +497,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
 
   function handleBeginHike() {
     beginPressedRef.current = true
+    setTrackStatus("acquiring")   // instant feedback — no blank gap while permission promise resolves
     setPhase("active")
     enableGPS()
   }
@@ -612,7 +613,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent }: Props) {
         )}
 
         {/* TRACK: acquiring */}
-        {mode === "track" && trackStatus === "acquiring" && (
+        {mode === "track" && trackStatus === "acquiring" && phase === "active" && (
           <div style={{
             position: "absolute", inset: 0, zIndex: 999,
             display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
