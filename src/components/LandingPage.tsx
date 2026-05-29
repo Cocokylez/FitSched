@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react"
 import { motion, useInView, AnimatePresence } from "framer-motion"
 import {
   ArrowRight, Flame, Zap, Navigation, BarChart2,
-  Calendar, Dumbbell, ChevronDown, Globe2,
+  Calendar, Dumbbell, ChevronDown, Globe2, ChevronLeft,
 } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
 import { ACCENT, ACCENT_DIM, ACCENT_BD } from "@/lib/theme"
@@ -29,15 +29,15 @@ function FadeIn({ children, delay = 0, style }: {
   )
 }
 
-// ── App UI mockup (hero right column) ─────────────────────────────────────────
-const MOCKUP_DAYS = ["M", "T", "W", "T", "F", "S", "S"]
-const MOCKUP_EX   = [
+// ── Phone Screen 1: Schedule ───────────────────────────────────────────────────
+const SCHED_DAYS = ["M", "T", "W", "T", "F", "S", "S"]
+const SCHED_EX = [
   { name: "Bench Press",    sets: 4, reps: 8,  done: true  },
   { name: "Overhead Press", sets: 3, reps: 10, done: true  },
   { name: "Cable Flyes",    sets: 3, reps: 12, done: false },
   { name: "Lat. Raises",    sets: 3, reps: 15, done: false },
 ]
-const MOCKUP_MU = [
+const SCHED_MU = [
   { name: "Chest", color: "#ef4444" },
   { name: "Back",  color: "#10b981" },
   { name: "Legs",  color: "#f59e0b" },
@@ -45,133 +45,420 @@ const MOCKUP_MU = [
   { name: "Core",  color: "#10b981" },
 ]
 
-function AppMockup() {
+function ScheduleScreen() {
   return (
-    <div style={{ position: "relative" }}>
-      {/* Ambient glow */}
+    <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 7, height: "100%" }}>
+      {/* Topbar */}
       <div style={{
-        position: "absolute", top: "5%", left: "10%", width: "80%", height: "80%",
-        background: `radial-gradient(circle, ${ACCENT_DIM} 0%, transparent 70%)`,
-        filter: "blur(40px)", pointerEvents: "none",
-      }} />
-
-      <motion.div
-        initial={{ opacity: 0, y: 24, scale: 0.96 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.85, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-        style={{
-          position: "relative",
-          borderRadius: 28,
-          border: "1px solid var(--border)",
-          background: "linear-gradient(160deg, rgba(255,255,255,0.045) 0%, transparent 50%), var(--panel)",
-          boxShadow: "0 32px 96px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.055)",
-          padding: 14, overflow: "hidden",
-        }}
-      >
-        {/* Top edge shine */}
-        <div style={{
-          position: "absolute", top: 0, left: "15%", right: "15%", height: 1,
-          background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent)",
-          pointerEvents: "none",
-        }} />
-
-        {/* App topbar */}
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "10px 14px", borderRadius: 22,
-          border: "1px solid var(--border)",
-          background: "linear-gradient(180deg, rgba(255,255,255,0.032), transparent), color-mix(in srgb, var(--panel) 94%, transparent)",
-          boxShadow: "var(--shadow)", marginBottom: 12,
-          backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" as any,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <img src="/logo.png" alt="" style={{ width: 22, height: 22, borderRadius: 7, objectFit: "contain" }} />
-            <span style={{ fontFamily: "var(--font-display)", fontSize: 13, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.03em" }}>FitSched</span>
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "7px 10px", borderRadius: 16,
+        border: "1px solid var(--border)",
+        background: "rgba(255,255,255,0.04)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <img src="/logo.png" alt="" style={{ width: 18, height: 18, borderRadius: 5, objectFit: "contain" }} />
+          <span style={{ fontFamily: "var(--font-display)", fontSize: 11, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.03em" }}>FitSched</span>
+        </div>
+        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 3, padding: "3px 7px", borderRadius: 999, background: FT_DIM, border: `1px solid ${FT_BD}` }}>
+            <div className="streak-flame" style={{ width: 8, height: 11 }} />
+            <span style={{ fontSize: 9, fontWeight: 900, color: FT_ORANGE }}>7</span>
           </div>
-          <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 9px", borderRadius: 999, background: FT_DIM, border: `1px solid ${FT_BD}` }}>
-              <div className="streak-flame" style={{ width: 10, height: 13 }} />
-              <span style={{ fontSize: 11, fontWeight: 900, color: FT_ORANGE }}>7</span>
-            </div>
-            <div style={{ padding: "4px 9px", borderRadius: 999, background: ACCENT_DIM, border: `1px solid ${ACCENT_BD}` }}>
-              <span style={{ fontSize: 11, fontWeight: 900, color: ACCENT }}>14.2 FT</span>
-            </div>
+          <div style={{ padding: "3px 7px", borderRadius: 999, background: ACCENT_DIM, border: `1px solid ${ACCENT_BD}` }}>
+            <span style={{ fontSize: 9, fontWeight: 900, color: ACCENT }}>14.2 FT</span>
           </div>
         </div>
+      </div>
 
-        {/* Day strip */}
-        <div style={{ display: "flex", gap: 3, marginBottom: 12 }}>
-          {MOCKUP_DAYS.map((d, i) => (
+      {/* Day strip */}
+      <div style={{ display: "flex", gap: 2 }}>
+        {SCHED_DAYS.map((d, i) => (
+          <div key={i} style={{
+            flex: 1, textAlign: "center", padding: "5px 1px", borderRadius: 10,
+            background: i === 2 ? ACCENT : "transparent",
+            border: `1px solid ${i === 2 ? ACCENT : "var(--border)"}`,
+          }}>
+            <div style={{ fontSize: 8, fontWeight: 800, color: i === 2 ? "#fff" : "var(--text-muted)" }}>{d}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Workout card */}
+      <div style={{
+        borderRadius: 16, border: "1px solid var(--border)",
+        background: "rgba(255,255,255,0.026)", padding: 10, flex: 1,
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+          <div>
+            <div style={{ fontSize: 7, fontWeight: 800, color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 2 }}>Push Day · Today</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 13, fontWeight: 900, color: "var(--text)", letterSpacing: "-0.03em" }}>Chest & Shoulders</div>
+          </div>
+          <div style={{ padding: "3px 8px", borderRadius: 999, background: ACCENT_DIM, border: `1px solid ${ACCENT_BD}` }}>
+            <span style={{ fontSize: 8, fontWeight: 900, color: ACCENT }}>+1.0 FT</span>
+          </div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {SCHED_EX.map((ex, i) => (
             <div key={i} style={{
-              flex: 1, textAlign: "center", padding: "7px 2px", borderRadius: 14,
-              background: i === 2 ? ACCENT : "transparent",
-              border: `1px solid ${i === 2 ? ACCENT : "var(--border)"}`,
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "5px 8px", borderRadius: 8,
+              background: ex.done ? "rgba(16,185,129,0.06)" : "var(--surface-2)",
+              border: `1px solid ${ex.done ? "rgba(16,185,129,0.14)" : "transparent"}`,
             }}>
-              <div style={{ fontSize: 9, fontWeight: 800, color: i === 2 ? "#fff" : "var(--text-muted)" }}>{d}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{
+                  width: 11, height: 11, borderRadius: 3, flexShrink: 0,
+                  background: ex.done ? "#10b981" : "var(--border)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  {ex.done && (
+                    <svg width="6" height="6" viewBox="0 0 8 8" fill="none">
+                      <path d="M1.5 4L3.5 6L6.5 2" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </div>
+                <span style={{ fontSize: 9, color: ex.done ? "var(--text-muted)" : "var(--text)", fontWeight: 600 }}>{ex.name}</span>
+              </div>
+              <span style={{ fontSize: 8, fontWeight: 700, color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>{ex.sets}×{ex.reps}</span>
             </div>
           ))}
         </div>
+      </div>
 
-        {/* Workout card */}
-        <div style={{
-          borderRadius: 20, border: "1px solid var(--border)",
-          background: "linear-gradient(180deg, rgba(255,255,255,0.026), transparent 46%), var(--panel)",
-          boxShadow: "var(--shadow)", padding: 13, marginBottom: 10,
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 11 }}>
-            <div>
-              <div style={{ fontSize: 9, fontWeight: 800, color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 3 }}>Push Day · Today</div>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 900, color: "var(--text)", letterSpacing: "-0.03em" }}>Chest & Shoulders</div>
+      {/* Recovery strip */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 8,
+        padding: "7px 10px", borderRadius: 12,
+        background: "var(--surface-2)", border: "1px solid var(--border)",
+      }}>
+        <span style={{ fontSize: 7, fontWeight: 800, color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", flexShrink: 0 }}>Recovery</span>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          {SCHED_MU.map((m, i) => (
+            <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: m.color, boxShadow: `0 0 4px ${m.color}55` }} />
+              <span style={{ fontSize: 7, color: "var(--text-muted)", fontWeight: 700 }}>{m.name}</span>
             </div>
-            <div style={{ padding: "4px 10px", borderRadius: 999, background: ACCENT_DIM, border: `1px solid ${ACCENT_BD}` }}>
-              <span style={{ fontSize: 10, fontWeight: 900, color: ACCENT }}>+1.0 FT</span>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Phone Screen 2: Active Workout ─────────────────────────────────────────────
+const ACTIVE_EXES = ["Bench Press", "Overhead Press", "Cable Flyes"]
+const TOTAL_SETS = 4
+
+function ActiveScreen() {
+  const [set, setSet] = useState(1)
+  const [exIdx, setExIdx] = useState(0)
+  const [verified, setVerified] = useState(false)
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setSet(s => {
+        if (s < TOTAL_SETS) return s + 1
+        setExIdx(e => (e + 1) % ACTIVE_EXES.length)
+        return 1
+      })
+    }, 900)
+    return () => clearInterval(t)
+  }, [])
+
+  useEffect(() => {
+    setVerified(false)
+    const t = setTimeout(() => setVerified(true), 380)
+    return () => clearTimeout(t)
+  }, [set, exIdx])
+
+  return (
+    <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 10, height: "100%" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <ChevronLeft size={13} strokeWidth={2.5} color="var(--text-muted)" />
+        <AnimatePresence mode="wait">
+          <motion.span
+            key={exIdx}
+            initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }}
+            transition={{ duration: 0.2 }}
+            style={{ fontFamily: "var(--font-display)", fontSize: 13, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.02em" }}
+          >
+            {ACTIVE_EXES[exIdx]}
+          </motion.span>
+        </AnimatePresence>
+      </div>
+
+      {/* Big set counter */}
+      <div style={{ textAlign: "center", paddingTop: 4 }}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`${exIdx}-${set}`}
+            initial={{ opacity: 0, scale: 0.65, y: -14 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 1.2, y: 14 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div style={{
+              fontFamily: "var(--font-display)", fontSize: 80, fontWeight: 900, lineHeight: 1,
+              color: "var(--text)", letterSpacing: "-0.04em", fontVariantNumeric: "tabular-nums",
+            }}>
+              {set}
             </div>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            {MOCKUP_EX.map((ex, i) => (
-              <div key={i} style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "7px 10px", borderRadius: 11,
-                background: ex.done ? "rgba(16,185,129,0.06)" : "var(--surface-2)",
-                border: `1px solid ${ex.done ? "rgba(16,185,129,0.14)" : "transparent"}`,
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{
-                    width: 14, height: 14, borderRadius: 4, flexShrink: 0,
-                    background: ex.done ? "#10b981" : "var(--border)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>
-                    {ex.done && (
-                      <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                        <path d="M1.5 4L3.5 6L6.5 2" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    )}
-                  </div>
-                  <span style={{ fontSize: 11, color: ex.done ? "var(--text-muted)" : "var(--text)", fontWeight: 600 }}>{ex.name}</span>
-                </div>
-                <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>{ex.sets}×{ex.reps}</span>
-              </div>
-            ))}
-          </div>
+          </motion.div>
+        </AnimatePresence>
+        <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700, marginTop: 2 }}>
+          of {TOTAL_SETS} sets · 8 reps
         </div>
 
-        {/* Muscle recovery strip */}
+        {/* Set dots */}
+        <div style={{ display: "flex", gap: 5, justifyContent: "center", marginTop: 12 }}>
+          {Array.from({ length: TOTAL_SETS }).map((_, i) => (
+            <div key={i} style={{
+              width: i < set ? 22 : 7, height: 6, borderRadius: 3,
+              background: i < set ? ACCENT : "var(--border)",
+              transition: "all 0.3s ease",
+            }} />
+          ))}
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div style={{ background: "var(--surface-2)", borderRadius: 6, height: 4, overflow: "hidden", margin: "0 2px" }}>
+        <motion.div
+          animate={{ width: `${(set / TOTAL_SETS) * 100}%` }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          style={{ height: "100%", background: ACCENT, borderRadius: 6 }}
+        />
+      </div>
+
+      {/* Motion verified badge */}
+      <AnimatePresence>
+        {verified && (
+          <motion.div
+            initial={{ opacity: 0, y: 6, scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.92 }}
+            transition={{ duration: 0.18 }}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "8px 12px", borderRadius: 12,
+              background: "rgba(16,185,129,0.07)",
+              border: "1px solid rgba(16,185,129,0.18)",
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <circle cx="6" cy="6" r="5.5" stroke="#10b981" strokeWidth="1" />
+              <path d="M3.5 6L5 7.5L8.5 4" stroke="#10b981" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span style={{ fontSize: 10, fontWeight: 800, color: "#10b981" }}>Motion verified</span>
+            <span style={{ marginLeft: "auto", fontSize: 9, fontWeight: 700, color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>+0.25 FT</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Rest timer */}
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, fontFamily: "var(--font-mono)", letterSpacing: "0.06em" }}>REST · 00:48</div>
+      </div>
+
+      {/* CTA + home bar */}
+      <div style={{ marginTop: "auto" }}>
         <div style={{
-          display: "flex", alignItems: "center", gap: 10,
-          padding: "9px 12px", borderRadius: 14,
-          background: "var(--surface-2)", border: "1px solid var(--border)",
+          padding: "11px", borderRadius: 14, background: ACCENT,
+          textAlign: "center", fontSize: 11, fontWeight: 800, color: "#fff", letterSpacing: "-0.01em",
         }}>
-          <span style={{ fontSize: 9, fontWeight: 800, color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Recovery</span>
-          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            {MOCKUP_MU.map((m, i) => (
-              <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-                <div style={{ width: 7, height: 7, borderRadius: "50%", background: m.color, boxShadow: `0 0 5px ${m.color}55` }} />
-                <span style={{ fontSize: 8, color: "var(--text-muted)", fontWeight: 700 }}>{m.name}</span>
-              </div>
-            ))}
+          Complete Set {set}
+        </div>
+        <div style={{ display: "flex", justifyContent: "center", paddingTop: 14 }}>
+          <div style={{ width: 80, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.14)" }} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Phone Screen 3: History ────────────────────────────────────────────────────
+const HIST_ITEMS = [
+  { title: "Chest & Shoulders", tag: "Push Day", ago: "Yesterday",  ft: "+1.0 FT" },
+  { title: "Squats & Deadlifts", tag: "Leg Day",  ago: "2 days ago", ft: "+1.2 FT" },
+  { title: "Riverside Trail",    tag: "Hike",     ago: "3 days ago", ft: "+0.8 FT" },
+]
+
+function HistoryScreen() {
+  return (
+    <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 10, height: "100%" }}>
+      {/* Header */}
+      <div style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 900, color: "var(--text)", letterSpacing: "-0.04em" }}>History</div>
+
+      {/* Streak card */}
+      <div style={{
+        padding: "12px 14px", borderRadius: 16,
+        background: FT_DIM, border: `1px solid ${FT_BD}`,
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div className="streak-flame" style={{ width: 18, height: 24 }} />
+          <div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 900, color: FT_ORANGE, letterSpacing: "-0.04em", lineHeight: 1 }}>7</div>
+            <div style={{ fontSize: 8, fontWeight: 800, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>day streak</div>
+          </div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 900, color: FT_ORANGE, letterSpacing: "-0.03em" }}>24.6 FT</div>
+          <div style={{ fontSize: 8, color: "var(--text-muted)", fontWeight: 700 }}>this week</div>
+        </div>
+      </div>
+
+      {/* Section label */}
+      <div style={{ fontSize: 9, fontWeight: 800, color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Recent</div>
+
+      {/* Workout list */}
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        {HIST_ITEMS.map((item, i) => (
+          <div key={i} style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "10px 0",
+            borderTop: i > 0 ? "1px solid var(--border)" : "none",
+          }}>
+            <div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 12, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.02em" }}>{item.title}</div>
+              <div style={{ fontSize: 9, color: "var(--text-muted)", fontWeight: 600, marginTop: 2 }}>{item.tag} · {item.ago}</div>
+            </div>
+            <div style={{ padding: "3px 8px", borderRadius: 999, background: FT_DIM, border: `1px solid ${FT_BD}` }}>
+              <span style={{ fontSize: 9, fontWeight: 900, color: FT_ORANGE }}>{item.ft}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Home bar */}
+      <div style={{ marginTop: "auto", display: "flex", justifyContent: "center", paddingBottom: 4 }}>
+        <div style={{ width: 80, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.14)" }} />
+      </div>
+    </div>
+  )
+}
+
+// ── Phone Mockup ───────────────────────────────────────────────────────────────
+function PhoneMockup() {
+  const [screen, setScreen] = useState(0)
+  const [dir, setDir] = useState(1)
+  const COUNT = 3
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setDir(1)
+      setScreen(s => (s + 1) % COUNT)
+    }, 3500)
+    return () => clearInterval(t)
+  }, [])
+
+  const advance = () => {
+    setDir(1)
+    setScreen(s => (s + 1) % COUNT)
+  }
+
+  const W = 270, H = 580, R = 50, B = 13
+
+  const SCREENS = [
+    <ScheduleScreen key="schedule" />,
+    <ActiveScreen key="active" />,
+    <HistoryScreen key="history" />,
+  ]
+
+  return (
+    <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
+      {/* Ambient glow behind phone */}
+      <div style={{
+        position: "absolute", top: "10%", left: "5%", width: "90%", height: "80%",
+        background: `radial-gradient(circle, ${ACCENT_DIM} 0%, transparent 70%)`,
+        filter: "blur(50px)", pointerEvents: "none",
+      }} />
+
+      <motion.div
+        initial={{ opacity: 0, y: 36, scale: 0.9 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.95, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        onClick={advance}
+        style={{ position: "relative", cursor: "pointer", userSelect: "none" as const }}
+      >
+        {/* iPhone shell */}
+        <div style={{
+          width: W, height: H, borderRadius: R,
+          background: "linear-gradient(145deg, #2e2e30 0%, #1c1c1e 50%, #111112 100%)",
+          boxShadow: [
+            "0 0 0 1px rgba(255,255,255,0.07)",
+            "0 0 0 2.5px #0d0d0e",
+            "0 52px 150px rgba(0,0,0,0.8)",
+            "inset 0 1px 0 rgba(255,255,255,0.12)",
+            "inset 0 -1px 0 rgba(0,0,0,0.5)",
+          ].join(", "),
+          padding: B, position: "relative",
+        }}>
+          {/* Silent switch */}
+          <div style={{ position: "absolute", left: -3, top: 100, width: 3, height: 24, background: "#2a2a2c", borderRadius: "3px 0 0 3px", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)" }} />
+          {/* Vol up */}
+          <div style={{ position: "absolute", left: -3, top: 140, width: 3, height: 52, background: "#2a2a2c", borderRadius: "3px 0 0 3px", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)" }} />
+          {/* Vol down */}
+          <div style={{ position: "absolute", left: -3, top: 204, width: 3, height: 52, background: "#2a2a2c", borderRadius: "3px 0 0 3px", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)" }} />
+          {/* Power */}
+          <div style={{ position: "absolute", right: -3, top: 180, width: 3, height: 72, background: "#2a2a2c", borderRadius: "0 3px 3px 0", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)" }} />
+
+          {/* Screen */}
+          <div style={{
+            width: W - B * 2, height: H - B * 2,
+            borderRadius: R - B + 2,
+            background: "#111514",
+            overflow: "hidden", position: "relative",
+          }}>
+            {/* Top edge shine */}
+            <div style={{
+              position: "absolute", top: 0, left: "8%", right: "8%", height: 1,
+              background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)",
+              zIndex: 10, pointerEvents: "none",
+            }} />
+
+            {/* Dynamic Island */}
+            <div style={{
+              position: "absolute", top: 9, left: "50%", transform: "translateX(-50%)",
+              width: 102, height: 30, borderRadius: 20, background: "#000", zIndex: 20,
+            }} />
+
+            {/* Screen content */}
+            <div style={{ paddingTop: 48, height: "100%", overflow: "hidden" }}>
+              <AnimatePresence custom={dir} mode="wait">
+                <motion.div
+                  key={screen}
+                  custom={dir}
+                  initial={{ x: 30, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -30, opacity: 0 }}
+                  transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                  style={{ height: "100%" }}
+                >
+                  {SCREENS[screen]}
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       </motion.div>
+
+      {/* Dot indicators */}
+      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+        {Array.from({ length: COUNT }).map((_, i) => (
+          <div
+            key={i}
+            onClick={() => { setDir(i > screen ? 1 : -1); setScreen(i) }}
+            style={{
+              width: i === screen ? 20 : 6, height: 6, borderRadius: 3,
+              background: i === screen ? ACCENT : "var(--border)",
+              transition: "all 0.3s ease",
+              cursor: "pointer",
+            }}
+          />
+        ))}
+      </div>
     </div>
   )
 }
@@ -333,7 +620,7 @@ function Hero() {
           </span>
         </motion.div>
 
-        {/* Split: text left, mockup right */}
+        {/* Split: text left, phone right */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "center" }} className="lp-hero-grid">
           <div>
             <motion.h1
@@ -401,7 +688,7 @@ function Hero() {
             </motion.div>
           </div>
 
-          <AppMockup />
+          <PhoneMockup />
         </div>
 
         {/* Stats strip */}
