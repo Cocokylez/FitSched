@@ -507,8 +507,8 @@ export default function ExerciseSessionPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#fff", color: "#111", display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <div style={{ width: "100%", maxWidth: 640, display: "flex", flexDirection: "column", flex: 1 }}>
+    <div style={{ position: "fixed", inset: 0, background: "#fff", color: "#111", display: "flex", flexDirection: "column", alignItems: "center", zIndex: 50 }}>
+      <div style={{ width: "100%", maxWidth: 640, display: "flex", flexDirection: "column", height: "100%" }}>
       {/* Header — breadcrumb style */}
       <div style={{ padding: "14px 16px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <button type="button" onClick={() => setQuitConfirm(true)} style={{ display: "flex", alignItems: "center", gap: 8, border: "none", background: "transparent", cursor: "pointer", padding: 0 }}>
@@ -525,21 +525,7 @@ export default function ExerciseSessionPage() {
 
       {/* Title block */}
       <div style={{ padding: "10px 16px 14px" }}>
-        <div style={{ fontSize: 30, fontWeight: 950, letterSpacing: "-0.5px", color: "#111", marginBottom: 4 }}>{workout.workoutName}</div>
-        <div style={{ fontSize: 13, color: "#aaa", fontWeight: 600 }}>
-          {workout.exercises.length} exercises · {Math.round(totalSets * 0.75)} min
-        </div>
-      </div>
-
-      {/* FT earn strip */}
-      <div style={{ margin: "0 16px 14px", background: "rgba(18,101,254,0.08)", border: "1px solid rgba(18,101,254,0.28)", borderRadius: 14, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 700, color: ACCENT }}>
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          Finish to earn +1.0 FT
-        </div>
-        <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>
-          {doneSets} of {totalSets}
-        </div>
+        <div style={{ fontSize: 30, fontWeight: 950, letterSpacing: "-0.5px", color: "#111" }}>{workout.workoutName}</div>
       </div>
 
       {/* W1 Fullscreen single exercise display */}
@@ -566,26 +552,12 @@ export default function ExerciseSessionPage() {
                 transition={{ type: "spring", stiffness: 320, damping: 30 }}
                 style={{ display: "flex", flexDirection: "column", gap: 14 }}
               >
-                {/* Category + exercise counter */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.1em", color: catStyle.color }}>{category}</span>
-                    <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>· {getMuscleGroup(ex.name)}</span>
-                  </div>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>
-                    {currentExIdx + 1} / {workout.exercises.length}
-                  </div>
-                </div>
+                {/* Exercise name */}
+                <div style={{ fontSize: 28, fontWeight: 950, color: "var(--text)", letterSpacing: "-0.5px", lineHeight: 1.1 }}>{ex.name}</div>
 
-                {/* Exercise name + description */}
-                <div>
-                  <div style={{ fontSize: 28, fontWeight: 950, color: "var(--text)", letterSpacing: "-0.5px", lineHeight: 1.1, marginBottom: 5 }}>{ex.name}</div>
-                  <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.4 }}>{getExerciseDesc(ex.name)}</div>
-                </div>
-
-                {/* Large demo visual */}
-                <div style={{ position: "relative", width: "100%", overflow: "hidden" }}>
-                  <ExerciseDemoVisual exerciseName={ex.name} height={260} objectFit="contain" />
+                {/* Large demo visual — full-bleed */}
+                <div style={{ position: "relative", width: "calc(100% + 32px)", marginLeft: -16, marginRight: -16 }}>
+                  <ExerciseDemoVisual exerciseName={ex.name} height={360} objectFit="cover" />
                   <AnimatePresence>
                     {allSetsDoneForCurrent && (
                       <motion.div
@@ -622,9 +594,6 @@ export default function ExerciseSessionPage() {
 
                 {/* Set — one at a time */}
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.14em", color: "var(--text-muted)", marginBottom: 8 }}>
-                    {allSetsDoneForCurrent ? `ALL ${ex.sets} SETS DONE` : `SET ${done + 1} OF ${ex.sets} — ${ex.reps} REPS`}
-                  </div>
                   {allSetsDoneForCurrent ? (
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "20px", background: `${catStyle.color}18`, border: `1.5px solid ${catStyle.color}55`, borderRadius: 18, color: catStyle.color, fontWeight: 900, fontSize: 15 }}>
                       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -644,9 +613,8 @@ export default function ExerciseSessionPage() {
                       }}
                     >
                       <motion.span animate={{ scale: [1, 1.12, 1] }} transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                       </motion.span>
-                      Next
                     </motion.button>
                   )}
                   {/* Set progress bar */}
@@ -655,49 +623,6 @@ export default function ExerciseSessionPage() {
                       <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i < done ? catStyle.color : i === done && !allSetsDoneForCurrent ? `${catStyle.color}55` : "var(--border)", transition: "background 0.3s" }} />
                     ))}
                   </div>
-                </div>
-
-                {/* Weight input */}
-                <div>
-                  <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.14em", color: "var(--text-muted)", marginBottom: 6 }}>WEIGHT (optional)</div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      min={0} max={999} step={0.5}
-                      placeholder={histWeight != null ? String(histWeight) : "0"}
-                      value={currentWeight ?? ""}
-                      onChange={(e) => {
-                        const v = parseFloat(e.target.value)
-                        setExerciseWeights(prev => ({ ...prev, [currentExIdx]: isNaN(v) ? null : v }))
-                      }}
-                      style={{
-                        flex: 1, background: isPRAttempt ? "rgba(18,101,254,0.08)" : "var(--surface-2)",
-                        border: isPRAttempt ? "1px solid rgba(18,101,254,0.4)" : "1px solid var(--border)",
-                        borderRadius: 12, padding: "10px 12px", color: "var(--text)", fontSize: 14, fontWeight: 700,
-                        outline: "none", fontFamily: "inherit", transition: "border-color 0.2s, background 0.2s",
-                      }}
-                    />
-                    <span style={{ fontSize: 13, fontWeight: 800, color: isPRAttempt ? ACCENT : "var(--text-muted)", flexShrink: 0, minWidth: 24 }}>kg</span>
-                    {isPRAttempt && (
-                      <motion.span initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 900, color: ACCENT, flexShrink: 0 }}>
-                        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
-                        PR
-                      </motion.span>
-                    )}
-                  </div>
-                  {suggested != null && currentWeight == null && (
-                    <motion.button
-                      type="button"
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      onClick={() => setExerciseWeights(prev => ({ ...prev, [currentExIdx]: suggested }))}
-                      style={{ marginTop: 6, border: "1px dashed rgba(18,101,254,0.45)", background: "rgba(18,101,254,0.06)", borderRadius: 8, padding: "5px 11px", color: ACCENT, fontSize: 11, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
-                    >
-                      <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
-                      Try {suggested} kg (+2.5)
-                    </motion.button>
-                  )}
                 </div>
 
                 {/* Progress dots */}
