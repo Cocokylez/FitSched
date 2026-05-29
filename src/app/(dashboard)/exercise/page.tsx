@@ -497,14 +497,9 @@ export default function ExerciseSessionPage() {
             transition={{ type: "spring", stiffness: 320, damping: 24 }}
             style={{ textAlign: "center" }}
           >
-            {countdownNum > 0 ? (
+            {countdownNum > 0 && (
               <div style={{ fontSize: 160, fontWeight: 950, color: "#111", lineHeight: 1, letterSpacing: "-6px", fontVariantNumeric: "tabular-nums" }}>{countdownNum}</div>
-            ) : (
-              <div style={{ fontSize: 80, fontWeight: 950, color: "#111", letterSpacing: "-3px" }}>GO!</div>
             )}
-            <div style={{ fontSize: 12, color: "#ccc", fontWeight: 800, marginTop: 16, letterSpacing: "0.16em" }}>
-              {countdownNum > 0 ? "GET READY" : "START MOVING"}
-            </div>
           </motion.div>
         </AnimatePresence>
       </div>
@@ -574,7 +569,6 @@ export default function ExerciseSessionPage() {
                 {/* Category + exercise counter */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: catStyle.color, flexShrink: 0 }} />
                     <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.1em", color: catStyle.color }}>{category}</span>
                     <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>· {getMuscleGroup(ex.name)}</span>
                   </div>
@@ -590,7 +584,7 @@ export default function ExerciseSessionPage() {
                 </div>
 
                 {/* Large demo visual */}
-                <div style={{ position: "relative", width: "100%", borderRadius: 20, overflow: "hidden", background: "var(--panel)", border: "1px solid var(--border)" }}>
+                <div style={{ position: "relative", width: "100%", overflow: "hidden" }}>
                   <ExerciseDemoVisual exerciseName={ex.name} height={260} objectFit="contain" />
                   <AnimatePresence>
                     {allSetsDoneForCurrent && (
@@ -652,7 +646,7 @@ export default function ExerciseSessionPage() {
                       <motion.span animate={{ scale: [1, 1.12, 1] }} transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}>
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                       </motion.span>
-                      Done — Set {done + 1}
+                      Next
                     </motion.button>
                   )}
                   {/* Set progress bar */}
@@ -729,6 +723,11 @@ export default function ExerciseSessionPage() {
             </AnimatePresence>
           )
         })()}
+      </div>
+
+      {/* Overall workout progress bar */}
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, height: 3, background: "var(--surface-2)", zIndex: 10 }}>
+        <div style={{ height: "100%", background: ACCENT, width: `${totalSets > 0 ? (doneSets / totalSets) * 100 : 0}%`, transition: "width 0.5s ease", borderRadius: "0 2px 2px 0" }} />
       </div>
 
       {/* W1 Sticky bottom CTA — appears only when all sets for current exercise are done */}

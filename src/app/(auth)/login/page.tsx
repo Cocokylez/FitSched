@@ -184,7 +184,7 @@ export default function LoginPage() {
           <motion.div variants={fadeIn}>
             <div style={{ textAlign: 'right', marginBottom: '20px' }}>
               <Link href="/forgot-password" style={{ fontSize: '12px', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 600 }}>
-                Forgot password?
+                {t.forgotPassword}
               </Link>
             </div>
           </motion.div>
@@ -245,7 +245,7 @@ export default function LoginPage() {
                 fontFamily: 'inherit',
               }}
             >
-              {guestLoading ? 'Starting guest session…' : 'Continue as Guest'}
+              {guestLoading ? t.startingGuest : t.continueGuest}
             </button>
           </motion.div>
 

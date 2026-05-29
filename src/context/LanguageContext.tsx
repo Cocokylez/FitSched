@@ -50,6 +50,9 @@ const translations = {
     continueGoogle: 'Continue with Google',
     noAccount: "Don't have an account?",
     signUp: 'Sign Up',
+    forgotPassword: 'Forgot password?',
+    continueGuest: 'Continue as Guest',
+    startingGuest: 'Starting guest session…',
     connect: 'Connect',
 
     enabled: 'Enabled',
@@ -274,6 +277,9 @@ const translations = {
     continueGoogle: '使用Google继续',
     noAccount: '没有账号？',
     signUp: '注册',
+    forgotPassword: '忘记密码？',
+    continueGuest: '以访客身份继续',
+    startingGuest: '正在启动访客会话…',
     connect: '连接',
 
     enabled: '已启用',
@@ -498,6 +504,9 @@ const translations = {
     continueGoogle: 'Googleで続ける',
     noAccount: 'アカウントをお持ちでないですか？',
     signUp: '登録',
+    forgotPassword: 'パスワードをお忘れですか？',
+    continueGuest: 'ゲストとして続ける',
+    startingGuest: 'ゲストセッションを開始中…',
     connect: '接続',
 
     enabled: '有効',
@@ -722,6 +731,9 @@ const translations = {
     continueGoogle: 'Tiếp tục với Google',
     noAccount: 'Chưa có tài khoản?',
     signUp: 'Đăng ký',
+    forgotPassword: 'Quên mật khẩu?',
+    continueGuest: 'Tiếp tục với tư cách khách',
+    startingGuest: 'Đang bắt đầu phiên khách…',
     connect: 'Kết nối',
 
     enabled: 'Đã bật',

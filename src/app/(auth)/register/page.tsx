@@ -305,7 +305,7 @@ export default function RegisterPage() {
                 fontFamily: "inherit",
               }}
             >
-              {guestLoading ? "Starting guest session…" : "Continue as Guest"}
+              {guestLoading ? t.startingGuest : t.continueGuest}
             </button>
           </motion.div>
 
