@@ -557,7 +557,7 @@ export default function ExerciseSessionPage() {
 
                 {/* Large demo visual — full-bleed */}
                 <div style={{ position: "relative", width: "calc(100% + 32px)", marginLeft: -16, marginRight: -16 }}>
-                  <ExerciseDemoVisual exerciseName={ex.name} height={360} objectFit="cover" />
+                  <ExerciseDemoVisual exerciseName={ex.name} height={360} objectFit="contain" />
                   <AnimatePresence>
                     {allSetsDoneForCurrent && (
                       <motion.div
