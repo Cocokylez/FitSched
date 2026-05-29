@@ -332,18 +332,31 @@ export default function ExerciseSessionPage() {
 
   if (locked) {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)", padding: "24px 16px" }}>
-        <div style={{ maxWidth: 520, margin: "0 auto", background: "var(--surface)", border: "1px solid rgba(18,101,254,0.32)", borderRadius: 20, padding: 24, textAlign: "center" }}>
-          <div style={{ width: 52, height: 52, borderRadius: "50%", background: lockReason === "quit" ? "rgba(255,80,80,0.12)" : "rgba(18,101,254,0.14)", color: lockReason === "quit" ? "#ff5050" : ACCENT, display: "grid", placeItems: "center", margin: "0 auto 14px", fontSize: 22 }}>
-            {lockReason === "quit" ? "✗" : "✓"}
-          </div>
-          <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 8 }}>
-            {lockReason === "date" ? t.todayWorkoutOnlyTitle : lockReason === "quit" ? "Session Lost" : t.workoutAlreadyComplete}
-          </div>
-          <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 18, lineHeight: 1.5 }}>
-            {lockReason === "date" ? t.todayWorkoutOnlyBody : lockReason === "quit" ? "You left today's workout before finishing. No FitTokens earned today — come back tomorrow for a fresh session." : t.workoutAlreadyCompleteBody}
-          </div>
-          <button onClick={() => router.push("/workout")} style={{ border: "none", borderRadius: 14, padding: "13px 18px", background: ACCENT, color: "#fff", fontWeight: 900, cursor: "pointer" }}>{t.backToWorkout}</button>
+      <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)", padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ maxWidth: 420, width: "100%", textAlign: "center" }}>
+          {lockReason === "quit" ? (
+            <>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>You already exited today&apos;s session</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 28, lineHeight: 1.5 }}>Come back tomorrow for a fresh workout and full FitToken reward.</div>
+              <button
+                disabled
+                style={{ width: "100%", border: "none", borderRadius: 16, padding: "16px", background: "var(--surface-2)", color: "var(--text-muted)", fontSize: 15, fontWeight: 900, cursor: "not-allowed", opacity: 0.5 }}
+              >
+                Go Exercise
+              </button>
+            </>
+          ) : (
+            <>
+              <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(18,101,254,0.14)", color: ACCENT, display: "grid", placeItems: "center", margin: "0 auto 14px", fontSize: 22 }}>✓</div>
+              <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 8 }}>
+                {lockReason === "date" ? t.todayWorkoutOnlyTitle : t.workoutAlreadyComplete}
+              </div>
+              <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 18, lineHeight: 1.5 }}>
+                {lockReason === "date" ? t.todayWorkoutOnlyBody : t.workoutAlreadyCompleteBody}
+              </div>
+              <button onClick={() => router.push("/workout")} style={{ border: "none", borderRadius: 14, padding: "13px 18px", background: ACCENT, color: "#fff", fontWeight: 900, cursor: "pointer" }}>{t.backToWorkout}</button>
+            </>
+          )}
         </div>
       </div>
     )
@@ -497,46 +510,40 @@ export default function ExerciseSessionPage() {
                   </div>
                 )}
 
-                {/* Set buttons */}
+                {/* Set — one at a time */}
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.14em", color: "var(--text-muted)", marginBottom: 8 }}>
-                    SETS — {ex.sets} × {ex.reps} reps
+                    {allSetsDoneForCurrent ? `ALL ${ex.sets} SETS DONE` : `SET ${done + 1} OF ${ex.sets} — ${ex.reps} REPS`}
                   </div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    {Array.from({ length: ex.sets }, (_, setIdx) => {
-                      const setDone = setIdx < done
-                      const isCurrent = setIdx === done && !allSetsDoneForCurrent
-                      return (
-                        <motion.button
-                          key={setIdx}
-                          type="button"
-                          whileTap={isCurrent ? { scale: 0.88 } : {}}
-                          onClick={() => isCurrent ? completeSet(currentExIdx) : undefined}
-                          style={{
-                            flex: 1,
-                            border: setDone ? `1.5px solid ${catStyle.color}66` : isCurrent ? `1.5px solid ${catStyle.color}` : "1.5px solid var(--border)",
-                            background: setDone ? `${catStyle.color}22` : isCurrent ? `${catStyle.color}14` : "var(--surface-2)",
-                            color: setDone ? catStyle.color : isCurrent ? catStyle.color : "var(--text-muted)",
-                            borderRadius: 14,
-                            padding: "16px 8px",
-                            fontSize: 16,
-                            fontWeight: 900,
-                            cursor: isCurrent ? "pointer" : "default",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            transition: "all 0.18s",
-                          }}
-                        >
-                          {setDone
-                            ? <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            : isCurrent
-                              ? <motion.span animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}>{setIdx + 1}</motion.span>
-                              : <span>{setIdx + 1}</span>
-                          }
-                        </motion.button>
-                      )
-                    })}
+                  {allSetsDoneForCurrent ? (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "20px", background: `${catStyle.color}18`, border: `1.5px solid ${catStyle.color}55`, borderRadius: 18, color: catStyle.color, fontWeight: 900, fontSize: 15 }}>
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      Complete
+                    </div>
+                  ) : (
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.94 }}
+                      onClick={() => completeSet(currentExIdx)}
+                      style={{
+                        width: "100%", border: `1.5px solid ${catStyle.color}`,
+                        background: `${catStyle.color}14`, color: catStyle.color,
+                        borderRadius: 18, padding: "22px 16px",
+                        fontSize: 16, fontWeight: 900, cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                      }}
+                    >
+                      <motion.span animate={{ scale: [1, 1.12, 1] }} transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      </motion.span>
+                      Done — Set {done + 1}
+                    </motion.button>
+                  )}
+                  {/* Set progress bar */}
+                  <div style={{ display: "flex", gap: 5, marginTop: 10 }}>
+                    {Array.from({ length: ex.sets }, (_, i) => (
+                      <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i < done ? catStyle.color : i === done && !allSetsDoneForCurrent ? `${catStyle.color}55` : "var(--border)", transition: "background 0.3s" }} />
+                    ))}
                   </div>
                 </div>
 
