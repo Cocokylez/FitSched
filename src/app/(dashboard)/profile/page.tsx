@@ -372,7 +372,6 @@ export default function ProfilePage() {
         {email.endsWith("@fitsched.guest") && (
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4, display: "flex", alignItems: "center", gap: 5 }}>
             <span style={{ fontSize: 9, background: "rgba(18,101,254,0.18)", border: "1px solid rgba(18,101,254,0.3)", color: ACCENT, borderRadius: 999, padding: "2px 8px", fontWeight: 800, letterSpacing: "0.08em" }}>GUEST</span>
-            Progress is temporary
           </div>
         )}
         {joinDate && !email.endsWith("@fitsched.guest") && (
