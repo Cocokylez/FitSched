@@ -161,7 +161,6 @@ export default function HistoryPage() {
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 14 }}>
           <div>
             <h1 style={{ fontSize: 28, fontWeight: 900, color: "var(--text)", letterSpacing: "-0.5px", margin: 0 }}>{t.history}</h1>
-            <p style={{ fontSize: 14, color: "var(--text-muted)", margin: "4px 0 0" }}>{t.trackJourney}</p>
           </div>
         </div>
         <div style={{ display: "flex", gap: 6, background: "var(--surface-2)", borderRadius: 12, padding: 4 }}>

@@ -551,54 +551,6 @@ export default function WorkoutPage() {
           </motion.div>
         )}
 
-        {/* Contextual tip — shown when relevant */}
-        {selectedDay === todayIdx && !computing && muscleReadiness && (() => {
-          const soreMuscles = muscleReadiness.filter(m => m.status === "sore").map(m => m.group)
-          const recovering = muscleReadiness.filter(m => m.status === "recovering").length
-          const fresh = muscleReadiness.filter(m => m.status === "fresh" || m.status === "untrained").length
-          let tip: string | null = null
-          if (weeklyDone === workoutsPerWeek) {
-            tip = "Weekly goal reached — any extra sets are a bonus."
-          } else if (weeklyDone === workoutsPerWeek - 1) {
-            tip = "One more workout to hit your goal."
-          } else if (soreMuscles.length >= 3) {
-            tip = "Most muscles still sore — keep intensity moderate today."
-          } else if (fresh >= 4) {
-            tip = "Muscles are fresh across the board — a good day to push."
-          } else if (recovering > 0 && soreMuscles.length === 0) {
-            tip = "Recovering well — a steady session is the right call today."
-          }
-          if (!tip) return null
-          return (
-            <motion.div
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              style={{
-                marginBottom: 12,
-                borderRadius: "0 10px 10px 0",
-                padding: "9px 13px",
-                background: "var(--surface-2)",
-                borderTop: "1px solid var(--border)",
-                borderRight: "1px solid var(--border)",
-                borderBottom: "1px solid var(--border)",
-                borderLeft: "2px solid var(--border-strong)",
-                fontSize: 12, fontWeight: 600,
-                color: "var(--text-muted)", lineHeight: 1.5,
-              }}
-            >
-              {tip}
-            </motion.div>
-          )
-        })()}
-
-        {/* FT motivation strip */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14, padding: "0 2px" }}>
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: ACCENT, flexShrink: 0, opacity: 0.7 }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.01em" }}>
-            Complete this session to earn <span style={{ color: ACCENT }}>FitTokens</span>
-          </span>
-        </div>
-
         {/* Blocked banner */}
         {workoutBlocked && (
           <div style={{ background: "rgba(18,101,254,0.1)", border: "1px solid rgba(18,101,254,0.28)", borderRadius: 14, padding: "12px 14px", marginBottom: 14 }}>
