@@ -1,432 +1,36 @@
-﻿"use client"
+"use client"
 
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import { motion, useInView, AnimatePresence } from "framer-motion"
 import {
   ArrowRight, Flame, Zap, Navigation, BarChart2,
-  Calendar, CheckCheck, Dumbbell, ChevronDown, Globe2,
+  Calendar, Dumbbell, ChevronDown, Globe2,
 } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
 import { ACCENT, ACCENT_DIM, ACCENT_BD } from "@/lib/theme"
 
-// ── Scroll-reveal wrapper ──────────────────────────────────────────────────────
+const FT_ORANGE = "#FF6B35"
 
-function FadeIn({
-  children,
-  delay = 0,
-  style,
-}: {
-  children: React.ReactNode
-  delay?: number
-  style?: React.CSSProperties
-}) {
+// ── Scroll reveal ──────────────────────────────────────────────────────────────
+function FadeIn({ children, delay = 0, style }: { children: React.ReactNode; delay?: number; style?: React.CSSProperties }) {
   const ref = useRef<HTMLDivElement>(null)
-  const inView = useInView(ref, { once: true, margin: "-50px" })
+  const inView = useInView(ref, { once: true, margin: "-60px" })
   return (
-    <motion.div
-      ref={ref}
-      style={style}
-      initial={{ opacity: 0, y: 26 }}
+    <motion.div ref={ref} style={style}
+      initial={{ opacity: 0, y: 18 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.58, delay, ease: [0.16, 1, 0.3, 1] }}
-    >
-      {children}
-    </motion.div>
+      transition={{ duration: 0.6, delay, ease: [0.16, 1, 0.3, 1] }}
+    >{children}</motion.div>
   )
 }
 
-// ── Phone mockup — intentionally always dark (showing a phone screen) ──────────
-
-const WEEK_DAYS = ["SUN","MON","TUE","WED","THU","FRI","SAT"]
-const MOCK_CARDS = [
-  { time: "07:00", label: "Morning Run", tag: "CARDIO",    dot: "#f59e0b" },
-  { time: "12:30", label: "Upper Body",  tag: "STRENGTH",  dot: ACCENT    },
-  { time: "19:00", label: "Yoga Flow",   tag: "FLEX",      dot: "#818cf8" },
-]
-
-function PhoneMockup() {
-  return (
-    <motion.div
-      animate={{ y: [0, -11, 0] }}
-      transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
-      style={{
-        width: 248, flexShrink: 0,
-        borderRadius: 42,
-        background: "#0c1210",
-        border: "1px solid rgba(255,255,255,0.07)",
-        boxShadow: [
-          "0 64px 120px rgba(0,0,0,0.7)",
-          "0 0 0 1px rgba(255,255,255,0.04)",
-          "inset 0 1px 0 rgba(255,255,255,0.06)",
-          `0 0 80px -20px rgba(18,101,254,0.18)`,
-        ].join(", "),
-        overflow: "hidden",
-        position: "relative",
-      }}
-    >
-      {/* Dynamic island */}
-      <div style={{
-        position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)",
-        width: 110, height: 32, borderRadius: 20, background: "#000", zIndex: 10,
-      }} />
-
-      {/* Top bar */}
-      <div style={{
-        padding: "52px 14px 10px",
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-      }}>
-        <span style={{
-          fontFamily: "var(--font-display)", fontSize: 13, fontWeight: 800,
-          color: "rgba(255,255,255,0.82)", letterSpacing: "-0.02em",
-        }}>FitSched</span>
-        <div style={{
-          display: "flex", alignItems: "center", gap: 4,
-          background: ACCENT_DIM, border: `1px solid ${ACCENT_BD}`,
-          borderRadius: 20, padding: "3px 8px",
-        }}>
-          <div style={{ width: 5, height: 5, borderRadius: "50%", background: ACCENT }} />
-          <span style={{ fontSize: 9, fontWeight: 800, color: ACCENT }}>TUE</span>
-        </div>
-      </div>
-
-      {/* Week strip */}
-      <div style={{ padding: "0 12px 12px", display: "flex", gap: 4 }}>
-        {WEEK_DAYS.map((d, i) => {
-          const active = i === 2
-          return (
-            <div key={i} style={{
-              flex: 1, borderRadius: 10, padding: "5px 0",
-              display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
-              background: active
-                ? "linear-gradient(145deg, #7dd4cc, #5aaea7)"
-                : "rgba(255,255,255,0.045)",
-              boxShadow: active ? "0 3px 10px rgba(18,101,254,0.3)" : "none",
-            }}>
-              <span style={{
-                fontSize: 6.5, fontWeight: 800, letterSpacing: "0.04em",
-                color: active ? "#0b1715" : "rgba(255,255,255,0.32)",
-              }}>{d.slice(0, 3)}</span>
-              <span style={{
-                fontFamily: "var(--font-display)",
-                fontSize: 12, fontWeight: 900, lineHeight: 1,
-                color: active ? "#0b1715" : "rgba(255,255,255,0.78)",
-              }}>{i + 14}</span>
-            </div>
-          )
-        })}
-      </div>
-
-      <div style={{ height: 1, background: "rgba(255,255,255,0.055)", marginBottom: 10 }} />
-
-      {/* Section label */}
-      <div style={{ padding: "0 14px 8px" }}>
-        <span style={{
-          fontSize: 8, fontWeight: 800, letterSpacing: "0.1em",
-          textTransform: "uppercase", color: "rgba(255,255,255,0.28)",
-        }}>Morning</span>
-      </div>
-
-      {/* Cards */}
-      <div style={{ padding: "0 12px", display: "flex", flexDirection: "column", gap: 7 }}>
-        {MOCK_CARDS.map((c, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, x: 18 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.35 + i * 0.11, duration: 0.48, ease: [0.16, 1, 0.3, 1] }}
-            style={{
-              borderRadius: 13,
-              background: "rgba(255,255,255,0.038)",
-              border: "1px solid rgba(255,255,255,0.065)",
-              padding: "9px 11px",
-              display: "flex", alignItems: "center", gap: 9,
-            }}
-          >
-            <div style={{
-              width: 3, height: 34, borderRadius: 2, background: c.dot, flexShrink: 0,
-              boxShadow: `0 0 6px ${c.dot}44`,
-            }} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{
-                fontFamily: "var(--font-display)",
-                fontSize: 11.5, fontWeight: 800,
-                color: "rgba(255,255,255,0.88)", marginBottom: 2,
-              }}>{c.label}</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <span style={{ fontSize: 9, color: "rgba(255,255,255,0.33)" }}>{c.time}</span>
-                <span style={{
-                  fontSize: 7.5, fontWeight: 900, letterSpacing: "0.08em",
-                  color: ACCENT, background: ACCENT_DIM,
-                  borderRadius: 4, padding: "1px 4px",
-                }}>{c.tag}</span>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-
-        {/* AI badge */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.82 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.75, type: "spring", stiffness: 260, damping: 22 }}
-          style={{
-            marginTop: 3, marginBottom: 16,
-            borderRadius: 12,
-            background: ACCENT_DIM, border: `1px solid ${ACCENT_BD}`,
-            padding: "7px 11px",
-            display: "flex", alignItems: "center", gap: 7,
-          }}
-        >
-          <CheckCheck size={11} color={ACCENT} strokeWidth={2.5} />
-          <span style={{ fontSize: 9.5, fontWeight: 800, color: ACCENT }}>
-            Plan ready
-          </span>
-        </motion.div>
-      </div>
-    </motion.div>
-  )
-}
-
-// ── Marquee strip ──────────────────────────────────────────────────────────────
-
-function MarqueeStrip() {
-  const { t } = useLanguage()
-  return (
-    <div style={{
-      borderTop: "1px solid var(--border)",
-      borderBottom: "1px solid var(--border)",
-      padding: "13px 0",
-      overflow: "hidden",
-    }}>
-      <div style={{
-        display: "flex", gap: 36,
-        animation: "lp-marquee 30s linear infinite",
-        whiteSpace: "nowrap",
-      }}>
-        {[...t.lpMarqueeItems, ...t.lpMarqueeItems].map((item, i) => (
-          <span key={i} style={{
-            display: "inline-flex", alignItems: "center", gap: 10,
-            fontSize: 11, fontWeight: 800, letterSpacing: "0.09em",
-            textTransform: "uppercase", color: "var(--text-muted)",
-            flexShrink: 0,
-          }}>
-            <span style={{
-              width: 4, height: 4, borderRadius: "50%",
-              background: ACCENT, display: "inline-block", flexShrink: 0,
-            }} />
-            {item}
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// ── Bento feature cards ────────────────────────────────────────────────────────
-
-const BAR_HEIGHTS = [28, 44, 36, 52, 40, 62, 48, 70, 56, 66]
-
-function ScheduleCard() {
-  const { t } = useLanguage()
-  return (
-    <div style={{
-      background: "var(--surface)",
-      border: "1px solid var(--border)",
-      borderRadius: 28,
-      padding: "28px 28px 24px",
-      height: "100%", display: "flex", flexDirection: "column", gap: 20,
-    }}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 10,
-              background: ACCENT_DIM, border: `1px solid ${ACCENT_BD}`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <Zap size={15} color={ACCENT} strokeWidth={2.5} />
-            </div>
-            <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.09em", textTransform: "uppercase", color: ACCENT }}>
-              {t.lpPlanGenerator}
-            </span>
-          </div>
-          <div style={{
-            fontFamily: "var(--font-display)",
-            fontSize: 22, fontWeight: 800, lineHeight: 1.15,
-            color: "var(--text)", letterSpacing: "-0.025em",
-          }}>
-            {t.lpPlanLine1}<br />{t.lpPlanLine2}
-          </div>
-        </div>
-      </div>
-
-      {/* Mini week grid */}
-      <div style={{ display: "flex", gap: 5 }}>
-        {["M","T","W","T","F","S","S"].map((d, i) => {
-          const filled = [0, 1, 3, 4].includes(i)
-          return (
-            <div key={i} style={{
-              flex: 1, borderRadius: 8, padding: "6px 0",
-              background: filled ? ACCENT_DIM : "var(--surface-2)",
-              border: `1px solid ${filled ? ACCENT_BD : "transparent"}`,
-              display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-            }}>
-              <span style={{ fontSize: 8, fontWeight: 800, color: filled ? ACCENT : "var(--text-muted)" }}>{d}</span>
-              {filled && <div style={{ width: 4, height: 4, borderRadius: "50%", background: ACCENT }} />}
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Sample sessions */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {[
-          { label: t.lpSessionPush,  time: t.lpSessionPushTime,  color: ACCENT },
-          { label: t.lpSessionRest,  time: t.lpSessionRestTime,  color: "var(--border)" },
-          { label: t.lpSessionLower, time: t.lpSessionLowerTime, color: "#f59e0b" },
-        ].map((s, i) => (
-          <div key={i} style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "7px 10px", borderRadius: 10,
-            background: "var(--surface-2)",
-            border: "1px solid var(--border)",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 3, height: 20, borderRadius: 2, background: s.color }} />
-              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text)" }}>{s.label}</span>
-            </div>
-            <span style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 600 }}>{s.time}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function StreakCard() {
-  const { t } = useLanguage()
-  return (
-    <div style={{
-      background: "var(--surface)",
-      border: "1px solid var(--border)",
-      borderRadius: 28, padding: "24px",
-      display: "flex", flexDirection: "column", gap: 16, height: "100%",
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: 10,
-          background: "rgba(255, 116, 77, 0.12)", border: "1px solid rgba(255,116,77,0.22)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <Flame size={15} color="#ff744d" strokeWidth={2.5} />
-        </div>
-        <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.09em", textTransform: "uppercase", color: "#ff9066" }}>
-          {t.lpStreakTitle}
-        </span>
-      </div>
-
-      <div>
-        <div style={{
-          fontFamily: "var(--font-display)",
-          fontSize: 52, fontWeight: 900, lineHeight: 1,
-          color: "var(--text)", letterSpacing: "-0.04em",
-        }}>23</div>
-        <div style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 600, marginTop: 4 }}>{t.lpDaysInARow}</div>
-      </div>
-
-      {/* Flame dots row */}
-      <div style={{ display: "flex", gap: 4 }}>
-        {Array.from({ length: 14 }).map((_, i) => (
-          <div key={i} style={{
-            flex: 1, height: 4, borderRadius: 2,
-            background: i < 11 ? "linear-gradient(90deg, #ff744d, #ffb64d)" : "var(--surface-2)",
-          }} />
-        ))}
-      </div>
-
-      <div style={{
-        background: "rgba(255,116,77,0.09)",
-        border: "1px solid rgba(255,116,77,0.18)",
-        borderRadius: 12, padding: "8px 12px",
-        fontSize: 11, fontWeight: 700, color: "#ff9066",
-      }}>
-        {t.lpLongestRun}
-      </div>
-    </div>
-  )
-}
-
-function ProgressCard() {
-  const { t } = useLanguage()
-  return (
-    <div style={{
-      background: "var(--surface)",
-      border: "1px solid var(--border)",
-      borderRadius: 28, padding: "24px",
-      display: "flex", flexDirection: "column", gap: 16,
-    }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 10,
-            background: "rgba(129,140,248,0.12)", border: "1px solid rgba(129,140,248,0.22)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <BarChart2 size={15} color="#818cf8" strokeWidth={2.5} />
-          </div>
-          <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.09em", textTransform: "uppercase", color: "#818cf8" }}>
-            {t.lpProgressLabel}
-          </span>
-        </div>
-        <span style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 600 }}>{t.lpLast10Days}</span>
-      </div>
-
-      {/* Bar chart */}
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 72 }}>
-        {BAR_HEIGHTS.map((h, i) => (
-          <motion.div
-            key={i}
-            initial={{ scaleY: 0 }}
-            whileInView={{ scaleY: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: i * 0.04, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            style={{
-              flex: 1, height: h, borderRadius: 4,
-              background: i === 9
-                ? `linear-gradient(180deg, ${ACCENT}, #4aaa9d)`
-                : "var(--surface-2)",
-              transformOrigin: "bottom",
-            }}
-          />
-        ))}
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <div style={{
-            fontFamily: "var(--font-display)",
-            fontSize: 22, fontWeight: 900, color: "var(--text)", letterSpacing: "-0.03em",
-          }}>7 / 10</div>
-          <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>{t.lpSessionsCompleted}</div>
-        </div>
-        <div style={{
-          background: ACCENT_DIM, border: `1px solid ${ACCENT_BD}`,
-          borderRadius: 10, padding: "6px 10px",
-          fontSize: 11, fontWeight: 800, color: ACCENT,
-        }}>{t.lpVsLastWeek}</div>
-      </div>
-    </div>
-  )
-}
-
-// ── Navbar ────────────────────────────────────────────────────────────────────
-
+// ── Navbar ─────────────────────────────────────────────────────────────────────
 const LANG_OPTIONS = [
-  { id: "EN" as const, native: "English",     flag: "🇺🇸" },
-  { id: "CN" as const, native: "中文",          flag: "🇨🇳" },
-  { id: "JP" as const, native: "日本語",        flag: "🇯🇵" },
-  { id: "VI" as const, native: "Tiếng Việt",   flag: "🇻🇳" },
+  { id: "EN" as const, native: "English",   flag: "🇺🇸" },
+  { id: "CN" as const, native: "中文",       flag: "🇨🇳" },
+  { id: "JP" as const, native: "日本語",     flag: "🇯🇵" },
+  { id: "VI" as const, native: "Tiếng Việt", flag: "🇻🇳" },
 ]
 
 function Navbar() {
@@ -434,114 +38,77 @@ function Navbar() {
   const [langOpen, setLangOpen] = useState(false)
   const langRef = useRef<HTMLDivElement>(null)
 
-  // Close on outside click
   useEffect(() => {
     if (!langOpen) return
     function handleClick(e: MouseEvent) {
-      if (langRef.current && !langRef.current.contains(e.target as Node)) {
-        setLangOpen(false)
-      }
+      if (langRef.current && !langRef.current.contains(e.target as Node)) setLangOpen(false)
     }
     document.addEventListener("mousedown", handleClick)
     return () => document.removeEventListener("mousedown", handleClick)
   }, [langOpen])
 
-  const current = LANG_OPTIONS.find(l => l.id === language)!
-
   return (
     <motion.nav
-      initial={{ opacity: 0, y: -16 }}
+      initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
       style={{
-        position: "sticky", top: 12, zIndex: 40,
-        margin: "12px 16px 0",
+        position: "sticky", top: 0, zIndex: 40,
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "12px 16px 12px 20px",
-        borderRadius: 999,
-        background: "color-mix(in srgb, var(--panel) 92%, transparent)",
-        border: "1px solid var(--border)",
-        boxShadow: "var(--shadow-md)",
-        backdropFilter: "blur(18px)",
+        padding: "14px 28px",
+        background: "rgba(10,10,10,0.9)",
+        backdropFilter: "blur(20px)",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
       }}
     >
-      {/* Brand */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <img src="/logo.png" alt="FitSched" style={{ width: 30, height: 30, objectFit: "contain", borderRadius: 8 }} />
-        <span style={{
-          fontFamily: "var(--font-display)",
-          fontSize: 16, fontWeight: 800, letterSpacing: "-0.03em",
-          color: "var(--text)",
-        }}>FitSched</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+        <img src="/logo.png" alt="FitSched" style={{ width: 28, height: 28, objectFit: "contain", borderRadius: 7 }} />
+        <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.03em", color: "#fff" }}>FitSched</span>
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-
-        {/* ── Language picker ── */}
         <div ref={langRef} style={{ position: "relative" }}>
-          <button
-            onClick={() => setLangOpen(v => !v)}
-            style={{
-              display: "flex", alignItems: "center", gap: 5,
-              background: ACCENT_DIM, border: `1px solid ${ACCENT_BD}`,
-              borderRadius: 999, padding: "7px 12px",
-              color: ACCENT, fontSize: 12, fontWeight: 800,
-              cursor: "pointer", fontFamily: "inherit",
-              transition: "background 0.15s, border-color 0.15s",
-            }}
-          >
-            <Globe2 size={13} color={ACCENT} strokeWidth={2.2} />
-            <span style={{ letterSpacing: "0.04em" }}>{language}</span>
-            <ChevronDown
-              size={12} strokeWidth={2.2} color={ACCENT}
-              style={{ transform: langOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.18s ease" }}
-            />
+          <button onClick={() => setLangOpen(v => !v)} style={{
+            display: "flex", alignItems: "center", gap: 5,
+            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: 999, padding: "7px 13px",
+            color: "rgba(255,255,255,0.65)", fontSize: 12, fontWeight: 700,
+            cursor: "pointer", fontFamily: "inherit",
+          }}>
+            <Globe2 size={13} strokeWidth={2.2} />
+            <span>{language}</span>
+            <ChevronDown size={11} strokeWidth={2.2} style={{ transform: langOpen ? "rotate(180deg)" : "none", transition: "transform 0.18s" }} />
           </button>
-
           <AnimatePresence>
             {langOpen && (
               <motion.div
                 initial={{ opacity: 0, y: -8, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.15 }}
                 style={{
-                  position: "absolute", top: "calc(100% + 8px)", right: 0,
-                  width: 180,
-                  background: "var(--panel)",
-                  backdropFilter: "blur(20px)",
-                  WebkitBackdropFilter: "blur(20px)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 16, padding: 5,
-                  boxShadow: "var(--shadow-lg)",
-                  zIndex: 50,
+                  position: "absolute", top: "calc(100% + 8px)", right: 0, width: 180,
+                  background: "#111", border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 16, padding: 5, zIndex: 50,
+                  boxShadow: "0 24px 60px rgba(0,0,0,0.6)",
                 }}
               >
                 {LANG_OPTIONS.map((item, i) => {
                   const active = item.id === language
                   return (
-                    <button
-                      key={item.id}
-                      onClick={() => { changeLanguage(item.id); setLangOpen(false) }}
-                      style={{
-                        width: "100%",
-                        background: active ? ACCENT_DIM : "transparent",
-                        border: `1px solid ${active ? ACCENT_BD : "transparent"}`,
-                        borderRadius: 11, padding: "9px 11px",
-                        color: active ? ACCENT : "var(--text)",
-                        display: "flex", alignItems: "center", gap: 10,
-                        fontSize: 13, fontWeight: active ? 700 : 500,
-                        cursor: "pointer", fontFamily: "inherit",
-                        marginBottom: i < LANG_OPTIONS.length - 1 ? 2 : 0,
-                        transition: "background 0.12s, border-color 0.12s",
-                      }}
-                    >
-                      <span style={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }}>{item.flag}</span>
+                    <button key={item.id} onClick={() => { changeLanguage(item.id); setLangOpen(false) }} style={{
+                      width: "100%", background: active ? ACCENT_DIM : "transparent",
+                      border: `1px solid ${active ? ACCENT_BD : "transparent"}`,
+                      borderRadius: 11, padding: "9px 11px",
+                      color: active ? ACCENT : "rgba(255,255,255,0.75)",
+                      display: "flex", alignItems: "center", gap: 10,
+                      fontSize: 13, fontWeight: active ? 700 : 500,
+                      cursor: "pointer", fontFamily: "inherit",
+                      marginBottom: i < LANG_OPTIONS.length - 1 ? 2 : 0,
+                    }}>
+                      <span style={{ fontSize: 18 }}>{item.flag}</span>
                       <span style={{ flex: 1, textAlign: "left" }}>{item.native}</span>
-                      <span style={{
-                        fontSize: 10, fontWeight: 800, letterSpacing: "0.06em",
-                        color: active ? ACCENT : "var(--text-muted)", opacity: active ? 1 : 0.6,
-                      }}>{item.id}</span>
+                      <span style={{ fontSize: 10, fontWeight: 800, color: active ? ACCENT : "rgba(255,255,255,0.25)" }}>{item.id}</span>
                     </button>
                   )
                 })}
@@ -549,18 +116,13 @@ function Navbar() {
             )}
           </AnimatePresence>
         </div>
-
-        {/* CTA */}
         <Link href="/register" style={{
           display: "flex", alignItems: "center", gap: 6,
-          background: ACCENT, color: "#0d1f1e",
-          borderRadius: 999, padding: "8px 16px",
-          fontSize: 13, fontWeight: 800, textDecoration: "none",
-          fontFamily: "var(--font-display)",
-          boxShadow: "0 2px 10px rgba(18,101,254,0.28)",
+          background: "#fff", color: "#0a0a0a",
+          borderRadius: 999, padding: "8px 18px",
+          fontSize: 13, fontWeight: 800, textDecoration: "none", letterSpacing: "-0.01em",
         }}>
           {t.createAccount}
-          <ArrowRight size={14} strokeWidth={2.5} />
         </Link>
       </div>
     </motion.nav>
@@ -568,356 +130,369 @@ function Navbar() {
 }
 
 // ── Hero ──────────────────────────────────────────────────────────────────────
-
 function Hero() {
   const { t } = useLanguage()
   return (
     <section style={{
-      minHeight: "100dvh",
-      display: "flex", alignItems: "center",
-      padding: "0 20px",
-      maxWidth: 1140, margin: "0 auto",
+      minHeight: "100dvh", background: "#0a0a0a",
+      display: "flex", flexDirection: "column", justifyContent: "flex-end",
+      padding: "60px 28px",
+      position: "relative", overflow: "hidden",
     }}>
+      {/* Subtle grid */}
       <div style={{
-        display: "grid",
-        gridTemplateColumns: "minmax(0, 1.15fr) minmax(0, 0.85fr)",
-        gap: 48, alignItems: "center", width: "100%",
-      }} className="hero-grid">
-        {/* Left */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            style={{ display: "flex", alignItems: "center", gap: 8 }}
-          >
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 7,
-              background: ACCENT_DIM, border: `1px solid ${ACCENT_BD}`,
-              borderRadius: 999, padding: "6px 14px",
-            }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: ACCENT, animation: "appBreath 2s ease-in-out infinite" }} />
-              <span style={{ fontSize: 11, fontWeight: 800, color: ACCENT, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                {t.lpFitnessScheduler}
-              </span>
-            </div>
-          </motion.div>
+        position: "absolute", inset: 0, pointerEvents: "none",
+        backgroundImage: `
+          linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px)
+        `,
+        backgroundSize: "72px 72px",
+      }} />
+      {/* Blue ambient glow */}
+      <div style={{
+        position: "absolute", bottom: -160, left: -120, width: 700, height: 700,
+        borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(18,101,254,0.10) 0%, transparent 68%)",
+        pointerEvents: "none",
+      }} />
 
+      <div style={{ maxWidth: 1200, margin: "0 auto", width: "100%", position: "relative" }}>
+        {/* Eyebrow */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }} style={{ marginBottom: 36 }}>
+          <span style={{
+            display: "inline-flex", alignItems: "center", gap: 7,
+            background: "rgba(18,101,254,0.1)", border: "1px solid rgba(18,101,254,0.2)",
+            borderRadius: 999, padding: "5px 14px",
+            fontSize: 10, fontWeight: 900, color: ACCENT, letterSpacing: "0.12em", textTransform: "uppercase",
+          }}>
+            <span style={{ width: 5, height: 5, borderRadius: "50%", background: ACCENT }} />
+            Fitness · Tokens · Habits
+          </span>
+        </motion.div>
+
+        {/* Split layout: huge headline left, content right */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "flex-end" }} className="lp-hero-grid">
+          {/* Left — giant headline */}
           <motion.h1
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            initial={{ opacity: 0, y: 36 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.75, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
             style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "clamp(38px, 5.5vw, 68px)",
-              fontWeight: 900, lineHeight: 1.04,
-              letterSpacing: "-0.035em",
-              color: "var(--text)",
               margin: 0,
+              fontSize: "clamp(62px, 9vw, 120px)",
+              fontWeight: 950, lineHeight: 0.9,
+              letterSpacing: "-0.04em", color: "#fff",
             }}
           >
-            {t.lpHeroLine1}<br />
-            <span style={{ color: ACCENT }}>{t.lpHeroLine2}</span>
+            TRAIN.<br />
+            <span style={{ color: ACCENT }}>GET<br />REWARDED.</span>
           </motion.h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.28, ease: [0.16, 1, 0.3, 1] }}
-            style={{
-              fontSize: 17, lineHeight: 1.6, fontWeight: 500,
-              color: "var(--text-muted)", maxWidth: 420, margin: 0,
-            }}
-          >
-            {t.lpHeroBody}
-          </motion.p>
-
+          {/* Right — body + CTAs + FT pill */}
           <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.36, ease: [0.16, 1, 0.3, 1] }}
-            style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}
+            initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.65, delay: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            style={{ display: "flex", flexDirection: "column", gap: 28, paddingBottom: 6 }}
           >
-            <Link href="/register" style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              background: ACCENT, color: "#0d1f1e",
-              borderRadius: 16, padding: "14px 24px",
-              fontSize: 15, fontWeight: 900, textDecoration: "none",
-              fontFamily: "var(--font-display)", letterSpacing: "-0.01em",
-              boxShadow: "0 4px 20px rgba(18,101,254,0.32)",
-            }}>
-              {t.createAccount}
-              <ArrowRight size={16} strokeWidth={2.5} />
-            </Link>
-            <Link href="#features" style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              color: "var(--text-muted)", textDecoration: "none",
-              fontSize: 14, fontWeight: 700, padding: "14px 4px",
-              borderBottom: "1px solid var(--border)",
-            }}>
-              {t.lpSeeHow}
-            </Link>
-          </motion.div>
+            <p style={{ margin: 0, fontSize: 17, lineHeight: 1.7, color: "rgba(255,255,255,0.5)", fontWeight: 500, maxWidth: 380 }}>
+              {t.lpHeroBody}
+            </p>
 
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            style={{ display: "flex", flexDirection: "column", gap: 8 }}
-          >
-            {[t.lpCheck1, t.lpCheck2, t.lpCheck3].map((item, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                <CheckCheck size={14} color={ACCENT} strokeWidth={2.5} />
-                <span style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 600 }}>{item}</span>
+            <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+              <Link href="/register" style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                background: "#fff", color: "#0a0a0a",
+                borderRadius: 14, padding: "14px 24px",
+                fontSize: 14, fontWeight: 900, textDecoration: "none", letterSpacing: "-0.01em",
+              }}>
+                {t.createAccount}
+                <ArrowRight size={15} strokeWidth={2.5} />
+              </Link>
+              <Link href="#features" style={{
+                color: "rgba(255,255,255,0.35)", textDecoration: "none",
+                fontSize: 13, fontWeight: 700,
+                borderBottom: "1px solid rgba(255,255,255,0.12)", paddingBottom: 2,
+              }}>
+                {t.lpSeeHow}
+              </Link>
+            </div>
+
+            {/* FitToken pill */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 14,
+              padding: "16px 20px",
+              background: "rgba(255,107,53,0.07)",
+              border: "1px solid rgba(255,107,53,0.18)",
+              borderRadius: 14, maxWidth: 340,
+            }}>
+              <span style={{ fontSize: 30, fontWeight: 950, letterSpacing: "-0.04em", color: FT_ORANGE, fontVariantNumeric: "tabular-nums" }}>+1.0 FT</span>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 800, color: FT_ORANGE }}>per completed workout</div>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontWeight: 600, marginTop: 2 }}>Base Network · EVM</div>
               </div>
-            ))}
+            </div>
           </motion.div>
         </div>
 
-        {/* Right — phone */}
+        {/* Bottom data strip */}
         <motion.div
-          initial={{ opacity: 0, x: 32 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.65, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
-          style={{ display: "flex", justifyContent: "center", alignItems: "center" }}
-          className="phone-col"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.55 }}
+          style={{ marginTop: 60, borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 28, display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}
+          className="lp-hero-stats"
         >
-          <PhoneMockup />
+          {[
+            { v: "80+", l: "Exercises" },
+            { v: "+1.0 FT", l: "Per session" },
+            { v: "GPS", l: "Hike tracking" },
+            { v: "Free", l: "No card needed" },
+          ].map((s, i) => (
+            <div key={i} style={{
+              borderRight: i < 3 ? "1px solid rgba(255,255,255,0.07)" : "none",
+              padding: "0 24px", paddingLeft: i === 0 ? 0 : 24,
+            }}>
+              <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{s.v}</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontWeight: 600, marginTop: 3 }}>{s.l}</div>
+            </div>
+          ))}
         </motion.div>
       </div>
     </section>
   )
 }
 
-// ── Feature bento ─────────────────────────────────────────────────────────────
-
-function Features() {
-  const { t } = useLanguage()
+// ── How it works ───────────────────────────────────────────────────────────────
+function HowItWorks() {
+  const STEPS = [
+    { num: "01", icon: Calendar,  color: ACCENT,      title: "Schedule", desc: "Set your weekly goal. FitSched builds a smart plan around your recovery and muscle readiness." },
+    { num: "02", icon: Dumbbell,  color: "#818cf8",   title: "Train",    desc: "Follow the guided session. Motion tracking verifies every rep for a full token reward." },
+    { num: "03", icon: Zap,       color: FT_ORANGE,   title: "Earn",     desc: "Complete the session, claim FitTokens to your Base wallet. Streak bonuses stack." },
+  ]
   return (
-    <section id="features" style={{ padding: "80px 20px", maxWidth: 1140, margin: "0 auto" }}>
-      <FadeIn>
-        <div style={{ marginBottom: 48 }}>
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 7,
-            background: ACCENT_DIM, border: `1px solid ${ACCENT_BD}`,
-            borderRadius: 999, padding: "5px 13px", marginBottom: 14,
-          }}>
-            <span style={{ fontSize: 10.5, fontWeight: 800, color: ACCENT, letterSpacing: "0.09em", textTransform: "uppercase" }}>
-              {t.lpBuiltDifferent}
-            </span>
-          </div>
-          <h2 style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "clamp(28px, 4vw, 46px)",
-            fontWeight: 900, lineHeight: 1.08, letterSpacing: "-0.03em",
-            color: "var(--text)", margin: 0,
-          }}>
-            {t.lpEveryTool}<br />
-            <span style={{ color: "var(--text-muted)" }}>{t.lpNothingYouDont}</span>
-          </h2>
+    <section style={{ background: "#0a0a0a", borderTop: "1px solid rgba(255,255,255,0.06)", padding: "100px 28px" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+        <FadeIn>
+          <p style={{ margin: "0 0 64px", fontSize: 10, fontWeight: 900, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)" }}>
+            How it works
+          </p>
+        </FadeIn>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1 }} className="lp-steps-grid">
+          {STEPS.map((step, i) => (
+            <FadeIn key={i} delay={i * 0.1}>
+              <div style={{
+                padding: "40px 32px",
+                borderTop: `2px solid ${step.color}`,
+                borderRight: i < 2 ? "1px solid rgba(255,255,255,0.07)" : "none",
+                background: "rgba(255,255,255,0.015)",
+              }}>
+                <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.12em", color: "rgba(255,255,255,0.18)", marginBottom: 28, fontFamily: "monospace" }}>{step.num} /</div>
+                <step.icon size={20} color={step.color} strokeWidth={1.8} style={{ marginBottom: 18, display: "block" }} />
+                <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", marginBottom: 10 }}>{step.title}</div>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", lineHeight: 1.7, fontWeight: 500 }}>{step.desc}</div>
+              </div>
+            </FadeIn>
+          ))}
         </div>
-      </FadeIn>
-
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "minmax(0, 1.35fr) minmax(0, 1fr)",
-        gridTemplateRows: "auto auto",
-        gap: 16,
-      }} className="bento-grid">
-        <FadeIn delay={0.05} style={{ gridColumn: 1, gridRow: "1 / 3" }}>
-          <ScheduleCard />
-        </FadeIn>
-        <FadeIn delay={0.12} style={{ gridColumn: 2, gridRow: 1 }}>
-          <StreakCard />
-        </FadeIn>
-        <FadeIn delay={0.18} style={{ gridColumn: 2, gridRow: 2 }}>
-          <ProgressCard />
-        </FadeIn>
       </div>
     </section>
   )
 }
 
-// ── Stats row ─────────────────────────────────────────────────────────────────
-
-function StatsRow() {
-  const { t } = useLanguage()
-  const STATS = [
-    { value: "80+",   label: t.lpStatExercises, icon: Dumbbell   },
-    { value: "7-day", label: t.lpStatPlans,     icon: Calendar   },
-    { value: "GPS",   label: t.lpStatHike,      icon: Navigation },
-    { value: "14+",   label: t.lpStatStreak,    icon: Flame      },
-  ]
+// ── FitToken section ───────────────────────────────────────────────────────────
+function FitTokenSection() {
   return (
-    <section style={{ padding: "0 20px 80px", maxWidth: 1140, margin: "0 auto" }}>
-      <FadeIn>
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 1,
-          border: "1px solid var(--border)",
-          borderRadius: 24,
-          overflow: "hidden",
-          background: "var(--surface)",
-        }} className="stats-grid">
-          {STATS.map(({ value, label, icon: Icon }, i) => (
-            <div key={i} style={{
-              padding: "28px 24px",
-              borderRight: i < 3 ? "1px solid var(--border)" : "none",
-              display: "flex", flexDirection: "column", gap: 10,
-            }}>
-              <Icon size={18} color={ACCENT} strokeWidth={2} />
-              <div>
-                <div style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: 30, fontWeight: 900, letterSpacing: "-0.04em",
-                  color: "var(--text)", lineHeight: 1,
-                }}>{value}</div>
-                <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600, marginTop: 4 }}>{label}</div>
+    <section style={{
+      background: "#0d0d0d",
+      borderTop: "1px solid rgba(255,255,255,0.06)",
+      borderBottom: "1px solid rgba(255,255,255,0.06)",
+      padding: "100px 28px", overflow: "hidden", position: "relative",
+    }}>
+      <div style={{
+        position: "absolute", top: -200, right: -200, width: 700, height: 700, borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(255,107,53,0.05) 0%, transparent 68%)",
+        pointerEvents: "none",
+      }} />
+      <div style={{ maxWidth: 1200, margin: "0 auto", position: "relative" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "center" }} className="lp-ft-grid">
+          {/* Left */}
+          <FadeIn>
+            <div>
+              <div style={{
+                fontSize: "clamp(56px, 9vw, 108px)", fontWeight: 950, lineHeight: 0.95,
+                letterSpacing: "-0.04em", color: FT_ORANGE, fontVariantNumeric: "tabular-nums", marginBottom: 14,
+              }}>+1.0<br />FT</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", fontWeight: 800, letterSpacing: "0.1em" }}>PER COMPLETED WORKOUT</div>
+              <div style={{ marginTop: 24, display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(255,107,53,0.08)", border: "1px solid rgba(255,107,53,0.2)", borderRadius: 999, padding: "6px 14px" }}>
+                <div style={{ width: 5, height: 5, borderRadius: "50%", background: FT_ORANGE }} />
+                <span style={{ fontSize: 10, fontWeight: 900, color: FT_ORANGE, letterSpacing: "0.1em" }}>BASE NETWORK · EVM</span>
               </div>
             </div>
-          ))}
+          </FadeIn>
+
+          {/* Right */}
+          <FadeIn delay={0.12}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              <h2 style={{ margin: 0, fontSize: "clamp(24px, 3.2vw, 38px)", fontWeight: 900, lineHeight: 1.15, letterSpacing: "-0.03em", color: "#fff" }}>
+                Real crypto rewards<br />for real effort.
+              </h2>
+              <p style={{ margin: 0, fontSize: 15, color: "rgba(255,255,255,0.42)", lineHeight: 1.72, fontWeight: 500 }}>
+                Every workout earns FitTokens — tracked off-chain, claimable to your Base wallet. Streak bonuses, verification multipliers, and weekly boosts mean the harder you train, the more you earn.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {[
+                  { label: "Base workout",        value: "+1.0 FT" },
+                  { label: "7-day streak bonus",  value: "+0.20 FT" },
+                  { label: "Motion verified",      value: "Full reward" },
+                ].map((row, i) => (
+                  <div key={i} style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "11px 16px",
+                    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10,
+                  }}>
+                    <span style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>{row.label}</span>
+                    <span style={{ fontSize: 13, fontWeight: 900, color: FT_ORANGE, fontVariantNumeric: "tabular-nums" }}>{row.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </FadeIn>
         </div>
-      </FadeIn>
+      </div>
     </section>
   )
 }
 
-// ── CTA block ─────────────────────────────────────────────────────────────────
+// ── Features ───────────────────────────────────────────────────────────────────
+function Features() {
+  const { t } = useLanguage()
+  const FEATURES = [
+    { icon: Zap,       color: ACCENT,     title: "Smart Scheduling",    desc: "Weekly plans built around your recovery, muscle readiness, and goals." },
+    { icon: Flame,     color: FT_ORANGE,  title: "Streak System",       desc: "Daily streaks with freeze protection so one bad day doesn't reset everything." },
+    { icon: Navigation,color: "#818cf8",  title: "GPS Hike Tracking",   desc: "Log outdoor hikes with live GPS route recording and elevation data." },
+    { icon: Dumbbell,  color: "#34d399",  title: "Motion Verification", desc: "Device motion sensors confirm every rep and award full token rewards." },
+    { icon: BarChart2, color: "#f59e0b",  title: "Achievements",        desc: "Unlock badges and track personal records across every muscle group." },
+    { icon: Calendar,  color: "#e879f9",  title: "Calendar Sync",       desc: "Push your workout schedule directly to Google Calendar." },
+  ]
 
+  return (
+    <section id="features" style={{ background: "#0a0a0a", borderTop: "1px solid rgba(255,255,255,0.06)", padding: "100px 28px" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+        <FadeIn>
+          <div style={{ marginBottom: 64 }}>
+            <h2 style={{ margin: 0, fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 900, lineHeight: 1.1, letterSpacing: "-0.03em", color: "#fff" }}>
+              {t.lpEveryTool}<br />
+              <span style={{ color: "rgba(255,255,255,0.25)" }}>{t.lpNothingYouDont}</span>
+            </h2>
+          </div>
+        </FadeIn>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)" }} className="lp-features-grid">
+          {FEATURES.map((f, i) => (
+            <FadeIn key={i} delay={i * 0.06}>
+              <div style={{
+                padding: "32px 28px",
+                borderTop: "1px solid rgba(255,255,255,0.07)",
+                borderRight: i % 3 !== 2 ? "1px solid rgba(255,255,255,0.07)" : "none",
+                display: "flex", flexDirection: "column", gap: 14,
+              }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 10,
+                  background: `${f.color}12`, border: `1px solid ${f.color}24`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <f.icon size={16} color={f.color} strokeWidth={2} />
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em" }}>{f.title}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", lineHeight: 1.65, fontWeight: 500 }}>{f.desc}</div>
+              </div>
+            </FadeIn>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── CTA ────────────────────────────────────────────────────────────────────────
 function CtaBlock() {
   const { t } = useLanguage()
   return (
-    <section style={{ padding: "0 20px 100px", maxWidth: 1140, margin: "0 auto" }}>
+    <section style={{ background: "#0a0a0a", borderTop: "1px solid rgba(255,255,255,0.06)", padding: "120px 28px", textAlign: "center" }}>
       <FadeIn>
-        <div style={{
-          borderRadius: 32, overflow: "hidden",
-          background: `
-            radial-gradient(ellipse at 30% 0%, rgba(18,101,254,0.18) 0%, transparent 55%),
-            radial-gradient(ellipse at 80% 100%, rgba(18,101,254,0.09) 0%, transparent 45%),
-            var(--surface)
-          `,
-          border: `1px solid ${ACCENT_BD}`,
-          padding: "clamp(40px, 6vw, 72px) clamp(28px, 5vw, 72px)",
-          display: "flex", alignItems: "center",
-          justifyContent: "space-between", gap: 32, flexWrap: "wrap",
-        }}>
-          <div style={{ maxWidth: 520 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-              <Calendar size={16} color={ACCENT} strokeWidth={2} />
-              <span style={{ fontSize: 12, fontWeight: 800, color: ACCENT, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                {t.lpStartToday}
-              </span>
-            </div>
-            <h2 style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "clamp(26px, 4vw, 44px)",
-              fontWeight: 900, lineHeight: 1.1, letterSpacing: "-0.03em",
-              color: "var(--text)", margin: "0 0 14px",
-            }}>
-              {t.lpCtaTitle}
-            </h2>
-            <p style={{
-              fontSize: 15, color: "var(--text-muted)",
-              fontWeight: 500, lineHeight: 1.6, margin: 0,
-            }}>
-              {t.lpCtaBody}
-            </p>
-          </div>
-
+        <div style={{ maxWidth: 560, margin: "0 auto" }}>
+          <h2 style={{ margin: "0 0 22px", fontSize: "clamp(36px, 6vw, 72px)", fontWeight: 950, lineHeight: 0.96, letterSpacing: "-0.045em", color: "#fff" }}>
+            Start training<br />today.
+          </h2>
+          <p style={{ margin: "0 0 40px", fontSize: 15, color: "rgba(255,255,255,0.38)", lineHeight: 1.7, fontWeight: 500 }}>
+            {t.lpCtaBody}
+          </p>
           <Link href="/register" style={{
-            display: "inline-flex", alignItems: "center", gap: 8, flexShrink: 0,
-            background: ACCENT, color: "#0d1f1e",
-            borderRadius: 18, padding: "16px 28px",
-            fontSize: 16, fontWeight: 900, textDecoration: "none",
-            fontFamily: "var(--font-display)", letterSpacing: "-0.01em",
-            boxShadow: "0 6px 24px rgba(18,101,254,0.3)",
-            whiteSpace: "nowrap",
+            display: "inline-flex", alignItems: "center", gap: 8,
+            background: "#fff", color: "#0a0a0a",
+            borderRadius: 14, padding: "15px 32px",
+            fontSize: 14, fontWeight: 900, textDecoration: "none", letterSpacing: "-0.01em",
           }}>
             {t.lpGetStartedFree}
-            <ArrowRight size={17} strokeWidth={2.5} />
+            <ArrowRight size={15} strokeWidth={2.5} />
           </Link>
+          <div style={{ marginTop: 18, fontSize: 11, color: "rgba(255,255,255,0.18)", fontWeight: 700, letterSpacing: "0.04em" }}>
+            FREE · NO CREDIT CARD
+          </div>
         </div>
       </FadeIn>
     </section>
   )
 }
 
-// ── Footer ────────────────────────────────────────────────────────────────────
-
+// ── Footer ─────────────────────────────────────────────────────────────────────
 function Footer() {
   const { t } = useLanguage()
   return (
     <footer style={{
-      borderTop: "1px solid var(--border)",
-      padding: "28px 20px",
-      maxWidth: 1140, margin: "0 auto",
-      display: "flex", alignItems: "center", justifyContent: "space-between",
-      flexWrap: "wrap", gap: 12,
+      borderTop: "1px solid rgba(255,255,255,0.06)",
+      padding: "24px 28px",
+      display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12,
+      maxWidth: 1200, margin: "0 auto",
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-        <img src="/logo.png" alt="FitSched" style={{ width: 26, height: 26, objectFit: "contain", borderRadius: 7, opacity: 0.72 }} />
-        <span style={{
-          fontFamily: "var(--font-display)",
-          fontSize: 14, fontWeight: 800, letterSpacing: "-0.02em",
-          color: "var(--text-muted)",
-        }}>FitSched</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <img src="/logo.png" alt="FitSched" style={{ width: 22, height: 22, objectFit: "contain", borderRadius: 6, opacity: 0.5 }} />
+        <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: "-0.02em", color: "rgba(255,255,255,0.3)" }}>FitSched</span>
       </div>
-      <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600 }}>
-        {t.lpFooterTagline}
-      </span>
+      <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+        <Link href="/privacy" style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", textDecoration: "none", fontWeight: 700 }}>Privacy</Link>
+        <Link href="/terms"   style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", textDecoration: "none", fontWeight: 700 }}>Terms</Link>
+        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.15)", fontWeight: 600 }}>{t.lpFooterTagline}</span>
+      </div>
     </footer>
   )
 }
 
-// ── Root component ────────────────────────────────────────────────────────────
-
+// ── Root ───────────────────────────────────────────────────────────────────────
 export function LandingPage() {
   return (
-    <div style={{ background: "var(--bg)", minHeight: "100dvh", overflowX: "hidden" }}>
+    <div style={{ background: "#0a0a0a", minHeight: "100dvh", overflowX: "hidden" }}>
       <style>{`
-        @keyframes lp-marquee {
-          from { transform: translateX(0); }
-          to   { transform: translateX(-50%); }
-        }
-
-        /* Mobile overrides */
         @media (max-width: 768px) {
-          .hero-grid {
-            grid-template-columns: 1fr !important;
-            padding-top: 48px !important;
-          }
-          .phone-col {
-            display: none !important;
-          }
-          .bento-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .bento-grid > * {
-            grid-column: 1 !important;
-            grid-row: auto !important;
-          }
-          .stats-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-          }
-          .stats-grid > *:nth-child(odd) {
-            border-right: 1px solid var(--border) !important;
-          }
-          .stats-grid > *:nth-child(even) {
-            border-right: none !important;
-          }
-          .stats-grid > *:nth-child(1),
-          .stats-grid > *:nth-child(2) {
-            border-bottom: 1px solid var(--border);
-          }
+          .lp-hero-grid    { grid-template-columns: 1fr !important; gap: 40px !important; }
+          .lp-hero-stats   { grid-template-columns: repeat(2, 1fr) !important; }
+          .lp-hero-stats > *:nth-child(odd)  { border-right: 1px solid rgba(255,255,255,0.07) !important; }
+          .lp-hero-stats > *:nth-child(even) { border-right: none !important; padding-left: 24px !important; }
+          .lp-hero-stats > *:nth-child(-n+2) { border-bottom: 1px solid rgba(255,255,255,0.07); padding-bottom: 20px; margin-bottom: 4px; }
+          .lp-steps-grid   { grid-template-columns: 1fr !important; }
+          .lp-steps-grid > * { border-right: none !important; }
+          .lp-ft-grid      { grid-template-columns: 1fr !important; gap: 40px !important; }
+          .lp-features-grid { grid-template-columns: 1fr !important; }
+          .lp-features-grid > * { border-right: none !important; }
+        }
+        @media (min-width: 769px) and (max-width: 1024px) {
+          .lp-features-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .lp-features-grid > *:nth-child(even) { border-right: none !important; }
+          .lp-features-grid > *:nth-child(odd)  { border-right: 1px solid rgba(255,255,255,0.07) !important; }
         }
       `}</style>
-
       <Navbar />
       <Hero />
-      <MarqueeStrip />
+      <HowItWorks />
+      <FitTokenSection />
       <Features />
-      <StatsRow />
       <CtaBlock />
       <Footer />
     </div>
