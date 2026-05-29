@@ -333,6 +333,10 @@ textarea::placeholder {
   scroll-behavior: smooth;
 }
 
+[data-dashboard-scroll] [data-dashboard-scroll] {
+  border-top: 1px solid var(--border);
+}
+
 .toast {
   position: fixed;
   bottom: calc(5rem + env(safe-area-inset-bottom));
