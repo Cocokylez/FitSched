@@ -59,6 +59,7 @@ export default function LoginPage() {
     setError('')
     try {
       await createGuestAndSignIn()
+      window.location.href = '/onboarding'
     } catch {
       setError('Could not start guest session. Please try again.')
       setGuestLoading(false)

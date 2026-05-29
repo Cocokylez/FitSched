@@ -1,7 +1,6 @@
 "use server"
 
 import { cookies } from "next/headers"
-import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
 import { hash } from "bcryptjs"
 
@@ -36,5 +35,4 @@ export async function createGuestAndSignIn() {
     path: "/",
   })
 
-  redirect("/onboarding")
 }
