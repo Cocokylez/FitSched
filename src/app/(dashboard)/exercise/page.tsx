@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { AnimatePresence, motion } from "framer-motion"
 import { useLanguage } from "@/context/LanguageContext"
 import { saveWorkoutFeedback, type SessionFeedback } from "@/lib/workoutFeedback"
@@ -72,7 +73,9 @@ function daysAgoLabel(iso: string): string {
 
 export default function ExerciseSessionPage() {
   const router = useRouter()
+  const { data: session } = useSession()
   const { t } = useLanguage()
+  const abandonedKey = `fitsched-session-abandoned-date-${session?.user?.id ?? "guest"}`
   const [workout, setWorkout] = useState<ActiveWorkout | null>(null)
   const [completedSets, setCompletedSets] = useState<Record<number, number>>({})
   const [elapsed, setElapsed] = useState(0)
@@ -115,7 +118,7 @@ export default function ExerciseSessionPage() {
       // Check if today's session was already abandoned
       if (parsed?.date) {
         try {
-          const abandonedDate = localStorage.getItem("fitsched-session-abandoned-date")
+          const abandonedDate = localStorage.getItem(abandonedKey)
           if (abandonedDate === parsed.date) {
             setLockReason("quit")
             setLocked(true)
@@ -171,7 +174,7 @@ export default function ExerciseSessionPage() {
     }
     loadWorkout()
     return () => { active = false }
-  }, [])
+  }, [abandonedKey])
 
   // Elapsed timer
   useEffect(() => {
@@ -199,7 +202,7 @@ export default function ExerciseSessionPage() {
   useEffect(() => {
     const markAbandoned = () => {
       if (!sessionDoneRef.current && !quitRef.current && workoutRef.current?.date) {
-        try { localStorage.setItem("fitsched-session-abandoned-date", workoutRef.current.date) } catch {}
+        try { localStorage.setItem(abandonedKey, workoutRef.current.date) } catch {}
       }
     }
     window.addEventListener("beforeunload", markAbandoned)
@@ -217,7 +220,7 @@ export default function ExerciseSessionPage() {
     quitRef.current = true
     try {
       if (workoutRef.current?.date) {
-        localStorage.setItem("fitsched-session-abandoned-date", workoutRef.current.date)
+        localStorage.setItem(abandonedKey, workoutRef.current.date)
       }
       sessionStorage.removeItem("fitsched-active-workout")
     } catch {}
@@ -312,7 +315,7 @@ export default function ExerciseSessionPage() {
         window.dispatchEvent(new Event("fitsched:workout-completed"))
         sessionStorage.removeItem("fitsched-active-workout")
         // Clear any abandoned flag for today (they finished properly)
-        try { localStorage.removeItem("fitsched-session-abandoned-date") } catch {}
+        try { localStorage.removeItem(abandonedKey) } catch {}
         try { const sr = await fetch("/api/streak"); if (sr.ok) { const sd = await sr.json(); setStreakDay(Number(sd.streak) || 1) } } catch {}
         sessionDoneRef.current = true
         setCelebrating(true)
