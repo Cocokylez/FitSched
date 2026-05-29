@@ -344,12 +344,12 @@ export default function ExerciseSessionPage() {
   }
 
   if (checkingLock) {
-    return <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)", display: "grid", placeItems: "center" }}><div style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 800, letterSpacing: "0.12em" }}>{t.checkingWorkout}</div></div>
+    return <div style={{ position: "fixed", inset: 0, background: "var(--bg)", color: "var(--text)", display: "grid", placeItems: "center", zIndex: 50 }}><div style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 800, letterSpacing: "0.12em" }}>{t.checkingWorkout}</div></div>
   }
 
   if (locked) {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)", padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ position: "fixed", inset: 0, background: "var(--bg)", color: "var(--text)", padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
         <div style={{ maxWidth: 420, width: "100%", textAlign: "center" }}>
           {lockReason === "quit" ? (
             <>
@@ -381,8 +381,8 @@ export default function ExerciseSessionPage() {
 
   if (!workout) {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)", padding: "24px 16px" }}>
-        <div style={{ maxWidth: 520, margin: "0 auto", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 20, padding: 24, textAlign: "center" }}>
+      <div style={{ position: "fixed", inset: 0, background: "var(--bg)", color: "var(--text)", padding: "24px 16px", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
+        <div style={{ maxWidth: 520, width: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 20, padding: 24, textAlign: "center" }}>
           <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 8 }}>{t.noWorkoutLoaded}</div>
           <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 18 }}>{t.noWorkoutLoadedBody}</div>
           <button onClick={() => router.push("/workout")} style={{ border: "none", borderRadius: 14, padding: "13px 18px", background: "var(--text)", color: "var(--bg)", fontWeight: 800, cursor: "pointer" }}>{t.backToWorkout}</button>
