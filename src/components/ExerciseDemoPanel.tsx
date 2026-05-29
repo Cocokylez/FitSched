@@ -249,8 +249,7 @@ export function ExerciseDemoVisual({
         height: typeof frameHeight === "number" ? `${frameHeight}px` : frameHeight,
         borderRadius: compact ? "11px" : "14px",
         overflow: "hidden",
-        border: "1px solid rgba(18,101,254, 0.22)",
-        background: "linear-gradient(135deg, rgba(18,101,254,0.14), rgba(255,255,255,0.04))",
+        background: "transparent",
         contain: "layout paint style",
       }}
     >
