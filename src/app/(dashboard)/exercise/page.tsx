@@ -248,19 +248,19 @@ export default function ExerciseSessionPage() {
     if (!workout) return
     const ex = workout.exercises[exIdx]
     const newCount = Math.min((completedSets[exIdx] || 0) + 1, ex.sets)
-    const newCompleted = { ...completedSets, [exIdx]: newCount }
-    setCompletedSets(newCompleted)
-    // Rest between individual sets, but not after the last set of this exercise
-    // (pressing "Next Exercise" triggers the rest before advancing to the next one)
-    const justFinishedAllSetsForThisEx = newCount >= ex.sets
-    if (!justFinishedAllSetsForThisEx) {
+    setCompletedSets(prev => ({ ...prev, [exIdx]: newCount }))
+    const justFinishedAllSets = newCount >= ex.sets
+    const isLastExercise = exIdx >= workout.exercises.length - 1
+    if (justFinishedAllSets) {
+      if (!isLastExercise) {
+        // Auto-advance to next exercise after rest
+        afterRestRef.current = () => setCurrentExIdx(i => i + 1)
+        setRestSeconds(restDuration)
+      }
+      // If last exercise: "Finish Workout" button will appear
+    } else {
       setRestSeconds(restDuration)
     }
-  }
-
-  function handleNextExercise() {
-    afterRestRef.current = () => setCurrentExIdx(i => i + 1)
-    setRestSeconds(restDuration)
   }
 
   function saveSessionFeedback(value: SessionFeedback) {
@@ -655,24 +655,24 @@ export default function ExerciseSessionPage() {
         <div style={{ height: "100%", background: ACCENT, width: `${totalSets > 0 ? (doneSets / totalSets) * 100 : 0}%`, transition: "width 0.5s ease", borderRadius: "0 2px 2px 0" }} />
       </div>
 
-      {/* W1 Sticky bottom CTA — appears only when all sets for current exercise are done */}
+      {/* Finish Workout CTA — only shown after last exercise's last set */}
       {(() => {
         const ex = workout.exercises[currentExIdx]
         if (!ex) return null
         const done = completedSets[currentExIdx] || 0
         const allSetsDoneForCurrent = done >= ex.sets
         const isLastExercise = currentExIdx >= workout.exercises.length - 1
-        if (!allSetsDoneForCurrent) return null
+        if (!allSetsDoneForCurrent || !isLastExercise) return null
         return (
-          <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "12px 16px", paddingBottom: "max(12px, env(safe-area-inset-bottom))", background: "var(--bg)", borderTop: "1px solid var(--border)" }}>
+          <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "12px 16px", paddingBottom: "max(12px, env(safe-area-inset-bottom))", background: "#fff", borderTop: "1px solid #f0f0f0" }}>
             <AnimatePresence mode="wait">
               <motion.button
-                key={isLastExercise ? "finish" : `next-${currentExIdx}`}
+                key="finish"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 type="button"
-                onClick={isLastExercise ? finishWorkout : handleNextExercise}
+                onClick={finishWorkout}
                 disabled={saving}
                 style={{
                   width: "100%", border: "none", borderRadius: 16, padding: 15,
@@ -683,10 +683,10 @@ export default function ExerciseSessionPage() {
                   boxShadow: "0 8px 24px rgba(18,101,254,0.28)",
                 }}
               >
-                {saving ? t.saving : isLastExercise ? t.finishWorkout : "Next Exercise →"}
+                {saving ? t.saving : t.finishWorkout}
                 {!saving && (
                   <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6"/>
+                    <polyline points="20 6 9 17 4 12"/>
                   </svg>
                 )}
               </motion.button>
