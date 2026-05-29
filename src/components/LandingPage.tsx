@@ -367,7 +367,7 @@ function PhoneMockup() {
   ]
 
   return (
-    <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
+    <div className="lp-phone-wrap" style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
       {/* Ambient glow behind phone */}
       <div style={{
         position: "absolute", top: "10%", left: "5%", width: "90%", height: "80%",
@@ -475,7 +475,15 @@ function Navbar() {
   const { language, changeLanguage, t } = useLanguage()
   const [langOpen, setLangOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const langRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640)
+    check()
+    window.addEventListener("resize", check)
+    return () => window.removeEventListener("resize", check)
+  }, [])
 
   useEffect(() => {
     function onScroll() { setScrolled(window.scrollY > 40) }
@@ -497,8 +505,8 @@ function Navbar() {
       initial={{ opacity: 0, y: -10 }}
       animate={{
         opacity: 1, y: 0,
-        marginLeft: scrolled ? 40 : 16,
-        marginRight: scrolled ? 40 : 16,
+        marginLeft: scrolled ? (isMobile ? 10 : 40) : (isMobile ? 8 : 16),
+        marginRight: scrolled ? (isMobile ? 10 : 40) : (isMobile ? 8 : 16),
         padding: scrolled ? "10px 14px 10px 18px" : "12px 16px 12px 20px",
       }}
       transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
@@ -571,8 +579,10 @@ function Navbar() {
           background: ACCENT, color: "#fff",
           borderRadius: 999, padding: "8px 18px",
           fontSize: 13, fontWeight: 800, textDecoration: "none", letterSpacing: "-0.01em",
-        }}>
-          {t.createAccount}
+          whiteSpace: "nowrap",
+        }} className="lp-nav-cta">
+          <span className="lp-nav-cta-full">{t.createAccount}</span>
+          <span className="lp-nav-cta-short">{t.signUp}</span>
         </Link>
       </div>
     </motion.nav>
@@ -586,7 +596,7 @@ function Hero() {
     <section style={{
       minHeight: "100dvh",
       display: "flex", flexDirection: "column", justifyContent: "center",
-      padding: "60px 28px", position: "relative", overflow: "hidden",
+      padding: "clamp(40px,8vw,80px) clamp(18px,4vw,28px)", position: "relative", overflow: "hidden",
     }}>
       {/* Blue glows matching the app's dashboard-shell-bg */}
       <div style={{
@@ -607,7 +617,7 @@ function Hero() {
         <motion.div
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.05 }}
-          style={{ marginBottom: 44 }}
+          style={{ marginBottom: "clamp(24px,6vw,44px)" }}
         >
           <span style={{
             display: "inline-flex", alignItems: "center", gap: 7,
@@ -695,7 +705,7 @@ function Hero() {
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.6 }}
-          style={{ marginTop: 72, borderTop: "1px solid var(--border)", paddingTop: 30, display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}
+          style={{ marginTop: "clamp(40px,6vw,72px)", borderTop: "1px solid var(--border)", paddingTop: 30, display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}
           className="lp-hero-stats"
         >
           {[
@@ -738,10 +748,10 @@ function HowItWorks() {
     },
   ]
   return (
-    <section style={{ borderTop: "1px solid var(--border)", padding: "100px 28px" }}>
+    <section style={{ borderTop: "1px solid var(--border)", padding: "clamp(64px,9vw,100px) clamp(18px,4vw,28px)" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <FadeIn>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 80 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "clamp(44px,7vw,80px)" }}>
             <h2 style={{
               margin: 0, fontFamily: "var(--font-display)",
               fontSize: "clamp(30px, 4vw, 52px)", fontWeight: 800, lineHeight: 1.0,
@@ -792,7 +802,7 @@ function HowItWorks() {
 // ── FitToken section ───────────────────────────────────────────────────────────
 function FitTokenSection() {
   return (
-    <section style={{ borderTop: "1px solid var(--border)", padding: "100px 28px", position: "relative", overflow: "hidden" }}>
+    <section style={{ borderTop: "1px solid var(--border)", padding: "clamp(64px,9vw,100px) clamp(18px,4vw,28px)", position: "relative", overflow: "hidden" }}>
       <div style={{
         position: "absolute", top: -200, right: -200, width: 700, height: 700, borderRadius: "50%",
         background: "radial-gradient(circle, rgba(255,107,53,0.06) 0%, transparent 68%)",
@@ -867,7 +877,7 @@ function Features() {
     { icon: Calendar,   color: "#e879f9",  title: "Calendar Sync",       desc: "Push your workout schedule directly to Google Calendar." },
   ]
   return (
-    <section id="features" style={{ borderTop: "1px solid var(--border)", padding: "100px 28px" }}>
+    <section id="features" style={{ borderTop: "1px solid var(--border)", padding: "clamp(64px,9vw,100px) clamp(18px,4vw,28px)" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <FadeIn>
           <div style={{ marginBottom: 64 }}>
@@ -914,7 +924,7 @@ function Features() {
 function CtaBlock() {
   const { t } = useLanguage()
   return (
-    <section style={{ borderTop: "1px solid var(--border)", padding: "120px 28px", textAlign: "center" }}>
+    <section style={{ borderTop: "1px solid var(--border)", padding: "clamp(72px,10vw,120px) clamp(18px,4vw,28px)", textAlign: "center" }}>
       <FadeIn>
         <div style={{ maxWidth: 560, margin: "0 auto" }}>
           <h2 style={{
@@ -973,15 +983,25 @@ export function LandingPage() {
     <div style={{ minHeight: "100dvh", overflowX: "hidden" }}>
       <style>{`
         @media (max-width: 768px) {
-          .lp-hero-grid     { grid-template-columns: 1fr !important; gap: 48px !important; }
+          .lp-hero-grid     { grid-template-columns: 1fr !important; gap: 36px !important; }
           .lp-hero-stats    { grid-template-columns: repeat(2, 1fr) !important; }
           .lp-hero-stats > *:nth-child(odd)  { border-right: 1px solid var(--border) !important; }
-          .lp-hero-stats > *:nth-child(even) { border-right: none !important; padding-left: 20px !important; }
-          .lp-hero-stats > *:nth-child(-n+2) { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 4px; }
-          .lp-step-row      { grid-template-columns: 48px 1fr !important; gap: 16px 20px !important; }
+          .lp-hero-stats > *:nth-child(even) { border-right: none !important; padding-left: 16px !important; }
+          .lp-hero-stats > *:nth-child(-n+2) { border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 4px; }
+          .lp-step-row      { grid-template-columns: 40px 1fr !important; gap: 12px 16px !important; }
           .lp-step-row > *:last-child { grid-column: 1 / -1; padding-top: 0 !important; }
-          .lp-ft-grid       { grid-template-columns: 1fr !important; gap: 40px !important; }
+          .lp-ft-grid       { grid-template-columns: 1fr !important; gap: 32px !important; }
           .lp-features-grid { grid-template-columns: 1fr !important; column-gap: 0 !important; }
+          .lp-phone-wrap    { transform: scale(0.88); transform-origin: top center; margin-bottom: -40px; }
+          .lp-nav-cta-full  { display: none; }
+          .lp-nav-cta-short { display: inline; }
+        }
+        @media (min-width: 769px) {
+          .lp-nav-cta-full  { display: inline; }
+          .lp-nav-cta-short { display: none; }
+        }
+        @media (max-width: 360px) {
+          .lp-phone-wrap { transform: scale(0.78); transform-origin: top center; margin-bottom: -64px; }
         }
         @media (min-width: 769px) and (max-width: 1024px) {
           .lp-hero-grid  { grid-template-columns: 1.1fr 0.9fr !important; gap: 40px !important; }
