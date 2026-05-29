@@ -37,6 +37,7 @@ type ActiveExercise = { name: string; sets: number; reps: number; weight?: numbe
 type ActiveWorkout = { date: string; workoutName: string; exercises: ActiveExercise[] }
 type FitTokenReward = { amount?: number; totalAwarded?: number; boosted?: boolean }
 type PRRecord = { exerciseName: string; weight: number; prevBest?: number }
+type ExPhase = "intro" | "permission" | "countdown" | "session"
 
 // Returns JSX path elements for each workout category icon
 function catIconPaths(category: string) {
@@ -106,6 +107,8 @@ export default function ExerciseSessionPage() {
   const [newAchievements, setNewAchievements] = useState<string[]>([])
   const [newPRs, setNewPRs] = useState<PRRecord[]>([])
   const [exerciseWeights, setExerciseWeights] = useState<Record<number, number | null>>({})
+  const [phase, setPhase] = useState<ExPhase>("intro")
+  const [countdownNum, setCountdownNum] = useState(3)
   const [exerciseHistory, setExerciseHistory] = useState<Record<string, { sets: number; reps: number; completedAt: string; weight?: number }>>({})
 
   useEffect(() => {
@@ -197,6 +200,20 @@ export default function ExerciseSessionPage() {
     const t = window.setTimeout(() => setRestSeconds(v => (v !== null && v > 0) ? v - 1 : null), 1000)
     return () => window.clearTimeout(t)
   }, [restSeconds])
+
+  // Countdown 3→2→1→GO then enter session
+  useEffect(() => {
+    if (phase !== "countdown") return
+    if (countdownNum > 0) {
+      const t = window.setTimeout(() => setCountdownNum(n => n - 1), 1000)
+      return () => window.clearTimeout(t)
+    }
+    const t = window.setTimeout(() => {
+      setPhase("session")
+      setCountdownNum(3)
+    }, 700)
+    return () => window.clearTimeout(t)
+  }, [phase, countdownNum])
 
   // Abandon session on tab close or SPA navigation away (if not finished/quit explicitly)
   useEffect(() => {
@@ -374,6 +391,123 @@ export default function ExerciseSessionPage() {
     )
   }
 
+  // ── Intro screen ──────────────────────────────────────────────────────────
+  if (phase === "intro") {
+    return (
+      <div style={{ position: "fixed", inset: 0, background: "#fff", color: "#111", display: "flex", flexDirection: "column", zIndex: 200 }}>
+        {/* Back */}
+        <div style={{ padding: "16px 16px 0" }}>
+          <button type="button" onClick={() => router.push("/workout")} style={{ display: "flex", alignItems: "center", gap: 6, border: "none", background: "transparent", cursor: "pointer", padding: 0, color: "#888", fontSize: 13, fontWeight: 600 }}>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back
+          </button>
+        </div>
+        {/* Content */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "24px 20px 160px" }}>
+          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.14em", color: "#aaa", marginBottom: 8 }}>TODAY&apos;S WORKOUT</div>
+          <div style={{ fontSize: 40, fontWeight: 950, letterSpacing: "-1px", color: "#111", marginBottom: 6, lineHeight: 1.05 }}>{workout.workoutName}</div>
+          <div style={{ fontSize: 13, color: "#999", fontWeight: 600, marginBottom: 28 }}>
+            {workout.exercises.length} exercises · {Math.round(totalSets * 0.75)} min
+          </div>
+          {/* Exercise list */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {workout.exercises.map((ex, i) => {
+              const category = getCategory(ex.name, i)
+              const catStyle = CATEGORY_COLORS[category] || CATEGORY_COLORS.CORE
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "#f7f7f7", borderRadius: 14, border: "1px solid #efefef" }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: catStyle.color, flexShrink: 0 }} />
+                  <div style={{ flex: 1, fontSize: 14, fontWeight: 800, color: "#111" }}>{ex.name}</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#999" }}>{ex.sets}×{ex.reps}</div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+        {/* Sticky bottom */}
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "12px 16px", paddingBottom: "max(20px, env(safe-area-inset-bottom))", background: "#fff", borderTop: "1px solid #f0f0f0" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, padding: "10px 14px", background: "rgba(255,160,0,0.08)", border: "1px solid rgba(255,160,0,0.28)", borderRadius: 12 }}>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ffa000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#ffa000", lineHeight: 1.4 }}>One shot only — exit means no FitTokens today</span>
+          </div>
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.97 }}
+            onClick={() => setPhase("permission")}
+            style={{ width: "100%", border: "none", borderRadius: 16, padding: 16, background: "#111", color: "#fff", fontSize: 16, fontWeight: 950, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+          >
+            Let&apos;s Go
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </motion.button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Permission screen ─────────────────────────────────────────────────────
+  if (phase === "permission") {
+    return (
+      <div style={{ position: "fixed", inset: 0, background: "#fff", color: "#111", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 28px", zIndex: 200 }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", stiffness: 260, damping: 24 }} style={{ width: "100%", maxWidth: 380, textAlign: "center" }}>
+          {/* Icon */}
+          <div style={{ width: 80, height: 80, borderRadius: "50%", background: "#f3f3f3", display: "grid", placeItems: "center", margin: "0 auto 24px" }}>
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#111" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+              <path d="M12 18h.01"/>
+              <path d="M9 7l1.5 3L12 8l1.5 2L15 7"/>
+            </svg>
+          </div>
+          <div style={{ fontSize: 28, fontWeight: 950, letterSpacing: "-0.5px", marginBottom: 10 }}>Track your movement</div>
+          <div style={{ fontSize: 14, color: "#777", lineHeight: 1.6, marginBottom: 36 }}>
+            FitSched uses your device&apos;s motion sensors to verify your workout and award full FitTokens. Your data never leaves your device.
+          </div>
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.96 }}
+            onClick={() => { startVerify(); setVerifySettled(true); setPhase("countdown") }}
+            style={{ width: "100%", border: "none", borderRadius: 16, padding: "16px", background: "#111", color: "#fff", fontSize: 15, fontWeight: 950, cursor: "pointer", marginBottom: 10 }}
+          >
+            Enable Motion Tracking
+          </motion.button>
+          <button
+            type="button"
+            onClick={() => { setVerifySettled(true); setPhase("countdown") }}
+            style={{ width: "100%", border: "1px solid #e8e8e8", borderRadius: 16, padding: "14px", background: "transparent", color: "#999", fontSize: 14, fontWeight: 800, cursor: "pointer" }}
+          >
+            Skip — earn 50% FitTokens
+          </button>
+        </motion.div>
+      </div>
+    )
+  }
+
+  // ── Countdown screen ──────────────────────────────────────────────────────
+  if (phase === "countdown") {
+    return (
+      <div style={{ position: "fixed", inset: 0, background: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 200 }}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={countdownNum}
+            initial={{ opacity: 0, scale: 1.4 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.6 }}
+            transition={{ type: "spring", stiffness: 300, damping: 22 }}
+            style={{ textAlign: "center" }}
+          >
+            {countdownNum > 0 ? (
+              <div style={{ fontSize: 120, fontWeight: 950, color: "#111", lineHeight: 1, letterSpacing: "-4px", fontVariantNumeric: "tabular-nums" }}>{countdownNum}</div>
+            ) : (
+              <div style={{ fontSize: 64, fontWeight: 950, color: "#111", letterSpacing: "-2px" }}>GO!</div>
+            )}
+            <div style={{ fontSize: 13, color: "#bbb", fontWeight: 700, marginTop: 12, letterSpacing: "0.12em" }}>
+              {countdownNum > 0 ? "GET READY" : "START MOVING"}
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    )
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)", display: "flex", flexDirection: "column" }}>
       {/* W1 Header — breadcrumb style */}
@@ -398,7 +532,7 @@ export default function ExerciseSessionPage() {
         </div>
       </div>
 
-      {/* W1 FT earn strip */}
+      {/* FT earn strip */}
       <div style={{ margin: "0 16px 14px", background: "rgba(18,101,254,0.08)", border: "1px solid rgba(18,101,254,0.28)", borderRadius: 14, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 700, color: ACCENT }}>
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
@@ -408,28 +542,6 @@ export default function ExerciseSessionPage() {
           {doneSets} of {totalSets}
         </div>
       </div>
-
-      {/* One-shot warning banner */}
-      <div style={{ margin: "0 16px 14px", background: "rgba(255,160,0,0.08)", border: "1px solid rgba(255,160,0,0.32)", borderRadius: 14, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10 }}>
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ffa000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        <span style={{ fontSize: 12, fontWeight: 700, color: "#ffa000", lineHeight: 1.45 }}>
-          One shot only — if you exit or quit, you <strong>cannot return</strong> and lose today&apos;s FitToken reward.
-        </span>
-      </div>
-
-      {/* Verification prompt */}
-      {!verifySettled && (
-        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} style={{ margin: "0 16px 14px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "12px 14px", display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 900, color: "var(--text)", marginBottom: 2 }}>Verify your workout</div>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.4 }}>Use motion verification to earn full FitTokens. Skip = 50%.</div>
-          </div>
-          <div style={{ display: "flex", gap: 7, flexShrink: 0 }}>
-            <button type="button" onClick={() => setVerifySettled(true)} style={{ border: "1px solid var(--border)", background: "transparent", color: "var(--text-muted)", borderRadius: 10, padding: "7px 11px", fontSize: 11, fontWeight: 800, cursor: "pointer" }}>Skip</button>
-            <button type="button" onClick={() => { startVerify(); setVerifySettled(true) }} style={{ border: "none", background: ACCENT, color: "#fff", borderRadius: 10, padding: "7px 13px", fontSize: 11, fontWeight: 900, cursor: "pointer" }}>Verify</button>
-          </div>
-        </motion.div>
-      )}
 
       {/* W1 Fullscreen single exercise display */}
       <div data-dashboard-scroll style={{ flex: 1, overflowY: "auto", padding: "0 16px", paddingBottom: 120 }}>
