@@ -122,4 +122,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return session
     },
   },
+  events: {
+    async signOut(message: any) {
+      const userId = message?.session?.userId
+      if (!userId) return
+      try {
+        const user = await db.user.findUnique({ where: { id: userId }, select: { email: true } })
+        if (user?.email?.endsWith("@fitsched.guest")) {
+          await db.user.delete({ where: { id: userId } })
+        }
+      } catch {}
+    },
+  },
 })
