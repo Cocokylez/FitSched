@@ -129,16 +129,11 @@ export async function awardFitTokensForWorkoutLogTx(
       amount: 0,
       balance: Number(balance?.amount || 0),
       transactions: [] as TokenTransaction[],
-      boosted: false,
     }
   }
 
-  const [streak, userFlags] = await Promise.all([
-    calculateCurrentStreak(tx, userId),
-    tx.user.findUnique({ where: { id: userId }, select: { ftBoostArmed: true } }),
-  ])
+  const streak = await calculateCurrentStreak(tx, userId)
   const streakBonus = calculateStreakBonus(streak)
-  const boosted = userFlags?.ftBoostArmed === true
 
   // Verification multiplier: ≥0.55 → full, 0.25–0.55 → half, <0.25 → no tokens
   const multiplier =
@@ -153,19 +148,15 @@ export async function awardFitTokensForWorkoutLogTx(
       amount: 0,
       balance: Number(balance?.amount || 0),
       transactions: [] as TokenTransaction[],
-      boosted: false,
     }
   }
 
-  // Apply boost multiplier (2x) if armed
-  const boostMultiplier = boosted ? new Prisma.Decimal(2) : new Prisma.Decimal(1)
-
-  const scaledBase = BASE_WORKOUT_REWARD.times(multiplier).times(boostMultiplier).toDecimalPlaces(2)
-  const scaledBonus = streakBonus.times(multiplier).times(boostMultiplier).toDecimalPlaces(2)
+  const scaledBase = BASE_WORKOUT_REWARD.times(multiplier).toDecimalPlaces(2)
+  const scaledBonus = streakBonus.times(multiplier).toDecimalPlaces(2)
   const totalAward = scaledBase.plus(scaledBonus).toDecimalPlaces(2)
 
   const transactions: TokenTransaction[] = [
-    { amount: scaledBase.toNumber(), reason: boosted ? "workout_complete_boosted" : "workout_complete" },
+    { amount: scaledBase.toNumber(), reason: "workout_complete" },
   ]
 
   await tx.fitToken.create({
@@ -173,7 +164,7 @@ export async function awardFitTokensForWorkoutLogTx(
       userId,
       workoutLogId,
       amount: scaledBase,
-      reason: boosted ? "workout_complete_boosted" : "workout_complete",
+      reason: "workout_complete",
     },
   })
 
@@ -190,14 +181,6 @@ export async function awardFitTokensForWorkoutLogTx(
     })
   }
 
-  // Reset boost after use
-  if (boosted) {
-    await tx.user.update({
-      where: { id: userId },
-      data: { ftBoostArmed: false },
-    })
-  }
-
   const balance = await tx.fitTokenBalance.upsert({
     where: { userId },
     create: { userId, amount: totalAward },
@@ -209,6 +192,5 @@ export async function awardFitTokensForWorkoutLogTx(
     amount: totalAward.toNumber(),
     balance: Number(balance.amount),
     transactions,
-    boosted,
   }
 }

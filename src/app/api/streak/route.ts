@@ -10,7 +10,6 @@ interface StreakData {
   streakBroken: boolean
   lastCompletedDate: string | null
   newMilestone: number | null
-  streakFreezeArmed: boolean
 }
 
 function getLocalDateId(offsetDays = 0) {
@@ -58,7 +57,7 @@ function isRestDay(dateId: string, workoutsPerWeek: number): boolean {
  * Walks backward from `fromDate` day-by-day, counting consecutive completed
  * workout days. Rest days are transparent — they neither break nor increment
  * the streak. A workout logged on a rest day counts as a +1 bonus. A missed
- * workout day breaks the streak unless a freeze covers it (consumes the freeze).
+ * workout day breaks the streak immediately.
  *
  * Hard-capped at 730 iterations (~2 years) so a misconfigured rest policy
  * can't run away.
@@ -67,10 +66,8 @@ function countStreak(
   workoutSet: Set<string>,
   fromDate: string,
   workoutsPerWeek: number,
-  freezeArmed: boolean,
-): { streak: number; freezeUsed: boolean } {
+): number {
   let streak = 0
-  let freezeUsed = false
   let cursor = fromDate
 
   for (let i = 0; i < 730; i++) {
@@ -86,16 +83,12 @@ function countStreak(
     if (hasLog) {
       streak++
       cursor = addDays(cursor, -1)
-    } else if (!freezeUsed && freezeArmed) {
-      freezeUsed = true
-      streak++                       // freeze covers this missed workout day
-      cursor = addDays(cursor, -1)
     } else {
       break
     }
   }
 
-  return { streak, freezeUsed }
+  return streak
 }
 
 export async function GET(req: Request) {
@@ -114,10 +107,9 @@ export async function GET(req: Request) {
       orderBy: { date: "desc" },
       select: { date: true },
     }),
-    db.user.findUnique({ where: { id: userId }, select: { streakFreezeArmed: true, workoutsPerWeek: true } }),
+    db.user.findUnique({ where: { id: userId }, select: { workoutsPerWeek: true } }),
   ])
 
-  const freezeArmed = user?.streakFreezeArmed ?? false
   // Default = 6 → train Mon–Sat, rest Sunday. Matches the universal
   // "Sunday is rest" rule used elsewhere in the app for users who haven't
   // picked a value during onboarding.
@@ -137,24 +129,15 @@ export async function GET(req: Request) {
   // the user doesn't see streak=0 before they've had a chance to train today.
   const startDate = workoutDateSet.has(today) ? today : yesterday
 
-  const { streak, freezeUsed: freezeConsumed } = countStreak(
-    workoutDateSet, startDate, workoutsPerWeek, freezeArmed,
-  )
+  const streak = countStreak(workoutDateSet, startDate, workoutsPerWeek)
 
   const previousStreak = lastCompletedDate
-    ? countStreak(workoutDateSet, lastCompletedDate, workoutsPerWeek, false).streak
+    ? countStreak(workoutDateSet, lastCompletedDate, workoutsPerWeek)
     : 0
 
   // Streak broken when the active count is zero but there used to be one.
   // Rest days alone can't cause this — only missed workout days can.
   const streakBroken = streak === 0 && previousStreak > 0
-
-  // Consume the freeze if it was used
-  let currentFreezeArmed = freezeArmed
-  if (freezeConsumed && freezeArmed) {
-    await db.user.update({ where: { id: userId }, data: { streakFreezeArmed: false } })
-    currentFreezeArmed = false
-  }
 
   const MILESTONES = [3, 7, 14, 30]
   let newMilestone: number | null = null
@@ -188,6 +171,5 @@ export async function GET(req: Request) {
     streakBroken,
     lastCompletedDate,
     newMilestone,
-    streakFreezeArmed: currentFreezeArmed,
   } satisfies StreakData)
 }

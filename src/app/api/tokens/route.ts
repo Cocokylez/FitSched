@@ -49,7 +49,7 @@ export async function GET(req: Request) {
       }),
       db.user.findUnique({
         where: { id: session.user.id },
-        select: { ftBoostArmed: true, walletAddress: true },
+        select: { walletAddress: true },
       }).catch(() => null),
       db.claimReceipt.findMany({
         where:   { userId: session.user.id },
@@ -67,7 +67,6 @@ export async function GET(req: Request) {
       claimable,
       claimed:       totalClaimed,
       transactions:  transactions.map(formatTransaction),
-      ftBoostArmed:  (user as any)?.ftBoostArmed  ?? false,
       walletAddress: (user as any)?.walletAddress ?? null,
       tokenDeployed: Boolean(process.env.FIT_TOKEN_ADDRESS),
       claimReceipts: receipts.map((r) => ({

@@ -841,7 +841,7 @@ function FitTokenSection() {
                 Real crypto rewards<br />for real effort.
               </h2>
               <p style={{ margin: 0, fontSize: 15, color: "var(--text-muted)", lineHeight: 1.72, fontWeight: 500 }}>
-                Every workout earns FitTokens — tracked off-chain, claimable to your Base wallet. Streak bonuses, verification multipliers, and weekly boosts mean the harder you train, the more you earn.
+                Every workout earns FitTokens — tracked off-chain, claimable to your Base wallet. Streak bonuses and verification multipliers mean the harder you train, the more you earn.
               </p>
               {/* Reward table — app panel style */}
               <div style={{ borderRadius: 18, overflow: "hidden", border: "1px solid var(--border)" }}>
@@ -874,7 +874,7 @@ function Features() {
   const { t } = useLanguage()
   const FEATURES = [
     { icon: Sparkles,   color: ACCENT,     title: "Smart Scheduling",    desc: "Weekly plans built around your recovery, muscle readiness, and goals." },
-    { icon: Flame,      color: FT_ORANGE,  title: "Streak System",       desc: "Daily streaks with freeze protection so one bad day doesn't reset everything." },
+    { icon: Flame,      color: FT_ORANGE,  title: "Streak System",       desc: "Daily streaks with rest days that don't break your run." },
     { icon: Navigation, color: "#818cf8",  title: "GPS Hike Tracking",   desc: "Log outdoor hikes with live GPS route recording and elevation data." },
     { icon: Activity,   color: "#34d399",  title: "Motion Verification", desc: "Device sensors confirm every rep and award full token rewards." },
     { icon: Trophy,     color: "#f59e0b",  title: "Achievements",        desc: "Unlock badges and track personal records across every muscle group." },
