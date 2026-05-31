@@ -42,29 +42,54 @@ function addDays(dateId: string, days: number) {
   return date.toISOString().split("T")[0]
 }
 
-function countStreakFrom(sortedDates: string[], startDate: string, freezeArmed: boolean) {
+// Sunday (UTC day 0) is always a rest day. For other days, the user's
+// `workoutsPerWeek` determines how many of [Mon..Sat] are workout days:
+//   workoutsPerWeek=3 → Mon, Tue, Wed are workouts; Thu..Sun are rest
+//   workoutsPerWeek=6 → Mon..Sat are workouts; Sun is rest
+// Treats dates as calendar days (UTC midnight parse) — the workout-vs-rest
+// schedule is the user's own weekly plan, not a timezone-dependent thing.
+function isRestDay(dateId: string, workoutsPerWeek: number): boolean {
+  const day = new Date(`${dateId}T00:00:00Z`).getUTCDay()
+  if (day === 0) return true              // Sunday always rest
+  return day - 1 >= workoutsPerWeek        // beyond the configured workout block
+}
+
+/**
+ * Walks backward from `fromDate` day-by-day, counting consecutive completed
+ * workout days. Rest days are transparent — they neither break nor increment
+ * the streak. A workout logged on a rest day counts as a +1 bonus. A missed
+ * workout day breaks the streak unless a freeze covers it (consumes the freeze).
+ *
+ * Hard-capped at 730 iterations (~2 years) so a misconfigured rest policy
+ * can't run away.
+ */
+function countStreak(
+  workoutSet: Set<string>,
+  fromDate: string,
+  workoutsPerWeek: number,
+  freezeArmed: boolean,
+): { streak: number; freezeUsed: boolean } {
   let streak = 0
   let freezeUsed = false
-  // Tracks the extra calendar day consumed by the freeze so the expected-date
-  // calculation stays in sync with the array index after the gap is covered.
-  let freezeOffset = 0
+  let cursor = fromDate
 
-  for (let i = 0; i < sortedDates.length; i++) {
-    const expected = addDays(startDate, -(i + freezeOffset))
-    if (sortedDates[i] === expected) {
+  for (let i = 0; i < 730; i++) {
+    const isRest = isRestDay(cursor, workoutsPerWeek)
+    const hasLog = workoutSet.has(cursor)
+
+    if (isRest) {
+      if (hasLog) streak++          // bonus workout on a scheduled rest day
+      cursor = addDays(cursor, -1)
+      continue
+    }
+
+    if (hasLog) {
       streak++
+      cursor = addDays(cursor, -1)
     } else if (!freezeUsed && freezeArmed) {
-      // Gap of 1 day — freeze covers it; check that the next real date follows
-      const afterGap = addDays(startDate, -(i + freezeOffset + 1))
-      if (sortedDates[i] === afterGap) {
-        freezeUsed = true
-        freezeOffset++ // shift expected-date window forward by 1 for the gap
-        streak++       // count the frozen (gap) day
-        streak++       // count the afterGap day (sortedDates[i])
-        // do NOT manually increment i — the for loop will advance it naturally
-      } else {
-        break
-      }
+      freezeUsed = true
+      streak++                       // freeze covers this missed workout day
+      cursor = addDays(cursor, -1)
     } else {
       break
     }
@@ -89,38 +114,40 @@ export async function GET(req: Request) {
       orderBy: { date: "desc" },
       select: { date: true },
     }),
-    db.user.findUnique({ where: { id: userId }, select: { streakFreezeArmed: true } }),
+    db.user.findUnique({ where: { id: userId }, select: { streakFreezeArmed: true, workoutsPerWeek: true } }),
   ])
 
   const freezeArmed = user?.streakFreezeArmed ?? false
+  // Default = 6 → train Mon–Sat, rest Sunday. Matches the universal
+  // "Sunday is rest" rule used elsewhere in the app for users who haven't
+  // picked a value during onboarding.
+  const workoutsPerWeek = user?.workoutsPerWeek ?? 6
 
-  const uniqueDates = new Set<string>()
+  const workoutDateSet = new Set<string>()
   logs.forEach((log) => {
-    uniqueDates.add(log.date)
+    workoutDateSet.add(log.date)
   })
 
-  const sortedDates = Array.from(uniqueDates).sort().reverse()
+  const sortedDates = Array.from(workoutDateSet).sort().reverse()
   const today = getLocalDateId()
   const yesterday = getLocalDateId(-1)
   const lastCompletedDate = sortedDates[0] || null
-  const streakAnchor = lastCompletedDate === today || lastCompletedDate === yesterday ? lastCompletedDate : null
 
-  let streak = 0
-  let freezeConsumed = false
+  // Grace for today: if today has no log yet, start counting from yesterday so
+  // the user doesn't see streak=0 before they've had a chance to train today.
+  const startDate = workoutDateSet.has(today) ? today : yesterday
 
-  if (streakAnchor) {
-    const result = countStreakFrom(sortedDates, streakAnchor, freezeArmed)
-    streak = result.streak
-    freezeConsumed = result.freezeUsed
-  } else if (freezeArmed && lastCompletedDate === addDays(yesterday, -1)) {
-    // Missed yesterday AND the day before was the last workout; freeze covers yesterday
-    const result = countStreakFrom(sortedDates, yesterday, true)
-    streak = result.streak
-    freezeConsumed = result.freezeUsed
-  }
+  const { streak, freezeUsed: freezeConsumed } = countStreak(
+    workoutDateSet, startDate, workoutsPerWeek, freezeArmed,
+  )
 
-  const previousStreak = lastCompletedDate ? countStreakFrom(sortedDates, lastCompletedDate, false).streak : 0
-  const streakBroken = Boolean(lastCompletedDate && lastCompletedDate < yesterday)
+  const previousStreak = lastCompletedDate
+    ? countStreak(workoutDateSet, lastCompletedDate, workoutsPerWeek, false).streak
+    : 0
+
+  // Streak broken when the active count is zero but there used to be one.
+  // Rest days alone can't cause this — only missed workout days can.
+  const streakBroken = streak === 0 && previousStreak > 0
 
   // Consume the freeze if it was used
   let currentFreezeArmed = freezeArmed
