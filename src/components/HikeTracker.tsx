@@ -8,6 +8,23 @@ import { CheckCircle, Flag, Locate, MapPin, Navigation, Pause, Play, RotateCcw, 
 import { ACCENT, GREEN, RED, BLUE, YELLOW } from "@/lib/theme"
 import { haversineKm } from "@/lib/hikeUtils"
 
+// ── Anti-jitter thresholds ───────────────────────────────────────────────────
+//
+// GPS readings have an `accuracy` radius (68% confidence circle in meters).
+// A "move" smaller than the accuracy ring is statistically noise — the
+// device can't tell whether the user actually moved. We reject:
+//
+//   • Fixes worse than MAX_ACCURACY_M (low signal, indoor, or shake-induced)
+//   • Waypoints closer than MIN_MOVEMENT_KM to the previous one
+//   • Waypoints arriving sooner than MIN_TIME_BETWEEN_MS after the last commit
+//
+// Together these defeat the "shake phone in place → km goes up" exploit
+// without significantly affecting legit slow walkers (a 4 km/h walker still
+// registers every ~7 seconds).
+const MAX_ACCURACY_M       = 30
+const MIN_MOVEMENT_KM      = 0.008   // 8 meters
+const MIN_TIME_BETWEEN_MS  = 1500
+
 // ── Tile pre-fetch (warms the offline cache around the starting position) ─────
 
 function prefetchTilesAround(lat: number, lng: number) {
@@ -171,8 +188,12 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent, onPhaseChange 
   // ── GPS callbacks ────────────────────────────────────────────────────────────
 
   function onPosition(pos: GeolocationPosition) {
-    const { latitude: lat, longitude: lng, altitude: alt } = pos.coords
+    const { latitude: lat, longitude: lng, altitude: alt, accuracy } = pos.coords
     setError(null)
+
+    // Reject low-quality fixes outright — these are the main source of phantom
+    // distance when stationary (shake, indoor reflection, weak signal).
+    if (typeof accuracy === "number" && accuracy > MAX_ACCURACY_M) return
 
     if (!startedRef.current) {
       startedRef.current   = true
@@ -193,13 +214,20 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent, onPhaseChange 
 
     if (pausedRef.current) return
 
-    const wp: Waypoint = { lat, lng, alt, ts: Date.now() }
+    const now = Date.now()
+    const wp: Waypoint = { lat, lng, alt, ts: now }
     const prev = waypointsRef.current
 
     if (prev.length > 0) {
       const last = prev[prev.length - 1]
+
+      // Time guard: drop fixes arriving suspiciously fast (shake spam, GPS
+      // bursts). 1.5 s between commits still allows a brisk jogger to log
+      // every other fix on a 1 Hz watcher.
+      if (now - last.ts < MIN_TIME_BETWEEN_MS) return
+
       const d = haversineKm(last.lat, last.lng, lat, lng)
-      if (d < 0.003) return
+      if (d < MIN_MOVEMENT_KM) return
       distanceRef.current += d
       if (alt !== null && last.alt !== null && alt > last.alt) {
         elevGainRef.current += alt - last.alt
