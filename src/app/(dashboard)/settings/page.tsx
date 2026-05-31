@@ -9,6 +9,7 @@ import { useLanguage } from "@/context/LanguageContext"
 import { useTheme } from "@/context/ThemeContext"
 import { ACCENT } from "@/lib/theme"
 import { formatFT, kgToLbs, lbsToKg } from "@/lib/formatUtils"
+import { PasswordGate } from "@/components/PasswordGate"
 
 type WorkoutEnvironment = "home_bodyweight" | "home_dumbbells" | "gym"
 
@@ -261,7 +262,26 @@ export default function SettingsPage() {
     } catch {}
   }
 
+  // ── Password gates ──────────────────────────────────────────────────────────
+  // Profile edits and account deletion are sensitive — gate both behind a
+  // password check. profileUnlocked persists for the current page visit so
+  // the user isn't re-prompted on every field change; navigating away resets it.
+  const [profileUnlocked, setProfileUnlocked] = useState(false)
+  const [profileGateOpen, setProfileGateOpen] = useState(false)
+  const pendingProfileAction = useRef<(() => void) | null>(null)
+
+  const withProfileGate = (action: () => void) => {
+    if (profileUnlocked) { action(); return }
+    pendingProfileAction.current = action
+    setProfileGateOpen(true)
+  }
+
+  const [deleteGateOpen, setDeleteGateOpen] = useState(false)
+
   const saveWorkoutEnvironment = async (next: WorkoutEnvironment) => {
+    return withProfileGate(() => doSaveWorkoutEnvironment(next))
+  }
+  const doSaveWorkoutEnvironment = async (next: WorkoutEnvironment) => {
     userModifiedRef.current.add("workoutEnvironment")
     const prev = workoutEnvironment
     setWorkoutEnvironment(next)
@@ -274,6 +294,9 @@ export default function SettingsPage() {
   }
 
   const changeWorkoutsPerWeek = async (delta: number) => {
+    return withProfileGate(() => doChangeWorkoutsPerWeek(delta))
+  }
+  const doChangeWorkoutsPerWeek = async (delta: number) => {
     const next = Math.max(1, Math.min(6, workoutsPerWeek + delta))
     if (next === workoutsPerWeek) return
     userModifiedRef.current.add("workoutsPerWeek")
@@ -288,6 +311,9 @@ export default function SettingsPage() {
   }
 
   const saveFitnessGoal = async (next: string) => {
+    return withProfileGate(() => doSaveFitnessGoal(next))
+  }
+  const doSaveFitnessGoal = async (next: string) => {
     userModifiedRef.current.add("fitnessGoal")
     const prev = fitnessGoal
     setFitnessGoal(next)
@@ -300,6 +326,9 @@ export default function SettingsPage() {
   }
 
   const saveExperienceLevel = async (next: string) => {
+    return withProfileGate(() => doSaveExperienceLevel(next))
+  }
+  const doSaveExperienceLevel = async (next: string) => {
     userModifiedRef.current.add("experienceLevel")
     const prev = experienceLevel
     setExperienceLevel(next)
@@ -312,6 +341,9 @@ export default function SettingsPage() {
   }
 
   const saveBodyStat = async (field: "heightCm" | "weightKg", rawValue: string) => {
+    return withProfileGate(() => doSaveBodyStat(field, rawValue))
+  }
+  const doSaveBodyStat = async (field: "heightCm" | "weightKg", rawValue: string) => {
     const num = parseFloat(rawValue.replace(",", "."))
     if (!isFinite(num) || num <= 0) return
     const dbValue = field === "weightKg" && weightUnit === "lbs" ? lbsToKg(num) : num
@@ -422,6 +454,11 @@ export default function SettingsPage() {
 
   const deleteAccount = async () => {
     if (deleteConfirm !== "DELETE") return
+    // Open the password gate before firing the destructive API call.
+    // doDeleteAccount runs from the gate's onSuccess.
+    setDeleteGateOpen(true)
+  }
+  const doDeleteAccount = async () => {
     setDeleting(true)
     try {
       const res = await fetch("/api/account", { method: "DELETE" })
@@ -483,7 +520,7 @@ export default function SettingsPage() {
               : profileEmail.endsWith("@fitsched.guest") ? (
                   <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
                     <span style={{ fontSize: 9, background: "rgba(18,101,254,0.18)", border: "1px solid rgba(18,101,254,0.3)", color: ACCENT, borderRadius: 999, padding: "2px 7px", fontWeight: 800, letterSpacing: "0.08em" }}>GUEST</span>
-                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Temporary account</span>
+                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{t.temporaryAccount}</span>
                   </div>
                 ) : (
                   <div style={{ fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{profileEmail}</div>
@@ -494,7 +531,7 @@ export default function SettingsPage() {
       </div>
 
       {/* EARNINGS */}
-      <SectionLabel>EARNINGS</SectionLabel>
+      <SectionLabel>{t.earnings}</SectionLabel>
       <SectionCard>
         <Row
           label="FitTokens balance"
@@ -551,10 +588,10 @@ export default function SettingsPage() {
       </SectionCard>
 
       {/* FITNESS PROFILE */}
-      <SectionLabel>FITNESS PROFILE</SectionLabel>
+      <SectionLabel>{t.fitnessProfile}</SectionLabel>
       <SectionCard>
         <div style={{ padding: "12px 14px" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>Goal</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>{t.goalLabel}</div>
           {loading ? (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
               {[0,1,2,3].map(i => <Skeleton key={i} width="100%" height={44} radius={12} />)}
@@ -593,7 +630,7 @@ export default function SettingsPage() {
           )}
         </div>
         <div style={{ borderTop: "1px solid var(--border)", padding: "12px 14px" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>Experience level</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>{t.experienceLevelLabel}</div>
           {loading ? (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 7 }}>
               {[0,1,2].map(i => <Skeleton key={i} width="100%" height={66} radius={12} />)}
@@ -633,7 +670,7 @@ export default function SettingsPage() {
 
         {/* Body stats */}
         <div style={{ borderTop: "1px solid var(--border)", padding: "12px 14px" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>Body stats</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>{t.bodyStats}</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {([
               { label: "Height", field: "heightCm" as const, value: heightInput, setter: setHeightInput, unit: "cm",       min: 100, max: 250,  placeholder: "175"  },
@@ -819,7 +856,7 @@ export default function SettingsPage() {
           Delete account
         </button>
         <div style={{ textAlign: "center", fontSize: 11, color: "var(--text-muted)", marginTop: 8 }}>
-          FitSched v1.0.0
+          FitSched v1.0.1
         </div>
       </div>
 
@@ -846,7 +883,7 @@ export default function SettingsPage() {
                 This permanently deletes your profile, workout history, streak, and FitTokens. There is no undo.
               </p>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 8 }}>
-                Type <span style={{ color: "#d96060", fontFamily: "monospace" }}>DELETE</span> to confirm
+                {t.typeDeleteToConfirm}
               </div>
               <input
                 autoFocus value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)} placeholder="DELETE"
@@ -865,6 +902,28 @@ export default function SettingsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Password gate — profile field edits */}
+      <PasswordGate
+        open={profileGateOpen}
+        actionLabel="edit your profile"
+        onClose={() => { setProfileGateOpen(false); pendingProfileAction.current = null }}
+        onSuccess={() => {
+          setProfileGateOpen(false)
+          setProfileUnlocked(true)
+          const action = pendingProfileAction.current
+          pendingProfileAction.current = null
+          action?.()
+        }}
+      />
+
+      {/* Password gate — account deletion (typed-DELETE confirmation already required) */}
+      <PasswordGate
+        open={deleteGateOpen}
+        actionLabel="delete your account"
+        onClose={() => setDeleteGateOpen(false)}
+        onSuccess={() => { setDeleteGateOpen(false); doDeleteAccount() }}
+      />
     </div>
   )
 }
