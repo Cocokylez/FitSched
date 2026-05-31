@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { getMuscleGroup } from "@/lib/exerciseData"
 
@@ -131,6 +131,7 @@ interface Props {
 
 export function MuscleHeatmap({ logs }: Props) {
   const [side, setSide] = useState<"front" | "back">("front")
+  const [imgError, setImgError] = useState(false)
 
   const { log, front, back, isToday, peakSets, combo } = useMemo(() => {
     const empty: Partial<Record<Zone, number>> = {}
@@ -149,6 +150,12 @@ export function MuscleHeatmap({ logs }: Props) {
     const { front, back } = buildZoneIntensity(byGroup)
     return { log, front, back, isToday, peakSets: peak, combo }
   }, [logs])
+
+  // Reset image-error state whenever the combo or side changes so a fresh
+  // <img> request is attempted before falling back to the SVG.
+  useEffect(() => {
+    setImgError(false)
+  }, [combo?.id, side])
 
   const zoneFill = (zone: Zone): string => {
     const map = side === "front" ? front : back
@@ -194,19 +201,43 @@ export function MuscleHeatmap({ logs }: Props) {
         </button>
       </div>
 
-      {/* Body — combo image when one matches, SVG heatmap otherwise */}
+      {/* Glow keyframes — soft pulsing green + yellow drop-shadow follows
+          the transparent-PNG alpha edge, so the highlighted muscles read as
+          active even though the filter isn't color-isolated. */}
+      <style>{`
+        @keyframes muscleGlowPulse {
+          0%, 100% {
+            filter:
+              drop-shadow(0 0 4px rgba(80, 220, 100, 0.35))
+              drop-shadow(0 0 8px rgba(230, 200, 50, 0.20));
+          }
+          50% {
+            filter:
+              drop-shadow(0 0 12px rgba(80, 220, 100, 0.70))
+              drop-shadow(0 0 22px rgba(230, 200, 50, 0.45));
+          }
+        }
+      `}</style>
+
+      {/* Body — combo image when one matches and loads, SVG heatmap otherwise */}
       <div style={{ display: "flex", justifyContent: "center", padding: "4px 0 8px" }}>
         <AnimatePresence mode="wait">
-          {combo ? (
+          {combo && !imgError ? (
             <motion.img
               key={`${combo.id}-${side}`}
               src={`/muscle/${encodeURIComponent(combo.filenameBase)}-${side}.png`}
               alt={`${combo.filenameBase} ${side} view`}
+              onError={() => setImgError(true)}
               initial={{ opacity: 0, rotateY: -25 }}
               animate={{ opacity: 1, rotateY: 0 }}
               exit={{ opacity: 0, rotateY: 25 }}
               transition={{ duration: 0.22 }}
-              style={{ width: "min(220px, 80%)", height: "auto", display: "block" }}
+              style={{
+                width: "min(220px, 80%)",
+                height: "auto",
+                display: "block",
+                animation: "muscleGlowPulse 2.4s ease-in-out infinite",
+              }}
             />
           ) : (
             <motion.svg
@@ -228,8 +259,8 @@ export function MuscleHeatmap({ logs }: Props) {
         </AnimatePresence>
       </div>
 
-      {/* Legend — combo legend (green/yellow) when image is shown, ramp legend for SVG */}
-      {combo ? (
+      {/* Legend — combo legend (green/yellow) when image renders, ramp legend for SVG fallback */}
+      {combo && !imgError ? (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, marginTop: 4 }}>
           <LegendDot color="#3fa84a" label="Primary" />
           <LegendDot color="#e8c029" label="Secondary" />
