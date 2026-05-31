@@ -264,14 +264,11 @@ export default function SettingsPage() {
 
   // ── Password gates ──────────────────────────────────────────────────────────
   // Profile edits and account deletion are sensitive — gate both behind a
-  // password check. profileUnlocked persists for the current page visit so
-  // the user isn't re-prompted on every field change; navigating away resets it.
-  const [profileUnlocked, setProfileUnlocked] = useState(false)
+  // password check. Strict mode: every save re-prompts. No session unlock.
   const [profileGateOpen, setProfileGateOpen] = useState(false)
   const pendingProfileAction = useRef<(() => void) | null>(null)
 
   const withProfileGate = (action: () => void) => {
-    if (profileUnlocked) { action(); return }
     pendingProfileAction.current = action
     setProfileGateOpen(true)
   }
@@ -903,14 +900,13 @@ export default function SettingsPage() {
         )}
       </AnimatePresence>
 
-      {/* Password gate — profile field edits */}
+      {/* Password gate — profile field edits (strict: re-prompts every save) */}
       <PasswordGate
         open={profileGateOpen}
         actionLabel="edit your profile"
         onClose={() => { setProfileGateOpen(false); pendingProfileAction.current = null }}
         onSuccess={() => {
           setProfileGateOpen(false)
-          setProfileUnlocked(true)
           const action = pendingProfileAction.current
           pendingProfileAction.current = null
           action?.()
