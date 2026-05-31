@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { getMuscleGroup } from "@/lib/exerciseData"
+import { useLanguage } from "@/context/LanguageContext"
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -130,6 +131,7 @@ interface Props {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function MuscleHeatmap({ logs }: Props) {
+  const { t } = useLanguage()
   const [side, setSide] = useState<"front" | "back">("front")
   const [imgError, setImgError] = useState(false)
 
@@ -167,14 +169,18 @@ export function MuscleHeatmap({ logs }: Props) {
   if (!log) {
     return (
       <div style={{ fontSize: 12, color: "var(--text-muted)", padding: "8px 0" }}>
-        No workout logged yet — your muscle map will appear after your first session.
+        {t.noMuscleMapYet}
       </div>
     )
   }
 
+  // Translate well-known combo workout names (Chest & Triceps, etc.); custom
+  // names that don't match the map fall through to whatever was saved.
+  const nameMap = t.workoutNames as Record<string, string> | undefined
+  const translatedName = nameMap?.[log.workoutName] ?? log.workoutName
   const headline = isToday
-    ? `Today: ${log.workoutName}`
-    : `Last workout: ${log.workoutName}`
+    ? `${t.todayLabel}: ${translatedName}`
+    : `${t.lastWorkoutLabel}: ${translatedName}`
 
   return (
     <div>
@@ -262,19 +268,19 @@ export function MuscleHeatmap({ logs }: Props) {
       {/* Legend — combo legend (green/yellow) when image renders, ramp legend for SVG fallback */}
       {combo && !imgError ? (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, marginTop: 4 }}>
-          <LegendDot color="#3fa84a" label="Primary" />
-          <LegendDot color="#e8c029" label="Secondary" />
+          <LegendDot color="#3fa84a" label={t.primaryLabel} />
+          <LegendDot color="#e8c029" label={t.secondaryLabel} />
         </div>
       ) : (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 4 }}>
-          <LegendDot color="#f5b400" label="Light" />
+          <LegendDot color="#f5b400" label={t.lightLabel} />
           <div style={{
             width: 60,
             height: 6,
             borderRadius: 999,
             background: "linear-gradient(to right, #f5b400, #e85555)",
           }} />
-          <LegendDot color="#e85555" label="Target" />
+          <LegendDot color="#e85555" label={t.targetLabel} />
         </div>
       )}
     </div>
