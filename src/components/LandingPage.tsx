@@ -6,6 +6,7 @@ import { motion, useInView, AnimatePresence } from "framer-motion"
 import {
   ArrowRight, Flame, Zap, Navigation, BarChart2,
   Calendar, Dumbbell, ChevronDown, Globe2, ChevronLeft,
+  Coins, Sparkles, Activity, Trophy,
 } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
 import { ACCENT, ACCENT_DIM, ACCENT_BD } from "@/lib/theme"
@@ -513,8 +514,11 @@ function Navbar() {
       style={{
         position: "sticky", top: 12, zIndex: 40,
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        background: "linear-gradient(180deg, rgba(255,255,255,0.035), transparent), color-mix(in srgb, var(--panel) 94%, transparent)",
-        backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" as any,
+        // Match the dashboard bottom-nav glass: low-opacity panel tint + heavy blur
+        // so backdrop scenery (hero gradient, scroll content) shows through.
+        background: "linear-gradient(180deg, rgba(255,255,255,0.05), transparent), color-mix(in srgb, var(--panel) 72%, transparent)",
+        backdropFilter: "blur(22px) saturate(140%)",
+        WebkitBackdropFilter: "blur(22px) saturate(140%)" as any,
         borderRadius: 28, border: "1px solid var(--border)",
         boxShadow: scrolled ? "var(--shadow-lg)" : "var(--shadow-md)",
       }}
@@ -742,7 +746,7 @@ function HowItWorks() {
       desc: "Follow the guided session. Device motion sensors verify each movement so every rep earns you the full token reward.",
     },
     {
-      num: "03", icon: Zap, color: FT_ORANGE,
+      num: "03", icon: Coins, color: FT_ORANGE,
       title: "Earn",
       desc: "Finish the session and earn FitTokens — tracked off-chain, claimable to your Base wallet. Streak bonuses stack on top.",
     },
@@ -869,11 +873,11 @@ function FitTokenSection() {
 function Features() {
   const { t } = useLanguage()
   const FEATURES = [
-    { icon: Zap,        color: ACCENT,     title: "Smart Scheduling",    desc: "Weekly plans built around your recovery, muscle readiness, and goals." },
+    { icon: Sparkles,   color: ACCENT,     title: "Smart Scheduling",    desc: "Weekly plans built around your recovery, muscle readiness, and goals." },
     { icon: Flame,      color: FT_ORANGE,  title: "Streak System",       desc: "Daily streaks with freeze protection so one bad day doesn't reset everything." },
     { icon: Navigation, color: "#818cf8",  title: "GPS Hike Tracking",   desc: "Log outdoor hikes with live GPS route recording and elevation data." },
-    { icon: Dumbbell,   color: "#34d399",  title: "Motion Verification", desc: "Device sensors confirm every rep and award full token rewards." },
-    { icon: BarChart2,  color: "#f59e0b",  title: "Achievements",        desc: "Unlock badges and track personal records across every muscle group." },
+    { icon: Activity,   color: "#34d399",  title: "Motion Verification", desc: "Device sensors confirm every rep and award full token rewards." },
+    { icon: Trophy,     color: "#f59e0b",  title: "Achievements",        desc: "Unlock badges and track personal records across every muscle group." },
     { icon: Calendar,   color: "#e879f9",  title: "Calendar Sync",       desc: "Push your workout schedule directly to Google Calendar." },
   ]
   return (
