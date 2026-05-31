@@ -15,13 +15,11 @@ import { MUSCLE_GROUPS } from "@/lib/exerciseData"
 import { formatLocalDate } from "@/lib/dateUtils"
 import { ACCENT } from "@/lib/theme"
 
-const DAY_EXERCISES: Record<number, Array<{ name: string; sets: number; reps: number }>> = {
-  1: [{ name: "Push-ups", sets: 3, reps: 15 }, { name: "Diamond Push-ups", sets: 3, reps: 10 }, { name: "Tricep Dips", sets: 3, reps: 12 }, { name: "Wide Push-ups", sets: 3, reps: 12 }, { name: "Close-grip Push-ups", sets: 3, reps: 10 }],
-  2: [{ name: "Pull-ups", sets: 3, reps: 10 }, { name: "Bicep Curls", sets: 3, reps: 12 }, { name: "Hammer Curls", sets: 3, reps: 10 }, { name: "Superman Hold", sets: 3, reps: 30 }, { name: "Reverse Fly", sets: 3, reps: 12 }],
-  3: [{ name: "Squats", sets: 4, reps: 15 }, { name: "Lunges", sets: 3, reps: 12 }, { name: "Glute Bridges", sets: 3, reps: 15 }, { name: "Wall Sit", sets: 3, reps: 45 }, { name: "Calf Raises", sets: 3, reps: 20 }],
-  4: [{ name: "Pike Push-ups", sets: 3, reps: 12 }, { name: "Lateral Raises", sets: 3, reps: 15 }, { name: "Plank", sets: 3, reps: 45 }, { name: "Russian Twist", sets: 3, reps: 20 }, { name: "Mountain Climbers", sets: 3, reps: 30 }],
-  5: [{ name: "Burpees", sets: 4, reps: 10 }, { name: "Jump Squats", sets: 4, reps: 15 }, { name: "High Knees", sets: 4, reps: 30 }, { name: "Box Jumps", sets: 3, reps: 12 }, { name: "Sprint", sets: 4, reps: 20 }],
-  6: [{ name: "Curl to Press", sets: 3, reps: 12 }, { name: "Tricep Extension", sets: 3, reps: 12 }, { name: "Plank Reaches", sets: 3, reps: 10 }, { name: "Leg Raises", sets: 3, reps: 15 }, { name: "Bicycle Crunches", sets: 3, reps: 20 }],
+interface UserProfile {
+  fitnessGoal?: string | null
+  experienceLevel?: string | null
+  workoutEnvironment?: string | null
+  hasInjury?: boolean | null
 }
 
 interface ScheduleBlock {
@@ -129,6 +127,7 @@ export default function SchedulePage() {
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [suggestedExercises, setSuggestedExercises] = useState<Array<{ name: string; sets: number; reps: number }>>([])
+  const [profile, setProfile] = useState<UserProfile | null>(null)
   const longPressTimer = useRef<number | null>(null)
   const [weekWorkouts, setWeekWorkouts] = useState(0)
   const [workoutsPerWeek, setWorkoutsPerWeek] = useState(3)
@@ -216,9 +215,10 @@ export default function SchedulePage() {
         if (selDate) {
           try {
             const profileRes = await fetch("/api/onboarding")
-            const profile = profileRes.ok ? await profileRes.json() : {}
+            const profileData: UserProfile = profileRes.ok ? await profileRes.json() : {}
+            setProfile(profileData)
             const targetMuscles = (() => { try { const raw = localStorage.getItem("fitsched-onboarding-preferences"); const p = raw ? JSON.parse(raw) : {}; return Array.isArray(p?.targetMuscles) ? p.targetMuscles : [] } catch { return [] } })()
-            recommendationExercises = toWorkoutExercises(getSmartExercisePlan({ selectedDay, fitnessGoal: profile.fitnessGoal || "stay_active", experienceLevel: getFeedbackAdjustedExperienceLevel(profile.experienceLevel || "intermediate"), workoutEnvironment: profile.workoutEnvironment || "gym", hasInjury: Boolean(profile.hasInjury), targetMuscles }))
+            recommendationExercises = toWorkoutExercises(getSmartExercisePlan({ selectedDay, fitnessGoal: profileData.fitnessGoal || "stay_active", experienceLevel: getFeedbackAdjustedExperienceLevel(profileData.experienceLevel || "intermediate"), workoutEnvironment: profileData.workoutEnvironment || "gym", hasInjury: Boolean(profileData.hasInjury), targetMuscles }))
             setSuggestedExercises(recommendationExercises)
           } catch { recommendationExercises = toWorkoutExercises(getSmartExercisePlan({ selectedDay })); setSuggestedExercises(recommendationExercises) }
           const dateStr = formatLocalDate(selDate)
@@ -312,9 +312,34 @@ export default function SchedulePage() {
 
   const startExerciseFromSchedule = (block: ScheduleBlock) => {
     if (!selectedDate || !canStartExerciseToday) return
+
+    // Fallback path: when the block has no exercises and the suggested cache
+    // is empty (profile still loading, AI fetch failed, etc.) compute a fresh
+    // smart plan from whatever profile we have. If profile is also unloaded
+    // we default to home_bodyweight — the safest plan for any user since it
+    // requires no equipment.
+    const fallbackExercises = (): Array<{ name: string; sets: number; reps: number }> => {
+      const targetMuscles = (() => {
+        try {
+          const raw = localStorage.getItem("fitsched-onboarding-preferences")
+          const p = raw ? JSON.parse(raw) : {}
+          return Array.isArray(p?.targetMuscles) ? p.targetMuscles : []
+        } catch { return [] }
+      })()
+      const plan = toWorkoutExercises(getSmartExercisePlan({
+        selectedDay,
+        fitnessGoal:        profile?.fitnessGoal || "stay_active",
+        experienceLevel:    getFeedbackAdjustedExperienceLevel(profile?.experienceLevel || "intermediate"),
+        workoutEnvironment: profile?.workoutEnvironment || "home_bodyweight",
+        hasInjury:          Boolean(profile?.hasInjury),
+        targetMuscles,
+      }))
+      return plan.length > 0 ? plan : [{ name: block.label, sets: 3, reps: 12 }]
+    }
+
     const exercises = Array.isArray(block.exercises) && block.exercises.length > 0
       ? block.exercises.map(e => ({ name: e.name || block.label, sets: Number(e.sets) || 3, reps: Number(e.reps) || 12 }))
-      : suggestedExercises.length > 0 ? suggestedExercises : (DAY_EXERCISES[selectedDay] || [{ name: block.label, sets: 3, reps: 12 }])
+      : suggestedExercises.length > 0 ? suggestedExercises : fallbackExercises()
     sessionStorage.setItem("fitsched-active-workout", JSON.stringify({ date: formatLocalDate(selectedDate), workoutName: block.label, exercises }))
     router.push("/exercise")
   }
