@@ -10,6 +10,8 @@ import {
 } from "lucide-react"
 import { ACCENT } from "@/lib/theme"
 import { formatFT } from "@/lib/formatUtils"
+import { SkeletonCard, SkeletonLine } from "@/components/Skeleton"
+import { PasswordGate } from "@/components/PasswordGate"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -208,7 +210,18 @@ export default function WithdrawalPage() {
 
   // ── Claim ───────────────────────────────────────────────────────────────────
 
-  async function handleClaim() {
+  // Claim is gated behind a password check (verify existing, or set a first
+  // password for Google-only signups). handleClaim opens the gate; only on
+  // successful unlock does performClaim() actually hit /api/tokens/claim.
+  const [gateOpen, setGateOpen] = useState(false)
+
+  function handleClaim() {
+    if (!data || claimState === "claiming") return
+    setClaimError(null)
+    setGateOpen(true)
+  }
+
+  async function performClaim() {
     if (!data || claimState === "claiming") return
     setClaimState("claiming")
     setClaimError(null)
@@ -293,7 +306,20 @@ export default function WithdrawalPage() {
           </div>
         </div>
 
+        {/* Initial fetch skeleton — shown above (and instead of) the wallet
+            and balance cards while the first /api/tokens load resolves. */}
+        {loading && (
+          <div>
+            <SkeletonCard height="92px" />
+            <SkeletonCard height="220px" />
+            <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+              <SkeletonLine width="100%" height="50px" borderRadius="14px" />
+            </div>
+          </div>
+        )}
+
         {/* ══ WALLET CARD ═══════════════════════════════════════════════════════ */}
+        {!loading && (
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -423,8 +449,10 @@ export default function WithdrawalPage() {
 
           {loading && <div style={{ height: 40, background: "var(--surface-2)", borderRadius: 10, opacity: 0.5 }} />}
         </motion.div>
+        )}
 
         {/* ══ BALANCE + CLAIM CARD ══════════════════════════════════════════════ */}
+        {!loading && (
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -579,6 +607,7 @@ export default function WithdrawalPage() {
             )}
           </AnimatePresence>
         </motion.div>
+        )}
 
         {/* ══ HOW YOU EARN ══════════════════════════════════════════════════════ */}
         <motion.div
@@ -689,6 +718,14 @@ export default function WithdrawalPage() {
         )}
 
       </div>
+
+      {/* Password gate — opens before any /api/tokens/claim call */}
+      <PasswordGate
+        open={gateOpen}
+        actionLabel="withdraw FIT"
+        onClose={() => setGateOpen(false)}
+        onSuccess={() => { setGateOpen(false); performClaim() }}
+      />
     </div>
   )
 }

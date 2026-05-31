@@ -7,7 +7,7 @@
 *An AI-powered workout scheduler that automatically fits
 workouts into your free time using Google Calendar.*
 
-![Version](https://img.shields.io/badge/version-1.0.0-white?style=flat-square&labelColor=1a1a1a)
+![Version](https://img.shields.io/badge/version-1.0.1-white?style=flat-square&labelColor=1a1a1a)
 ![Next.js](https://img.shields.io/badge/Next.js-15-white?style=flat-square&labelColor=1a1a1a)
 ![License](https://img.shields.io/badge/license-MIT-white?style=flat-square&labelColor=1a1a1a)
 ![Status](https://img.shields.io/badge/status-in%20development-orange?style=flat-square&labelColor=1a1a1a)
