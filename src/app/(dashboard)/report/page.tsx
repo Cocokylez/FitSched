@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell, AreaChart, Area, YAxis } from "recharts"
 import { useLanguage } from "@/context/LanguageContext"
 import { SkeletonCard } from "@/components/Skeleton"
-import { ChevronDown, ChevronRight, RotateCcw, Check, Wallet, Snowflake, Zap } from "lucide-react"
+import { ChevronDown, ChevronRight, RotateCcw, Check, Wallet } from "lucide-react"
 import { stagger, fadeUp } from "@/lib/animations"
 import { getMuscleGroup } from "@/lib/exerciseData"
 import { getWeekId, formatLocalDate, toDateId, addDays, calculateLongestStreak } from "@/lib/dateUtils"
@@ -119,12 +119,6 @@ export default function ReportPage() {
   const [historyMuscleFilter, setHistoryMuscleFilter] = useState<string | null>(null)
   const [ftBalance, setFtBalance] = useState(0)
   const [ftTxs, setFtTxs] = useState<FitTokenTx[]>([])
-  const [streakFreezeArmed, setStreakFreezeArmed] = useState(false)
-  const [buyingFreeze, setBuyingFreeze] = useState(false)
-  const [freezeError, setFreezeError] = useState<string | null>(null)
-  const [ftBoostArmed, setFtBoostArmed] = useState(false)
-  const [buyingBoost, setBuyingBoost] = useState(false)
-  const [boostError, setBoostError] = useState<string | null>(null)
   const [hikeTotals, setHikeTotals] = useState<{ count: number; km: number; durationMin: number } | null>(null)
 
   // Streak count-up animation
@@ -183,14 +177,13 @@ export default function ReportPage() {
         if (logRes.ok) setLogs(await logRes.json())
         let latestStreak = 0
         let latestTokens = 0
-        if (streakRes.ok) { const d = await streakRes.json(); latestStreak = d.streak ?? 0; setStreak(latestStreak); setStreakFreezeArmed(d.streakFreezeArmed ?? false) }
+        if (streakRes.ok) { const d = await streakRes.json(); latestStreak = d.streak ?? 0; setStreak(latestStreak) }
         if (profileRes.ok) { const d = await profileRes.json(); if (d.workoutsPerWeek) setWorkoutsPerWeek(d.workoutsPerWeek) }
         if (tokenRes.ok) {
           const d = await tokenRes.json()
           latestTokens = d.balance ?? 0
           setFtBalance(latestTokens)
           setFtTxs(d.transactions ?? [])
-          setFtBoostArmed(d.ftBoostArmed ?? false)
         }
         // Push fresh data to Android home-screen widget (no-op on web / iOS)
         updateWidget(latestStreak, latestTokens)
@@ -209,46 +202,6 @@ export default function ReportPage() {
     }
     load()
   }, [status])
-
-  const buyBoost = async () => {
-    if (buyingBoost || ftBoostArmed || ftBalance < 3) return
-    setBuyingBoost(true)
-    setBoostError(null)
-    try {
-      const res = await fetch("/api/tokens/boost", { method: "POST" })
-      if (res.ok) {
-        const d = await res.json()
-        setFtBoostArmed(true)
-        setFtBalance(d.balance ?? ftBalance - 3)
-      } else {
-        const d = await res.json().catch(() => ({}))
-        setBoostError(d.error ?? "Failed to activate boost")
-      }
-    } catch {
-      setBoostError("Network error — try again")
-    }
-    setBuyingBoost(false)
-  }
-
-  const buyFreeze = async () => {
-    if (buyingFreeze || streakFreezeArmed || ftBalance < 2) return
-    setBuyingFreeze(true)
-    setFreezeError(null)
-    try {
-      const res = await fetch("/api/streak-freeze", { method: "POST" })
-      if (res.ok) {
-        const d = await res.json()
-        setStreakFreezeArmed(true)
-        setFtBalance(d.balance ?? ftBalance - 2)
-      } else {
-        const d = await res.json().catch(() => ({}))
-        setFreezeError(d.error ?? "Failed to activate freeze")
-      }
-    } catch {
-      setFreezeError("Network error — try again")
-    }
-    setBuyingFreeze(false)
-  }
 
   const handleRepeat = async (log: WorkoutLog) => {
     if (repeatingId) return
@@ -381,15 +334,6 @@ export default function ReportPage() {
                 <div style={{ position: "absolute", right: 14, top: 12, pointerEvents: "none" }}>
                   <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }} style={{ opacity: 0.9, transformOrigin: "50% 80%", position: "relative" }}>
                     <FlameIcon size={56} streak={streak} />
-                    {streakFreezeArmed && (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        style={{ position: "absolute", bottom: -4, right: -4, width: 20, height: 20, borderRadius: "50%", background: "rgba(99,179,237,0.95)", border: "1.5px solid rgba(255,255,255,0.4)", display: "flex", alignItems: "center", justifyContent: "center" }}
-                      >
-                        <Snowflake size={10} strokeWidth={2.5} color="#fff" />
-                      </motion.div>
-                    )}
                   </motion.div>
                   <div style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)" }}>
                     {embers.map(ember => (
@@ -418,80 +362,6 @@ export default function ReportPage() {
                     Personal best · <span style={{ color: ACCENT, fontWeight: 900 }}>{longestStreak} {longestStreak === 1 ? "day" : "days"}</span>
                   </div>
                 </div>
-
-                {/* Freeze status pill */}
-                {streakFreezeArmed && (
-                  <div style={{ padding: "0 22px 6px" }}>
-                    <div style={{ display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 20, padding: "6px 12px", background: "rgba(99,179,237,0.15)", border: "1px solid rgba(99,179,237,0.38)", fontSize: 11, fontWeight: 800, color: "#63b3ed" }}>
-                      <Snowflake size={12} strokeWidth={2.5} />
-                      Freeze armed — one miss protected
-                    </div>
-                  </div>
-                )}
-
-                {/* Inline store chips — compact buy row */}
-                {(!streakFreezeArmed || !ftBoostArmed) && (
-                  <div style={{ padding: `${streakFreezeArmed ? "0" : "0"} 22px 14px`, display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    {!streakFreezeArmed && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                        <button
-                          onClick={buyFreeze}
-                          disabled={buyingFreeze || ftBalance < 2 || streak === 0}
-                          style={{
-                            display: "inline-flex", alignItems: "center", gap: 5,
-                            borderRadius: 20, padding: "5px 12px",
-                            background: ftBalance >= 2 && streak > 0 ? "rgba(99,179,237,0.1)" : "rgba(255,255,255,0.04)",
-                            border: `1px solid ${ftBalance >= 2 && streak > 0 ? "rgba(99,179,237,0.35)" : "rgba(255,255,255,0.08)"}`,
-                            color: ftBalance >= 2 && streak > 0 ? "#63b3ed" : "var(--text-muted)",
-                            fontSize: 11, fontWeight: 800,
-                            cursor: ftBalance >= 2 && streak > 0 ? "pointer" : "not-allowed",
-                            opacity: buyingFreeze ? 0.6 : 1,
-                            transition: "opacity 0.15s",
-                          }}
-                        >
-                          <Snowflake size={10} strokeWidth={2.5} />
-                          {buyingFreeze ? "Activating…" : streak === 0 ? "Freeze · need streak" : "Freeze · 2 FT"}
-                        </button>
-                        {freezeError && <span style={{ fontSize: 10, color: "#fc8181", fontWeight: 700, paddingLeft: 4 }}>{freezeError}</span>}
-                      </div>
-                    )}
-                    {!ftBoostArmed && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                        <button
-                          onClick={buyBoost}
-                          disabled={buyingBoost || ftBalance < 3}
-                          style={{
-                            display: "inline-flex", alignItems: "center", gap: 5,
-                            borderRadius: 20, padding: "5px 12px",
-                            background: ftBalance >= 3 ? "rgba(246,211,101,0.1)" : "rgba(255,255,255,0.04)",
-                            border: `1px solid ${ftBalance >= 3 ? "rgba(246,211,101,0.35)" : "rgba(255,255,255,0.08)"}`,
-                            color: ftBalance >= 3 ? "#c8a832" : "var(--text-muted)",
-                            fontSize: 11, fontWeight: 800,
-                            cursor: ftBalance >= 3 ? "pointer" : "not-allowed",
-                            opacity: buyingBoost ? 0.6 : 1,
-                            transition: "opacity 0.15s",
-                          }}
-                        >
-                          <Zap size={10} strokeWidth={2.5} />
-                          {buyingBoost ? "Activating…" : "Boost · 3 FT"}
-                        </button>
-                        {boostError && <span style={{ fontSize: 10, color: "#fc8181", fontWeight: 700, paddingLeft: 4 }}>{boostError}</span>}
-                      </div>
-                    )}
-                    {ftBoostArmed && !streakFreezeArmed && (
-                      <div style={{ display: "inline-flex", alignItems: "center", gap: 5, borderRadius: 20, padding: "5px 12px", background: "rgba(246,211,101,0.1)", border: "1px solid rgba(246,211,101,0.35)", fontSize: 11, fontWeight: 800, color: "#c8a832" }}>
-                        <Zap size={10} strokeWidth={2.5} /> Boost active
-                      </div>
-                    )}
-                  </div>
-                )}
-                {(streakFreezeArmed && ftBoostArmed) && (
-                  <div style={{ padding: "0 22px 14px", display: "flex", gap: 8 }}>
-                    <div style={{ display: "inline-flex", alignItems: "center", gap: 5, borderRadius: 20, padding: "5px 12px", background: "rgba(246,211,101,0.1)", border: "1px solid rgba(246,211,101,0.35)", fontSize: 11, fontWeight: 800, color: "#c8a832" }}>
-                      <Zap size={10} strokeWidth={2.5} /> Boost active
-                    </div>
-                  </div>
-                )}
 
                 {/* Week strip */}
                 <div style={{ borderTop: `1px solid ${isDark ? "rgba(18,101,254,0.15)" : "rgba(18,101,254,0.25)"}`, padding: "12px 22px 18px" }}>
