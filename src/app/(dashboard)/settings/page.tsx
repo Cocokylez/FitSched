@@ -275,6 +275,16 @@ export default function SettingsPage() {
 
   const [deleteGateOpen, setDeleteGateOpen] = useState(false)
 
+  // Success toast — flashes a brief "Profile updated" confirmation after each
+  // successful profile save. Auto-dismisses after 1.8s.
+  const [profileToast, setProfileToast] = useState(false)
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const showProfileSavedToast = useCallback(() => {
+    setProfileToast(true)
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    toastTimerRef.current = setTimeout(() => setProfileToast(false), 1800)
+  }, [])
+
   const saveWorkoutEnvironment = async (next: WorkoutEnvironment) => {
     return withProfileGate(() => doSaveWorkoutEnvironment(next))
   }
@@ -286,6 +296,7 @@ export default function SettingsPage() {
     try {
       const res = await fetch("/api/onboarding", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workoutEnvironment: next }) })
       if (!res.ok) { setWorkoutEnvironment(prev); userModifiedRef.current.delete("workoutEnvironment") }
+      else { showProfileSavedToast() }
     } catch { setWorkoutEnvironment(prev); userModifiedRef.current.delete("workoutEnvironment") }
     setSavingEnvironment(false)
   }
@@ -303,6 +314,7 @@ export default function SettingsPage() {
     try {
       const res = await fetch("/api/onboarding", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workoutsPerWeek: next }) })
       if (!res.ok) { setWorkoutsPerWeek(prev); userModifiedRef.current.delete("workoutsPerWeek") }
+      else { showProfileSavedToast() }
     } catch { setWorkoutsPerWeek(prev); userModifiedRef.current.delete("workoutsPerWeek") }
     setSavingPerWeek(false)
   }
@@ -318,6 +330,7 @@ export default function SettingsPage() {
     try {
       const res = await fetch("/api/onboarding", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fitnessGoal: next }) })
       if (!res.ok) { setFitnessGoal(prev); userModifiedRef.current.delete("fitnessGoal") }
+      else { showProfileSavedToast() }
     } catch { setFitnessGoal(prev); userModifiedRef.current.delete("fitnessGoal") }
     setSavingGoal(false)
   }
@@ -333,6 +346,7 @@ export default function SettingsPage() {
     try {
       const res = await fetch("/api/onboarding", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ experienceLevel: next }) })
       if (!res.ok) { setExperienceLevel(prev); userModifiedRef.current.delete("experienceLevel") }
+      else { showProfileSavedToast() }
     } catch { setExperienceLevel(prev); userModifiedRef.current.delete("experienceLevel") }
     setSavingLevel(false)
   }
@@ -359,6 +373,8 @@ export default function SettingsPage() {
         if (field === "heightCm") setHeightCm(prevHeight)
         if (field === "weightKg") setWeightKg(prevWeight)
         userModifiedRef.current.delete(field)
+      } else {
+        showProfileSavedToast()
       }
     } catch {
       if (field === "heightCm") setHeightCm(prevHeight)
@@ -912,6 +928,40 @@ export default function SettingsPage() {
           action?.()
         }}
       />
+
+      {/* Profile-saved toast */}
+      <AnimatePresence>
+        {profileToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 24, scale: 0.92 }}
+            transition={{ type: "spring", stiffness: 320, damping: 26 }}
+            style={{
+              position: "fixed",
+              bottom: "calc(96px + env(safe-area-inset-bottom))",
+              left: "50%", transform: "translateX(-50%)",
+              zIndex: 250,
+              display: "flex", alignItems: "center", gap: 9,
+              background: "rgba(10,20,18,0.92)",
+              backdropFilter: "blur(14px)",
+              WebkitBackdropFilter: "blur(14px)",
+              border: "1px solid rgba(74,222,128,0.36)",
+              borderRadius: 999,
+              padding: "10px 18px",
+              boxShadow: "0 14px 38px rgba(0,0,0,0.4)",
+              pointerEvents: "none",
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <span style={{ fontSize: 13, fontWeight: 800, color: "#fff", letterSpacing: "-0.01em" }}>
+              {t.profileUpdated}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Password gate — account deletion (typed-DELETE confirmation already required) */}
       <PasswordGate

@@ -239,6 +239,7 @@ const translations = {
     typeDeleteToConfirm: 'Type DELETE to confirm',
     temporaryAccount: 'Temporary account',
     yourProgressIsTemporary: 'Your progress is temporary',
+    profileUpdated: 'Profile updated',
   },
   CN: {
     yourDay: '你的一天',
@@ -475,6 +476,7 @@ const translations = {
     typeDeleteToConfirm: '输入 DELETE 以确认',
     temporaryAccount: '临时账户',
     yourProgressIsTemporary: '您的进度是临时的',
+    profileUpdated: '档案已更新',
   },
   JP: {
     yourDay: '今日の予定',
@@ -711,6 +713,7 @@ const translations = {
     typeDeleteToConfirm: '確認のため DELETE と入力',
     temporaryAccount: '一時アカウント',
     yourProgressIsTemporary: 'あなたの進捗は一時的です',
+    profileUpdated: 'プロフィールを更新しました',
   },
   VI: {
     yourDay: 'Ngày của bạn',
@@ -947,6 +950,7 @@ const translations = {
     typeDeleteToConfirm: 'Nhập DELETE để xác nhận',
     temporaryAccount: 'Tài khoản tạm thời',
     yourProgressIsTemporary: 'Tiến độ của bạn là tạm thời',
+    profileUpdated: 'Hồ sơ đã cập nhật',
   }
 }
 
