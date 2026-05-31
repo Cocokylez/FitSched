@@ -35,7 +35,7 @@ const FEEDBACK_OPTIONS: Array<{ value: SessionFeedback; label: string; detail: s
 
 type ActiveExercise = { name: string; sets: number; reps: number; weight?: number }
 type ActiveWorkout = { date: string; workoutName: string; exercises: ActiveExercise[] }
-type FitTokenReward = { amount?: number; totalAwarded?: number; boosted?: boolean }
+type FitTokenReward = { amount?: number; totalAwarded?: number }
 type PRRecord = { exerciseName: string; weight: number; prevBest?: number }
 type ExPhase = "intro" | "permission" | "countdown" | "session"
 
@@ -827,17 +827,6 @@ export default function ExerciseSessionPage() {
               <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.50 }} style={{ borderRadius: 18, padding: 16, background: "linear-gradient(135deg, rgba(18,101,254,0.2), rgba(18,101,254,0.06))", border: "1px solid rgba(18,101,254,0.32)", marginBottom: 18 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
                   <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.12em" }}>YOU RECEIVED</div>
-                  {fitTokenReward?.boosted && (
-                    <motion.span
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 380, damping: 18, delay: 0.55 }}
-                      style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", color: "#f6d365", background: "rgba(246,211,101,0.18)", border: "1px solid rgba(246,211,101,0.4)", borderRadius: 999, padding: "2px 7px", display: "flex", alignItems: "center", gap: 3 }}
-                    >
-                      <svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                      2X BOOST
-                    </motion.span>
-                  )}
                 </div>
                 <motion.div
                   initial={{ scale: 0.8, opacity: 0 }}
