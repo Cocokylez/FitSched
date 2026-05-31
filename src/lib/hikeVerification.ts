@@ -32,6 +32,21 @@ const MIN_POINTS = 4
 /** Cap on claimed distance when no GPS data is provided (sanity limit). */
 const NO_GPS_KM_CAP = 12
 
+/**
+ * km — bounding-box diagonal below which all GPS points are considered to
+ * be clustered around one location (i.e. the user never actually moved).
+ * Defeats the patched-client variant of the shake-jitter exploit even when
+ * the client uploads many points with valid timestamps.
+ */
+const CLUSTER_DIAMETER_KM = 0.05  // 50 meters
+
+/**
+ * km — only run the cluster check when claimed/server distance exceeds
+ * this threshold. Short, legitimate strolls inside a small park or
+ * around a viewpoint shouldn't trip the heuristic.
+ */
+const MIN_DISTANCE_FOR_CLUSTER_CHECK_KM = 0.3  // 300 meters
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ValidPoint { lat: number; lng: number; ts: number }
@@ -45,10 +60,12 @@ export interface HikeVerification {
   vehicleKm:    number
   /** km excluded because of suspiciously large positional jumps. */
   jumpKm:       number
-  /** Fraction of distance (0–1) that was excluded as vehicle / jump. */
+  /** Fraction of distance (0–1) that was excluded as vehicle / jump / cluster. */
   excludedRatio: number
   /** Whether meaningful route data was present. */
   hasGpsData:   boolean
+  /** True when all GPS points clustered within CLUSTER_DIAMETER_KM (jitter fraud). */
+  clustered:    boolean
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
@@ -70,6 +87,7 @@ export function verifyHikeRoute(
       jumpKm:       0,
       excludedRatio: 0,
       hasGpsData:   false,
+      clustered:    false,
     }
   }
 
@@ -121,8 +139,23 @@ export function verifyHikeRoute(
     }
   }
 
-  const totalTracked = walkingKm + vehicleKm + jumpKm
-  const excludedRatio = totalTracked > 0 ? (vehicleKm + jumpKm) / totalTracked : 0
+  // ── Cluster check — defeats stationary-jitter fraud ────────────────────────
+  // If all waypoints fit inside a tiny bounding box but the cumulative segment
+  // distance is non-trivial, the user never actually moved. Zero out the
+  // walking distance entirely so no reward is paid.
+  const boundingDiameterKm = maxBoundingDiameterKm(points)
+  const clustered =
+    serverKm > MIN_DISTANCE_FOR_CLUSTER_CHECK_KM &&
+    boundingDiameterKm < CLUSTER_DIAMETER_KM
+
+  if (clustered) {
+    walkingKm = 0
+  }
+
+  const totalTracked = walkingKm + vehicleKm + jumpKm + (clustered ? serverKm : 0)
+  const excludedRatio = totalTracked > 0
+    ? (vehicleKm + jumpKm + (clustered ? serverKm : 0)) / totalTracked
+    : 0
 
   // Reward only the walking portion; cap at what client claimed to prevent
   // GPS drift inflation (long hikes in open terrain can accumulate ghost km).
@@ -135,7 +168,30 @@ export function verifyHikeRoute(
     jumpKm:       parseFloat(jumpKm.toFixed(3)),
     excludedRatio: parseFloat(excludedRatio.toFixed(4)),
     hasGpsData:   true,
+    clustered,
   }
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Diagonal of the lat/lng bounding box containing every point, in km.
+ * Upper bound on how far the user ever got from any other waypoint —
+ * if this is small, the user effectively never moved.
+ */
+function maxBoundingDiameterKm(points: ValidPoint[]): number {
+  if (points.length < 2) return 0
+  let minLat = points[0].lat
+  let maxLat = points[0].lat
+  let minLng = points[0].lng
+  let maxLng = points[0].lng
+  for (const p of points) {
+    if (p.lat < minLat) minLat = p.lat
+    if (p.lat > maxLat) maxLat = p.lat
+    if (p.lng < minLng) minLng = p.lng
+    if (p.lng > maxLng) maxLng = p.lng
+  }
+  return haversineKm(minLat, minLng, maxLat, maxLng)
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
