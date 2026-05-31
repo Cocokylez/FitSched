@@ -1,5 +1,16 @@
 apply plugin: 'com.android.application'
 
+// Load signing credentials from keystore.properties (gitignored).
+// Falls back to no release signing config if the file is missing — debug
+// builds still work without it.
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+def hasReleaseSigning = false
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+    hasReleaseSigning = true
+}
+
 android {
     namespace = "com.fitsched.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -15,18 +26,22 @@ android {
         }
     }
     signingConfigs {
-        release {
-            storeFile file("C:\\Users\\kuyag\\my-release-key.jks")
-            storePassword "sibrowalangrizz"
-            keyAlias "my-key"
-            keyPassword "sibrowalangrizz"
+        if (hasReleaseSigning) {
+            release {
+                storeFile     file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias      keystoreProperties['keyAlias']
+                keyPassword   keystoreProperties['keyPassword']
+            }
         }
     }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.release
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

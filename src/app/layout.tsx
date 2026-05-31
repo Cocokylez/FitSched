@@ -46,11 +46,14 @@ export const metadata: Metadata = {
     ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "FitSched — AI Workout Scheduler",
     description:
       "AI-powered workout scheduler that fits your workouts into your day automatically.",
     images: [`${APP_URL}/logo2.png`],
+  },
+  alternates: {
+    canonical: APP_URL,
   },
   metadataBase: new URL(APP_URL),
 };
