@@ -19,16 +19,6 @@ import { WorkoutTemplatesModal } from "@/components/WorkoutTemplatesModal"
 import { ExerciseDemoVisual } from "@/components/ExerciseDemoPanel"
 
 
-const DEFAULT_EXERCISES: Record<number, Array<[string, string]>> = {
-  0: [],
-  1: [["Push-ups","3×15"],["Diamond Push-ups","3×10"],["Tricep Dips","3×12"],["Chest Fly","3×12"],["Close-grip Push-ups","3×10"]],
-  2: [["Pull-ups","3×10"],["Bicep Curls","3×12"],["Hammer Curls","3×10"],["Superman Hold","3×30s"],["Reverse Fly","3×12"]],
-  3: [["Squats","4×15"],["Lunges","3×12 each"],["Glute Bridges","3×15"],["Wall Sit","3×45s"],["Calf Raises","3×20"]],
-  4: [["Pike Push-ups","3×12"],["Lateral Raises","3×15"],["Plank","3×45s"],["Russian Twist","3×20"],["Mountain Climbers","3×30s"]],
-  5: [["Burpees","4×10"],["Jump Squats","4×15"],["High Knees","4×30s"],["Box Jumps","3×12"],["Sprint","4×20s"]],
-  6: [["Curl to Press","3×12"],["Tricep Extension","3×12"],["Plank Reaches","3×10 each"],["Leg Raises","3×15"],["Bicycle Crunches","3×20"]],
-}
-
 function getStoredTargetMuscles(): string[] {
   try {
     const raw = localStorage.getItem("fitsched-onboarding-preferences")
