@@ -37,6 +37,34 @@ const GROUP_TO_BACK_ZONES: Record<string, Zone[]> = {
   Cardio:     ["calves", "hamstrings"],
 }
 
+// ── Combo image table ────────────────────────────────────────────────────────
+//
+// Pre-rendered body diagrams for the four canonical combo workouts.
+// `filenameBase` matches the on-disk asset name in public/muscle/.
+// File pattern: /muscle/{filenameBase}-{front|back}.png
+// `groups` are the muscle-group labels (from exerciseData.ts) the combo targets.
+//
+type ComboDef = { id: string; filenameBase: string; groups: string[] }
+
+const COMBOS: ComboDef[] = [
+  { id: "chest-tricep",  filenameBase: "chest and tricep",  groups: ["Chest", "Arms"]    },
+  { id: "back-bicep",    filenameBase: "Back & Biceps",     groups: ["Back",  "Arms"]    },
+  { id: "shoulder-core", filenameBase: "Shoulders & Core",  groups: ["Shoulders", "Core"] },
+  { id: "arms-core",     filenameBase: "Arms & Core",       groups: ["Arms",  "Core"]    },
+]
+
+// Score each combo by total sets across its target groups.
+// Returns the highest-scoring combo, or null when nothing was hit (or only
+// non-combo groups like Legs/Full Body were trained — those fall back to SVG).
+function detectCombo(byGroup: Record<string, number>): ComboDef | null {
+  let best: { combo: ComboDef; score: number } | null = null
+  for (const combo of COMBOS) {
+    const score = combo.groups.reduce((sum, g) => sum + (byGroup[g] ?? 0), 0)
+    if (score > 0 && (!best || score > best.score)) best = { combo, score }
+  }
+  return best?.combo ?? null
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 // Mix between yellow (low) and red (high) via ratio 0..1.
@@ -104,13 +132,14 @@ interface Props {
 export function MuscleHeatmap({ logs }: Props) {
   const [side, setSide] = useState<"front" | "back">("front")
 
-  const { log, front, back, isToday, peakSets } = useMemo(() => {
+  const { log, front, back, isToday, peakSets, combo } = useMemo(() => {
     const empty: Partial<Record<Zone, number>> = {}
     const log = pickLog(logs)
-    if (!log) return { log: null, front: empty, back: empty, isToday: false, peakSets: 0 }
+    if (!log) return { log: null, front: empty, back: empty, isToday: false, peakSets: 0, combo: null as ComboDef | null }
 
     const byGroup = aggregateSetsByGroup(log)
     const peak = Math.max(0, ...Object.values(byGroup))
+    const combo = detectCombo(byGroup)
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -118,7 +147,7 @@ export function MuscleHeatmap({ logs }: Props) {
     const isToday = (log.date || "") === todayId
 
     const { front, back } = buildZoneIntensity(byGroup)
-    return { log, front, back, isToday, peakSets: peak }
+    return { log, front, back, isToday, peakSets: peak, combo }
   }, [logs])
 
   const zoneFill = (zone: Zone): string => {
@@ -165,38 +194,58 @@ export function MuscleHeatmap({ logs }: Props) {
         </button>
       </div>
 
-      {/* Silhouette */}
+      {/* Body — combo image when one matches, SVG heatmap otherwise */}
       <div style={{ display: "flex", justifyContent: "center", padding: "4px 0 8px" }}>
         <AnimatePresence mode="wait">
-          <motion.svg
-            key={side}
-            initial={{ opacity: 0, rotateY: -25 }}
-            animate={{ opacity: 1, rotateY: 0 }}
-            exit={{ opacity: 0, rotateY: 25 }}
-            transition={{ duration: 0.22 }}
-            viewBox="0 0 220 420"
-            style={{ width: "min(220px, 80%)", height: "auto", display: "block" }}
-          >
-            {side === "front" ? (
-              <FrontBody zoneFill={zoneFill} />
-            ) : (
-              <BackBody zoneFill={zoneFill} />
-            )}
-          </motion.svg>
+          {combo ? (
+            <motion.img
+              key={`${combo.id}-${side}`}
+              src={`/muscle/${encodeURIComponent(combo.filenameBase)}-${side}.png`}
+              alt={`${combo.filenameBase} ${side} view`}
+              initial={{ opacity: 0, rotateY: -25 }}
+              animate={{ opacity: 1, rotateY: 0 }}
+              exit={{ opacity: 0, rotateY: 25 }}
+              transition={{ duration: 0.22 }}
+              style={{ width: "min(220px, 80%)", height: "auto", display: "block" }}
+            />
+          ) : (
+            <motion.svg
+              key={side}
+              initial={{ opacity: 0, rotateY: -25 }}
+              animate={{ opacity: 1, rotateY: 0 }}
+              exit={{ opacity: 0, rotateY: 25 }}
+              transition={{ duration: 0.22 }}
+              viewBox="0 0 220 420"
+              style={{ width: "min(220px, 80%)", height: "auto", display: "block" }}
+            >
+              {side === "front" ? (
+                <FrontBody zoneFill={zoneFill} />
+              ) : (
+                <BackBody zoneFill={zoneFill} />
+              )}
+            </motion.svg>
+          )}
         </AnimatePresence>
       </div>
 
-      {/* Legend */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 4 }}>
-        <LegendDot color="#f5b400" label="Light" />
-        <div style={{
-          width: 60,
-          height: 6,
-          borderRadius: 999,
-          background: "linear-gradient(to right, #f5b400, #e85555)",
-        }} />
-        <LegendDot color="#e85555" label="Target" />
-      </div>
+      {/* Legend — combo legend (green/yellow) when image is shown, ramp legend for SVG */}
+      {combo ? (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, marginTop: 4 }}>
+          <LegendDot color="#3fa84a" label="Primary" />
+          <LegendDot color="#e8c029" label="Secondary" />
+        </div>
+      ) : (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 4 }}>
+          <LegendDot color="#f5b400" label="Light" />
+          <div style={{
+            width: 60,
+            height: 6,
+            borderRadius: 999,
+            background: "linear-gradient(to right, #f5b400, #e85555)",
+          }} />
+          <LegendDot color="#e85555" label="Target" />
+        </div>
+      )}
     </div>
   )
 }
