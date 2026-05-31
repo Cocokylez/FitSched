@@ -102,6 +102,12 @@ export default function WorkoutPage() {
   const { t, language } = useLanguage()
   const { theme, toggleTheme } = useTheme()
   const [smartExercises, setSmartExercises] = useState<Array<[string, string]> | null>(null)
+  const [userProfile, setUserProfile] = useState<{
+    fitnessGoal?: string | null
+    experienceLevel?: string | null
+    workoutEnvironment?: string | null
+    hasInjury?: boolean | null
+  } | null>(null)
   const [computing, setComputing] = useState(true)
   const [showTemplates, setShowTemplates] = useState(false)
   const [templateExercises, setTemplateExercises] = useState<Array<[string, string]> | null>(null)
@@ -184,14 +190,15 @@ export default function WorkoutPage() {
     const compute = async () => {
       try {
         const profileRes = await fetch("/api/onboarding")
-        const profile = profileRes.ok ? await profileRes.json() : {}
-        const fitnessGoal = profile.fitnessGoal || "stay_active"
-        const experienceLevel = getFeedbackAdjustedExperienceLevel(profile.experienceLevel || "intermediate")
-        const profileWorkoutsPerWeek = profile.workoutsPerWeek || 3
+        const profileData = profileRes.ok ? await profileRes.json() : {}
+        setUserProfile(profileData)
+        const fitnessGoal = profileData.fitnessGoal || "stay_active"
+        const experienceLevel = getFeedbackAdjustedExperienceLevel(profileData.experienceLevel || "intermediate")
+        const profileWorkoutsPerWeek = profileData.workoutsPerWeek || 3
         setWorkoutsPerWeek(profileWorkoutsPerWeek)
         const workoutsPerWeek = profileWorkoutsPerWeek
-        const workoutEnvironment = (profile.workoutEnvironment || "gym") as WorkoutEnvironment
-        const hasInjury = Boolean(profile.hasInjury)
+        const workoutEnvironment = (profileData.workoutEnvironment || "gym") as WorkoutEnvironment
+        const hasInjury = Boolean(profileData.hasInjury)
         const allowedAccess = getAllowedExerciseAccess(workoutEnvironment)
 
         const groupResult = getMuscleGroupsForDay(selectedDay, workoutsPerWeek)
@@ -415,7 +422,18 @@ export default function WorkoutPage() {
   }
 
   const muscle = MUSCLE_GROUPS[selectedDay]
-  const todayExercises = templateExercises ?? smartExercises ?? getSmartExercisePlan({ selectedDay })
+  // Fallback when smart plan hasn't finished computing or the profile fetch
+  // failed: re-derive a plan using the cached profile if available. Defaulting
+  // to home_bodyweight (vs. the original "gym" default) keeps the suggestion
+  // safe for any user — bodyweight moves work everywhere.
+  const todayExercises = templateExercises ?? smartExercises ?? getSmartExercisePlan({
+    selectedDay,
+    fitnessGoal:        userProfile?.fitnessGoal || "stay_active",
+    experienceLevel:    getFeedbackAdjustedExperienceLevel(userProfile?.experienceLevel || "intermediate"),
+    workoutEnvironment: userProfile?.workoutEnvironment || "home_bodyweight",
+    hasInjury:          Boolean(userProfile?.hasInjury),
+    targetMuscles:      getStoredTargetMuscles(),
+  })
 
   const currentExercises = toWorkoutExercises(todayExercises)
 
