@@ -13,6 +13,7 @@ import { getMuscleGroup } from "@/lib/exerciseData"
 import { getWeekId, formatLocalDate, toDateId, addDays, calculateLongestStreak } from "@/lib/dateUtils"
 import { ActivityHeatmap } from "@/components/ActivityHeatmap"
 import { MuscleRecovery } from "@/components/MuscleRecovery"
+import { MuscleHeatmap } from "@/components/MuscleHeatmap"
 import { updateWidget } from "@/lib/widgetBridge"
 import { estimateCalories } from "@/lib/calorieEstimate"
 import FlameIcon from "@/components/FlameIcon"
@@ -525,6 +526,12 @@ export default function ReportPage() {
                   </motion.div>
                 </div>
               </div>
+            </motion.div>
+
+            {/* Muscle heatmap */}
+            <motion.div variants={fadeUp}>
+              <div style={sectionLabelStyle}>Muscles Hit</div>
+              <div style={cardStyle}><MuscleHeatmap logs={logs} /></div>
             </motion.div>
 
             {/* Recovery */}
