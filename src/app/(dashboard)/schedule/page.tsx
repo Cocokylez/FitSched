@@ -16,7 +16,7 @@ import { formatLocalDate } from "@/lib/dateUtils"
 import { ACCENT } from "@/lib/theme"
 
 const DAY_EXERCISES: Record<number, Array<{ name: string; sets: number; reps: number }>> = {
-  1: [{ name: "Push-ups", sets: 3, reps: 15 }, { name: "Diamond Push-ups", sets: 3, reps: 10 }, { name: "Tricep Dips", sets: 3, reps: 12 }, { name: "Chest Fly", sets: 3, reps: 12 }, { name: "Close-grip Push-ups", sets: 3, reps: 10 }],
+  1: [{ name: "Push-ups", sets: 3, reps: 15 }, { name: "Diamond Push-ups", sets: 3, reps: 10 }, { name: "Tricep Dips", sets: 3, reps: 12 }, { name: "Wide Push-ups", sets: 3, reps: 12 }, { name: "Close-grip Push-ups", sets: 3, reps: 10 }],
   2: [{ name: "Pull-ups", sets: 3, reps: 10 }, { name: "Bicep Curls", sets: 3, reps: 12 }, { name: "Hammer Curls", sets: 3, reps: 10 }, { name: "Superman Hold", sets: 3, reps: 30 }, { name: "Reverse Fly", sets: 3, reps: 12 }],
   3: [{ name: "Squats", sets: 4, reps: 15 }, { name: "Lunges", sets: 3, reps: 12 }, { name: "Glute Bridges", sets: 3, reps: 15 }, { name: "Wall Sit", sets: 3, reps: 45 }, { name: "Calf Raises", sets: 3, reps: 20 }],
   4: [{ name: "Pike Push-ups", sets: 3, reps: 12 }, { name: "Lateral Raises", sets: 3, reps: 15 }, { name: "Plank", sets: 3, reps: 45 }, { name: "Russian Twist", sets: 3, reps: 20 }, { name: "Mountain Climbers", sets: 3, reps: 30 }],
