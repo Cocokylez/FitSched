@@ -50,7 +50,7 @@ function colorForRatio(ratio: number): string {
   return `hsl(${hue.toFixed(1)} ${sat.toFixed(1)}% ${light.toFixed(1)}%)`
 }
 
-function pickLog(logs: { date?: string; completedAt: string; exercises: { name: string; sets: number }[] }[]) {
+function pickLog<T extends { date?: string; completedAt: string }>(logs: T[]): T | null {
   if (logs.length === 0) return null
 
   const today = new Date()
