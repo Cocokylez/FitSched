@@ -151,25 +151,26 @@ export function DashboardNav() {
   if (hideNav) return null
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="popLayout">
       {visible && (
         <motion.nav
           key="bottom-nav"
-          initial={{ y: 76, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 76, opacity: 0 }}
+          initial={{ y: 80, opacity: 0, scale: 0.94 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          exit={{ y: 80, opacity: 0, scale: 0.94 }}
           transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
           style={{
             position: "fixed",
-            bottom: "max(14px, env(safe-area-inset-bottom))",
+            bottom: "max(18px, env(safe-area-inset-bottom))",
             left: 0,
             right: 0,
             zIndex: 70,
-            padding: "0 14px",
+            padding: "0 22px",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
             pointerEvents: "none",
+            willChange: "transform, opacity",
           }}
         >
           <div className="dashboard-nav-shell" style={{
@@ -179,13 +180,14 @@ export function DashboardNav() {
             gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))`,
             alignItems: "center",
             width: "100%",
-            maxWidth: "430px",
+            maxWidth: "380px",
             borderRadius: "28px",
             padding: "6px",
             backdropFilter: "blur(22px)",
             WebkitBackdropFilter: "blur(22px)",
             pointerEvents: "auto",
             overflow: "visible",
+            transformOrigin: "center bottom",
           }}>
             {activeIndex >= 0 && (
               <motion.span
