@@ -105,8 +105,9 @@ export function MuscleHeatmap({ logs }: Props) {
   const [side, setSide] = useState<"front" | "back">("front")
 
   const { log, front, back, isToday, peakSets } = useMemo(() => {
+    const empty: Partial<Record<Zone, number>> = {}
     const log = pickLog(logs)
-    if (!log) return { log: null, front: {}, back: {}, isToday: false, peakSets: 0 }
+    if (!log) return { log: null, front: empty, back: empty, isToday: false, peakSets: 0 }
 
     const byGroup = aggregateSetsByGroup(log)
     const peak = Math.max(0, ...Object.values(byGroup))
