@@ -174,7 +174,7 @@ export function MuscleHeatmap({ logs }: Props) {
             animate={{ opacity: 1, rotateY: 0 }}
             exit={{ opacity: 0, rotateY: 25 }}
             transition={{ duration: 0.22 }}
-            viewBox="0 0 200 340"
+            viewBox="0 0 220 420"
             style={{ width: "min(220px, 80%)", height: "auto", display: "block" }}
           >
             {side === "front" ? (
@@ -212,57 +212,189 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   )
 }
 
+// ── SVG body data ─────────────────────────────────────────────────────────────
+//
+// All paths are designed for viewBox 220×420. Center line = x:110.
+// Anatomy reference: stylized fitness chart (head→shoulder slope→narrow waist
+// →hip flare→thigh→knee→calf→foot). Each side mirrors across the center.
+//
+// Rendering order per side:
+//   1. Body envelope (head, torso, arms, legs) — neutral fog
+//   2. Neutral scaffolding (forearms, shins, hands, feet) — drawn into envelope
+//   3. Tracked muscle zones — filled by zoneFill(), sit on top
+//
+
+const BODY_BACKDROP = "rgba(141,153,150,0.12)"
+const BODY_STROKE   = "rgba(255,255,255,0.16)"
+const NEUTRAL_FILL  = "rgba(141,153,150,0.18)"
+
 function FrontBody({ zoneFill }: { zoneFill: (z: Zone) => string }) {
   const s = ZONE_STROKE
   return (
     <g>
+      {/* ── 1. Body envelope ─────────────────────────────────────────── */}
       {/* Head */}
-      <circle cx="100" cy="32" r="18" fill="rgba(141,153,150,0.10)" stroke={s} strokeWidth="0.8" />
+      <circle cx="110" cy="32" r="20" fill={BODY_BACKDROP} stroke={BODY_STROKE} strokeWidth="1" />
       {/* Neck */}
-      <rect x="94" y="48" width="12" height="10" rx="3" fill="rgba(141,153,150,0.10)" stroke={s} strokeWidth="0.8" />
-
-      {/* Shoulders (both delts) */}
-      <ellipse cx="68"  cy="74" rx="14" ry="11" fill={zoneFill("shoulders")} stroke={s} strokeWidth="0.8" />
-      <ellipse cx="132" cy="74" rx="14" ry="11" fill={zoneFill("shoulders")} stroke={s} strokeWidth="0.8" />
-
-      {/* Chest (two pecs) */}
+      <path d="M100 51 L120 51 L122 65 L98 65 Z" fill={BODY_BACKDROP} stroke={BODY_STROKE} strokeWidth="1" />
+      {/* Torso (shoulders → waist → hips) */}
       <path
-        d="M82 70 Q100 64 118 70 L118 102 Q100 110 82 102 Z"
-        fill={zoneFill("chest")}
-        stroke={s}
-        strokeWidth="0.8"
+        d="M62 78 C 78 70, 96 65, 110 65 C 124 65, 142 70, 158 78
+           C 168 88, 170 100, 168 116
+           L 164 142
+           C 158 162, 150 178, 148 188
+           C 150 208, 156 222, 158 234
+           L 62 234
+           C 64 222, 70 208, 72 188
+           C 70 178, 62 162, 56 142
+           L 52 116
+           C 50 100, 52 88, 62 78 Z"
+        fill={BODY_BACKDROP} stroke={BODY_STROKE} strokeWidth="1"
+      />
+      {/* Right arm envelope */}
+      <path
+        d="M168 92 C 178 102, 184 116, 183 134
+           C 181 154, 178 175, 175 196
+           C 173 212, 170 224, 167 232
+           C 168 240, 162 244, 156 240
+           L 152 232
+           C 154 218, 156 200, 156 184
+           C 156 168, 156 152, 156 138
+           L 156 116
+           Z"
+        fill={BODY_BACKDROP} stroke={BODY_STROKE} strokeWidth="1"
+      />
+      {/* Left arm envelope (mirror) */}
+      <path
+        d="M52 92 C 42 102, 36 116, 37 134
+           C 39 154, 42 175, 45 196
+           C 47 212, 50 224, 53 232
+           C 52 240, 58 244, 64 240
+           L 68 232
+           C 66 218, 64 200, 64 184
+           C 64 168, 64 152, 64 138
+           L 64 116
+           Z"
+        fill={BODY_BACKDROP} stroke={BODY_STROKE} strokeWidth="1"
+      />
+      {/* Right leg envelope */}
+      <path
+        d="M114 234 L158 234
+           C 160 258, 160 295, 158 325
+           L 156 345
+           C 155 365, 156 388, 156 405
+           C 156 412, 150 415, 142 414
+           L 122 412
+           C 117 410, 115 405, 115 398
+           L 113 345
+           L 112 320
+           Z"
+        fill={BODY_BACKDROP} stroke={BODY_STROKE} strokeWidth="1"
+      />
+      {/* Left leg envelope (mirror) */}
+      <path
+        d="M106 234 L62 234
+           C 60 258, 60 295, 62 325
+           L 64 345
+           C 65 365, 64 388, 64 405
+           C 64 412, 70 415, 78 414
+           L 98 412
+           C 103 410, 105 405, 105 398
+           L 107 345
+           L 108 320
+           Z"
+        fill={BODY_BACKDROP} stroke={BODY_STROKE} strokeWidth="1"
       />
 
-      {/* Biceps */}
-      <ellipse cx="58"  cy="108" rx="9"  ry="20" fill={zoneFill("biceps")} stroke={s} strokeWidth="0.8" />
-      <ellipse cx="142" cy="108" rx="9"  ry="20" fill={zoneFill("biceps")} stroke={s} strokeWidth="0.8" />
+      {/* ── 2. Tracked muscle zones (front) ──────────────────────────── */}
 
-      {/* Forearms (untracked — neutral fill) */}
-      <ellipse cx="54"  cy="148" rx="7" ry="18" fill="rgba(141,153,150,0.10)" stroke={s} strokeWidth="0.8" />
-      <ellipse cx="146" cy="148" rx="7" ry="18" fill="rgba(141,153,150,0.10)" stroke={s} strokeWidth="0.8" />
-
-      {/* Abs (rectus) */}
+      {/* Deltoids — anterior caps with shoulder slope */}
       <path
-        d="M86 112 L114 112 L112 178 L88 178 Z"
-        fill={zoneFill("abs")}
-        stroke={s}
-        strokeWidth="0.8"
+        d="M62 78 C 56 86, 53 96, 54 110 C 64 110, 72 105, 78 96 C 76 86, 70 80, 62 78 Z"
+        fill={zoneFill("shoulders")} stroke={s} strokeWidth="0.8"
+      />
+      <path
+        d="M158 78 C 164 86, 167 96, 166 110 C 156 110, 148 105, 142 96 C 144 86, 150 80, 158 78 Z"
+        fill={zoneFill("shoulders")} stroke={s} strokeWidth="0.8"
       />
 
-      {/* Obliques */}
-      <path d="M78 116 L86 116 L88 172 L78 168 Z" fill={zoneFill("obliques")} stroke={s} strokeWidth="0.8" />
-      <path d="M122 116 L114 116 L112 172 L122 168 Z" fill={zoneFill("obliques")} stroke={s} strokeWidth="0.8" />
+      {/* Pectorals — two distinct ovals with center gap */}
+      <path
+        d="M82 76 C 76 82, 73 96, 76 112 C 80 124, 95 130, 106 124 L 108 92 C 104 80, 94 74, 82 76 Z"
+        fill={zoneFill("chest")} stroke={s} strokeWidth="0.8"
+      />
+      <path
+        d="M138 76 C 144 82, 147 96, 144 112 C 140 124, 125 130, 114 124 L 112 92 C 116 80, 126 74, 138 76 Z"
+        fill={zoneFill("chest")} stroke={s} strokeWidth="0.8"
+      />
 
-      {/* Hips (neutral) */}
-      <path d="M76 180 L124 180 L120 204 L80 204 Z" fill="rgba(141,153,150,0.10)" stroke={s} strokeWidth="0.8" />
+      {/* Biceps — bulged narrowing into elbow */}
+      <path
+        d="M50 100 C 44 116, 42 138, 46 158 C 52 162, 58 160, 60 152 C 62 138, 62 118, 58 102 C 54 99, 51 99, 50 100 Z"
+        fill={zoneFill("biceps")} stroke={s} strokeWidth="0.8"
+      />
+      <path
+        d="M170 100 C 176 116, 178 138, 174 158 C 168 162, 162 160, 160 152 C 158 138, 158 118, 162 102 C 166 99, 169 99, 170 100 Z"
+        fill={zoneFill("biceps")} stroke={s} strokeWidth="0.8"
+      />
 
-      {/* Quads */}
-      <path d="M78 206 L98 206 L94 282 L80 282 Z" fill={zoneFill("quads")} stroke={s} strokeWidth="0.8" />
-      <path d="M122 206 L102 206 L106 282 L120 282 Z" fill={zoneFill("quads")} stroke={s} strokeWidth="0.8" />
+      {/* Forearms — taper from elbow to wrist (neutral, untracked) */}
+      <path
+        d="M44 160 C 41 180, 43 200, 47 220 C 51 222, 55 220, 56 214 C 56 196, 56 178, 54 162 Z"
+        fill={NEUTRAL_FILL} stroke={s} strokeWidth="0.8"
+      />
+      <path
+        d="M176 160 C 179 180, 177 200, 173 220 C 169 222, 165 220, 164 214 C 164 196, 164 178, 166 162 Z"
+        fill={NEUTRAL_FILL} stroke={s} strokeWidth="0.8"
+      />
 
-      {/* Shins (neutral) */}
-      <ellipse cx="86"  cy="306" rx="7" ry="18" fill="rgba(141,153,150,0.10)" stroke={s} strokeWidth="0.8" />
-      <ellipse cx="114" cy="306" rx="7" ry="18" fill="rgba(141,153,150,0.10)" stroke={s} strokeWidth="0.8" />
+      {/* Abdominals — 6-pack grid (3 rows × 2 cols) */}
+      {[0, 1, 2].map((row) => (
+        <g key={row}>
+          <rect x="93"  y={130 + row * 16} width="11" height="13" rx="2.5"
+                fill={zoneFill("abs")} stroke={s} strokeWidth="0.8" />
+          <rect x="106" y={130 + row * 16} width="11" height="13" rx="2.5"
+                fill={zoneFill("abs")} stroke={s} strokeWidth="0.8" />
+        </g>
+      ))}
+
+      {/* Obliques — flank the abs */}
+      <path
+        d="M80 132 C 76 148, 76 166, 80 182 C 84 184, 90 182, 91 176 L 91 138 C 88 132, 84 130, 80 132 Z"
+        fill={zoneFill("obliques")} stroke={s} strokeWidth="0.8"
+      />
+      <path
+        d="M140 132 C 144 148, 144 166, 140 182 C 136 184, 130 182, 129 176 L 129 138 C 132 132, 136 130, 140 132 Z"
+        fill={zoneFill("obliques")} stroke={s} strokeWidth="0.8"
+      />
+
+      {/* Quads — outer (vastus lateralis) + inner (vastus medialis) per leg */}
+      <path
+        d="M118 244 C 124 270, 128 300, 128 328 C 124 334, 118 334, 115 326 C 114 300, 113 270, 114 244 Z"
+        fill={zoneFill("quads")} stroke={s} strokeWidth="0.8"
+      />
+      <path
+        d="M150 244 C 152 270, 150 305, 146 330 C 142 334, 137 332, 136 326 C 134 300, 134 270, 138 244 Z"
+        fill={zoneFill("quads")} stroke={s} strokeWidth="0.8"
+      />
+      <path
+        d="M102 244 C 96 270, 92 300, 92 328 C 96 334, 102 334, 105 326 C 106 300, 107 270, 106 244 Z"
+        fill={zoneFill("quads")} stroke={s} strokeWidth="0.8"
+      />
+      <path
+        d="M70 244 C 68 270, 70 305, 74 330 C 78 334, 83 332, 84 326 C 86 300, 86 270, 82 244 Z"
+        fill={zoneFill("quads")} stroke={s} strokeWidth="0.8"
+      />
+
+      {/* Shins (tibialis anterior) — slim, neutral fill */}
+      <path
+        d="M120 352 C 122 370, 124 388, 124 402 C 121 404, 118 403, 117 398 L 116 352 Z"
+        fill={NEUTRAL_FILL} stroke={s} strokeWidth="0.8"
+      />
+      <path
+        d="M100 352 C 98 370, 96 388, 96 402 C 99 404, 102 403, 103 398 L 104 352 Z"
+        fill={NEUTRAL_FILL} stroke={s} strokeWidth="0.8"
+      />
     </g>
   )
 }
@@ -271,68 +403,187 @@ function BackBody({ zoneFill }: { zoneFill: (z: Zone) => string }) {
   const s = ZONE_STROKE
   return (
     <g>
+      {/* ── 1. Body envelope (same outline as front) ─────────────────── */}
       {/* Head */}
-      <circle cx="100" cy="32" r="18" fill="rgba(141,153,150,0.10)" stroke={s} strokeWidth="0.8" />
+      <circle cx="110" cy="32" r="20" fill={BODY_BACKDROP} stroke={BODY_STROKE} strokeWidth="1" />
       {/* Neck */}
-      <rect x="94" y="48" width="12" height="10" rx="3" fill="rgba(141,153,150,0.10)" stroke={s} strokeWidth="0.8" />
-
-      {/* Traps (upper back triangle) */}
+      <path d="M100 51 L120 51 L122 65 L98 65 Z" fill={BODY_BACKDROP} stroke={BODY_STROKE} strokeWidth="1" />
+      {/* Torso */}
       <path
-        d="M82 60 L118 60 L122 88 L78 88 Z"
-        fill={zoneFill("traps")}
-        stroke={s}
-        strokeWidth="0.8"
+        d="M62 78 C 78 70, 96 65, 110 65 C 124 65, 142 70, 158 78
+           C 168 88, 170 100, 168 116
+           L 164 142
+           C 158 162, 150 178, 148 188
+           C 150 208, 156 222, 158 234
+           L 62 234
+           C 64 222, 70 208, 72 188
+           C 70 178, 62 162, 56 142
+           L 52 116
+           C 50 100, 52 88, 62 78 Z"
+        fill={BODY_BACKDROP} stroke={BODY_STROKE} strokeWidth="1"
       />
-
-      {/* Rear delts */}
-      <ellipse cx="64"  cy="78" rx="12" ry="10" fill={zoneFill("rearDelts")} stroke={s} strokeWidth="0.8" />
-      <ellipse cx="136" cy="78" rx="12" ry="10" fill={zoneFill("rearDelts")} stroke={s} strokeWidth="0.8" />
-
-      {/* Lats (V-taper) */}
+      {/* Arms */}
       <path
-        d="M78 90 L122 90 L116 156 L84 156 Z"
-        fill={zoneFill("lats")}
-        stroke={s}
-        strokeWidth="0.8"
-      />
-
-      {/* Triceps */}
-      <ellipse cx="58"  cy="108" rx="9" ry="20" fill={zoneFill("triceps")} stroke={s} strokeWidth="0.8" />
-      <ellipse cx="142" cy="108" rx="9" ry="20" fill={zoneFill("triceps")} stroke={s} strokeWidth="0.8" />
-
-      {/* Forearms (neutral) */}
-      <ellipse cx="54"  cy="148" rx="7" ry="18" fill="rgba(141,153,150,0.10)" stroke={s} strokeWidth="0.8" />
-      <ellipse cx="146" cy="148" rx="7" ry="18" fill="rgba(141,153,150,0.10)" stroke={s} strokeWidth="0.8" />
-
-      {/* Lower back (spinal erectors) */}
-      <path
-        d="M88 158 L112 158 L110 184 L90 184 Z"
-        fill={zoneFill("lowerBack")}
-        stroke={s}
-        strokeWidth="0.8"
-      />
-
-      {/* Glutes */}
-      <path
-        d="M76 186 L100 186 L98 222 L80 222 Z"
-        fill={zoneFill("glutes")}
-        stroke={s}
-        strokeWidth="0.8"
+        d="M168 92 C 178 102, 184 116, 183 134
+           C 181 154, 178 175, 175 196
+           C 173 212, 170 224, 167 232
+           C 168 240, 162 244, 156 240
+           L 152 232
+           C 154 218, 156 200, 156 184
+           C 156 168, 156 152, 156 138
+           L 156 116
+           Z"
+        fill={BODY_BACKDROP} stroke={BODY_STROKE} strokeWidth="1"
       />
       <path
-        d="M124 186 L100 186 L102 222 L120 222 Z"
-        fill={zoneFill("glutes")}
-        stroke={s}
-        strokeWidth="0.8"
+        d="M52 92 C 42 102, 36 116, 37 134
+           C 39 154, 42 175, 45 196
+           C 47 212, 50 224, 53 232
+           C 52 240, 58 244, 64 240
+           L 68 232
+           C 66 218, 64 200, 64 184
+           C 64 168, 64 152, 64 138
+           L 64 116
+           Z"
+        fill={BODY_BACKDROP} stroke={BODY_STROKE} strokeWidth="1"
+      />
+      {/* Legs */}
+      <path
+        d="M114 234 L158 234
+           C 160 258, 160 295, 158 325
+           L 156 345
+           C 155 365, 156 388, 156 405
+           C 156 412, 150 415, 142 414
+           L 122 412
+           C 117 410, 115 405, 115 398
+           L 113 345
+           L 112 320
+           Z"
+        fill={BODY_BACKDROP} stroke={BODY_STROKE} strokeWidth="1"
+      />
+      <path
+        d="M106 234 L62 234
+           C 60 258, 60 295, 62 325
+           L 64 345
+           C 65 365, 64 388, 64 405
+           C 64 412, 70 415, 78 414
+           L 98 412
+           C 103 410, 105 405, 105 398
+           L 107 345
+           L 108 320
+           Z"
+        fill={BODY_BACKDROP} stroke={BODY_STROKE} strokeWidth="1"
       />
 
-      {/* Hamstrings */}
-      <path d="M80 224 L98 224 L94 280 L84 280 Z" fill={zoneFill("hamstrings")} stroke={s} strokeWidth="0.8" />
-      <path d="M120 224 L102 224 L106 280 L116 280 Z" fill={zoneFill("hamstrings")} stroke={s} strokeWidth="0.8" />
+      {/* ── 2. Tracked muscle zones (back) ──────────────────────────── */}
 
-      {/* Calves */}
-      <ellipse cx="86"  cy="304" rx="8" ry="20" fill={zoneFill("calves")} stroke={s} strokeWidth="0.8" />
-      <ellipse cx="114" cy="304" rx="8" ry="20" fill={zoneFill("calves")} stroke={s} strokeWidth="0.8" />
+      {/* Trapezius — diamond/kite from neck base widening to shoulders, tapering down */}
+      <path
+        d="M110 66 C 96 70, 78 80, 62 92 C 70 100, 92 108, 110 110 C 128 108, 150 100, 158 92 C 142 80, 124 70, 110 66 Z"
+        fill={zoneFill("traps")} stroke={s} strokeWidth="0.8"
+      />
+      <path
+        d="M88 108 C 96 116, 110 120, 110 132 C 110 120, 124 116, 132 108 C 124 114, 110 116, 110 116 C 110 116, 96 114, 88 108 Z"
+        fill={zoneFill("traps")} stroke={s} strokeWidth="0.8"
+      />
+
+      {/* Rear deltoids — small caps tucked behind */}
+      <path
+        d="M52 100 C 48 110, 47 122, 52 132 C 60 132, 66 126, 68 118 C 66 108, 60 102, 52 100 Z"
+        fill={zoneFill("rearDelts")} stroke={s} strokeWidth="0.8"
+      />
+      <path
+        d="M168 100 C 172 110, 173 122, 168 132 C 160 132, 154 126, 152 118 C 154 108, 160 102, 168 100 Z"
+        fill={zoneFill("rearDelts")} stroke={s} strokeWidth="0.8"
+      />
+
+      {/* Latissimus dorsi — V-taper wings */}
+      <path
+        d="M70 116 C 74 138, 80 158, 88 174 C 96 178, 105 178, 108 170 L 108 130 C 96 124, 82 118, 70 116 Z"
+        fill={zoneFill("lats")} stroke={s} strokeWidth="0.8"
+      />
+      <path
+        d="M150 116 C 146 138, 140 158, 132 174 C 124 178, 115 178, 112 170 L 112 130 C 124 124, 138 118, 150 116 Z"
+        fill={zoneFill("lats")} stroke={s} strokeWidth="0.8"
+      />
+
+      {/* Triceps — horseshoe shape (suggested three heads via slight inset) */}
+      <path
+        d="M50 100 C 44 116, 42 138, 46 158 C 52 162, 58 160, 60 152 C 62 138, 62 118, 58 102 C 54 99, 51 99, 50 100 Z M 50 122 C 48 130, 48 145, 50 152 L 54 152 C 56 140, 56 125, 54 118 Z"
+        fill={zoneFill("triceps")} stroke={s} strokeWidth="0.8" fillRule="evenodd"
+      />
+      <path
+        d="M170 100 C 176 116, 178 138, 174 158 C 168 162, 162 160, 160 152 C 158 138, 158 118, 162 102 C 166 99, 169 99, 170 100 Z M 170 122 C 172 130, 172 145, 170 152 L 166 152 C 164 140, 164 125, 166 118 Z"
+        fill={zoneFill("triceps")} stroke={s} strokeWidth="0.8" fillRule="evenodd"
+      />
+
+      {/* Forearms — neutral */}
+      <path
+        d="M44 160 C 41 180, 43 200, 47 220 C 51 222, 55 220, 56 214 C 56 196, 56 178, 54 162 Z"
+        fill={NEUTRAL_FILL} stroke={s} strokeWidth="0.8"
+      />
+      <path
+        d="M176 160 C 179 180, 177 200, 173 220 C 169 222, 165 220, 164 214 C 164 196, 164 178, 166 162 Z"
+        fill={NEUTRAL_FILL} stroke={s} strokeWidth="0.8"
+      />
+
+      {/* Lower back (erector spinae) — two columns flanking the spine */}
+      <path
+        d="M96 176 C 94 190, 94 208, 96 222 L 104 222 C 106 208, 106 190, 104 176 Z"
+        fill={zoneFill("lowerBack")} stroke={s} strokeWidth="0.8"
+      />
+      <path
+        d="M124 176 C 126 190, 126 208, 124 222 L 116 222 C 114 208, 114 190, 116 176 Z"
+        fill={zoneFill("lowerBack")} stroke={s} strokeWidth="0.8"
+      />
+
+      {/* Glutes — heart-shape: two weighted curves meeting at center */}
+      <path
+        d="M64 236 C 60 252, 62 278, 76 290 C 90 294, 105 288, 108 274 L 108 246 C 98 236, 80 234, 64 236 Z"
+        fill={zoneFill("glutes")} stroke={s} strokeWidth="0.8"
+      />
+      <path
+        d="M156 236 C 160 252, 158 278, 144 290 C 130 294, 115 288, 112 274 L 112 246 C 122 236, 140 234, 156 236 Z"
+        fill={zoneFill("glutes")} stroke={s} strokeWidth="0.8"
+      />
+
+      {/* Hamstrings — two parallel long muscles per leg */}
+      <path
+        d="M70 295 C 72 314, 74 332, 78 346 C 82 350, 86 348, 86 342 L 86 296 Z"
+        fill={zoneFill("hamstrings")} stroke={s} strokeWidth="0.8"
+      />
+      <path
+        d="M104 295 C 102 314, 100 332, 96 346 C 92 350, 88 348, 88 342 L 88 296 Z"
+        fill={zoneFill("hamstrings")} stroke={s} strokeWidth="0.8"
+      />
+      <path
+        d="M150 295 C 148 314, 146 332, 142 346 C 138 350, 134 348, 134 342 L 134 296 Z"
+        fill={zoneFill("hamstrings")} stroke={s} strokeWidth="0.8"
+      />
+      <path
+        d="M116 295 C 118 314, 120 332, 124 346 C 128 350, 132 348, 132 342 L 132 296 Z"
+        fill={zoneFill("hamstrings")} stroke={s} strokeWidth="0.8"
+      />
+
+      {/* Calves — diamond/teardrop gastrocnemius, widest at upper third */}
+      <path
+        d="M86 354
+           C 78 366, 76 380, 80 392
+           C 82 400, 86 404, 88 402
+           L 92 396
+           C 96 384, 96 370, 92 358
+           C 90 354, 88 353, 86 354 Z"
+        fill={zoneFill("calves")} stroke={s} strokeWidth="0.8"
+      />
+      <path
+        d="M134 354
+           C 142 366, 144 380, 140 392
+           C 138 400, 134 404, 132 402
+           L 128 396
+           C 124 384, 124 370, 128 358
+           C 130 354, 132 353, 134 354 Z"
+        fill={zoneFill("calves")} stroke={s} strokeWidth="0.8"
+      />
     </g>
   )
 }
