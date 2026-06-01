@@ -1,7 +1,7 @@
 ﻿import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 
-const EFFECTIVE_DATE = "May 23, 2026"
+const EFFECTIVE_DATE = "June 1, 2026"
 const APP_NAME = "FitSched"
 const CONTACT_EMAIL = "support@fitsched.app"
 
@@ -43,6 +43,8 @@ export default function TermsPage() {
           <p>{APP_NAME} is a personal fitness scheduling tool that helps you plan workouts, track progress, earn FitTokens for consistency, and log outdoor hikes with GPS. It is not a medical service and does not provide medical advice.</p>
           <p>Always consult a qualified healthcare professional before starting a new exercise programme, especially if you have an injury or pre-existing condition.</p>
           <p>The Hike Tracker accesses your device location while active. You grant this permission explicitly through your browser or device. You can revoke it at any time in your device settings.</p>
+          <p>Hikes finished without an internet connection are saved locally on your device and uploaded automatically once you are back online. If you clear your browser&apos;s site data before reconnecting, any unsynced hike will be lost.</p>
+          <p>The exercise screen offers optional workout verification using your device&apos;s motion sensors. Enabling it lets {APP_NAME} confirm that physical movement occurred during your session. Sensor readings stay on your device — only a verification score is sent with your workout log — and you can skip verification at any time, though doing so reduces your FitToken reward for that session.</p>
           <p>Route planning uses publicly available map data from OpenStreetMap, OSRM, and Valhalla. Not all lines visible on the map represent walkable trails — use the in-app map legend (available in Plan route mode) to identify routable paths. {APP_NAME} is not responsible for route accuracy on unmapped or restricted terrain.</p>
         </Section>
 
