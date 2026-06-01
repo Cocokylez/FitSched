@@ -98,6 +98,7 @@ export default function ExerciseSessionPage() {
   const workoutRef      = useRef<ActiveWorkout | null>(null)
   const sessionDoneRef  = useRef(false)   // true once celebration fires
   const quitRef         = useRef(false)   // true once user explicitly quits
+  const sessionStartedRef = useRef(false) // true once countdown finishes and real workout begins
   const [restSeconds, setRestSeconds] = useState<number | null>(null)
   const [restDuration, setRestDuration] = useState(60)
   const [currentExIdx, setCurrentExIdx] = useState(0)
@@ -210,6 +211,7 @@ export default function ExerciseSessionPage() {
     }
     const t = window.setTimeout(() => {
       setPhase("session")
+      sessionStartedRef.current = true
       setCountdownNum(3)
     }, 700)
     return () => window.clearTimeout(t)
@@ -218,7 +220,9 @@ export default function ExerciseSessionPage() {
   // Abandon session on tab close or SPA navigation away (if not finished/quit explicitly)
   useEffect(() => {
     const markAbandoned = () => {
-      if (!sessionDoneRef.current && !quitRef.current && workoutRef.current?.date) {
+      // Only count as abandoned if the user actually entered the workout session.
+      // Leaving from intro / permission / countdown is free — no lockout, no FitToken penalty.
+      if (sessionStartedRef.current && !sessionDoneRef.current && !quitRef.current && workoutRef.current?.date) {
         try { localStorage.setItem(abandonedKey, workoutRef.current.date) } catch {}
       }
     }
