@@ -1,7 +1,7 @@
 ﻿import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 
-const EFFECTIVE_DATE = "May 23, 2026"
+const EFFECTIVE_DATE = "June 1, 2026"
 const APP_NAME = "FitSched"
 const CONTACT_EMAIL = "support@fitsched.app"
 
@@ -48,6 +48,7 @@ export default function PrivacyPage() {
             <Bullet><strong style={{ color: "var(--text)" }}>FitToken history</strong> — token earnings tied to completed workouts.</Bullet>
             <Bullet><strong style={{ color: "var(--text)" }}>Calendar data</strong> — if you connect Google Calendar, we store your access token (encrypted) and read your calendar events solely to schedule workouts around your existing commitments.</Bullet>
             <Bullet><strong style={{ color: "var(--text)" }}>Location data</strong> — if you use the Hike Tracker, GPS coordinates are recorded during your hike session and stored as route waypoints. Location is only accessed while the tracker is active and only with your permission.</Bullet>
+            <Bullet><strong style={{ color: "var(--text)" }}>Motion sensor data</strong> — if you enable workout verification on the exercise screen, your device&apos;s accelerometer is read locally during the session to confirm that physical movement occurred. Readings are processed on-device only and are never transmitted or stored — only a verification score (a single number) is sent with your workout log. You can skip verification at any time.</Bullet>
             <Bullet><strong style={{ color: "var(--text)" }}>Security logs</strong> — anonymised events such as failed login attempts, for abuse prevention only.</Bullet>
           </ul>
         </Section>
@@ -80,6 +81,7 @@ export default function PrivacyPage() {
 
         <Section title="5. Data Retention">
           <p>Your data is retained for as long as your account is active. You can permanently delete your account and all associated data from <strong style={{ color: "var(--text)" }}>Settings → Delete Account</strong>. Deletion is immediate and irreversible.</p>
+          <p><strong style={{ color: "var(--text)" }}>Local-only storage.</strong> If you finish a hike while offline, the hike payload is held in your browser&apos;s IndexedDB on your device until network connectivity returns, at which point it is uploaded automatically and removed from local storage. This pending queue is never accessible to us until upload succeeds. Clearing your browser&apos;s site data before reconnecting will discard any unsynced hikes.</p>
         </Section>
 
         <Section title="6. Security">
