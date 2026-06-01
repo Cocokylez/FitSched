@@ -81,7 +81,26 @@ export default function HikePage() {
   // ── Offline queue bookkeeping ─────────────────────────────────────────────────
 
   useEffect(() => {
-    getPendingHikeCount().then(setPendingCount).catch(() => {})
+    // Shared flush helper — used on mount, online, visibilitychange, and manual taps
+    const tryFlush = async () => {
+      if (!navigator.onLine) return
+      const synced = await flushPendingHikes().catch(() => 0)
+      const newCount = await getPendingHikeCount().catch(() => 0)
+      setPendingCount(newCount)
+      if (synced === 0 && newCount > 0) {
+        // Direct flush failed (probably a transient hiccup) — try BG Sync as fallback
+        requestSync().catch(() => {})
+      }
+    }
+
+    // On mount: read count, then flush if online — the `online` event won't fire
+    // if we were already online when this tab opened (the most common return case).
+    getPendingHikeCount()
+      .then(count => {
+        setPendingCount(count)
+        if (count > 0) void tryFlush()
+      })
+      .catch(() => {})
 
     // SW uses postMessage — NOT a DOM CustomEvent. Listen on serviceWorker directly.
     const onSwMessage = (event: MessageEvent) => {
@@ -92,20 +111,20 @@ export default function HikePage() {
     navigator.serviceWorker?.addEventListener("message", onSwMessage)
 
     // When WiFi comes back, flush immediately from the page (BG Sync is unreliable)
-    const onOnline = async () => {
-      const synced = await flushPendingHikes().catch(() => 0)
-      if (synced > 0) {
-        getPendingHikeCount().then(setPendingCount).catch(() => {})
-      } else {
-        // Nothing flushed yet — still register BG Sync as a fallback
-        requestSync().catch(() => {})
-      }
-    }
+    const onOnline = () => { void tryFlush() }
     window.addEventListener("online", onOnline)
+
+    // When tab returns to foreground (app-switch, lock-screen unlock) retry too.
+    // The `online` event may have fired while we were backgrounded and been missed.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void tryFlush()
+    }
+    document.addEventListener("visibilitychange", onVisible)
 
     return () => {
       navigator.serviceWorker?.removeEventListener("message", onSwMessage)
       window.removeEventListener("online", onOnline)
+      document.removeEventListener("visibilitychange", onVisible)
     }
   }, [])
 
@@ -285,7 +304,14 @@ export default function HikePage() {
                 initial={{ opacity: 0, y: -6, scale: 0.92 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -6, scale: 0.92 }}
-                onClick={async () => { await requestSync(); getPendingHikeCount().then(setPendingCount).catch(() => {}) }}
+                onClick={async () => {
+                  // Flush directly from the page first — BG Sync (requestSync) is unreliable
+                  // and unsupported on iOS Safari, so we cannot rely on it as the primary path.
+                  await flushPendingHikes().catch(() => 0)
+                  const newCount = await getPendingHikeCount().catch(() => 0)
+                  setPendingCount(newCount)
+                  if (newCount > 0) requestSync().catch(() => {})
+                }}
                 style={{
                   background: "rgba(250,204,21,0.15)", border: "1px solid rgba(250,204,21,0.4)",
                   borderRadius: 999, padding: "6px 11px",
