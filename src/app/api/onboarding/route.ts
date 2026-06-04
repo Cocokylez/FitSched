@@ -172,6 +172,9 @@ export async function GET(req: Request) {
       bmi: true,
       hasInjury: true,
       injuryNotes: true,
+      // Anchor for the personal workout cycle: the client derives
+      // anchorDayOfWeek from this so day 1 of the plan is always a workout.
+      createdAt: true,
     },
   })
 

@@ -8,10 +8,11 @@ import { useStore } from "@/store/useStore"
 import { useLanguage } from "@/context/LanguageContext"
 import { useTheme } from "@/context/ThemeContext"
 import { SkeletonExerciseRow } from "@/components/Skeleton"
-import { getSmartExercisePlan, parseSetsReps, toWorkoutExercises, EXERCISE_LIBRARY, getAllowedExerciseAccess, getExerciseAccess } from "@/lib/workoutRecommendations"
-import type { ExerciseDef, WorkoutEnvironment, ExerciseAccess } from "@/lib/workoutRecommendations"
+import { getSmartExercisePlan, parseSetsReps, toWorkoutExercises, resolveDaySplit, getSplitLabel } from "@/lib/workoutRecommendations"
+import type { WorkoutEnvironment, MuscleGroup } from "@/lib/workoutRecommendations"
 import { getFeedbackAdjustedExperienceLevel } from "@/lib/workoutFeedback"
-import { MUSCLE_GROUPS, getMuscleGroup } from "@/lib/exerciseData"
+import { computeMuscleReadiness, pickFreshestTarget, type MuscleReadiness } from "@/lib/muscleReadiness"
+import { getMuscleGroup } from "@/lib/exerciseData"
 import { formatLocalDate } from "@/lib/dateUtils"
 import { ACCENT, ACCENT_DIM, ACCENT_BD } from "@/lib/theme"
 import { getCategory, CATEGORY_COLORS } from "@/lib/exerciseUtils"
@@ -29,32 +30,6 @@ function getStoredTargetMuscles(): string[] {
   } catch {
     return []
   }
-}
-
-function getMuscleGroupsForDay(day: number, workoutsPerWeek: number): { groups: string[]; isRestDay: boolean } {
-  if (day === 0) return { groups: [], isRestDay: true }
-  const workoutDayOrder = [1, 2, 3, 4, 5, 6]
-  const workoutDayIndex = workoutDayOrder.indexOf(day)
-  if (workoutDayIndex === -1 || workoutDayIndex >= workoutsPerWeek) return { groups: [], isRestDay: true }
-  if (workoutsPerWeek === 3) {
-    const splits = [["CHEST", "SHOULDERS", "ARMS"], ["BACK", "ARMS"], ["LEGS", "CORE"]]
-    return { groups: splits[workoutDayIndex], isRestDay: false }
-  }
-  if (workoutsPerWeek === 4) {
-    const splits = [["CHEST", "BACK"], ["LEGS", "CORE"], ["SHOULDERS", "ARMS"], ["BACK", "ARMS"]]
-    return { groups: splits[workoutDayIndex] ?? [], isRestDay: false }
-  }
-  if (workoutsPerWeek === 5) {
-    const splits = [["CHEST", "SHOULDERS"], ["BACK", "ARMS"], ["LEGS", "CORE"], ["CHEST", "ARMS"], ["FULL_BODY"]]
-    return { groups: splits[workoutDayIndex] ?? [], isRestDay: false }
-  }
-  if (workoutsPerWeek === 6) {
-    const splits = [["CHEST"], ["BACK"], ["SHOULDERS"], ["ARMS"], ["LEGS", "CORE"], ["FULL_BODY"]]
-    return { groups: splits[workoutDayIndex] ?? [], isRestDay: false }
-  }
-  // 7+: same as 6-day split with fallback
-  const splits = [["CHEST"], ["BACK"], ["SHOULDERS"], ["ARMS"], ["LEGS", "CORE"], ["FULL_BODY"]]
-  return { groups: splits[workoutDayIndex] ?? [], isRestDay: false }
 }
 
 function getExerciseDesc(name: string): string {
@@ -101,8 +76,11 @@ export default function WorkoutPage() {
   const [computing, setComputing] = useState(true)
   const [showTemplates, setShowTemplates] = useState(false)
   const [templateExercises, setTemplateExercises] = useState<Array<[string, string]> | null>(null)
-  const [muscleReadiness, setMuscleReadiness] = useState<Array<{ group: string; status: "fresh" | "recovering" | "sore" | "untrained" }> | null>(null)
+  const [muscleReadiness, setMuscleReadiness] = useState<MuscleReadiness[] | null>(null)
   const [workoutsPerWeek, setWorkoutsPerWeek] = useState(3)
+  // Weekday the user started (0=Sun..6=Sat), from profile.createdAt. null until
+  // the profile loads; the cycle is anchored to this so day 1 is never rest.
+  const [anchorDayOfWeek, setAnchorDayOfWeek] = useState<number | null>(null)
   const dayNames = [t.days.sun, t.days.mon, t.days.tue, t.days.wed, t.days.thu, t.days.fri, t.days.sat]
   const DAY_ABBR = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
 
@@ -173,7 +151,6 @@ export default function WorkoutPage() {
 
   useEffect(() => {
     if (status !== "authenticated") return
-    if (selectedDay === 0) { setSmartExercises([]); setComputing(false); return }
 
     setComputing(true)
 
@@ -184,77 +161,16 @@ export default function WorkoutPage() {
         setUserProfile(profileData)
         const fitnessGoal = profileData.fitnessGoal || "stay_active"
         const experienceLevel = getFeedbackAdjustedExperienceLevel(profileData.experienceLevel || "intermediate")
-        const profileWorkoutsPerWeek = profileData.workoutsPerWeek || 3
-        setWorkoutsPerWeek(profileWorkoutsPerWeek)
-        const workoutsPerWeek = profileWorkoutsPerWeek
+        const wpw = profileData.workoutsPerWeek || 3
+        setWorkoutsPerWeek(wpw)
+        const anchor = profileData.createdAt ? new Date(profileData.createdAt).getDay() : 0
+        setAnchorDayOfWeek(anchor)
         const workoutEnvironment = (profileData.workoutEnvironment || "gym") as WorkoutEnvironment
         const hasInjury = Boolean(profileData.hasInjury)
-        const allowedAccess = getAllowedExerciseAccess(workoutEnvironment)
 
-        const groupResult = getMuscleGroupsForDay(selectedDay, workoutsPerWeek)
-        const allowedGroups = [...groupResult.groups]
-        const targetMuscles = getStoredTargetMuscles()
-        const targetForToday = targetMuscles.length > 0
-          ? targetMuscles[(selectedDay - 1 + targetMuscles.length) % targetMuscles.length]
-          : null
-
-        if ((fitnessGoal === "lose_weight" || fitnessGoal === "improve_endurance") && !allowedGroups.includes("FULL_BODY") && !allowedGroups.includes("CARDIO")) {
-          allowedGroups.push("FULL_BODY")
-        }
-
-        const DIFFICULTY_MAP: Record<string, string[]> = {
-          beginner: ["BEGINNER"],
-          intermediate: ["BEGINNER", "INTERMEDIATE"],
-          advanced: ["BEGINNER", "INTERMEDIATE", "ADVANCED"],
-        }
-        const allowedDifficulties = hasInjury
-          ? ["BEGINNER"]
-          : DIFFICULTY_MAP[experienceLevel] || ["BEGINNER", "INTERMEDIATE"]
-
-        let filtered = EXERCISE_LIBRARY.filter((ex) =>
-          allowedGroups.includes(ex.muscleGroup) &&
-          allowedDifficulties.includes(ex.difficulty) &&
-          allowedAccess.includes(getExerciseAccess(ex.name)) &&
-          (fitnessGoal === "stay_active" || ex.goalTypes.includes(fitnessGoal))
-        )
-
-        if (filtered.length < 3) {
-          filtered = EXERCISE_LIBRARY.filter((ex) =>
-            allowedGroups.includes(ex.muscleGroup) &&
-            allowedDifficulties.includes(ex.difficulty) &&
-            allowedAccess.includes(getExerciseAccess(ex.name))
-          )
-        }
-
-        if (filtered.length < 3) {
-          filtered = EXERCISE_LIBRARY.filter((ex) =>
-            allowedGroups.includes(ex.muscleGroup) &&
-            allowedAccess.includes(getExerciseAccess(ex.name))
-          )
-        }
-
-        if (filtered.length < 3) {
-          filtered = EXERCISE_LIBRARY.filter((ex) =>
-            allowedDifficulties.includes(ex.difficulty) &&
-            allowedAccess.includes(getExerciseAccess(ex.name))
-          )
-        }
-
-        if (filtered.length === 0) {
-          filtered = EXERCISE_LIBRARY.filter((ex) => allowedAccess.includes(getExerciseAccess(ex.name)))
-        }
-
-        if (hasInjury) {
-          const cautionExercises = new Set(["Burpees", "Jump Squats", "Tuck Jumps", "Box Jumps", "Sprints", "Battle Ropes"])
-          filtered = filtered.filter((ex) => !cautionExercises.has(ex.name))
-          if (filtered.length === 0) {
-            filtered = EXERCISE_LIBRARY.filter((ex) =>
-              ex.difficulty === "BEGINNER" &&
-              allowedAccess.includes(getExerciseAccess(ex.name))
-            )
-          }
-        }
-
+        // Recent exercise names (7-day window) for non-repetition, plus the
+        // shared muscle-readiness picture. Loaded even on rest days so the
+        // "Train again" action can pick a fresh target.
         let recentNames: string[] = []
         try {
           const logRes = await fetch("/api/workout-log")
@@ -265,71 +181,17 @@ export default function WorkoutPage() {
             recentNames = logs
               .filter((l: any) => new Date(l.completedAt || l.createdAt) > oneWeekAgo)
               .flatMap((l: any) => l.exercises?.map((e: any) => e.name) || [])
-
-            // Muscle readiness
-            const TRACKED = ["Chest", "Back", "Shoulders", "Arms", "Legs", "Core"] as const
-            const FULL_BODY_SPILL = ["Chest", "Back", "Legs", "Core"]
-            const lastTrained: Record<string, Date> = {}
-            const nowTime = new Date()
-            for (const log of logs) {
-              for (const ex of (log.exercises || [])) {
-                const rawGroup = getMuscleGroup(ex.name)
-                const affected = rawGroup === "Full Body" ? FULL_BODY_SPILL : [rawGroup]
-                for (const g of affected) {
-                  if (!TRACKED.includes(g as any)) continue
-                  const d = new Date(log.completedAt)
-                  if (!lastTrained[g] || d > lastTrained[g]) lastTrained[g] = d
-                }
-              }
-            }
-            setMuscleReadiness(TRACKED.map(group => {
-              const last = lastTrained[group]
-              if (!last) return { group, status: "untrained" as const }
-              const days = (nowTime.getTime() - last.getTime()) / (1000 * 60 * 60 * 24)
-              if (days < 1.5) return { group, status: "sore" as const }
-              if (days < 3.5) return { group, status: "recovering" as const }
-              return { group, status: "fresh" as const }
-            }))
+            setMuscleReadiness(computeMuscleReadiness(logs))
           }
         } catch {}
 
-        const available = recentNames.length > 0
-          ? filtered.filter((ex) => !recentNames.includes(ex.name))
-          : filtered
-
-        const pool = available.length >= 3 ? available : filtered
-
-        const now = new Date()
-        const startOfYear = new Date(now.getFullYear(), 0, 1)
-        const weekNum = Math.floor((now.getTime() - startOfYear.getTime()) / (7 * 24 * 60 * 60 * 1000))
-
-        const shuffled = [...pool].sort((a, b) => {
-          if (targetForToday && allowedGroups.includes(targetForToday)) {
-            const aTarget = a.muscleGroup === targetForToday ? 0 : 1
-            const bTarget = b.muscleGroup === targetForToday ? 0 : 1
-            if (aTarget !== bTarget) return aTarget - bTarget
-          }
-
-          const hashA = (a.name.charCodeAt(0) + weekNum * 7) % 1000
-          const hashB = (b.name.charCodeAt(0) + weekNum * 7) % 1000
-          return hashA - hashB
-        })
-
-        const selected = shuffled.slice(0, 5)
-
-        const SETS_REPS_MAP: Record<string, string> = {
-          beginner: "3×10",
-          intermediate: "3×12",
-          advanced: "4×12",
+        // Anchor the split to the user's start day — day 1 is always a workout.
+        const daySplit = resolveDaySplit(selectedDay, anchor, wpw)
+        if (daySplit.isRestDay) {
+          setSmartExercises([])
+          setComputing(false)
+          return
         }
-        const ENDURANCE_REPS_MAP: Record<string, string> = {
-          beginner: "3×15",
-          intermediate: "4×15",
-          advanced: "4×20",
-        }
-
-        const repsMap = fitnessGoal === "improve_endurance" ? ENDURANCE_REPS_MAP : SETS_REPS_MAP
-        const setsReps = repsMap[experienceLevel] || "3×12"
 
         setSmartExercises(getSmartExercisePlan({
           selectedDay,
@@ -337,8 +199,9 @@ export default function WorkoutPage() {
           experienceLevel,
           workoutEnvironment,
           hasInjury,
-          targetMuscles,
+          targetMuscles: getStoredTargetMuscles(),
           recentNames,
+          muscleGroupsOverride: daySplit.groups,
         }))
       } catch {
         setSmartExercises(null)
@@ -361,7 +224,40 @@ export default function WorkoutPage() {
   const weeklyDone = weekDates.filter(d => completedDateIds.has(formatLocalDate(d))).length
   const weeklyGoalMet = weeklyDone >= workoutsPerWeek
 
-  if (selectedDay === 0) {
+  // Personal-cycle split for the selected day (null until the profile/anchor
+  // loads — while null we fall through to the normal layout's skeletons).
+  const daySplit = anchorDayOfWeek === null ? null : resolveDaySplit(selectedDay, anchorDayOfWeek, workoutsPerWeek)
+  const isRestView = Boolean(daySplit?.isRestDay)
+  const canStartToday = Boolean(selectedDateId && selectedDateId === todayDateId)
+  const preferredTargets = getStoredTargetMuscles() as MuscleGroup[]
+  // The muscle a bonus "Train again" session would hit: freshest + recovered,
+  // biased toward the user's onboarding targets.
+  const freshTarget: MuscleGroup = muscleReadiness && muscleReadiness.length
+    ? pickFreshestTarget(muscleReadiness, preferredTargets)
+    : (preferredTargets[0] ?? "FULL_BODY")
+
+  function startTrainAgain() {
+    if (!canStartToday) return
+    const plan = getSmartExercisePlan({
+      selectedDay,
+      fitnessGoal:        userProfile?.fitnessGoal || "stay_active",
+      experienceLevel:    getFeedbackAdjustedExperienceLevel(userProfile?.experienceLevel || "intermediate"),
+      workoutEnvironment: userProfile?.workoutEnvironment || "home_bodyweight",
+      hasInjury:          Boolean(userProfile?.hasInjury),
+      targetMuscles:      preferredTargets,
+      muscleGroupsOverride: [freshTarget],
+    })
+    const exercises = toWorkoutExercises(plan).map(e => ({ name: e.name, sets: e.sets, reps: e.reps }))
+    if (!exercises.length) return
+    sessionStorage.setItem("fitsched-active-workout", JSON.stringify({
+      date: formatLocalDate(new Date()),
+      workoutName: `Bonus · ${getSplitLabel([freshTarget])}`,
+      exercises,
+    }))
+    router.push("/exercise")
+  }
+
+  if (isRestView) {
     return (
       <div style={{ minHeight: "100vh", background: "transparent", display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "16px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -404,14 +300,23 @@ export default function WorkoutPage() {
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1265fe" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
             </div>
             <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text)", marginBottom: 6 }}>{t.restDay}</div>
-            <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.55 }}>{t.restBody}</p>
+            <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.55, marginBottom: canStartToday ? 20 : 0 }}>{t.restBody}</p>
+            {canStartToday && (
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={startTrainAgain}
+                style={{ border: "1px solid rgba(18,101,254,0.4)", background: "rgba(18,101,254,0.12)", color: ACCENT, borderRadius: 999, padding: "10px 22px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}
+              >
+                Train again · {getSplitLabel([freshTarget])}
+              </motion.button>
+            )}
           </div>
         </div>
       </div>
     )
   }
 
-  const muscle = MUSCLE_GROUPS[selectedDay]
+  const muscle = getSplitLabel(daySplit?.groups ?? [])
   // Fallback when smart plan hasn't finished computing or the profile fetch
   // failed: re-derive a plan using the cached profile if available. Defaulting
   // to home_bodyweight (vs. the original "gym" default) keeps the suggestion
@@ -422,7 +327,8 @@ export default function WorkoutPage() {
     experienceLevel:    getFeedbackAdjustedExperienceLevel(userProfile?.experienceLevel || "intermediate"),
     workoutEnvironment: userProfile?.workoutEnvironment || "home_bodyweight",
     hasInjury:          Boolean(userProfile?.hasInjury),
-    targetMuscles:      getStoredTargetMuscles(),
+    targetMuscles:      preferredTargets,
+    muscleGroupsOverride: daySplit?.groups,
   })
 
   const currentExercises = toWorkoutExercises(todayExercises)
@@ -698,8 +604,24 @@ export default function WorkoutPage() {
             </div>
           </div>
         ) : (
-          <div style={{ width: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: 14, fontSize: 13, color: "#65c97a", fontWeight: 700, textAlign: "center" }}>
-            {selectedDayBlocked ? t.todayOnly : t.workoutCompleted}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ width: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: 14, fontSize: 13, color: "#65c97a", fontWeight: 700, textAlign: "center" }}>
+              {selectedDayBlocked ? t.todayOnly : t.workoutCompleted}
+            </div>
+            {/* Already trained today? Offer a recovery-aware bonus session. */}
+            {workoutLocked && canStartToday && (
+              <motion.button
+                whileTap={{ scale: 0.985 }}
+                onClick={startTrainAgain}
+                style={{
+                  width: "100%", border: "1px solid rgba(18,101,254,0.4)",
+                  background: "rgba(18,101,254,0.12)", color: ACCENT,
+                  borderRadius: 16, padding: "13px 24px", fontSize: 14, fontWeight: 800, cursor: "pointer",
+                }}
+              >
+                Train again · {getSplitLabel([freshTarget])}
+              </motion.button>
+            )}
           </div>
         )}
       </div>
