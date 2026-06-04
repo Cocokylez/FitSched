@@ -41,16 +41,17 @@ function addDays(dateId: string, days: number) {
   return date.toISOString().split("T")[0]
 }
 
-// Sunday (UTC day 0) is always a rest day. For other days, the user's
-// `workoutsPerWeek` determines how many of [Mon..Sat] are workout days:
-//   workoutsPerWeek=3 → Mon, Tue, Wed are workouts; Thu..Sun are rest
-//   workoutsPerWeek=6 → Mon..Sat are workouts; Sun is rest
-// Treats dates as calendar days (UTC midnight parse) — the workout-vs-rest
-// schedule is the user's own weekly plan, not a timezone-dependent thing.
-function isRestDay(dateId: string, workoutsPerWeek: number): boolean {
+// Rest days are anchored to the user's OWN cycle, not the calendar week. The
+// anchor is the weekday they started (createdAt); the first `workoutsPerWeek`
+// days of each personal 7-day cycle are workouts, the rest are rest days. This
+// keeps the streak's rest definition in lockstep with the plan the user sees
+// (resolveDaySplit on the client) so new rest days never break a streak.
+// Treats dates as calendar days (UTC midnight parse), matching anchorDayOfWeek
+// which is also derived in UTC below.
+function isRestDay(dateId: string, anchorDayOfWeek: number, workoutsPerWeek: number): boolean {
   const day = new Date(`${dateId}T00:00:00Z`).getUTCDay()
-  if (day === 0) return true              // Sunday always rest
-  return day - 1 >= workoutsPerWeek        // beyond the configured workout block
+  const cycleIndex = (((day - anchorDayOfWeek) % 7) + 7) % 7
+  return cycleIndex >= workoutsPerWeek
 }
 
 /**
@@ -65,13 +66,14 @@ function isRestDay(dateId: string, workoutsPerWeek: number): boolean {
 function countStreak(
   workoutSet: Set<string>,
   fromDate: string,
+  anchorDayOfWeek: number,
   workoutsPerWeek: number,
 ): number {
   let streak = 0
   let cursor = fromDate
 
   for (let i = 0; i < 730; i++) {
-    const isRest = isRestDay(cursor, workoutsPerWeek)
+    const isRest = isRestDay(cursor, anchorDayOfWeek, workoutsPerWeek)
     const hasLog = workoutSet.has(cursor)
 
     if (isRest) {
@@ -107,13 +109,14 @@ export async function GET(req: Request) {
       orderBy: { date: "desc" },
       select: { date: true },
     }),
-    db.user.findUnique({ where: { id: userId }, select: { workoutsPerWeek: true } }),
+    db.user.findUnique({ where: { id: userId }, select: { workoutsPerWeek: true, createdAt: true } }),
   ])
 
-  // Default = 6 → train Mon–Sat, rest Sunday. Matches the universal
-  // "Sunday is rest" rule used elsewhere in the app for users who haven't
-  // picked a value during onboarding.
+  // Default = 6 workouts/week for users who haven't picked a value yet.
   const workoutsPerWeek = user?.workoutsPerWeek ?? 6
+  // Anchor the rest-day cycle to the weekday the user started (UTC basis to
+  // match isRestDay). Falls back to 0 if createdAt is somehow missing.
+  const anchorDayOfWeek = user?.createdAt ? new Date(user.createdAt).getUTCDay() : 0
 
   const workoutDateSet = new Set<string>()
   logs.forEach((log) => {
@@ -129,10 +132,10 @@ export async function GET(req: Request) {
   // the user doesn't see streak=0 before they've had a chance to train today.
   const startDate = workoutDateSet.has(today) ? today : yesterday
 
-  const streak = countStreak(workoutDateSet, startDate, workoutsPerWeek)
+  const streak = countStreak(workoutDateSet, startDate, anchorDayOfWeek, workoutsPerWeek)
 
   const previousStreak = lastCompletedDate
-    ? countStreak(workoutDateSet, lastCompletedDate, workoutsPerWeek)
+    ? countStreak(workoutDateSet, lastCompletedDate, anchorDayOfWeek, workoutsPerWeek)
     : 0
 
   // Streak broken when the active count is zero but there used to be one.

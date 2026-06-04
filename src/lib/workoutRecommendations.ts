@@ -133,6 +133,59 @@ const DAY_GROUPS: Record<number, MuscleGroup[]> = {
   6: ["ARMS", "CORE"],
 }
 
+// Canonical, POSITION-based splits (index = how many workouts deep into the
+// user's personal cycle, NOT the calendar weekday). This is the single source
+// of truth shared by the schedule page, the workout page, and the streak route
+// — replacing the old habit of keying the split off `new Date().getDay()`.
+export const WORKOUT_SPLITS: Record<number, MuscleGroup[][]> = {
+  1: [["FULL_BODY"]],
+  2: [["CHEST", "BACK", "SHOULDERS", "ARMS"], ["LEGS", "CORE"]],
+  3: [["CHEST", "SHOULDERS", "ARMS"], ["BACK", "ARMS"], ["LEGS", "CORE"]],
+  4: [["CHEST", "BACK"], ["LEGS", "CORE"], ["SHOULDERS", "ARMS"], ["BACK", "ARMS"]],
+  5: [["CHEST", "SHOULDERS"], ["BACK", "ARMS"], ["LEGS", "CORE"], ["CHEST", "ARMS"], ["FULL_BODY"]],
+  6: [["CHEST"], ["BACK"], ["SHOULDERS"], ["ARMS"], ["LEGS", "CORE"], ["FULL_BODY"]],
+}
+
+const GROUP_LABEL: Record<MuscleGroup, string> = {
+  CHEST: "Chest",
+  BACK: "Back",
+  LEGS: "Legs",
+  SHOULDERS: "Shoulders",
+  CORE: "Core",
+  ARMS: "Arms",
+  FULL_BODY: "Full Body",
+  CARDIO: "Cardio",
+}
+
+// Human-readable title for a day's muscle groups, e.g. ["CHEST","SHOULDERS","ARMS"]
+// → "Chest, Shoulders & Arms". Empty groups read as "Rest".
+export function getSplitLabel(groups: MuscleGroup[]): string {
+  const names = groups.map((g) => GROUP_LABEL[g])
+  if (names.length === 0) return "Rest"
+  if (names.length === 1) return names[0]
+  return `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`
+}
+
+// Personal day index: 0 = the user's start day, regardless of calendar weekday.
+// Anchoring here is what guarantees day 1 is always a workout (split position 0)
+// instead of landing on whatever the absolute weekday happens to be.
+export function getPersonalCycleIndex(dayOfWeek: number, anchorDayOfWeek: number): number {
+  return (((dayOfWeek - anchorDayOfWeek) % 7) + 7) % 7
+}
+
+// Anchor-aware replacement for getMuscleGroupsForDay. Rest days fall at the tail
+// of the user's OWN 7-day cycle (positions >= workoutsPerWeek), not on Sunday.
+export function resolveDaySplit(
+  dayOfWeek: number,
+  anchorDayOfWeek: number,
+  workoutsPerWeek: number,
+): { groups: MuscleGroup[]; isRestDay: boolean; splitIndex: number } {
+  const table = WORKOUT_SPLITS[workoutsPerWeek] ?? WORKOUT_SPLITS[3]
+  const idx = getPersonalCycleIndex(dayOfWeek, anchorDayOfWeek)
+  if (idx >= workoutsPerWeek) return { groups: [], isRestDay: true, splitIndex: -1 }
+  return { groups: table[idx] ?? [], isRestDay: false, splitIndex: idx }
+}
+
 const CAUTION_EXERCISES = new Set(["Burpees", "Jump Squats", "Tuck Jumps", "Box Jumps", "Sprints", "Sprint", "Battle Ropes"])
 
 function uniqueExercises(exercises: ExerciseDef[]) {
@@ -216,6 +269,7 @@ export function getSmartExercisePlan({
   targetMuscles = [],
   recentNames = [],
   limit = 5,
+  muscleGroupsOverride,
 }: {
   selectedDay: number
   fitnessGoal?: string | null
@@ -225,8 +279,16 @@ export function getSmartExercisePlan({
   targetMuscles?: string[]
   recentNames?: string[]
   limit?: number
+  // When provided, these groups drive selection instead of the weekday lookup.
+  // Pass the result of resolveDaySplit().groups for the anchored plan, or a
+  // single picked group for an on-demand "Train again" session. An empty array
+  // explicitly means "rest day → no exercises".
+  muscleGroupsOverride?: MuscleGroup[]
 }): ExercisePlanItem[] {
-  const { groups, isRestDay } = getMuscleGroupsForDay(selectedDay)
+  const resolved = muscleGroupsOverride !== undefined
+    ? { groups: muscleGroupsOverride, isRestDay: muscleGroupsOverride.length === 0 }
+    : getMuscleGroupsForDay(selectedDay)
+  const { groups, isRestDay } = resolved
   if (isRestDay) return []
 
   const allowedAccess = getAllowedExerciseAccess(workoutEnvironment)

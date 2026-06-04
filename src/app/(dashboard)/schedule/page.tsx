@@ -10,8 +10,9 @@ import { StreakWelcomeCard } from "@/components/StreakWelcomeCard"
 import { useLanguage } from "@/context/LanguageContext"
 import { useTheme } from "@/context/ThemeContext"
 import { getFeedbackAdjustedExperienceLevel } from "@/lib/workoutFeedback"
-import { getSmartExercisePlan, toWorkoutExercises } from "@/lib/workoutRecommendations"
-import { MUSCLE_GROUPS } from "@/lib/exerciseData"
+import { getSmartExercisePlan, toWorkoutExercises, resolveDaySplit, getSplitLabel } from "@/lib/workoutRecommendations"
+import type { MuscleGroup } from "@/lib/workoutRecommendations"
+import { computeMuscleReadiness, pickFreshestTarget, type MuscleReadiness } from "@/lib/muscleReadiness"
 import { formatLocalDate } from "@/lib/dateUtils"
 import { ACCENT } from "@/lib/theme"
 
@@ -20,6 +21,8 @@ interface UserProfile {
   experienceLevel?: string | null
   workoutEnvironment?: string | null
   hasInjury?: boolean | null
+  workoutsPerWeek?: number | null
+  createdAt?: string | null
 }
 
 interface ScheduleBlock {
@@ -128,6 +131,8 @@ export default function SchedulePage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [suggestedExercises, setSuggestedExercises] = useState<Array<{ name: string; sets: number; reps: number }>>([])
   const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [anchorDayOfWeek, setAnchorDayOfWeek] = useState<number | null>(null)
+  const [readiness, setReadiness] = useState<MuscleReadiness[] | null>(null)
   const longPressTimer = useRef<number | null>(null)
   const [weekWorkouts, setWeekWorkouts] = useState(0)
   const [workoutsPerWeek, setWorkoutsPerWeek] = useState(3)
@@ -191,7 +196,7 @@ export default function SchedulePage() {
           fetch("/api/onboarding"),
         ])
         if (logRes.ok) {
-          const allLogs: Array<{ date?: string; completedAt: string }> = await logRes.json()
+          const allLogs: Array<{ date?: string; completedAt: string; exercises?: Array<{ name: string }> }> = await logRes.json()
           // Count logs completed this calendar week (Mon–Sun)
           const now = new Date()
           const dow = now.getDay()
@@ -202,10 +207,13 @@ export default function SchedulePage() {
             return d >= monday && d < sunday
           })
           setWeekWorkouts(thisWeek.length)
+          // Shared readiness picture for the rest-day "Train again" pick.
+          setReadiness(computeMuscleReadiness(allLogs))
         }
         if (profileRes.ok) {
           const p = await profileRes.json()
           if (p.workoutsPerWeek) setWorkoutsPerWeek(Number(p.workoutsPerWeek))
+          if (p.createdAt) setAnchorDayOfWeek(new Date(p.createdAt).getDay())
         }
       } catch {}
       let workoutEvents: any[] = []
@@ -217,8 +225,12 @@ export default function SchedulePage() {
             const profileRes = await fetch("/api/onboarding")
             const profileData: UserProfile = profileRes.ok ? await profileRes.json() : {}
             setProfile(profileData)
+            const anchor = profileData.createdAt ? new Date(profileData.createdAt).getDay() : 0
+            setAnchorDayOfWeek(anchor)
+            const wpw = Number(profileData.workoutsPerWeek) || 3
+            const daySplit = resolveDaySplit(selectedDay, anchor, wpw)
             const targetMuscles = (() => { try { const raw = localStorage.getItem("fitsched-onboarding-preferences"); const p = raw ? JSON.parse(raw) : {}; return Array.isArray(p?.targetMuscles) ? p.targetMuscles : [] } catch { return [] } })()
-            recommendationExercises = toWorkoutExercises(getSmartExercisePlan({ selectedDay, fitnessGoal: profileData.fitnessGoal || "stay_active", experienceLevel: getFeedbackAdjustedExperienceLevel(profileData.experienceLevel || "intermediate"), workoutEnvironment: profileData.workoutEnvironment || "gym", hasInjury: Boolean(profileData.hasInjury), targetMuscles }))
+            recommendationExercises = toWorkoutExercises(getSmartExercisePlan({ selectedDay, fitnessGoal: profileData.fitnessGoal || "stay_active", experienceLevel: getFeedbackAdjustedExperienceLevel(profileData.experienceLevel || "intermediate"), workoutEnvironment: profileData.workoutEnvironment || "gym", hasInjury: Boolean(profileData.hasInjury), targetMuscles, muscleGroupsOverride: daySplit.groups }))
             setSuggestedExercises(recommendationExercises)
           } catch { recommendationExercises = toWorkoutExercises(getSmartExercisePlan({ selectedDay })); setSuggestedExercises(recommendationExercises) }
           const dateStr = formatLocalDate(selDate)
@@ -263,11 +275,17 @@ export default function SchedulePage() {
     }
   }, [schedule, selectedDay])
 
-  const bestIdx = selectedDay !== 0 ? schedule.findIndex(b => b.kind === "free" && b.duration.includes("best")) : -1
+  // Anchor the rest-day view to the user's personal cycle (null until profile
+  // loads). isRestView replaces the old hardcoded "Sunday = rest" assumption.
+  const daySplit = anchorDayOfWeek === null ? null : resolveDaySplit(selectedDay, anchorDayOfWeek, workoutsPerWeek)
+  const isRestView = Boolean(daySplit?.isRestDay)
+  const splitLabel = getSplitLabel(daySplit?.groups ?? [])
+
+  const bestIdx = !isRestView ? schedule.findIndex(b => b.kind === "free" && b.duration.includes("best")) : -1
 
   const ds = schedule.map((b, i) => {
     const w = i === bestIdx
-    return { ...b, kind: w ? "wrk" as const : b.kind, label: w ? MUSCLE_GROUPS[selectedDay] : b.label, duration: w ? "25 min" : b.duration, hint: w ? "Optimal energy window" : b.hint }
+    return { ...b, kind: w ? "wrk" as const : b.kind, label: w ? splitLabel : b.label, duration: w ? "25 min" : b.duration, hint: w ? "Optimal energy window" : b.hint }
   })
 
   const bestBlock = bestIdx >= 0 ? ds[bestIdx] : null
@@ -276,6 +294,11 @@ export default function SchedulePage() {
   const todayDateId = formatLocalDate(new Date())
   const selectedDateId = selectedDate ? formatLocalDate(selectedDate) : ""
   const canStartExerciseToday = Boolean(selectedDateId && selectedDateId === todayDateId)
+
+  const preferredTargets = (() => { try { const raw = localStorage.getItem("fitsched-onboarding-preferences"); const p = raw ? JSON.parse(raw) : {}; return Array.isArray(p?.targetMuscles) ? p.targetMuscles : [] } catch { return [] } })() as MuscleGroup[]
+  const freshTarget: MuscleGroup = readiness && readiness.length
+    ? pickFreshestTarget(readiness, preferredTargets)
+    : (preferredTargets[0] ?? "FULL_BODY")
 
   const resetManualForm = () => { setManualTitle(""); setManualDescription(""); setManualTime("08:00"); setEditingBlockId(null) }
   const openAddSchedule = () => { resetManualForm(); setAddOpen(true) }
@@ -333,6 +356,7 @@ export default function SchedulePage() {
         workoutEnvironment: profile?.workoutEnvironment || "home_bodyweight",
         hasInjury:          Boolean(profile?.hasInjury),
         targetMuscles,
+        muscleGroupsOverride: daySplit?.groups,
       }))
       return plan.length > 0 ? plan : [{ name: block.label, sets: 3, reps: 12 }]
     }
@@ -341,6 +365,28 @@ export default function SchedulePage() {
       ? block.exercises.map(e => ({ name: e.name || block.label, sets: Number(e.sets) || 3, reps: Number(e.reps) || 12 }))
       : suggestedExercises.length > 0 ? suggestedExercises : fallbackExercises()
     sessionStorage.setItem("fitsched-active-workout", JSON.stringify({ date: formatLocalDate(selectedDate), workoutName: block.label, exercises }))
+    router.push("/exercise")
+  }
+
+  // On-demand bonus session from a rest day: build a plan for the freshest,
+  // recovery-aware muscle (biased to onboarding targets) and jump into it.
+  const startTrainAgain = () => {
+    if (!selectedDate || !canStartExerciseToday) return
+    const plan = toWorkoutExercises(getSmartExercisePlan({
+      selectedDay,
+      fitnessGoal:        profile?.fitnessGoal || "stay_active",
+      experienceLevel:    getFeedbackAdjustedExperienceLevel(profile?.experienceLevel || "intermediate"),
+      workoutEnvironment: profile?.workoutEnvironment || "home_bodyweight",
+      hasInjury:          Boolean(profile?.hasInjury),
+      targetMuscles:      preferredTargets,
+      muscleGroupsOverride: [freshTarget],
+    }))
+    if (!plan.length) return
+    sessionStorage.setItem("fitsched-active-workout", JSON.stringify({
+      date: formatLocalDate(selectedDate),
+      workoutName: `Bonus · ${getSplitLabel([freshTarget])}`,
+      exercises: plan,
+    }))
     router.push("/exercise")
   }
 
@@ -586,35 +632,20 @@ export default function SchedulePage() {
                 </div>
               )}
 
-              {selectedDay === 0 && (
+              {isRestView && (
                 <div className="ios-inset-grouped" style={{ padding: "32px 24px", textAlign: "center" }}>
                   <div style={{ width: 44, height: 44, borderRadius: 14, background: "rgba(18,101,254,0.1)", border: `1px solid rgba(18,101,254,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke={ACCENT} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
                   </div>
                   <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text)", marginBottom: 6 }}>{t.restDay}</div>
-                  <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.55, marginBottom: 20 }}>{t.restBody}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.55, marginBottom: canStartExerciseToday ? 20 : 0 }}>{t.restBody}</div>
                   {canStartExerciseToday && (
                     <motion.button
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => {
-                        if (!selectedDate) return
-                        const lightExercises = [
-                          { name: "Walking Lunges", sets: 2, reps: 12 },
-                          { name: "Cat-Cow Stretch", sets: 2, reps: 10 },
-                          { name: "Superman Hold", sets: 2, reps: 15 },
-                          { name: "Hip Circles", sets: 2, reps: 10 },
-                          { name: "Dead Hang", sets: 2, reps: 20 },
-                        ]
-                        sessionStorage.setItem("fitsched-active-workout", JSON.stringify({
-                          date: formatLocalDate(selectedDate),
-                          workoutName: "Active Recovery",
-                          exercises: lightExercises,
-                        }))
-                        router.push("/exercise")
-                      }}
+                      onClick={startTrainAgain}
                       style={{ border: `1px solid rgba(18,101,254,0.4)`, background: "rgba(18,101,254,0.12)", color: ACCENT, borderRadius: 999, padding: "10px 22px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}
                     >
-                      {t.lightWorkoutBtn}
+                      Train again · {getSplitLabel([freshTarget])}
                     </motion.button>
                   )}
                 </div>
