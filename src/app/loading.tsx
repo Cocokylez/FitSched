@@ -6,7 +6,7 @@ export default function Loading() {
     <div style={{
       position: "fixed",
       inset: 0,
-      background: "#000",
+      background: "#0b0f0e",
       zIndex: 9998,
     }} />
   )
