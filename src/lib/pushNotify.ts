@@ -39,7 +39,13 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
         await wp.sendNotification({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, data)
       } catch (err: any) {
         // 410 Gone = subscription expired/unsubscribed, clean it up
-        if (err?.statusCode === 410) staleIds.push(sub.id)
+        if (err?.statusCode === 410 || err?.statusCode === 404) {
+          staleIds.push(sub.id)
+        } else {
+          // Surface real delivery failures (e.g. 403 VAPID key mismatch, which
+          // is otherwise invisible) so they show up in server logs.
+          console.error(`Push send failed (status ${err?.statusCode ?? "?"}):`, err?.body || err?.message || err)
+        }
       }
     })
   )
