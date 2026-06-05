@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 
-const MIN_MS = 600    // show at least this long so it doesn't flash
+const MIN_MS = 1000   // show at least this long so it reads as a real loading moment
 const MAX_MS = 4000   // hard cap — the splash can never block the app
 const FADE_MS = 380
 

@@ -120,6 +120,7 @@ export default function SchedulePage() {
   const [previousStreak, setPreviousStreak] = useState(0)
   const [streakBroken, setStreakBroken] = useState(false)
   const [newMilestone, setNewMilestone] = useState<number | null>(null)
+  const [freezesRemaining, setFreezesRemaining] = useState<number | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [manualTitle, setManualTitle] = useState("")
   const [manualDescription, setManualDescription] = useState("")
@@ -187,6 +188,7 @@ export default function SchedulePage() {
           setPreviousStreak(Number(d.previousStreak) || 0)
           setStreakBroken(Boolean(d.streakBroken))
           setNewMilestone(d.newMilestone)
+          if (typeof d.freezesRemainingThisMonth === "number") setFreezesRemaining(d.freezesRemainingThisMonth)
         }
       } catch {}
       // Load this week's workout count + goal
@@ -655,7 +657,7 @@ export default function SchedulePage() {
         </div>
       </div>
 
-      <StreakWelcomeCard streak={streak} previousStreak={previousStreak} streakBroken={streakBroken} onGoWorkout={() => router.push("/workout")} />
+      <StreakWelcomeCard streak={streak} previousStreak={previousStreak} streakBroken={streakBroken} freezesRemaining={freezesRemaining ?? undefined} onGoWorkout={() => router.push("/workout")} />
 
       {/* Add/edit schedule modal */}
       <AnimatePresence>
