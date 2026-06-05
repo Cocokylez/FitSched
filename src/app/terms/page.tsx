@@ -1,7 +1,7 @@
 ﻿import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 
-const EFFECTIVE_DATE = "June 1, 2026"
+const EFFECTIVE_DATE = "June 5, 2026"
 const APP_NAME = "FitSched"
 const CONTACT_EMAIL = "support@fitsched.app"
 
@@ -41,6 +41,7 @@ export default function TermsPage() {
 
         <Section title="2. What FitSched Is">
           <p>{APP_NAME} is a personal fitness scheduling tool that helps you plan workouts, track progress, earn FitTokens for consistency, and log outdoor hikes with GPS. It is not a medical service and does not provide medical advice.</p>
+          <p>Your workout plans are generated automatically and personalised to your goals, experience, equipment, and recent training history. Your plan begins from the day you start, rest days are spaced across your own weekly cycle, and you can request additional sessions at any time. These plans are suggestions, not medical or professional fitness prescriptions.</p>
           <p>Always consult a qualified healthcare professional before starting a new exercise programme, especially if you have an injury or pre-existing condition.</p>
           <p>The Hike Tracker accesses your device location while active. You grant this permission explicitly through your browser or device. You can revoke it at any time in your device settings.</p>
           <p>Hikes finished without an internet connection are saved locally on your device and uploaded automatically once you are back online. If you clear your browser&apos;s site data before reconnecting, any unsynced hike will be lost.</p>
