@@ -133,6 +133,8 @@ export default function SettingsPage() {
   const [pushEnabled, setPushEnabled]   = useState(false)
   const [pushLoading, setPushLoading]   = useState(false)
   const [pushError, setPushError]       = useState<string | null>(null)
+  const [pushTesting, setPushTesting]   = useState(false)
+  const [pushTestMsg, setPushTestMsg]   = useState<string | null>(null)
   const [workoutsPerWeek, setWorkoutsPerWeek] = useState(3)
   const [workoutEnvironment, setWorkoutEnvironment] = useState<WorkoutEnvironment>("gym")
   const [savingEnvironment, setSavingEnvironment] = useState(false)
@@ -448,21 +450,60 @@ export default function SettingsPage() {
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidKey),
       })
-      await fetch("/api/push/subscribe", {
+      const res = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(sub),
       })
+      // The subscription only counts if the SERVER actually stored it. Without
+      // this check the toggle would show "Enabled" even when nothing was saved,
+      // so no notification could ever be delivered.
+      if (!res.ok) throw new Error("subscribe-failed")
     } catch (err) {
       setPushEnabled(false)
       const msg = err instanceof Error ? err.message : ""
       setPushError(
         msg === "VAPID key not configured"
           ? "Push notifications aren't set up yet."
+          : msg === "subscribe-failed"
+          ? "Couldn't save your subscription. Please try again."
           : "Couldn't enable notifications — try again."
       )
     }
     setPushLoading(false)
+  }
+
+  // Fires a real push to this user's stored subscriptions so the whole pipeline
+  // can be verified on demand — the response tells us exactly where it breaks
+  // (no subscription stored, server not configured, or delivery rejected).
+  const sendTestPush = async () => {
+    setPushTesting(true)
+    setPushTestMsg(null)
+    try {
+      const res = await fetch("/api/push/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "FitSched test ✅",
+          body: "Notifications are working on this device.",
+        }),
+      })
+      const data = await res.json().catch(() => ({} as { sent?: number; error?: string }))
+      if (res.ok && (data.sent ?? 0) > 0) {
+        setPushTestMsg("Sent — check your device's notifications.")
+      } else if (res.ok) {
+        setPushTestMsg("No active subscription on this device. Toggle notifications off, then on again.")
+      } else if (data.error === "Push not configured") {
+        setPushTestMsg("The server isn't set up for push yet (missing VAPID keys).")
+      } else if (res.status === 500) {
+        setPushTestMsg("Delivery was rejected — your subscription may be stale. Toggle off and on again.")
+      } else {
+        setPushTestMsg(data.error || "Couldn't send a test notification.")
+      }
+    } catch {
+      setPushTestMsg("Couldn't reach the server.")
+    }
+    setPushTesting(false)
   }
 
   const deleteAccount = async () => {
@@ -805,6 +846,23 @@ export default function SettingsPage() {
           }
           right={<Toggle on={pushEnabled} onToggle={togglePush} loading={pushLoading} />}
         />
+        {pushEnabled && (
+          <Row
+            divider
+            label="Test notification"
+            sublabel={pushTesting ? "Sending…" : (pushTestMsg ?? "Send one to this device now")}
+            right={
+              <motion.button
+                onClick={sendTestPush}
+                disabled={pushTesting}
+                whileTap={{ scale: 0.9 }}
+                style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 10, padding: "5px 13px", color: "var(--text)", fontSize: 13, fontWeight: 700, cursor: pushTesting ? "default" : "pointer", opacity: pushTesting ? 0.6 : 1 }}
+              >
+                Send
+              </motion.button>
+            }
+          />
+        )}
         <Row
           divider
           label="Appearance"

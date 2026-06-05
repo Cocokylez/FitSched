@@ -63,6 +63,12 @@ export async function POST(req: Request) {
     );
 
     const failed = results.filter((r) => r.status === "rejected");
+    // Log real rejection reasons (status + body) so failures like a 403 VAPID
+    // key mismatch are visible in server logs instead of silently swallowed.
+    for (const r of failed) {
+      const reason = (r as PromiseRejectedResult).reason as { statusCode?: number; body?: string; message?: string };
+      console.error(`Test push rejected (status ${reason?.statusCode ?? "?"}):`, reason?.body || reason?.message || reason);
+    }
     if (failed.length > 0 && failed.length === subscriptions.length) {
       return NextResponse.json(
         { error: "Failed to send notifications" },
