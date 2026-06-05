@@ -235,6 +235,13 @@ export async function POST(req: Request) {
         // Finished in less than half the minimum plausible time for this exercise set
         verificationScore = Math.min(verificationScore, 0.3)
       }
+    } else {
+      // No signed session token → we can't trust the client-reported score at
+      // all (a crafted request could just send verificationScore: 1). Cap at
+      // half-reward. Legit in-app sessions always carry a token, so this only
+      // bites fabricated requests (and, harmlessly, a session whose start call
+      // failed — it still earns 50%).
+      verificationScore = Math.min(verificationScore, 0.5)
     }
 
     if (!isValidTodayDate(date)) {
