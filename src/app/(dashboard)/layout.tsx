@@ -15,11 +15,15 @@ export default async function DashboardLayout({
 
   const user = await db.user.findUnique({
     where: { id: session.user.id },
-    select: { onboardingCompleted: true, emailVerified: true, email: true },
+    select: { onboardingCompleted: true, emailVerified: true, email: true, banned: true },
   });
 
   if (!user) {
     redirect("/api/auth/force-signout");
+  }
+
+  if (user.banned) {
+    redirect("/banned");
   }
 
   if (!user.onboardingCompleted) {
