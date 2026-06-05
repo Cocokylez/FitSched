@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { awardFitTokensForHikeTx } from "@/lib/fitTokens"
+import { isUserBanned, flagHikeIfSuspicious } from "@/lib/antiCheat"
 import { verifyHikeRoute } from "@/lib/hikeVerification"
 import { cleanText, rateLimitByUser, rateLimitPresets, readJsonBody, requestBodyErrorResponse, validateSameOrigin } from "@/lib/security"
 import { Prisma } from "@prisma/client"
@@ -39,6 +40,10 @@ export async function POST(req: Request) {
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.strictWrite, "hike:post")
     if (limited) return limited
+
+    if (await isUserBanned(session.user.id)) {
+      return NextResponse.json({ error: "Account suspended" }, { status: 403 })
+    }
 
     // routePoints can be up to ~400 waypoints; allow 100 KB for this route
     const body = await readJsonBody(req, 100_000)
@@ -114,6 +119,9 @@ export async function POST(req: Request) {
 
       return { log, fitTokenReward }
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
+
+    // Review signals — evaluated after the award so flagging never affects it.
+    await flagHikeIfSuspicious(userId, distKm, verification)
 
     return NextResponse.json(
       {

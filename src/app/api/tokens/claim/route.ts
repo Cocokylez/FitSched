@@ -37,9 +37,14 @@ export async function POST(req: Request) {
   try {
     // ── Step 1: Read current state ─────────────────────────────────────────────
     const [user, balance] = await Promise.all([
-      db.user.findUnique({ where: { id: userId }, select: { walletAddress: true } }),
+      db.user.findUnique({ where: { id: userId }, select: { walletAddress: true, banned: true } }),
       db.fitTokenBalance.findUnique({ where: { userId } }),
     ])
+
+    // Banned accounts cannot cash out earned tokens.
+    if (user?.banned) {
+      return NextResponse.json({ error: "Account suspended" }, { status: 403 })
+    }
 
     const walletAddress = user?.walletAddress
     if (!walletAddress || !isValidEvmAddress(walletAddress)) {

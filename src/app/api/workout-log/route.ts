@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { awardFitTokensForWorkoutLogTx } from "@/lib/fitTokens"
+import { isUserBanned, flagFastWorkout } from "@/lib/antiCheat"
 import { sendPushToUser } from "@/lib/pushNotify"
 import { unlockAchievementsForUser } from "@/lib/unlockAchievements"
 import { cleanText, clampInt, isDateId, rateLimitByUser, rateLimitPresets, readJsonBody, requestBodyErrorResponse, safeError, validateSameOrigin } from "@/lib/security"
@@ -199,6 +200,10 @@ export async function POST(req: Request) {
     const limited = await rateLimitByUser(req, userId, rateLimitPresets.strictWrite, "workout-log:post")
     if (limited) return limited
 
+    if (await isUserBanned(userId)) {
+      return NextResponse.json({ error: "Account suspended" }, { status: 403 })
+    }
+
     const body = await readJsonBody(req)
     const date = body.date
     const workoutName = cleanText(body.workoutName, 100)
@@ -231,6 +236,7 @@ export async function POST(req: Request) {
       if (serverElapsedSec < 60) {
         // Under 1 minute — reduce but keep above 0.25 so user still earns 50%
         verificationScore = Math.min(verificationScore, 0.26)
+        await flagFastWorkout(userId, serverElapsedSec)
       } else if (minExpectedSec > 0 && serverElapsedSec < minExpectedSec * 0.5) {
         // Finished in less than half the minimum plausible time for this exercise set
         verificationScore = Math.min(verificationScore, 0.3)

@@ -47,6 +47,27 @@ model User {
   achievements            UserAchievement[]
   walletAddress           String?                  // Base EVM address for FIT token claims
   claimReceipts           ClaimReceipt[]
+
+  // Anti-cheat / moderation
+  banned                  Boolean                  @default(false)
+  bannedAt                DateTime?
+  bannedReason            String?
+  suspiciousFlags         SuspiciousFlag[]
+}
+
+// Automated anti-cheat flags for review. A row here does NOT auto-ban; it's a
+// signal a human (or a later rule) can act on. See lib/antiCheat.ts.
+model SuspiciousFlag {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String   // e.g. "no_gps_max_hike" | "high_excluded_ratio" | "fast_workout"
+  detail    String?  // short human-readable context
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([kind, createdAt])
 }
 
 model Account {
