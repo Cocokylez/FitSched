@@ -36,21 +36,14 @@ export const metadata: Metadata = {
     title: "FitSched — AI Workout Scheduler",
     description:
       "AI-powered workout scheduler that fits your workouts into your day automatically. Track streaks, earn FitTokens, and build lasting fitness habits.",
-    images: [
-      {
-        url: `${APP_URL}/logo2.png`,
-        width: 512,
-        height: 512,
-        alt: "FitSched",
-      },
-    ],
+    // og:image comes from the file-based app/opengraph-image.tsx (1200×630).
   },
   twitter: {
     card: "summary_large_image",
     title: "FitSched — AI Workout Scheduler",
     description:
       "AI-powered workout scheduler that fits your workouts into your day automatically.",
-    images: [`${APP_URL}/logo2.png`],
+    // twitter image falls back to the 1200×630 opengraph-image.
   },
   alternates: {
     canonical: APP_URL,
