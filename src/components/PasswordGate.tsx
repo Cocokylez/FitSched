@@ -11,8 +11,13 @@ interface Props {
   open: boolean
   /** Called when the user dismisses without unlocking. */
   onClose: () => void
-  /** Called once the user successfully verifies or sets a password. */
-  onSuccess: () => void
+  /**
+   * Called once the user successfully verifies or sets a password. The plaintext
+   * password is passed through so the caller can forward it to a server action
+   * that re-verifies it (e.g. changing the payout wallet). Callers that don't
+   * need it can ignore the argument.
+   */
+  onSuccess: (password?: string) => void
   /** Short label shown in the modal header, e.g. "withdraw FIT" or "edit profile". */
   actionLabel: string
 }
@@ -67,7 +72,7 @@ export function PasswordGate({ open, onClose, onSuccess, actionLabel }: Props) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ password }),
         })
-        if (res.ok) { onSuccess(); return }
+        if (res.ok) { onSuccess(password); return }
         if (res.status === 409) {
           // user lost password between status check and submit — switch flows
           setMode("set")
@@ -95,7 +100,7 @@ export function PasswordGate({ open, onClose, onSuccess, actionLabel }: Props) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ password }),
         })
-        if (res.ok) { onSuccess(); return }
+        if (res.ok) { onSuccess(password); return }
         const data = await res.json().catch(() => ({}))
         if (data?.code === "PASSWORD_EXISTS") {
           setMode("verify")

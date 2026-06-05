@@ -10,7 +10,14 @@ interface StreakData {
   streakBroken: boolean
   lastCompletedDate: string | null
   newMilestone: number | null
+  freezeLimit: number
+  freezesRemainingThisMonth: number
 }
+
+// Each calendar month a user gets this many "streak freezes": a missed workout
+// day is automatically forgiven (the streak survives) up to this many times per
+// month. The 3rd miss in a month breaks the streak.
+const MAX_STREAK_FREEZE_PER_MONTH = 2
 
 function getLocalDateId(offsetDays = 0) {
   const timeZone = process.env.FITSCHED_TIME_ZONE || "Asia/Singapore"
@@ -68,9 +75,11 @@ function countStreak(
   fromDate: string,
   anchorDayOfWeek: number,
   workoutsPerWeek: number,
-): number {
+): { streak: number; freezesUsedByMonth: Record<string, number> } {
   let streak = 0
   let cursor = fromDate
+  // YYYY-MM -> freezes spent that month while walking this streak back.
+  const freezesUsedByMonth: Record<string, number> = {}
 
   for (let i = 0; i < 730; i++) {
     const isRest = isRestDay(cursor, anchorDayOfWeek, workoutsPerWeek)
@@ -85,12 +94,23 @@ function countStreak(
     if (hasLog) {
       streak++
       cursor = addDays(cursor, -1)
-    } else {
-      break
+      continue
     }
+
+    // Missed a scheduled workout day. Spend a streak freeze for that day's
+    // month if any remain — the streak survives (but doesn't increment). Once
+    // a month's freezes are exhausted, the streak ends here.
+    const month = cursor.slice(0, 7) // "YYYY-MM"
+    const used = freezesUsedByMonth[month] ?? 0
+    if (used < MAX_STREAK_FREEZE_PER_MONTH) {
+      freezesUsedByMonth[month] = used + 1
+      cursor = addDays(cursor, -1)
+      continue
+    }
+    break
   }
 
-  return streak
+  return { streak, freezesUsedByMonth }
 }
 
 export async function GET(req: Request) {
@@ -132,15 +152,20 @@ export async function GET(req: Request) {
   // the user doesn't see streak=0 before they've had a chance to train today.
   const startDate = workoutDateSet.has(today) ? today : yesterday
 
-  const streak = countStreak(workoutDateSet, startDate, anchorDayOfWeek, workoutsPerWeek)
+  const { streak, freezesUsedByMonth } = countStreak(workoutDateSet, startDate, anchorDayOfWeek, workoutsPerWeek)
 
   const previousStreak = lastCompletedDate
-    ? countStreak(workoutDateSet, lastCompletedDate, anchorDayOfWeek, workoutsPerWeek)
+    ? countStreak(workoutDateSet, lastCompletedDate, anchorDayOfWeek, workoutsPerWeek).streak
     : 0
 
   // Streak broken when the active count is zero but there used to be one.
   // Rest days alone can't cause this — only missed workout days can.
   const streakBroken = streak === 0 && previousStreak > 0
+
+  // Freezes left this calendar month (how many more missed days the streak can survive).
+  const currentMonth = today.slice(0, 7)
+  const freezesUsedThisMonth = freezesUsedByMonth[currentMonth] ?? 0
+  const freezesRemainingThisMonth = Math.max(0, MAX_STREAK_FREEZE_PER_MONTH - freezesUsedThisMonth)
 
   const MILESTONES = [3, 7, 14, 30]
   let newMilestone: number | null = null
@@ -174,5 +199,7 @@ export async function GET(req: Request) {
     streakBroken,
     lastCompletedDate,
     newMilestone,
+    freezeLimit: MAX_STREAK_FREEZE_PER_MONTH,
+    freezesRemainingThisMonth,
   } satisfies StreakData)
 }
