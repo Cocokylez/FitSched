@@ -380,7 +380,7 @@ export default function OnboardingPage() {
 
         {step === 4 && (
           <motion.div key="target" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.3 }}>
-            <StepHeader label={stepLabel} title="What do you want to grow?" body="Choose the muscle groups you care about most." />
+            <StepHeader label={stepLabel} title="What do you want to grow?" body="We'll prioritise these in your plan — and aim your bonus sessions at them too." />
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
               {muscleTargets.map(target => {
@@ -435,7 +435,7 @@ export default function OnboardingPage() {
 
         {step === 6 && (
           <motion.div key="frequency" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.3 }}>
-            <StepHeader label={stepLabel} title="How often?" body="We'll schedule workouts around your calendar." />
+            <StepHeader label={stepLabel} title="How often?" body="We'll spread your workouts and rest days across your week, starting from day one." />
 
             {frequencies.map(freq => (
               <motion.button key={freq.id} whileTap={{ scale: 0.98 }} onClick={() => handleSelect("workoutsPerWeek", freq.id)} style={optionStyle(selections.workoutsPerWeek === freq.id)}>

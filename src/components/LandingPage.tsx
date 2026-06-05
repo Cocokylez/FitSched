@@ -738,7 +738,7 @@ function HowItWorks() {
     {
       num: "01", icon: Calendar, color: ACCENT,
       title: "Schedule",
-      desc: "Set your weekly training goal. FitSched builds a smart plan around your muscle recovery, readiness, and available equipment.",
+      desc: "Set your weekly training goal. FitSched builds your plan starting from day one — no wasted rest day — and adapts every session to your muscle recovery, readiness, and available equipment.",
     },
     {
       num: "02", icon: Dumbbell, color: "#818cf8",
@@ -873,7 +873,7 @@ function FitTokenSection() {
 function Features() {
   const { t } = useLanguage()
   const FEATURES = [
-    { icon: Sparkles,   color: ACCENT,     title: "Smart Scheduling",    desc: "Weekly plans built around your recovery, muscle readiness, and goals." },
+    { icon: Sparkles,   color: ACCENT,     title: "Smart Scheduling",    desc: "Plans that start the day you join and adapt to your recovery and goals — with a freshest-muscle pick whenever you want a bonus session." },
     { icon: Flame,      color: FT_ORANGE,  title: "Streak System",       desc: "Daily streaks with rest days that don't break your run." },
     { icon: Navigation, color: "#818cf8",  title: "GPS Hike Tracking",   desc: "Log outdoor hikes with live GPS route recording and elevation data." },
     { icon: Activity,   color: "#34d399",  title: "Motion Verification", desc: "Device sensors confirm every rep and award full token rewards." },
