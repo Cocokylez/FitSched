@@ -2,8 +2,8 @@
 
 import { useEffect } from "react"
 
-const MIN_MS = 3000   // always visible for at least this long even if video fails
-const MAX_MS = 15000  // hard cap so a broken video never blocks the app
+const MIN_MS = 600    // show at least this long so it doesn't flash
+const MAX_MS = 4000   // hard cap — the splash can never block the app
 const FADE_MS = 380
 
 export function SplashRemover() {
@@ -21,30 +21,19 @@ export function SplashRemover() {
       setTimeout(() => el.parentNode?.removeChild(el), FADE_MS + 50)
     }
 
-    const video = el.querySelector("video")
     const shownAt = Number(el.dataset.shown ?? 0)
     const elapsed = shownAt ? Date.now() - shownAt : 0
 
-    // Hard-cap fallback — always dismiss by MAX_MS
+    // This effect running means the app shell has hydrated and is interactive —
+    // so we're ready to reveal it. Keep the splash for a short minimum so it
+    // doesn't flicker, then fade it out. The fallback is just a safety net.
+    const minTimer = setTimeout(dismiss, Math.max(0, MIN_MS - elapsed))
     const fallback = setTimeout(dismiss, Math.max(0, MAX_MS - elapsed))
 
-    if (video) {
-      // Dismiss when video ends, but respect MIN_MS
-      const onEnded = () => {
-        const remaining = Math.max(0, MIN_MS - (shownAt ? Date.now() - shownAt : MIN_MS))
-        setTimeout(dismiss, remaining)
-      }
-      video.addEventListener("ended", onEnded, { once: true })
-      // If video never plays (autoplay blocked, missing file), fall through to MAX_MS fallback
-      return () => {
-        clearTimeout(fallback)
-        video.removeEventListener("ended", onEnded)
-      }
+    return () => {
+      clearTimeout(minTimer)
+      clearTimeout(fallback)
     }
-
-    // No video element — just respect MIN_MS
-    const t = setTimeout(dismiss, Math.max(0, MIN_MS - elapsed))
-    return () => { clearTimeout(fallback); clearTimeout(t) }
   }, [])
 
   return null
