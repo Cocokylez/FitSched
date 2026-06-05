@@ -117,6 +117,8 @@ export default function WithdrawalPage() {
   const [savingWallet,  setSavingWallet]  = useState(false)
   const [walletSaved,   setWalletSaved]   = useState(false)
   const [walletError,   setWalletError]   = useState<string | null>(null)
+  const [walletGateOpen, setWalletGateOpen] = useState(false)
+  const [pendingWallet,  setPendingWallet]  = useState<string | null>(null)
   const walletInputRef = useRef<HTMLInputElement>(null)
 
   // claim
@@ -184,26 +186,38 @@ export default function WithdrawalPage() {
       return
     }
 
+    // Changing the payout wallet is password-gated. Open the gate; the verified
+    // password is forwarded to the server, which re-verifies before saving.
+    setPendingWallet(trimmed)
+    setWalletGateOpen(true)
+  }
+
+  async function performWalletSave(password?: string) {
+    const addr = pendingWallet
+    if (!addr) return
+    setWalletGateOpen(false)
+    setWalletError(null)
     setSavingWallet(true)
     try {
       const r = await fetch("/api/profile", {
         method:  "PATCH",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ walletAddress: trimmed }),
+        body:    JSON.stringify({ walletAddress: addr, password }),
       })
       if (r.ok) {
-        setData((prev) => prev ? { ...prev, walletAddress: trimmed.toLowerCase() } : prev)
+        setData((prev) => prev ? { ...prev, walletAddress: addr.toLowerCase() } : prev)
         setEditingWallet(false)
         setWalletSaved(true)
         setTimeout(() => setWalletSaved(false), 3000)
       } else {
-        const body = await r.json()
+        const body = await r.json().catch(() => ({}))
         setWalletError(body.error ?? "Failed to save wallet address")
       }
     } catch {
       setWalletError("Network error — please try again")
     }
     setSavingWallet(false)
+    setPendingWallet(null)
   }
 
   // ── Claim ───────────────────────────────────────────────────────────────────
@@ -723,6 +737,14 @@ export default function WithdrawalPage() {
         actionLabel="withdraw FIT"
         onClose={() => setGateOpen(false)}
         onSuccess={() => { setGateOpen(false); performClaim() }}
+      />
+
+      {/* Password gate — opens before changing the payout wallet */}
+      <PasswordGate
+        open={walletGateOpen}
+        actionLabel="change your wallet"
+        onClose={() => { setWalletGateOpen(false); setPendingWallet(null) }}
+        onSuccess={(pwd) => performWalletSave(pwd)}
       />
     </div>
   )

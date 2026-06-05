@@ -1,7 +1,9 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { compare } from "bcryptjs"
 import {
   cleanText,
+  logSecurityEvent,
   rateLimitByUser,
   rateLimitPresets,
   readJsonBody,
@@ -68,13 +70,41 @@ export async function PATCH(req: Request) {
     if ("walletAddress" in body) {
       const addr = body.walletAddress
       if (addr === null || addr === "") {
+        // Clearing a wallet doesn't redirect any payout, so it isn't gated.
         data.walletAddress = null
       } else if (typeof addr === "string") {
         // Validate EVM address: 0x + 40 hex chars
         if (!/^0x[0-9a-fA-F]{40}$/.test(addr)) {
           return safeError("Invalid wallet address — must be a valid EVM address (0x…)")
         }
-        data.walletAddress = addr.toLowerCase()
+        const normalized = addr.toLowerCase()
+        const current = await db.user.findUnique({
+          where: { id: session.user.id },
+          select: { walletAddress: true, password: true },
+        })
+        // Setting / redirecting the payout wallet is the one change an attacker
+        // with a hijacked session would make, so require the password for it.
+        if (normalized !== current?.walletAddress) {
+          if (!current?.password) {
+            return NextResponse.json(
+              { error: "Set a password first to change your wallet.", code: "NO_PASSWORD" },
+              { status: 409 },
+            )
+          }
+          const pwd = typeof body.password === "string" ? body.password : ""
+          if (!pwd) {
+            return NextResponse.json(
+              { error: "Password required to change wallet address", code: "PASSWORD_REQUIRED" },
+              { status: 401 },
+            )
+          }
+          const ok = await compare(pwd, current.password)
+          if (!ok) {
+            logSecurityEvent("wallet_change_bad_password", { userId: session.user.id })
+            return NextResponse.json({ error: "Incorrect password" }, { status: 401 })
+          }
+        }
+        data.walletAddress = normalized
       }
     }
 
