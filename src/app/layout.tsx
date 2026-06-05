@@ -6,7 +6,6 @@ import { LanguageProvider } from "@/context/LanguageContext";
 import { ProvidersWrapper } from "@/components/ProvidersWrapper";
 import { NativeShell } from "@/components/NativeShell";
 import { SwRegistration } from "@/components/SwRegistration";
-import { auth } from "@/lib/auth";
 import { Analytics } from "@vercel/analytics/next"
 import { SplashRemover } from "@/components/SplashRemover";
 
@@ -59,13 +58,11 @@ export const viewport: Viewport = {
   themeColor: "#1265fe",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-dvh flex flex-col antialiased">
@@ -75,7 +72,7 @@ export default async function RootLayout({
           <SplashRemover />
           <NativeShell />
           <SwRegistration />
-          <SessionProvider session={session}>
+          <SessionProvider>
             <LanguageProvider>
               <ProvidersWrapper>{children}</ProvidersWrapper>
             </LanguageProvider>

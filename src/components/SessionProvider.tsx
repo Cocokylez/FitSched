@@ -8,7 +8,9 @@ export function SessionProvider({
   session,
 }: {
   children: React.ReactNode;
-  session: Session | null;
+  // Optional: when omitted, next-auth fetches the session on the client. This
+  // lets the root layout render immediately instead of blocking on a DB lookup.
+  session?: Session | null;
 }) {
   return (
     <NextAuthSessionProvider session={session}>
