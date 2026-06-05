@@ -133,8 +133,6 @@ export default function SettingsPage() {
   const [pushEnabled, setPushEnabled]   = useState(false)
   const [pushLoading, setPushLoading]   = useState(false)
   const [pushError, setPushError]       = useState<string | null>(null)
-  const [pushTesting, setPushTesting]   = useState(false)
-  const [pushTestMsg, setPushTestMsg]   = useState<string | null>(null)
   const [workoutsPerWeek, setWorkoutsPerWeek] = useState(3)
   const [workoutEnvironment, setWorkoutEnvironment] = useState<WorkoutEnvironment>("gym")
   const [savingEnvironment, setSavingEnvironment] = useState(false)
@@ -459,6 +457,19 @@ export default function SettingsPage() {
       // this check the toggle would show "Enabled" even when nothing was saved,
       // so no notification could ever be delivered.
       if (!res.ok) throw new Error("subscribe-failed")
+
+      // Confirmation push — the moment they turn notifications on, send one to
+      // the device so they get instant proof it works. Best-effort: the toggle
+      // already reflects the stored subscription, so a delivery hiccup here
+      // shouldn't flip it back off.
+      fetch("/api/push/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "Notifications on ✅",
+          body: "You're all set — FitSched will nudge you to keep your streak going.",
+        }),
+      }).catch(() => {})
     } catch (err) {
       setPushEnabled(false)
       const msg = err instanceof Error ? err.message : ""
@@ -471,39 +482,6 @@ export default function SettingsPage() {
       )
     }
     setPushLoading(false)
-  }
-
-  // Fires a real push to this user's stored subscriptions so the whole pipeline
-  // can be verified on demand — the response tells us exactly where it breaks
-  // (no subscription stored, server not configured, or delivery rejected).
-  const sendTestPush = async () => {
-    setPushTesting(true)
-    setPushTestMsg(null)
-    try {
-      const res = await fetch("/api/push/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: "FitSched test ✅",
-          body: "Notifications are working on this device.",
-        }),
-      })
-      const data = await res.json().catch(() => ({} as { sent?: number; error?: string }))
-      if (res.ok && (data.sent ?? 0) > 0) {
-        setPushTestMsg("Sent — check your device's notifications.")
-      } else if (res.ok) {
-        setPushTestMsg("No active subscription on this device. Toggle notifications off, then on again.")
-      } else if (data.error === "Push not configured") {
-        setPushTestMsg("The server isn't set up for push yet (missing VAPID keys).")
-      } else if (res.status === 500) {
-        setPushTestMsg("Delivery was rejected — your subscription may be stale. Toggle off and on again.")
-      } else {
-        setPushTestMsg(data.error || "Couldn't send a test notification.")
-      }
-    } catch {
-      setPushTestMsg("Couldn't reach the server.")
-    }
-    setPushTesting(false)
   }
 
   const deleteAccount = async () => {
@@ -846,23 +824,6 @@ export default function SettingsPage() {
           }
           right={<Toggle on={pushEnabled} onToggle={togglePush} loading={pushLoading} />}
         />
-        {pushEnabled && (
-          <Row
-            divider
-            label="Test notification"
-            sublabel={pushTesting ? "Sending…" : (pushTestMsg ?? "Send one to this device now")}
-            right={
-              <motion.button
-                onClick={sendTestPush}
-                disabled={pushTesting}
-                whileTap={{ scale: 0.9 }}
-                style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 10, padding: "5px 13px", color: "var(--text)", fontSize: 13, fontWeight: 700, cursor: pushTesting ? "default" : "pointer", opacity: pushTesting ? 0.6 : 1 }}
-              >
-                Send
-              </motion.button>
-            }
-          />
-        )}
         <Row
           divider
           label="Appearance"
