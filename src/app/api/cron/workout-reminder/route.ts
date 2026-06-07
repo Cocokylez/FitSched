@@ -2,6 +2,15 @@ import { db } from "@/lib/db"
 import { sendPushToUser } from "@/lib/pushNotify"
 import { NextResponse } from "next/server"
 
+// "17:44" → "5:44 PM". Returns null for anything that isn't a valid HH:MM.
+function to12h(time: string | null): string | null {
+  if (!time || !/^\d{1,2}:\d{2}$/.test(time)) return null
+  const [h, m] = time.split(":").map(Number)
+  if (h > 23 || m > 59) return null
+  const suffix = h >= 12 ? "PM" : "AM"
+  return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${suffix}`
+}
+
 // Called by Vercel Cron every day at 08:00 UTC.
 // Sends a workout reminder to every subscriber who hasn't already
 // logged a workout or hike today.
@@ -50,6 +59,23 @@ export async function GET(req: Request) {
     const toRemind = userIds.filter((id) => !doneToday.has(id))
     if (toRemind.length === 0) return NextResponse.json({ sent: 0 })
 
+    // Pull today's scheduled workouts so the reminder can name the actual
+    // session (and the time the user picked) instead of a generic nudge.
+    const todayStr = now.toISOString().split("T")[0]
+    const todaySchedules = await db.workoutSchedule.findMany({
+      where: { userId: { in: toRemind }, date: todayStr },
+      orderBy: { createdAt: "desc" },
+      select: { userId: true, workoutName: true, exercises: true },
+    })
+    // Keep the first (most recent) schedule per user.
+    const scheduleByUser = new Map<string, { name: string; time: string | null }>()
+    for (const s of todaySchedules) {
+      if (scheduleByUser.has(s.userId)) continue
+      const first = Array.isArray(s.exercises) ? (s.exercises[0] as { time?: string } | undefined) : undefined
+      const rawTime = typeof first?.time === "string" ? first.time : null
+      scheduleByUser.set(s.userId, { name: s.workoutName || "your workout", time: rawTime })
+    }
+
     // Personalise by last activity date — users who haven't worked out in a while
     // get a slightly different nudge
     const recentLogs = await db.workoutSessionLog.findMany({
@@ -71,10 +97,23 @@ export async function GET(req: Request) {
     let sent = 0
     await Promise.allSettled(
       toRemind.map(async (userId) => {
-        const isActive = activeRecently.has(userId)
-        const msg = isActive
-          ? { title: "Keep the streak alive 🔥", body: "You've been on a roll — don't stop now!" }
-          : messages[Math.floor(Math.random() * messages.length)]
+        const scheduled = scheduleByUser.get(userId)
+        let msg: { title: string; body: string }
+
+        if (scheduled) {
+          // They scheduled something today — name it and include the time.
+          const pretty = to12h(scheduled.time)
+          msg = {
+            title: scheduled.name,
+            body: pretty
+              ? `Scheduled for ${pretty} today — tap to start.`
+              : "On your plan for today — tap to start.",
+          }
+        } else if (activeRecently.has(userId)) {
+          msg = { title: "Keep the streak alive 🔥", body: "You've been on a roll — don't stop now!" }
+        } else {
+          msg = messages[Math.floor(Math.random() * messages.length)]
+        }
 
         await sendPushToUser(userId, { title: msg.title, body: msg.body, url: "/workout" })
         sent++
