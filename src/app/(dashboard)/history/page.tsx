@@ -40,6 +40,7 @@ export default function HistoryPage() {
   const [deletingLogId, setDeletingLogId] = useState<string | null>(null)
   const noteInputRef = useRef<HTMLTextAreaElement>(null)
   const { t } = useLanguage()
+  const MUSCLE_LABEL: Record<string, string> = { Chest: t.muChest, Back: t.muBack, Legs: t.muLegs, Shoulders: t.muShoulders, Arms: t.muArms, Core: t.muCore }
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/register")
@@ -176,7 +177,7 @@ export default function HistoryPage() {
                 transition: "all 0.15s",
               }}
             >
-              {tab === "overview" ? "Overview" : tab === "chart" ? "Charts" : "PRs"}
+              {tab === "overview" ? t.overview : tab === "chart" ? t.charts : t.hPrs}
             </button>
           ))}
         </div>
@@ -228,7 +229,7 @@ export default function HistoryPage() {
                       cursor: "pointer", whiteSpace: "nowrap",
                     }}
                   >
-                    {group ?? "All"}
+                    {group ? MUSCLE_LABEL[group] : t.muAll}
                   </button>
                 ))}
               </div>
@@ -249,18 +250,18 @@ export default function HistoryPage() {
                           <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{log.workoutName}</div>
                           <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
                             {new Date(log.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                            {" · "}{log.exercises.length} exercises
+                            {" · "}{log.exercises.length} {t.exercisesCount}
                             {log.notes && <PenLine size={10} strokeWidth={2} color={ACCENT} style={{ marginLeft: 4, display: "inline", verticalAlign: "middle" }} />}
                           </div>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
                           <div style={{ textAlign: "right" }}>
                             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
-                              {log.exercises.reduce((s, e) => s + e.sets, 0)} sets
+                              {log.exercises.reduce((s, e) => s + e.sets, 0)} {t.setsCount}
                             </div>
                             {log.exercises.some((e) => e.weight) && (
                               <div style={{ fontSize: 11, color: ACCENT, fontWeight: 700, marginTop: 2 }}>
-                                {Math.max(...log.exercises.filter((e) => e.weight).map((e) => e.weight!))} kg max
+                                {Math.max(...log.exercises.filter((e) => e.weight).map((e) => e.weight!))} {t.hKgMax}
                               </div>
                             )}
                           </div>
@@ -299,7 +300,7 @@ export default function HistoryPage() {
                                     ref={noteInputRef}
                                     value={noteVal}
                                     onChange={(e) => setNoteValues((prev) => ({ ...prev, [log.id]: e.target.value }))}
-                                    placeholder="Add a note about this session…"
+                                    placeholder={t.hNotePlaceholder}
                                     maxLength={500}
                                     rows={3}
                                     style={{
@@ -315,7 +316,7 @@ export default function HistoryPage() {
                                       onClick={() => { setEditingNoteId(null) }}
                                       style={{ flex: 1, padding: "8px 0", borderRadius: 9, border: "1px solid var(--border)", background: "transparent", color: "var(--text-muted)", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
                                     >
-                                      Cancel
+                                      {t.cancel}
                                     </button>
                                     <button
                                       onClick={() => saveNote(log.id)}
@@ -323,7 +324,7 @@ export default function HistoryPage() {
                                       style={{ flex: 2, padding: "8px 0", borderRadius: 9, border: "none", background: ACCENT, color: "#0a1412", fontSize: 12, fontWeight: 800, cursor: "pointer", opacity: savingNoteId === log.id ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}
                                     >
                                       <Check size={12} strokeWidth={2.5} />
-                                      {savingNoteId === log.id ? "Saving…" : "Save note"}
+                                      {savingNoteId === log.id ? t.saving : t.hSaveNote}
                                     </button>
                                   </div>
                                 </div>
@@ -336,7 +337,7 @@ export default function HistoryPage() {
                                   }}
                                   style={{ cursor: "pointer", padding: "8px 10px", borderRadius: 9, border: "1px dashed var(--border)", color: log.notes ? "var(--text)" : "var(--text-muted)", fontSize: 12, fontWeight: log.notes ? 600 : 500, lineHeight: 1.5 }}
                                 >
-                                  {log.notes || "Tap to add a note…"}
+                                  {log.notes || t.hTapNote}
                                 </div>
                               )}
 
@@ -356,7 +357,7 @@ export default function HistoryPage() {
                                 }}
                               >
                                 <Trash2 size={12} strokeWidth={2} />
-                                {deletingLogId === log.id ? "Deleting…" : "Delete log"}
+                                {deletingLogId === log.id ? t.hDeleting : t.hDeleteLog}
                               </button>
                             </div>
                           </motion.div>
@@ -369,7 +370,7 @@ export default function HistoryPage() {
                   <div style={{ padding: "32px 16px", textAlign: "center" }}>
                     <Dumbbell size={28} color="var(--text-muted)" style={{ marginBottom: 10 }} />
                     <p style={{ fontSize: 14, color: "var(--text-muted)", margin: 0 }}>
-                      {historyMuscleFilter ? `No ${historyMuscleFilter} workouts yet` : t.noWorkouts}
+                      {historyMuscleFilter ? t.hNoFilteredWorkouts : t.noWorkouts}
                     </p>
                   </div>
                 )}
@@ -379,7 +380,7 @@ export default function HistoryPage() {
                   onClick={() => setShowAll((v) => !v)}
                   style={{ width: "100%", marginTop: 8, padding: "12px 0", fontSize: 13, fontWeight: 700, color: "var(--text-muted)", background: "transparent", border: "1px solid var(--border)", borderRadius: 12, cursor: "pointer" }}
                 >
-                  {showAll ? t.showLess : `Show all ${filteredLogs.length}`}
+                  {showAll ? t.showLess : t.showAll.replace("{n}", String(filteredLogs.length))}
                 </button>
               )}
             </>
@@ -393,7 +394,7 @@ export default function HistoryPage() {
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "16px 12px", marginBottom: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
               <BarChart width={0} height={0} data={[]} />
-              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>Sets per session</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{t.setsPerSession}</span>
             </div>
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={180}>
@@ -406,13 +407,13 @@ export default function HistoryPage() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <p style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", padding: "32px 0", margin: 0 }}>No data yet</p>
+              <p style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", padding: "32px 0", margin: 0 }}>{t.noData}</p>
             )}
           </div>
 
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "16px 12px" }}>
             <div style={{ marginBottom: 14 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text)" }}>Exercises per session</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text)" }}>{t.hExPerSession}</span>
             </div>
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={180}>
@@ -425,7 +426,7 @@ export default function HistoryPage() {
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <p style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", padding: "32px 0", margin: 0 }}>No data yet</p>
+              <p style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", padding: "32px 0", margin: 0 }}>{t.noData}</p>
             )}
           </div>
         </motion.div>
@@ -439,7 +440,7 @@ export default function HistoryPage() {
           ) : personalRecords.length === 0 ? (
             <div style={{ textAlign: "center", padding: "48px 16px" }}>
               <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 12 }}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
-              <p style={{ fontSize: 14, color: "var(--text-muted)", margin: 0 }}>Complete workouts with weights to track your PRs</p>
+              <p style={{ fontSize: 14, color: "var(--text-muted)", margin: 0 }}>{t.hPrEmpty}</p>
             </div>
           ) : (
             personalRecords.map((pr) => {
@@ -461,7 +462,7 @@ export default function HistoryPage() {
                           {pr.isRecent && <span style={{ color: ACCENT }}>★ </span>}{pr.name}
                         </div>
                         <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 3 }}>
-                          {pr.sessionCount} {pr.sessionCount === 1 ? "session" : "sessions"}
+                          {pr.sessionCount} {t.hSessions}
                         </div>
                       </div>
                       <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
@@ -471,10 +472,10 @@ export default function HistoryPage() {
                           </div>
                         ) : (
                           <div style={{ fontSize: 17, fontWeight: 900, color: ACCENT }}>
-                            {pr.pr?.maxReps} reps
+                            {pr.pr?.maxReps} {t.hReps}
                           </div>
                         )}
-                        <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, marginTop: 1 }}>BEST</div>
+                        <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, marginTop: 1 }}>{t.hBest}</div>
                       </div>
                     </div>
                   </button>
@@ -487,7 +488,7 @@ export default function HistoryPage() {
                         style={{ overflow: "hidden" }}
                       >
                         <div style={{ borderTop: "1px solid var(--border)", padding: "12px 12px" }}>
-                          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", color: "var(--text-muted)", marginBottom: 10 }}>PROGRESSION</div>
+                          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", color: "var(--text-muted)", marginBottom: 10 }}>{t.hProgression}</div>
                           <ResponsiveContainer width="100%" height={120}>
                             <LineChart data={pr.progression} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -495,7 +496,7 @@ export default function HistoryPage() {
                               <YAxis tick={{ fontSize: 8, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} width={32} />
                               <Tooltip
                                 contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 11 }}
-                                formatter={(val: number) => hasWeight ? [`${val}kg`, "Weight"] : [`${val}`, "Reps"]}
+                                formatter={(val: number) => hasWeight ? [`${val}kg`, t.setWeight] : [`${val}`, t.hRepsLabel]}
                               />
                               <Line type="monotone" dataKey={hasWeight ? "maxWeight" : "maxReps"} stroke={ACCENT} strokeWidth={2} dot={{ fill: ACCENT, r: 3 }} activeDot={{ r: 4 }} />
                             </LineChart>

@@ -72,10 +72,10 @@ function formatShortWeek(dateStr: string): string {
   return `${d.getMonth() + 1}/${d.getDate()}`
 }
 
-function formatTokenReason(reason: string, workoutName: string) {
-  if (reason === "streak_bonus") return "Streak bonus"
-  if (reason === "workout_complete") return workoutName ? `${workoutName}` : "Workout"
-  if (reason === "workout_complete_boosted") return workoutName ? `${workoutName} (2× boost)` : "Workout (2× boost)"
+function formatTokenReason(reason: string, workoutName: string, t: { rStreakBonus: string; rWorkout: string; rBoostSuffix: string }) {
+  if (reason === "streak_bonus") return t.rStreakBonus
+  if (reason === "workout_complete") return workoutName ? `${workoutName}` : t.rWorkout
+  if (reason === "workout_complete_boosted") return workoutName ? `${workoutName} ${t.rBoostSuffix}` : `${t.rWorkout} ${t.rBoostSuffix}`
   return reason.replace(/_/g, " ")
 }
 
@@ -106,6 +106,7 @@ export default function ReportPage() {
   const { t, language } = useLanguage()
   const { theme } = useTheme()
   const isDark = theme === "dark"
+  const MUSCLE_LABEL: Record<string, string> = { Chest: t.muChest, Back: t.muBack, Legs: t.muLegs, Shoulders: t.muShoulders, Arms: t.muArms, Core: t.muCore, "Full Body": t.muFullBody, Cardio: t.muCardio }
 
   const [logs, setLogs] = useState<WorkoutLog[]>([])
   const [streak, setStreak] = useState(0)
@@ -349,17 +350,17 @@ export default function ReportPage() {
 
                 {/* Numbers */}
                 <div style={{ position: "relative", padding: "20px 22px 14px" }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.01em", color: ACCENT, marginBottom: 6 }}>Current streak</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.01em", color: ACCENT, marginBottom: 6 }}>{t.currentStreak}</div>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                     <span style={{ fontSize: "clamp(44px,12vw,58px)", fontWeight: 900, lineHeight: 1, color: isDark ? "#fff" : "#0d2926", fontVariantNumeric: "tabular-nums" }}>
                       {displayStreak}
                     </span>
                     <span style={{ fontSize: 16, fontWeight: 700, color: isDark ? "rgba(255,255,255,0.4)" : "rgba(13,41,38,0.45)" }}>
-                      {streak === 1 ? "day" : "days"}
+                      {streak === 1 ? t.rDay : t.rDays}
                     </span>
                   </div>
                   <div style={{ marginTop: 6, fontSize: 12, fontWeight: 600, color: isDark ? "rgba(255,255,255,0.36)" : "rgba(13,41,38,0.48)" }}>
-                    Personal best · <span style={{ color: ACCENT, fontWeight: 900 }}>{longestStreak} {longestStreak === 1 ? "day" : "days"}</span>
+                    {t.rPersonalBest} · <span style={{ color: ACCENT, fontWeight: 900 }}>{longestStreak} {longestStreak === 1 ? t.rDay : t.rDays}</span>
                   </div>
                 </div>
 
@@ -400,19 +401,19 @@ export default function ReportPage() {
 
             {/* Muscle heatmap */}
             <motion.div variants={fadeUp}>
-              <div style={sectionLabelStyle}>Muscles Hit</div>
+              <div style={sectionLabelStyle}>{t.rMusclesHit}</div>
               <div style={cardStyle}><MuscleHeatmap logs={logs} /></div>
             </motion.div>
 
             {/* Recovery */}
             <motion.div variants={fadeUp}>
-              <div style={sectionLabelStyle}>Recovery</div>
+              <div style={sectionLabelStyle}>{t.rRecovery}</div>
               <div style={cardStyle}><MuscleRecovery logs={logs} /></div>
             </motion.div>
 
             {/* Activity heatmap */}
             <motion.div variants={fadeUp}>
-              <div style={sectionLabelStyle}>Activity</div>
+              <div style={sectionLabelStyle}>{t.rActivity}</div>
               <div style={cardStyle}><ActivityHeatmap logs={logs} weeks={16} /></div>
             </motion.div>
 
@@ -421,20 +422,20 @@ export default function ReportPage() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", ...sectionLabelStyle }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
                   <Wallet size={11} strokeWidth={2} style={{ color: ACCENT }} />
-                  FitToken earnings
+                  {t.rFtEarnings}
                 </span>
                 <span style={{ fontSize: 12, fontWeight: 900, color: ACCENT, letterSpacing: 0 }}>{formatFT(ftBalance)} FT</span>
               </div>
               <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
                 {ftTxs.length === 0 ? (
                   <div style={{ padding: "20px", textAlign: "center", fontSize: 13, color: "var(--text-muted)" }}>
-                    Complete a workout to earn your first FitToken.
+                    {t.rFtEmpty}
                   </div>
                 ) : ftTxs.slice(0, 8).map((tx, i) => (
                   <div key={tx.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "12px 18px", borderTop: i > 0 ? "1px solid var(--border)" : "none" }}>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {formatTokenReason(tx.reason, tx.workoutName)}
+                        {formatTokenReason(tx.reason, tx.workoutName, t)}
                       </div>
                       <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
                         {new Date(tx.createdAt).toLocaleDateString()}
@@ -469,13 +470,13 @@ export default function ReportPage() {
             {/* Calorie burn trend */}
             {weeklyData.some(w => w.kcal > 0) && (
               <motion.div variants={fadeUp}>
-                <div style={sectionLabelStyle}>CALORIES BURNED (8 WEEKS)</div>
+                <div style={sectionLabelStyle}>{t.rCaloriesBurned}</div>
                 <div style={cardStyle}>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 10 }}>
                     <span style={{ fontSize: 22, fontWeight: 900, color: ACCENT, fontVariantNumeric: "tabular-nums" }}>
                       ~{weeklyData.reduce((s, w) => s + w.kcal, 0).toLocaleString()}
                     </span>
-                    <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700 }}>kcal total</span>
+                    <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700 }}>{t.rKcalTotal}</span>
                   </div>
                   <ResponsiveContainer width="100%" height={140}>
                     <AreaChart data={weeklyData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
@@ -490,7 +491,7 @@ export default function ReportPage() {
                       <Tooltip
                         contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "8px", fontSize: "12px" }}
                         labelStyle={{ color: "var(--text)" }}
-                        formatter={(v: number) => [`~${v} kcal`, "Calories"]}
+                        formatter={(v: number) => [`~${v} kcal`, t.rCalories]}
                       />
                       <Area type="monotone" dataKey="kcal" stroke={ACCENT} strokeWidth={2} fill="url(#kcalGrad)" dot={{ r: 3, fill: ACCENT, strokeWidth: 0 }} activeDot={{ r: 5 }} />
                     </AreaChart>
@@ -502,12 +503,12 @@ export default function ReportPage() {
             {/* Hike stats */}
             {hikeTotals && (
               <motion.div variants={fadeUp}>
-                <div style={sectionLabelStyle}>HIKE STATS</div>
+                <div style={sectionLabelStyle}>{t.rHikeStats}</div>
                 <div style={{ ...cardStyle, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 0, padding: 0, overflow: "hidden" }}>
                   {[
-                    { label: "Hikes", value: hikeTotals.count, suffix: "" },
-                    { label: "Distance", value: hikeTotals.km, suffix: " km" },
-                    { label: "Time", value: Math.round(hikeTotals.durationMin / 60 * 10) / 10, suffix: " h" },
+                    { label: t.rHikes, value: hikeTotals.count, suffix: "" },
+                    { label: t.rDistance, value: hikeTotals.km, suffix: " km" },
+                    { label: t.rTime, value: Math.round(hikeTotals.durationMin / 60 * 10) / 10, suffix: " h" },
                   ].map((stat, i) => (
                     <div key={i} style={{ padding: "16px 14px", textAlign: "center", borderLeft: i > 0 ? "1px solid var(--border)" : "none" }}>
                       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 2 }}>
@@ -522,7 +523,7 @@ export default function ReportPage() {
                   onClick={() => router.push("/hike")}
                   style={{ marginTop: 6, padding: "10px 14px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "var(--text-muted)", display: "flex", alignItems: "center", justifyContent: "space-between" }}
                 >
-                  <span>View all hikes</span>
+                  <span>{t.rViewAllHikes}</span>
                   <ChevronRight size={14} />
                 </div>
               </motion.div>
@@ -537,7 +538,7 @@ export default function ReportPage() {
                   return (
                     <div key={group} style={{ ...cardStyle, marginBottom: "8px" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                        <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)" }}>{group}</div>
+                        <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)" }}>{MUSCLE_LABEL[group] ?? group}</div>
                         <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>{pct}%</div>
                       </div>
                       <div style={{ width: "100%", height: 6, background: "var(--border)", borderRadius: 3, overflow: "hidden" }}>
@@ -553,7 +554,7 @@ export default function ReportPage() {
             <motion.div variants={fadeUp}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", ...sectionLabelStyle }}>
                 <span>{t.workoutHistory}</span>
-                <span style={{ fontWeight: 600, letterSpacing: 0 }}>{filteredLogs.length} total</span>
+                <span style={{ fontWeight: 600, letterSpacing: 0 }}>{filteredLogs.length} {t.rTotal}</span>
               </div>
               {/* Muscle group filter chips */}
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
@@ -569,7 +570,7 @@ export default function ReportPage() {
                       cursor: "pointer", whiteSpace: "nowrap",
                     }}
                   >
-                    {group ?? "All"}
+                    {group ? (MUSCLE_LABEL[group] ?? group) : t.muAll}
                   </button>
                 ))}
               </div>
@@ -579,7 +580,7 @@ export default function ReportPage() {
                 </svg>
                 <input
                   type="text"
-                  placeholder="Search workouts…"
+                  placeholder={t.rSearchWorkouts}
                   value={historySearch}
                   onChange={e => setHistorySearch(e.target.value)}
                   style={{ width: "100%", boxSizing: "border-box", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "9px 12px 9px 30px", fontSize: 13, color: "var(--text)", outline: "none", fontFamily: "inherit" }}
@@ -594,7 +595,7 @@ export default function ReportPage() {
               <motion.div variants={fadeUp}>
                 <div style={{ ...cardStyle, textAlign: "center", padding: "24px" }}>
                   <div style={{ fontSize: "14px", color: "var(--text-muted)" }}>
-                    {historySearch ? `No workouts matching "${historySearch}"` : historyMuscleFilter ? `No ${historyMuscleFilter} workouts yet` : t.noWorkouts}
+                    {historySearch ? `${t.rNoMatching} "${historySearch}"` : historyMuscleFilter ? t.hNoFilteredWorkouts : t.noWorkouts}
                   </div>
                 </div>
               </motion.div>
@@ -640,9 +641,9 @@ export default function ReportPage() {
                                 disabled={!!repeatingId || repeatedId === log.id}
                                 style={{ marginTop: 10, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "9px 0", borderRadius: 10, border: `1px solid ${repeatedId === log.id ? "var(--accent)" : "var(--border)"}`, background: repeatedId === log.id ? "var(--accent-soft)" : "var(--surface-2)", color: repeatedId === log.id ? "var(--accent)" : "var(--text-muted)", fontSize: 12, fontWeight: 700, cursor: repeatingId === log.id ? "wait" : repeatedId === log.id ? "default" : "pointer" }}
                               >
-                                {repeatedId === log.id ? <><Check size={13} strokeWidth={2.5} /> Loaded for today!</>
-                                  : repeatingId === log.id ? <>Loading…</>
-                                  : <><RotateCcw size={13} strokeWidth={2.5} /> Repeat today</>}
+                                {repeatedId === log.id ? <><Check size={13} strokeWidth={2.5} /> {t.rLoadedToday}</>
+                                  : repeatingId === log.id ? <>{t.rLoading}</>
+                                  : <><RotateCcw size={13} strokeWidth={2.5} /> {t.rRepeatToday}</>}
                               </motion.button>
                             </div>
                           </motion.div>
@@ -657,7 +658,7 @@ export default function ReportPage() {
             {!historySearch.trim() && filteredLogs.length > 10 && (
               <motion.div variants={fadeUp}>
                 <button onClick={() => setShowAllHistory(v => !v)} style={{ width: "100%", border: "1px solid var(--border)", background: "var(--surface)", borderRadius: 12, padding: "11px 0", fontSize: 13, fontWeight: 700, color: "var(--text-muted)", cursor: "pointer", marginTop: 2 }}>
-                  {showAllHistory ? "Show less" : `Show all ${filteredLogs.length} workouts`}
+                  {showAllHistory ? t.showLess : t.showAll.replace("{n}", String(filteredLogs.length))}
                 </button>
               </motion.div>
             )}
