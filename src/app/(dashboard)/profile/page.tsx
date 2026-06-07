@@ -250,7 +250,7 @@ export default function ProfilePage() {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px 0" }}>
         <div className="brand-wordmark" style={{ fontSize: "22px", fontWeight: 950, color: "var(--text)", letterSpacing: "-0.3px" }}>
-          Profile
+          {t.profTitle}
         </div>
         <button
           type="button"
@@ -361,8 +361,8 @@ export default function ProfilePage() {
             whileTap={{ scale: 0.97 }}
             style={{ fontSize: "22px", fontWeight: 950, letterSpacing: "-0.3px", color: "var(--text)", cursor: "text", marginBottom: 4, textAlign: "center" }}
           >
-            {displayName || "Tap to set name"}
-            {savingName && <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 6, fontWeight: 600 }}>saving…</span>}
+            {displayName || t.profTapName}
+            {savingName && <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 6, fontWeight: 600 }}>{t.profSaving}</span>}
           </motion.div>
         )}
 
@@ -376,7 +376,7 @@ export default function ProfilePage() {
         )}
         {joinDate && !email.endsWith("@fitsched.guest") && (
           <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)" }}>
-            Joined {joinDate}
+            {t.profJoined} {joinDate}
           </div>
         )}
 
@@ -387,7 +387,7 @@ export default function ProfilePage() {
             onClick={async () => { await import("next-auth/react").then(m => m.signOut({ redirect: false })); router.push("/register") }}
             style={{ marginTop: 14, border: "1px solid rgba(18,101,254,0.4)", background: "rgba(18,101,254,0.08)", borderRadius: 14, padding: "10px 20px", color: ACCENT, fontSize: 13, fontWeight: 700, cursor: "pointer" }}
           >
-            Create a free account to save your progress →
+            {t.profGuestCta}
           </motion.button>
         )}
 
@@ -411,7 +411,7 @@ export default function ProfilePage() {
               color: "var(--text)", cursor: "pointer",
             }}
           >
-            Withdraw
+            {t.setWithdraw}
           </button>
         </div>
         )}
@@ -435,7 +435,7 @@ export default function ProfilePage() {
             [
               { label: t.workoutsDone, sub: t.lifetimeLabel, value: stats.totalWorkouts, suffix: "" },
               { label: t.exercisesDoneLabel, sub: t.lifetimeLabel, value: stats.totalExercises, suffix: "" },
-              { label: t.thisWeek, sub: `${stats.thisWeek} of ${workoutsPerWeek} sessions`, value: stats.thisWeekPct, suffix: "%" },
+              { label: t.thisWeek, sub: `${stats.thisWeek} ${t.profOf} ${workoutsPerWeek} ${t.profSessions}`, value: stats.thisWeekPct, suffix: "%" },
               { label: t.bestStreakLabel, sub: t.daysLabel, value: stats.bestStreak, suffix: "" },
             ].map((row, i, arr) => (
               <div key={i} style={{ padding: "15px 20px", borderBottom: i < arr.length - 1 ? "1px solid var(--border)" : "none", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -456,14 +456,14 @@ export default function ProfilePage() {
       {liveBmi !== null && (
         <div style={{ padding: "20px 16px 0" }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 10 }}>
-            Body
+            {t.profBody}
           </div>
           {(() => {
             const cat =
-              liveBmi! < 18.5 ? { label: "Underweight", color: "#60a5fa", bg: "rgba(96,165,250,0.12)", border: "rgba(96,165,250,0.28)" }
-              : liveBmi! < 25 ? { label: "Normal", color: "#4ade80", bg: "rgba(74,222,128,0.12)", border: "rgba(74,222,128,0.28)" }
-              : liveBmi! < 30 ? { label: "Overweight", color: "#f59e0b", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.28)" }
-              : { label: "Obese", color: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.28)" }
+              liveBmi! < 18.5 ? { label: t.bmiUnder, color: "#60a5fa", bg: "rgba(96,165,250,0.12)", border: "rgba(96,165,250,0.28)" }
+              : liveBmi! < 25 ? { label: t.bmiNormal, color: "#4ade80", bg: "rgba(74,222,128,0.12)", border: "rgba(74,222,128,0.28)" }
+              : liveBmi! < 30 ? { label: t.bmiOver, color: "#f59e0b", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.28)" }
+              : { label: t.bmiObese, color: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.28)" }
             return (
               <div style={{
                 background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 20,
@@ -519,7 +519,7 @@ export default function ProfilePage() {
         return (
           <div style={{ padding: "20px 16px 0" }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 10 }}>
-              Weight trend
+              {t.profWeightTrend}
             </div>
             <div style={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 20, padding: "16px 18px 12px", boxShadow: "var(--shadow)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
@@ -529,12 +529,12 @@ export default function ProfilePage() {
                     <span style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 700 }}>kg</span>
                   </div>
                   <div style={{ fontSize: 11, fontWeight: 700, marginTop: 2, color: change === 0 ? "var(--text-muted)" : change < 0 ? "#4ade80" : "#f87171" }}>
-                    {change === 0 ? "No change" : `${change > 0 ? "+" : ""}${change} kg`}
-                    <span style={{ color: "var(--text-muted)", fontWeight: 600 }}> since first entry</span>
+                    {change === 0 ? t.profNoChange : `${change > 0 ? "+" : ""}${change} kg`}
+                    <span style={{ color: "var(--text-muted)", fontWeight: 600 }}> {t.profSinceFirst}</span>
                   </div>
                 </div>
                 <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, textAlign: "right" }}>
-                  {recent.length} entries
+                  {recent.length} {t.profEntries}
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={100}>
@@ -556,7 +556,7 @@ export default function ProfilePage() {
                   <Tooltip
                     contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
                     labelStyle={{ color: "var(--text)" }}
-                    formatter={(v: number) => [`${v} kg`, "Weight"]}
+                    formatter={(v: number) => [`${v} kg`, t.setWeight]}
                   />
                   <Area
                     type="monotone"
@@ -595,8 +595,8 @@ export default function ProfilePage() {
               <Scale size={16} strokeWidth={1.8} color={ACCENT} />
             </div>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Weight Log</div>
-              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Track your body weight over time</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t.profWeightLog}</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{t.profWeightLogSub}</div>
             </div>
           </div>
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--text-muted)", flexShrink: 0 }}>
@@ -627,9 +627,9 @@ export default function ProfilePage() {
                 </svg>
               </div>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Hike Logs</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t.profHikeLogs}</div>
                 <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                  {hikeTotals.count} hike{hikeTotals.count !== 1 ? "s" : ""} · {hikeTotals.km} km total
+                  {hikeTotals.count} {t.profHikes} · {hikeTotals.km} {t.profKmTotal}
                 </div>
               </div>
             </div>
@@ -643,7 +643,7 @@ export default function ProfilePage() {
       {/* Achievements */}
       <div style={{ padding: "20px 16px 0" }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
-          Achievements
+          {t.profAchievements}
           <span style={{ fontSize: 10, fontWeight: 600, opacity: 0.6 }}>{achievements.length} / {ACHIEVEMENT_DEFS.length}</span>
         </div>
 
@@ -788,7 +788,7 @@ export default function ProfilePage() {
                     <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="20 6 9 17 4 12"/>
                     </svg>
-                    Unlocked {new Date(unlocked.unlockedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    {t.profUnlocked} {new Date(unlocked.unlockedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                   </div>
                 ) : (
                   <div style={{
@@ -798,7 +798,7 @@ export default function ProfilePage() {
                     background: "var(--surface-2)", border: "1px solid var(--border)",
                     position: "relative", zIndex: 1,
                   }}>
-                    Not yet unlocked
+                    {t.profNotUnlocked}
                   </div>
                 )}
               </motion.div>
