@@ -655,6 +655,15 @@ const translations = {
     wdLaunchNote2post: 'FIT is safe and will be claimable once the contract is live on Base.',
     wdErrGeneric: 'Something went wrong. Please try again.',
     wdErrNetwork: 'Network error — please try again',
+    // Exercise library
+    exLibEdit: 'Edit Exercise',
+    eqBodyweight: 'Bodyweight',
+    eqDumbbells: 'Dumbbells',
+    eqBarbell: 'Barbell',
+    eqMachine: 'Machine',
+    eqCables: 'Cables',
+    eqBands: 'Bands',
+    eqKettlebell: 'Kettlebell',
     workoutNames: {
       'Chest & Triceps':  'Chest & Triceps',
       'Back & Biceps':    'Back & Biceps',
@@ -1316,6 +1325,15 @@ const translations = {
     wdLaunchNote2post: 'FIT 是安全的，合约在 Base 上线后即可领取。',
     wdErrGeneric: '出错了，请重试。',
     wdErrNetwork: '网络错误——请重试',
+    // Exercise library
+    exLibEdit: '编辑动作',
+    eqBodyweight: '徒手',
+    eqDumbbells: '哑铃',
+    eqBarbell: '杠铃',
+    eqMachine: '器械',
+    eqCables: '拉索',
+    eqBands: '弹力带',
+    eqKettlebell: '壶铃',
     workoutNames: {
       'Chest & Triceps':  '胸部 & 三头肌',
       'Back & Biceps':    '背部 & 二头肌',
@@ -1977,6 +1995,15 @@ const translations = {
     wdLaunchNote2post: 'FIT は安全で、コントラクトが Base で稼働すると請求できます。',
     wdErrGeneric: '問題が発生しました。もう一度お試しください。',
     wdErrNetwork: 'ネットワークエラー——もう一度お試しください',
+    // Exercise library
+    exLibEdit: '種目を編集',
+    eqBodyweight: '自重',
+    eqDumbbells: 'ダンベル',
+    eqBarbell: 'バーベル',
+    eqMachine: 'マシン',
+    eqCables: 'ケーブル',
+    eqBands: 'バンド',
+    eqKettlebell: 'ケトルベル',
     workoutNames: {
       'Chest & Triceps':  '胸 & 三頭筋',
       'Back & Biceps':    '背 & 二頭筋',
@@ -2638,6 +2665,15 @@ const translations = {
     wdLaunchNote2post: 'FIT của bạn an toàn và có thể rút khi hợp đồng hoạt động trên Base.',
     wdErrGeneric: 'Đã xảy ra lỗi. Vui lòng thử lại.',
     wdErrNetwork: 'Lỗi mạng — vui lòng thử lại',
+    // Exercise library
+    exLibEdit: 'Sửa bài tập',
+    eqBodyweight: 'Tự trọng lượng',
+    eqDumbbells: 'Tạ đơn',
+    eqBarbell: 'Tạ đòn',
+    eqMachine: 'Máy',
+    eqCables: 'Cáp',
+    eqBands: 'Dây kháng lực',
+    eqKettlebell: 'Tạ ấm',
     workoutNames: {
       'Chest & Triceps':  'Ngực & Cơ tam đầu',
       'Back & Biceps':    'Lưng & Cơ nhị đầu',
