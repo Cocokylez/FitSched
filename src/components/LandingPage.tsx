@@ -630,7 +630,7 @@ function Hero() {
             fontSize: 10, fontWeight: 900, color: ACCENT, letterSpacing: "0.12em", textTransform: "uppercase",
           }}>
             <span style={{ width: 5, height: 5, borderRadius: "50%", background: ACCENT, display: "inline-block" }} />
-            Fitness · Tokens · Habits
+            {t.lpEyebrow}
           </span>
         </motion.div>
 
@@ -648,8 +648,8 @@ function Hero() {
                 letterSpacing: "-0.04em", color: "var(--text)",
               }}
             >
-              TRAIN.<br />
-              <span style={{ color: ACCENT }}>GET<br />REWARDED.</span>
+              {t.lpHead1}<br />
+              <span style={{ color: ACCENT }}>{t.lpHead2}<br />{t.lpHead3}</span>
             </motion.h1>
 
             <motion.p
@@ -696,8 +696,8 @@ function Hero() {
             >
               <span style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 900, letterSpacing: "-0.04em", color: FT_ORANGE, fontVariantNumeric: "tabular-nums" }}>+1.0 FT</span>
               <div>
-                <div style={{ fontSize: 11, fontWeight: 800, color: FT_ORANGE }}>per completed workout</div>
-                <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 600, marginTop: 2 }}>Base Network · EVM</div>
+                <div style={{ fontSize: 11, fontWeight: 800, color: FT_ORANGE }}>{t.lpPerWorkout}</div>
+                <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 600, marginTop: 2 }}>{t.lpBaseNetwork}</div>
               </div>
             </motion.div>
           </div>
@@ -713,10 +713,10 @@ function Hero() {
           className="lp-hero-stats"
         >
           {[
-            { v: "80+",     l: "Exercises" },
-            { v: "+1.0 FT", l: "Per session" },
-            { v: "GPS",     l: "Hike tracking" },
-            { v: "Free",    l: "No card needed" },
+            { v: "80+",       l: t.lpStatExercisesLabel },
+            { v: "+1.0 FT",   l: t.lpStatPerSession },
+            { v: "GPS",       l: t.lpStatHikeTracking },
+            { v: t.lpStatFree, l: t.lpStatNoCard },
           ].map((s, i) => (
             <div key={i} style={{
               borderRight: i < 3 ? "1px solid var(--border)" : "none",
@@ -734,21 +734,22 @@ function Hero() {
 
 // ── How It Works ───────────────────────────────────────────────────────────────
 function HowItWorks() {
+  const { t } = useLanguage()
   const STEPS = [
     {
       num: "01", icon: Calendar, color: ACCENT,
-      title: "Schedule",
-      desc: "Set your weekly training goal. FitSched builds your plan starting from day one — no wasted rest day — and adapts every session to your muscle recovery, readiness, and available equipment.",
+      title: t.lpStepSchedule,
+      desc: t.lpStepScheduleDesc,
     },
     {
       num: "02", icon: Dumbbell, color: "#818cf8",
-      title: "Train",
-      desc: "Follow the guided session. Device motion sensors verify each movement so every rep earns you the full token reward.",
+      title: t.lpStepTrain,
+      desc: t.lpStepTrainDesc,
     },
     {
       num: "03", icon: Coins, color: FT_ORANGE,
-      title: "Earn",
-      desc: "Finish the session and earn FitTokens — tracked off-chain, claimable to your Base wallet. Streak bonuses stack on top.",
+      title: t.lpStepEarn,
+      desc: t.lpStepEarnDesc,
     },
   ]
   return (
@@ -761,9 +762,9 @@ function HowItWorks() {
               fontSize: "clamp(30px, 4vw, 52px)", fontWeight: 800, lineHeight: 1.0,
               letterSpacing: "-0.04em", color: "var(--text)",
             }}>
-              How it works
+              {t.lpHowItWorks}
             </h2>
-            <span style={{ fontSize: 11, fontWeight: 800, color: "var(--text-muted)", letterSpacing: "0.12em", textTransform: "uppercase" }}>3 steps</span>
+            <span style={{ fontSize: 11, fontWeight: 800, color: "var(--text-muted)", letterSpacing: "0.12em", textTransform: "uppercase" }}>{t.lpSteps}</span>
           </div>
         </FadeIn>
 
@@ -805,6 +806,7 @@ function HowItWorks() {
 
 // ── FitToken section ───────────────────────────────────────────────────────────
 function FitTokenSection() {
+  const { t } = useLanguage()
   return (
     <section style={{ borderTop: "1px solid var(--border)", padding: "clamp(64px,9vw,100px) clamp(18px,4vw,28px)", position: "relative", overflow: "hidden" }}>
       <div style={{
@@ -823,10 +825,10 @@ function FitTokenSection() {
               }}>
                 +1.0<br />FT
               </div>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>Per Completed Workout</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>{t.lpFtPerCompleted}</div>
               <div style={{ marginTop: 24, display: "inline-flex", alignItems: "center", gap: 7, background: FT_DIM, border: `1px solid ${FT_BD}`, borderRadius: 999, padding: "6px 14px" }}>
                 <div style={{ width: 5, height: 5, borderRadius: "50%", background: FT_ORANGE }} />
-                <span style={{ fontSize: 10, fontWeight: 900, color: FT_ORANGE, letterSpacing: "0.1em" }}>BASE NETWORK · EVM</span>
+                <span style={{ fontSize: 10, fontWeight: 900, color: FT_ORANGE, letterSpacing: "0.1em", textTransform: "uppercase" }}>{t.lpBaseNetwork}</span>
               </div>
             </div>
           </FadeIn>
@@ -838,17 +840,17 @@ function FitTokenSection() {
                 fontSize: "clamp(24px, 3vw, 38px)", fontWeight: 800, lineHeight: 1.1,
                 letterSpacing: "-0.04em", color: "var(--text)",
               }}>
-                Real crypto rewards<br />for real effort.
+                {t.lpFtTitle}
               </h2>
               <p style={{ margin: 0, fontSize: 15, color: "var(--text-muted)", lineHeight: 1.72, fontWeight: 500 }}>
-                Every workout earns FitTokens — tracked off-chain, claimable to your Base wallet. Streak bonuses and verification multipliers mean the harder you train, the more you earn.
+                {t.lpFtBody}
               </p>
               {/* Reward table — app panel style */}
               <div style={{ borderRadius: 18, overflow: "hidden", border: "1px solid var(--border)" }}>
                 {[
-                  { label: "Base workout",       value: "+1.0 FT" },
-                  { label: "7-day streak bonus",  value: "+0.20 FT" },
-                  { label: "Motion verified",      value: "Full reward" },
+                  { label: t.lpRewardBase,     value: "+1.0 FT" },
+                  { label: t.lpRewardStreak,   value: "+0.20 FT" },
+                  { label: t.lpRewardVerified, value: t.lpFullReward },
                 ].map((row, i, arr) => (
                   <div key={i} style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -873,12 +875,12 @@ function FitTokenSection() {
 function Features() {
   const { t } = useLanguage()
   const FEATURES = [
-    { icon: Sparkles,   color: ACCENT,     title: "Smart Scheduling",    desc: "Plans that start the day you join and adapt to your recovery and goals — with a freshest-muscle pick whenever you want a bonus session." },
-    { icon: Flame,      color: FT_ORANGE,  title: "Streak System",       desc: "Daily streaks with rest days that don't break your run." },
-    { icon: Navigation, color: "#818cf8",  title: "GPS Hike Tracking",   desc: "Log outdoor hikes with live GPS route recording and elevation data." },
-    { icon: Activity,   color: "#34d399",  title: "Motion Verification", desc: "Device sensors confirm every rep and award full token rewards." },
-    { icon: Trophy,     color: "#f59e0b",  title: "Achievements",        desc: "Unlock badges and track personal records across every muscle group." },
-    { icon: Calendar,   color: "#e879f9",  title: "Calendar Sync",       desc: "Push your workout schedule directly to Google Calendar." },
+    { icon: Sparkles,   color: ACCENT,     title: t.lpFeatSmartSched, desc: t.lpFeatSmartSchedDesc },
+    { icon: Flame,      color: FT_ORANGE,  title: t.lpFeatStreak,     desc: t.lpFeatStreakDesc },
+    { icon: Navigation, color: "#818cf8",  title: t.lpFeatGps,        desc: t.lpFeatGpsDesc },
+    { icon: Activity,   color: "#34d399",  title: t.lpFeatMotion,     desc: t.lpFeatMotionDesc },
+    { icon: Trophy,     color: "#f59e0b",  title: t.lpFeatAchieve,    desc: t.lpFeatAchieveDesc },
+    { icon: Calendar,   color: "#e879f9",  title: t.lpFeatCalSync,    desc: t.lpFeatCalSyncDesc },
   ]
   return (
     <section id="features" style={{ borderTop: "1px solid var(--border)", padding: "clamp(64px,9vw,100px) clamp(18px,4vw,28px)" }}>
@@ -936,7 +938,7 @@ function CtaBlock() {
             fontSize: "clamp(36px, 6vw, 72px)", fontWeight: 800, lineHeight: 0.94,
             letterSpacing: "-0.045em", color: "var(--text)",
           }}>
-            Start training<br />today.
+            {t.lpCtaTitle1}<br />{t.lpCtaTitle2}
           </h2>
           <p style={{ margin: "0 0 40px", fontSize: 15, color: "var(--text-muted)", lineHeight: 1.72, fontWeight: 500 }}>
             {t.lpCtaBody}
@@ -951,7 +953,7 @@ function CtaBlock() {
             <ArrowRight size={15} strokeWidth={2.5} />
           </Link>
           <div style={{ marginTop: 18, fontSize: 11, color: "var(--text-muted)", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-            Free · No credit card
+            {t.lpFreeNoCard}
           </div>
         </div>
       </FadeIn>

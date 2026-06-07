@@ -80,24 +80,34 @@ async function flushPendingHikes() {
   if (pending.length === 0) return
 
   let synced = 0
+  let changed = 0
   for (const item of pending) {
+    let res
     try {
-      const res = await fetch("/api/hike", {
+      res = await fetch("/api/hike", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify(item.data),
       })
-      if (res.ok) {
-        await idbDelete(db, "pending-hikes", item.id)
-        synced++
-      }
     } catch {
-      // Network still down — will retry on next sync event
+      break // network still down — stop and retry on the next sync event
     }
+
+    // Classify the response so the queue can't get stuck on a poison item.
+    //  2xx       → saved
+    //  409       → already logged for that day; data effectively saved → drop
+    //  400/403/413 (other 4xx) → permanently rejected → drop
+    //  401/429/5xx → transient → keep and retry later
+    const s = res.status
+    const transient = s === 401 || s === 429 || s >= 500
+    if (transient) break
+    await idbDelete(db, "pending-hikes", item.id)
+    changed++
+    if (s >= 200 && s < 300) synced++
   }
 
-  if (synced > 0) {
-    // Tell every open tab so they can refresh their logs list
+  if (changed > 0) {
+    // Tell every open tab so they can refresh their logs list + pending badge
     const all = await self.clients.matchAll({ type: "window" })
     all.forEach(c => c.postMessage({ type: "hike-synced", count: synced }))
   }
