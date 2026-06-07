@@ -38,15 +38,17 @@ const SCHED_EX = [
   { name: "Cable Flyes",    sets: 3, reps: 12, done: false },
   { name: "Lat. Raises",    sets: 3, reps: 15, done: false },
 ]
-const SCHED_MU = [
-  { name: "Chest", color: "#ef4444" },
-  { name: "Back",  color: "#10b981" },
-  { name: "Legs",  color: "#f59e0b" },
-  { name: "Arms",  color: "#10b981" },
-  { name: "Core",  color: "#10b981" },
-]
+const SCHED_MU_COLORS = ["#ef4444", "#10b981", "#f59e0b", "#10b981", "#10b981"]
 
 function ScheduleScreen() {
+  const { t } = useLanguage()
+  const SCHED_MU = [
+    { name: t.lpmMuChest, color: SCHED_MU_COLORS[0] },
+    { name: t.lpmMuBack,  color: SCHED_MU_COLORS[1] },
+    { name: t.lpmMuLegs,  color: SCHED_MU_COLORS[2] },
+    { name: t.lpmMuArms,  color: SCHED_MU_COLORS[3] },
+    { name: t.lpmMuCore,  color: SCHED_MU_COLORS[4] },
+  ]
   return (
     <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 7, height: "100%" }}>
       {/* Topbar */}
@@ -91,8 +93,8 @@ function ScheduleScreen() {
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
           <div>
-            <div style={{ fontSize: 7, fontWeight: 800, color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 2 }}>Push Day · Today</div>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 13, fontWeight: 900, color: "var(--text)", letterSpacing: "-0.03em" }}>Chest & Shoulders</div>
+            <div style={{ fontSize: 7, fontWeight: 800, color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 2 }}>{t.lpmPushDay} · {t.todayLabel}</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 13, fontWeight: 900, color: "var(--text)", letterSpacing: "-0.03em" }}>{t.lpmChestShoulders}</div>
           </div>
           <div style={{ padding: "3px 8px", borderRadius: 999, background: ACCENT_DIM, border: `1px solid ${ACCENT_BD}` }}>
             <span style={{ fontSize: 8, fontWeight: 900, color: ACCENT }}>+1.0 FT</span>
@@ -132,7 +134,7 @@ function ScheduleScreen() {
         padding: "7px 10px", borderRadius: 12,
         background: "var(--surface-2)", border: "1px solid var(--border)",
       }}>
-        <span style={{ fontSize: 7, fontWeight: 800, color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", flexShrink: 0 }}>Recovery</span>
+        <span style={{ fontSize: 7, fontWeight: 800, color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", flexShrink: 0 }}>{t.lpmRecovery}</span>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           {SCHED_MU.map((m, i) => (
             <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
@@ -151,6 +153,7 @@ const ACTIVE_EXES = ["Bench Press", "Overhead Press", "Cable Flyes"]
 const TOTAL_SETS = 4
 
 function ActiveScreen() {
+  const { t } = useLanguage()
   const [set, setSet] = useState(1)
   const [exIdx, setExIdx] = useState(0)
   const [verified, setVerified] = useState(false)
@@ -208,7 +211,7 @@ function ActiveScreen() {
           </motion.div>
         </AnimatePresence>
         <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700, marginTop: 2 }}>
-          of {TOTAL_SETS} sets · 8 reps
+          {t.lpmSetsReps}
         </div>
 
         {/* Set dots */}
@@ -251,7 +254,7 @@ function ActiveScreen() {
               <circle cx="6" cy="6" r="5.5" stroke="#10b981" strokeWidth="1" />
               <path d="M3.5 6L5 7.5L8.5 4" stroke="#10b981" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span style={{ fontSize: 10, fontWeight: 800, color: "#10b981" }}>Motion verified</span>
+            <span style={{ fontSize: 10, fontWeight: 800, color: "#10b981" }}>{t.lpRewardVerified}</span>
             <span style={{ marginLeft: "auto", fontSize: 9, fontWeight: 700, color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>+0.25 FT</span>
           </motion.div>
         )}
@@ -259,7 +262,7 @@ function ActiveScreen() {
 
       {/* Rest timer */}
       <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, fontFamily: "var(--font-mono)", letterSpacing: "0.06em" }}>REST · 00:48</div>
+        <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, fontFamily: "var(--font-mono)", letterSpacing: "0.06em" }}>{t.lpmRest}</div>
       </div>
 
       {/* CTA + home bar */}
@@ -268,7 +271,7 @@ function ActiveScreen() {
           padding: "11px", borderRadius: 14, background: ACCENT,
           textAlign: "center", fontSize: 11, fontWeight: 800, color: "#fff", letterSpacing: "-0.01em",
         }}>
-          Complete Set {set}
+          {t.lpmCompleteSet} {set}
         </div>
         <div style={{ display: "flex", justifyContent: "center", paddingTop: 14 }}>
           <div style={{ width: 80, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.14)" }} />
@@ -279,17 +282,17 @@ function ActiveScreen() {
 }
 
 // ── Phone Screen 3: History ────────────────────────────────────────────────────
-const HIST_ITEMS = [
-  { title: "Chest & Shoulders", tag: "Push Day", ago: "Yesterday",  ft: "+1.0 FT" },
-  { title: "Squats & Deadlifts", tag: "Leg Day",  ago: "2 days ago", ft: "+1.2 FT" },
-  { title: "Riverside Trail",    tag: "Hike",     ago: "3 days ago", ft: "+0.8 FT" },
-]
-
 function HistoryScreen() {
+  const { t } = useLanguage()
+  const HIST_ITEMS = [
+    { title: t.lpmChestShoulders, tag: t.lpmPushDay, ago: t.lpmYesterday, ft: "+1.0 FT" },
+    { title: t.lpmSquats,         tag: t.lpmLegDay,  ago: t.lpm2days,     ft: "+1.2 FT" },
+    { title: t.lpmTrail,          tag: t.hike,       ago: t.lpm3days,     ft: "+0.8 FT" },
+  ]
   return (
     <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 10, height: "100%" }}>
       {/* Header */}
-      <div style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 900, color: "var(--text)", letterSpacing: "-0.04em" }}>History</div>
+      <div style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 900, color: "var(--text)", letterSpacing: "-0.04em" }}>{t.history}</div>
 
       {/* Streak card */}
       <div style={{
@@ -301,17 +304,17 @@ function HistoryScreen() {
           <div className="streak-flame" style={{ width: 18, height: 24 }} />
           <div>
             <div style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 900, color: FT_ORANGE, letterSpacing: "-0.04em", lineHeight: 1 }}>7</div>
-            <div style={{ fontSize: 8, fontWeight: 800, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>day streak</div>
+            <div style={{ fontSize: 8, fontWeight: 800, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>{t.dayStreak}</div>
           </div>
         </div>
         <div style={{ textAlign: "right" }}>
           <div style={{ fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 900, color: FT_ORANGE, letterSpacing: "-0.03em" }}>24.6 FT</div>
-          <div style={{ fontSize: 8, color: "var(--text-muted)", fontWeight: 700 }}>this week</div>
+          <div style={{ fontSize: 8, color: "var(--text-muted)", fontWeight: 700 }}>{t.lpmThisWeek}</div>
         </div>
       </div>
 
       {/* Section label */}
-      <div style={{ fontSize: 9, fontWeight: 800, color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Recent</div>
+      <div style={{ fontSize: 9, fontWeight: 800, color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{t.lpmRecent}</div>
 
       {/* Workout list */}
       <div style={{ display: "flex", flexDirection: "column" }}>
