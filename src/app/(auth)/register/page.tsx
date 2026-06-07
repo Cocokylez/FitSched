@@ -42,7 +42,7 @@ export default function RegisterPage() {
     setLoading(false)
 
     if (result?.error) {
-      setError("Email already registered or password too weak")
+      setError(t.regEmailTaken)
     } else {
       // Fire-and-forget — don't block navigation if this fails
       fetch("/api/auth/send-verification", { method: "POST" }).catch(() => {})
@@ -57,7 +57,7 @@ export default function RegisterPage() {
       await createGuestAndSignIn()
       window.location.href = "/onboarding"
     } catch {
-      setError("Could not start guest session. Please try again.")
+      setError(t.authGuestError)
       setGuestLoading(false)
     }
   }
@@ -135,7 +135,7 @@ export default function RegisterPage() {
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder="Your name"
+                placeholder={t.regNamePlaceholder}
                 style={{
                   background: "var(--surface-2)",
                   border: "1px solid var(--border)",
@@ -182,7 +182,7 @@ export default function RegisterPage() {
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                placeholder="Min 8 characters"
+                placeholder={t.regPwPlaceholder}
                 required
                 minLength={8}
                 style={{
@@ -220,10 +220,10 @@ export default function RegisterPage() {
                   )}
                 </div>
                 <span style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.5" }}>
-                  I have read and agree to the{" "}
-                  <Link href="/terms" target="_blank" style={{ color: "var(--text)", fontWeight: 600, textDecoration: "none" }}>Terms of Service</Link>
-                  {" "}and{" "}
-                  <Link href="/privacy" target="_blank" style={{ color: "var(--text)", fontWeight: 600, textDecoration: "none" }}>Privacy Policy</Link>
+                  {t.authAgreePre}{" "}
+                  <Link href="/terms" target="_blank" style={{ color: "var(--text)", fontWeight: 600, textDecoration: "none" }}>{t.termsOfService}</Link>
+                  {" "}{t.andLabel}{" "}
+                  <Link href="/privacy" target="_blank" style={{ color: "var(--text)", fontWeight: 600, textDecoration: "none" }}>{t.privacyPolicy}</Link>
                 </span>
               </label>
             </motion.div>
@@ -278,10 +278,10 @@ export default function RegisterPage() {
           <motion.div variants={fadeIn}>
             <AuthGoogleButton label={t.continueGoogle} />
             <p style={{ textAlign: "center", fontSize: "11px", color: "var(--text-muted)", margin: "10px 0 0", lineHeight: 1.5 }}>
-              By continuing with Google you agree to our{" "}
-              <Link href="/terms" target="_blank" style={{ color: "var(--text-muted)", textDecoration: "underline" }}>Terms</Link>
+              {t.authGoogleAgree}{" "}
+              <Link href="/terms" target="_blank" style={{ color: "var(--text-muted)", textDecoration: "underline" }}>{t.termsShort}</Link>
               {" "}&amp;{" "}
-              <Link href="/privacy" target="_blank" style={{ color: "var(--text-muted)", textDecoration: "underline" }}>Privacy Policy</Link>
+              <Link href="/privacy" target="_blank" style={{ color: "var(--text-muted)", textDecoration: "underline" }}>{t.privacyPolicy}</Link>
             </p>
           </motion.div>
 
