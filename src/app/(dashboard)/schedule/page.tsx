@@ -290,7 +290,7 @@ export default function SchedulePage() {
 
   const ds = schedule.map((b, i) => {
     const w = i === bestIdx
-    return { ...b, kind: w ? "wrk" as const : b.kind, label: w ? splitLabel : b.label, duration: w ? "25 min" : b.duration, hint: w ? "Optimal energy window" : b.hint }
+    return { ...b, kind: w ? "wrk" as const : b.kind, label: w ? splitLabel : b.label, duration: w ? "25 min" : b.duration, hint: w ? t.scOptimalWindow : b.hint }
   })
 
   const bestBlock = bestIdx >= 0 ? ds[bestIdx] : null
@@ -508,7 +508,7 @@ export default function SchedulePage() {
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <div style={{ width: 5, height: 5, borderRadius: "50%", background: ACCENT, flexShrink: 0 }} />
-                      <div style={{ fontSize: 10, fontWeight: 700, color: ACCENT, letterSpacing: "0.02em" }}>Best window</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: ACCENT, letterSpacing: "0.02em" }}>{t.scBestWindow}</div>
                     </div>
                     <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)" }}>
                       {bestBlock.time ? `${to12h(bestBlock.time)} – ${to12h(addMins(bestBlock.time, 25))}` : ""}
@@ -516,13 +516,13 @@ export default function SchedulePage() {
                   </div>
                   <div className="display-text" style={{ fontSize: 24, fontWeight: 950, color: "var(--text)", letterSpacing: "-0.3px", marginBottom: 4 }}>{bestBlock.label}</div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{suggestedExercises.length || 5} exercises · 25 min</div>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{suggestedExercises.length || 5} {t.exercisesCount} · 25 {t.scMinShort}</div>
                     <motion.button
                       whileTap={{ scale: 0.94 }}
                       onClick={() => canStartExerciseToday ? startExerciseFromSchedule(bestBlock) : undefined}
                       style={{ background: ACCENT, border: "none", borderRadius: 999, padding: "9px 18px", fontSize: 13, fontWeight: 800, color: "#0b1715", cursor: canStartExerciseToday ? "pointer" : "default", opacity: canStartExerciseToday ? 1 : 0.5, display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
                     >
-                      Start
+                      {t.scStart}
                       <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                     </motion.button>
                   </div>
@@ -532,10 +532,10 @@ export default function SchedulePage() {
               {/* SCHEDULE — grouped by time of day, each block its own card */}
               {restBlocks.length > 0 && (() => {
                 const TIME_GROUPS = [
-                  { key: "morning" as const,     label: "MORNING",   sub: "Before noon" },
-                  { key: "afternoon" as const,    label: "AFTERNOON", sub: "12 – 5 PM"   },
-                  { key: "evening" as const,      label: "EVENING",   sub: "After 5 PM"  },
-                  { key: "unscheduled" as const,  label: "SCHEDULE",  sub: ""            },
+                  { key: "morning" as const,     label: t.scMorning,       sub: t.scMorningSub },
+                  { key: "afternoon" as const,    label: t.scAfternoon,    sub: t.scAfternoonSub },
+                  { key: "evening" as const,      label: t.scEvening,      sub: t.scEveningSub  },
+                  { key: "unscheduled" as const,  label: t.scScheduleGroup, sub: ""            },
                 ]
                 return (
                   <>
@@ -545,7 +545,7 @@ export default function SchedulePage() {
                       return (
                         <div key={key} style={{ marginBottom: 18 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-                            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.01em" }}>{label.charAt(0) + label.slice(1).toLowerCase()}</div>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.01em" }}>{label}</div>
                             {sub && <span style={{ fontSize: 10, color: "var(--text-muted)", opacity: 0.45, fontWeight: 600 }}>· {sub}</span>}
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -599,7 +599,7 @@ export default function SchedulePage() {
                                         )}
                                         {isWorkout && (
                                           <button type="button" onPointerDown={e => e.stopPropagation()} onClick={() => startExerciseFromSchedule(block)} disabled={!canStartExerciseToday} style={{ border: "none", background: canStartExerciseToday ? ACCENT : "var(--surface-2)", color: canStartExerciseToday ? "#0b1715" : "var(--text-muted)", borderRadius: 999, padding: "5px 12px", fontSize: 11, fontWeight: 800, cursor: canStartExerciseToday ? "pointer" : "default", opacity: canStartExerciseToday ? 1 : 0.6 }}>
-                                            {canStartExerciseToday ? "Start →" : "Today only"}
+                                            {canStartExerciseToday ? t.scStartArrow : t.scTodayOnly}
                                           </button>
                                         )}
                                       </div>
