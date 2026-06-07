@@ -9,6 +9,7 @@ import {
   Loader2, Wallet, X, Zap,
 } from "lucide-react"
 import { ACCENT } from "@/lib/theme"
+import { useLanguage } from "@/context/LanguageContext"
 import { formatFT } from "@/lib/formatUtils"
 import { SkeletonCard, SkeletonLine } from "@/components/Skeleton"
 import { PasswordGate } from "@/components/PasswordGate"
@@ -92,9 +93,9 @@ function basescanAddressUrl(addr: string) {
 
 // ── Reason metadata ───────────────────────────────────────────────────────────
 
-const REASON_META: Record<string, { label: string; icon: typeof Dumbbell; color: string }> = {
-  workout_complete: { label: "Workout completed", icon: Dumbbell, color: ACCENT    },
-  streak_bonus:     { label: "Streak bonus",      icon: Flame,    color: "#f97316" },
+const REASON_META: Record<string, { labelKey: string; icon: typeof Dumbbell; color: string }> = {
+  workout_complete: { labelKey: "wdReasonWorkout", icon: Dumbbell, color: ACCENT    },
+  streak_bonus:     { labelKey: "rStreakBonus",    icon: Flame,    color: "#f97316" },
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -102,6 +103,7 @@ const REASON_META: Record<string, { label: string; icon: typeof Dumbbell; color:
 export default function WithdrawalPage() {
   const { status } = useSession()
   const router     = useRouter()
+  const { t }      = useLanguage()
 
   // data
   const [data,    setData]    = useState<TokensData | null>(null)
@@ -262,11 +264,11 @@ export default function WithdrawalPage() {
         setClaimError("launching_soon")
       } else {
         setClaimState("error")
-        setClaimError(body.error ?? "Something went wrong. Please try again.")
+        setClaimError(body.error ?? t.wdErrGeneric)
       }
     } catch {
       setClaimState("error")
-      setClaimError("Network error — please try again")
+      setClaimError(t.wdErrNetwork)
     }
   }
 
@@ -305,7 +307,7 @@ export default function WithdrawalPage() {
           }}
         >
           <ArrowLeft size={16} strokeWidth={2.2} />
-          Settings
+          {t.settings}
         </button>
 
         {/* ── Page title ── */}
@@ -314,7 +316,7 @@ export default function WithdrawalPage() {
             FitTokens
           </div>
           <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 3 }}>
-            Earn FIT by working out. Claim to your Base wallet.
+            {t.wdSubtitle}
           </div>
         </div>
 
@@ -348,8 +350,8 @@ export default function WithdrawalPage() {
                 <Wallet size={16} strokeWidth={1.8} color={ACCENT} />
               </div>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Your Wallet</div>
-                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Base network (EVM)</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t.wdYourWallet}</div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{t.wdBaseNetwork}</div>
               </div>
             </div>
             {data?.walletAddress && !editingWallet && (
@@ -358,7 +360,7 @@ export default function WithdrawalPage() {
                 onClick={() => { setEditingWallet(true); setWalletError(null); setTimeout(() => walletInputRef.current?.focus(), 50) }}
                 style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, color: "var(--text-muted)", cursor: "pointer" }}
               >
-                Change
+                {t.wdChange}
               </button>
             )}
             {editingWallet && (
@@ -401,7 +403,7 @@ export default function WithdrawalPage() {
                     style={{ display: "flex", alignItems: "center", gap: 5, color: "#4ade80", fontSize: 12, fontWeight: 700, flexShrink: 0 }}
                   >
                     <CheckCircle2 size={14} strokeWidth={2.5} />
-                    Saved
+                    {t.wdSaved}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -412,7 +414,7 @@ export default function WithdrawalPage() {
           {(!data?.walletAddress || editingWallet) && !loading && (
             <div>
               <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8, lineHeight: 1.5 }}>
-                {data?.walletAddress ? "Enter a new Base wallet address:" : "Paste your Base wallet address to receive FIT when you claim:"}
+                {data?.walletAddress ? t.wdEnterNew : t.wdPasteAddr}
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <input
@@ -447,14 +449,14 @@ export default function WithdrawalPage() {
                     transition: "background 0.15s, color 0.15s, border-color 0.15s",
                   }}
                 >
-                  {savingWallet ? <Loader2 size={14} className="animate-spin" /> : "Save"}
+                  {savingWallet ? <Loader2 size={14} className="animate-spin" /> : t.wdSave}
                 </motion.button>
               </div>
               {walletError && (
                 <div style={{ fontSize: 11, color: "#f87171", marginTop: 6, fontWeight: 600 }}>{walletError}</div>
               )}
               <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8, lineHeight: 1.5 }}>
-                Only Base (chainId 8453) addresses are supported. Never share your private key.
+                {t.wdWalletHint}
               </div>
             </div>
           )}
@@ -482,9 +484,9 @@ export default function WithdrawalPage() {
               FT
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>FitToken Balance</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{t.wdFtBalance}</div>
               <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                {data?.tokenDeployed ? "Live on Base" : "Off-chain · Launching on Base"}
+                {data?.tokenDeployed ? t.wdLiveOnBase : t.wdOffchain}
               </div>
             </div>
             {data?.tokenDeployed && (
@@ -494,7 +496,7 @@ export default function WithdrawalPage() {
                 borderRadius: 999, padding: "3px 10px",
                 fontSize: 10, fontWeight: 800, color: "#4ade80", letterSpacing: "0.08em", flexShrink: 0,
               }}>
-                LIVE
+                {t.wdLive}
               </div>
             )}
           </div>
@@ -517,10 +519,10 @@ export default function WithdrawalPage() {
                   </svg>
                 </div>
                 <div style={{ fontSize: 22, fontWeight: 950, color: ACCENT, marginBottom: 4 }}>
-                  +{formatFT(claimAmount)} FIT claimed!
+                  +{formatFT(claimAmount)} FIT {t.wdClaimedExcl}
                 </div>
                 <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
-                  Tokens sent to your Base wallet.
+                  {t.wdTokensSent}
                 </div>
                 {/* On-chain balance after claim */}
                 {onChainBalance != null && (
@@ -531,7 +533,7 @@ export default function WithdrawalPage() {
                     fontSize: 13, fontWeight: 700, color: "#4ade80",
                   }}>
                     <CheckCircle2 size={14} strokeWidth={2.5} />
-                    On-chain balance: {formatFT(onChainBalance)} FIT
+                    {t.wdOnchainBalance} {formatFT(onChainBalance)} FIT
                   </div>
                 )}
                 {claimTxHash && (
@@ -542,7 +544,7 @@ export default function WithdrawalPage() {
                       rel="noopener noreferrer"
                       style={{ display: "inline-flex", alignItems: "center", gap: 6, color: ACCENT, fontSize: 13, fontWeight: 700, textDecoration: "none" }}
                     >
-                      View on Basescan
+                      {t.wdViewBasescan}
                       <ExternalLink size={13} strokeWidth={2} />
                     </a>
                   </div>
@@ -560,10 +562,10 @@ export default function WithdrawalPage() {
                 </div>
 
                 <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16 }}>
-                  Claimable balance
+                  {t.wdClaimableBalance}
                   {!loading && (data?.claimed ?? 0) > 0 && (
                     <span style={{ marginLeft: 8, color: "#4ade80", fontWeight: 700 }}>
-                      · {formatFT(data!.claimed)} FIT already claimed
+                      · {formatFT(data!.claimed)} FIT {t.wdAlreadyClaimed}
                     </span>
                   )}
                 </div>
@@ -575,7 +577,7 @@ export default function WithdrawalPage() {
                       <div className="number-text" style={{ fontSize: 18, fontWeight: 900, color: "var(--text)", letterSpacing: "-0.5px" }}>
                         {formatFT(data!.balance)}
                       </div>
-                      <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, marginTop: 2 }}>TOTAL EARNED</div>
+                      <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, marginTop: 2 }}>{t.wdTotalEarned}</div>
                     </div>
                     <div style={{ flex: 1, minWidth: 100, background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 10, padding: "10px 14px" }}>
                       <div className="number-text" style={{ fontSize: 18, fontWeight: 900, color: "#4ade80", letterSpacing: "-0.5px" }}>
@@ -586,7 +588,7 @@ export default function WithdrawalPage() {
                         }
                       </div>
                       <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, marginTop: 2 }}>
-                        {data?.tokenDeployed ? "ON-CHAIN" : "CLAIMED"}
+                        {data?.tokenDeployed ? t.wdOnChain : t.wdClaimedLabel}
                       </div>
                     </div>
                   </div>
@@ -596,7 +598,7 @@ export default function WithdrawalPage() {
                 {!loading && hasWallet && hasBalance && claimable < MIN_CLAIM_FIT && (
                   <div style={{ marginBottom: 14 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                      <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>Progress to minimum claim</span>
+                      <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>{t.wdProgressMin}</span>
                       <span style={{ fontSize: 11, color: ACCENT, fontWeight: 800 }}>{formatFT(claimable)} / {MIN_CLAIM_FIT} FIT</span>
                     </div>
                     <div style={{ height: 6, background: "var(--surface-2)", borderRadius: 999, overflow: "hidden" }}>
@@ -608,7 +610,7 @@ export default function WithdrawalPage() {
                       />
                     </div>
                     <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 5 }}>
-                      {formatFT(MIN_CLAIM_FIT - claimable)} more FIT to go
+                      {formatFT(MIN_CLAIM_FIT - claimable)} {t.wdMoreToGo}
                     </div>
                   </div>
                 )}
@@ -629,12 +631,12 @@ export default function WithdrawalPage() {
           style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "18px 20px", marginBottom: 12 }}
         >
           <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 14 }}>
-            How you earn
+            {t.wdHowEarn}
           </div>
           {[
-            { icon: Dumbbell, color: ACCENT,    bg: "rgba(18,101,254,0.12)", title: "Complete a workout",  detail: "+1.00 FT per session" },
-            { icon: Flame,    color: "#f97316", bg: "rgba(249,115,22,0.12)",  title: "Streak bonus",        detail: "Up to +0.20 FT extra" },
-            { icon: Zap,      color: "#8ab4ff", bg: "rgba(138,180,255,0.12)", title: "Verification score",  detail: "Full score = full reward" },
+            { icon: Dumbbell, color: ACCENT,    bg: "rgba(18,101,254,0.12)", title: t.wdEarn1, detail: t.wdEarn1d },
+            { icon: Flame,    color: "#f97316", bg: "rgba(249,115,22,0.12)",  title: t.wdEarn2, detail: t.wdEarn2d },
+            { icon: Zap,      color: "#8ab4ff", bg: "rgba(138,180,255,0.12)", title: t.wdEarn3, detail: t.wdEarn3d },
           ].map(({ icon: Icon, color, bg, title, detail }, i, arr) => (
             <div key={title} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: i < arr.length - 1 ? "1px solid var(--border)" : "none" }}>
               <div style={{ width: 34, height: 34, borderRadius: 10, background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -657,7 +659,7 @@ export default function WithdrawalPage() {
             style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, overflow: "hidden", marginBottom: 12 }}
           >
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", padding: "14px 18px 10px" }}>
-              Claim history
+              {t.wdClaimHistory}
             </div>
             {data!.claimReceipts.map((receipt, i) => (
               <div
@@ -706,7 +708,7 @@ export default function WithdrawalPage() {
             style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, overflow: "hidden", marginBottom: 12 }}
           >
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", padding: "14px 18px 10px" }}>
-              Recent earnings
+              {t.wdRecentEarnings}
             </div>
             {data!.transactions.map((tx, i) => {
               const meta = REASON_META[tx.reason] ?? REASON_META.workout_complete
@@ -718,7 +720,7 @@ export default function WithdrawalPage() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx.workoutName}</div>
-                    <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{meta.label} · {formatDate(tx.createdAt)}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{(t as unknown as Record<string, string>)[meta.labelKey]} · {formatDate(tx.createdAt)}</div>
                   </div>
                   <div style={{ fontSize: 14, fontWeight: 800, color: ACCENT, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
                     +{formatFT(tx.amount)}
@@ -734,7 +736,7 @@ export default function WithdrawalPage() {
       {/* Password gate — opens before any /api/tokens/claim call */}
       <PasswordGate
         open={gateOpen}
-        actionLabel="withdraw FIT"
+        actionLabel={t.wdActionWithdraw}
         onClose={() => setGateOpen(false)}
         onSuccess={() => { setGateOpen(false); performClaim() }}
       />
@@ -742,7 +744,7 @@ export default function WithdrawalPage() {
       {/* Password gate — opens before changing the payout wallet */}
       <PasswordGate
         open={walletGateOpen}
-        actionLabel="change your wallet"
+        actionLabel={t.wdActionWallet}
         onClose={() => { setWalletGateOpen(false); setPendingWallet(null) }}
         onSuccess={(pwd) => performWalletSave(pwd)}
       />
@@ -763,21 +765,22 @@ function ClaimButton({
   claimError: string | null
   onClaim:    () => void
 }) {
+  const { t } = useLanguage()
   const isDisabled = mode === "no_wallet" || mode === "no_balance" || mode === "below_minimum" || mode === "claiming"
 
   const config: Record<ButtonMode, { label: React.ReactNode; bg: string; border: string; color: string }> = {
     no_wallet: {
-      label:  "Set wallet address first",
+      label:  t.wdSetWalletFirst,
       bg:     "var(--surface-2)", border: "var(--border)", color: "var(--text-muted)",
     },
     no_balance: {
-      label:  "No FIT to claim yet",
+      label:  t.wdNoFitYet,
       bg:     "var(--surface-2)", border: "var(--border)", color: "var(--text-muted)",
     },
     below_minimum: {
       label: (
         <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
-          Need {MIN_CLAIM_FIT} FIT minimum
+          {t.wdNeedMinPre} {MIN_CLAIM_FIT} {t.wdNeedMinPost}
           <span style={{ background: "rgba(18,101,254,0.12)", border: "1px solid rgba(18,101,254,0.25)", borderRadius: 999, padding: "2px 8px", fontSize: 10, fontWeight: 900, color: ACCENT, letterSpacing: "0.07em" }}>
             {formatFT(claimable)} / {MIN_CLAIM_FIT}
           </span>
@@ -788,29 +791,29 @@ function ClaimButton({
     launching_soon: {
       label: (
         <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          Claim {formatFT(claimable)} FIT
+          {t.wdClaim} {formatFT(claimable)} FIT
           <span style={{ background: "rgba(234,179,8,0.18)", border: "1px solid rgba(234,179,8,0.35)", borderRadius: 999, padding: "2px 8px", fontSize: 10, fontWeight: 900, color: "#eab308", letterSpacing: "0.07em" }}>
-            LAUNCHING SOON
+            {t.wdLaunchingSoon}
           </span>
         </span>
       ),
       bg:     "rgba(18,101,254,0.08)", border: "rgba(18,101,254,0.28)", color: ACCENT,
     },
     ready: {
-      label:  `Claim ${formatFT(claimable)} FIT →`,
+      label:  `${t.wdClaim} ${formatFT(claimable)} FIT →`,
       bg:     "rgba(18,101,254,0.14)", border: "rgba(18,101,254,0.45)", color: ACCENT,
     },
     claiming: {
       label: (
         <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <Loader2 size={15} strokeWidth={2} className="animate-spin" />
-          Claiming…
+          {t.wdClaiming}
         </span>
       ),
       bg:     "rgba(18,101,254,0.08)", border: "rgba(18,101,254,0.22)", color: ACCENT,
     },
     success: {
-      label:  "Claimed",
+      label:  t.wdClaimedBtn,
       bg:     "rgba(74,222,128,0.12)", border: "rgba(74,222,128,0.35)", color: "#4ade80",
     },
   }
@@ -839,13 +842,13 @@ function ClaimButton({
         {mode === "launching_soon" && claimError === "launching_soon" && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} style={{ overflow: "hidden" }}>
             <div style={{ marginTop: 10, fontSize: 12, color: "#eab308", fontWeight: 600, lineHeight: 1.5 }}>
-              The FitToken contract is not yet live on Base. Your balance is safe and will be claimable once it launches.
+              {t.wdLaunchNote1}
             </div>
           </motion.div>
         )}
         {mode === "launching_soon" && !claimError && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ marginTop: 8, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.5, textAlign: "center" }}>
-            Your {formatFT(claimable)} FIT is safe and will be claimable once the contract is live on Base.
+            {t.wdLaunchNote2pre} {formatFT(claimable)} {t.wdLaunchNote2post}
           </motion.div>
         )}
         {mode !== "claiming" && claimError && claimError !== "launching_soon" && (
