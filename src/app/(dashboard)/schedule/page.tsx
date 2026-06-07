@@ -242,7 +242,10 @@ export default function SchedulePage() {
             workoutEvents = wsData.map((w: any) => {
               const details = Array.isArray(w.exercises) ? w.exercises[0] : null
               const isManual = w.source === "manual"
-              return { id: w.id, time: isManual ? formatManualTime(details?.time || "") : t.workout, label: w.workoutName, kind: isManual ? "cls" as const : "wrk" as const, duration: isManual ? t.manual : `${w.exercises.length} ${t.exercisesCount}`, description: isManual ? details?.description || "" : "", source: isManual ? "manual" as const : "workout" as const, exercises: isManual ? w.exercises : (Array.isArray(w.exercises) && w.exercises.length > 0 ? w.exercises : recommendationExercises) }
+              // A scheduled time may be attached to either a manual block or a
+              // saved workout — show it (and group by it) whenever present.
+              const timeStr = details?.time ? formatManualTime(details.time) : (isManual ? "" : t.workout)
+              return { id: w.id, time: timeStr, label: w.workoutName, kind: isManual ? "cls" as const : "wrk" as const, duration: isManual ? t.manual : `${w.exercises.length} ${t.exercisesCount}`, description: isManual ? details?.description || "" : "", source: isManual ? "manual" as const : "workout" as const, exercises: isManual ? w.exercises : (Array.isArray(w.exercises) && w.exercises.length > 0 ? w.exercises : recommendationExercises) }
             })
           }
         }

@@ -14,6 +14,7 @@ import { getFeedbackAdjustedExperienceLevel } from "@/lib/workoutFeedback"
 import { computeMuscleReadiness, pickFreshestTarget, type MuscleReadiness } from "@/lib/muscleReadiness"
 import { getMuscleGroup } from "@/lib/exerciseData"
 import { formatLocalDate } from "@/lib/dateUtils"
+import { pickBestWorkoutTime } from "@/lib/bestWorkoutTime"
 import { ACCENT, ACCENT_DIM, ACCENT_BD } from "@/lib/theme"
 import { getCategory, CATEGORY_COLORS } from "@/lib/exerciseUtils"
 import { WorkoutTemplatesModal } from "@/components/WorkoutTemplatesModal"
@@ -61,6 +62,11 @@ export default function WorkoutPage() {
   const todayDay = todayIdx
   const [savedWorkout, setSavedWorkout] = useState<any>(null)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  // Save-to-schedule time picker
+  const [schedulePickerOpen, setSchedulePickerOpen] = useState(false)
+  const [scheduleTime, setScheduleTime] = useState("07:00")
+  const [savingSchedule, setSavingSchedule] = useState(false)
+  const [workoutTimes, setWorkoutTimes] = useState<string[]>([])
   const [completed, setCompleted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [completedDateIds, setCompletedDateIds] = useState<Set<string>>(new Set())
@@ -182,6 +188,8 @@ export default function WorkoutPage() {
               .filter((l: any) => new Date(l.completedAt || l.createdAt) > oneWeekAgo)
               .flatMap((l: any) => l.exercises?.map((e: any) => e.name) || [])
             setMuscleReadiness(computeMuscleReadiness(logs))
+            // Completion times feed the "smart pick" workout-time suggestion.
+            setWorkoutTimes(logs.map((l: any) => l.completedAt || l.createdAt).filter(Boolean))
           }
         } catch {}
 
@@ -343,6 +351,31 @@ export default function WorkoutPage() {
       exercises,
     }))
     router.push("/exercise")
+  }
+
+  // ── Save to schedule (with a time) ────────────────────────────────────────────
+  function openSchedulePicker() {
+    // Pre-fill with the smart pick so the user can one-tap accept, or adjust.
+    setScheduleTime(pickBestWorkoutTime(workoutTimes))
+    setSchedulePickerOpen(true)
+  }
+
+  async function confirmSaveToSchedule() {
+    const selectedDate = weekDates[selectedDay]
+    if (!selectedDate) return
+    setSavingSchedule(true)
+    try {
+      const dateStr = formatLocalDate(selectedDate)
+      // Attach the chosen time to each exercise so the schedule page can place
+      // and display the block at that hour while keeping it startable.
+      const exercises = todayExercises.map(([name, reps]) => ({ name, ...parseSetsReps(reps), time: scheduleTime }))
+      const res = await fetch("/api/workout-schedule", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ date: dateStr, workoutName: muscle, exercises, source: "workout" }) })
+      if (res.ok) {
+        setSchedulePickerOpen(false)
+        setSaveSuccess(true)
+        setTimeout(() => setSaveSuccess(false), 2000)
+      }
+    } finally { setSavingSchedule(false) }
   }
 
   return (
@@ -583,14 +616,7 @@ export default function WorkoutPage() {
             </motion.button>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "8px 0 0" }}>
               <button
-                onClick={async () => {
-                  const selectedDate = weekDates[selectedDay]
-                  if (!selectedDate) return
-                  const dateStr = formatLocalDate(selectedDate)
-                  const exercises = todayExercises.map(([name, reps]) => ({ name, ...parseSetsReps(reps) }))
-                  const res = await fetch("/api/workout-schedule", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ date: dateStr, workoutName: muscle, exercises, source: "manual" }) })
-                  if (res.ok) { setSaveSuccess(true); setTimeout(() => setSaveSuccess(false), 2000) }
-                }}
+                onClick={openSchedulePicker}
                 style={{
                   background: "none", border: "none",
                   fontSize: 12, fontWeight: 700,
@@ -627,6 +653,46 @@ export default function WorkoutPage() {
       </div>
 
 
+
+          {/* Save-to-schedule time picker */}
+          <AnimatePresence>
+            {schedulePickerOpen && (
+              <motion.div
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                onClick={() => setSchedulePickerOpen(false)}
+                style={{ position: "fixed", inset: 0, zIndex: 9997, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: 18, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 18, scale: 0.98 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  onClick={e => e.stopPropagation()}
+                  style={{ width: "100%", maxWidth: 380, background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 22, padding: 20, color: "var(--text)", boxShadow: "var(--shadow-lg)" }}
+                >
+                  <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 4 }}>{t.pickWorkoutTime}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16 }}>{muscle}</div>
+                  <input
+                    type="time"
+                    value={scheduleTime}
+                    onChange={e => setScheduleTime(e.target.value)}
+                    style={{ width: "100%", boxSizing: "border-box", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", borderRadius: 13, padding: "13px 14px", fontSize: 16, fontWeight: 800, outline: "none", marginBottom: 10 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setScheduleTime(pickBestWorkoutTime(workoutTimes))}
+                    style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, border: "1px solid rgba(18,101,254,0.35)", background: "rgba(18,101,254,0.1)", color: ACCENT, borderRadius: 12, padding: "10px", fontSize: 13, fontWeight: 800, cursor: "pointer", marginBottom: 4 }}
+                  >
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v2M12 19v2M5 12H3M21 12h-2M18.36 5.64l-1.42 1.42M7.05 16.95l-1.41 1.41M18.36 18.36l-1.42-1.42M7.05 7.05 5.64 5.64"/><circle cx="12" cy="12" r="4"/></svg>
+                    {t.smartTime}
+                  </button>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", textAlign: "center", marginBottom: 16 }}>{t.smartTimeHint}</div>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button type="button" onClick={() => setSchedulePickerOpen(false)} style={{ flex: 1, border: "1px solid var(--border)", background: "transparent", color: "var(--text)", borderRadius: 14, padding: "13px 0", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{t.cancel}</button>
+                    <button type="button" onClick={confirmSaveToSchedule} disabled={savingSchedule} style={{ flex: 1, border: "none", background: "var(--text)", color: "var(--bg)", borderRadius: 14, padding: "13px 0", fontSize: 14, fontWeight: 900, cursor: savingSchedule ? "default" : "pointer", opacity: savingSchedule ? 0.5 : 1 }}>{savingSchedule ? t.saving : t.addToSchedule}</button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <AnimatePresence>
             {showTemplates && (

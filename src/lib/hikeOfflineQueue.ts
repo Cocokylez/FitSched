@@ -59,6 +59,32 @@ export async function requestSync(): Promise<void> {
   }
 }
 
+function deleteQueued(db: IDBDatabase, id: number): Promise<void> {
+  return new Promise<void>((res, rej) => {
+    const tx  = db.transaction(STORE, "readwrite")
+    const req = tx.objectStore(STORE).delete(id)
+    req.onsuccess = () => res()
+    req.onerror   = () => rej(req.error)
+  })
+}
+
+/**
+ * Decide what to do with a queued hike based on the server's response status.
+ *  - "synced":  saved (2xx) → remove from queue, count as a success.
+ *  - "drop":    permanently rejected → remove from queue so it can't get stuck.
+ *               409 = a hike already exists for that day (data is effectively
+ *               saved); 400/403/413 = invalid/banned/too-large, will never
+ *               succeed on retry.
+ *  - "retry":   transient (401 auth, 429 rate-limit, 5xx) → keep and retry later.
+ */
+function classifyHikeResponse(status: number): "synced" | "drop" | "retry" {
+  if (status >= 200 && status < 300) return "synced"
+  if (status === 409) return "drop"
+  if (status === 401 || status === 429 || status >= 500) return "retry"
+  if (status >= 400 && status < 500) return "drop"
+  return "retry"
+}
+
 /**
  * Directly flush queued hikes from the page (no SW needed).
  * Call this when the network comes back online.
@@ -76,24 +102,22 @@ export async function flushPendingHikes(): Promise<number> {
     })
 
     for (const item of all) {
+      let response: Response
       try {
-        const response = await fetch("/api/hike", {
+        response = await fetch("/api/hike", {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
           body:    JSON.stringify(item.data),
         })
-        if (response.ok) {
-          await new Promise<void>((res, rej) => {
-            const tx  = db.transaction(STORE, "readwrite")
-            const req = tx.objectStore(STORE).delete(item.id)
-            req.onsuccess = () => res()
-            req.onerror   = () => rej(req.error)
-          })
-          synced++
-        }
       } catch {
-        break // still offline — stop and retry later
+        break // genuine network failure — still offline, stop and retry later
       }
+
+      const verdict = classifyHikeResponse(response.status)
+      if (verdict === "retry") break // transient — keep item, retry on next trigger
+      // "synced" or "drop": remove from the queue either way so it can't stick.
+      await deleteQueued(db, item.id)
+      if (verdict === "synced") synced++
     }
   } catch {
     // IndexedDB unavailable

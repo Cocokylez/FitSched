@@ -84,9 +84,13 @@ export default function HikePage() {
     // Shared flush helper — used on mount, online, visibilitychange, and manual taps
     const tryFlush = async () => {
       if (!navigator.onLine) return
+      const before = await getPendingHikeCount().catch(() => 0)
       const synced = await flushPendingHikes().catch(() => 0)
       const newCount = await getPendingHikeCount().catch(() => 0)
       setPendingCount(newCount)
+      // If anything actually left the queue (synced or dropped), refresh the logs
+      // list so a freshly synced hike shows up immediately.
+      if (newCount < before) fetchLogs()
       if (synced === 0 && newCount > 0) {
         // Direct flush failed (probably a transient hiccup) — try BG Sync as fallback
         requestSync().catch(() => {})
@@ -106,6 +110,7 @@ export default function HikePage() {
     const onSwMessage = (event: MessageEvent) => {
       if (event.data?.type === "hike-synced") {
         getPendingHikeCount().then(setPendingCount).catch(() => {})
+        fetchLogs()
       }
     }
     navigator.serviceWorker?.addEventListener("message", onSwMessage)

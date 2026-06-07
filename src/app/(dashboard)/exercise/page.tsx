@@ -72,6 +72,27 @@ function daysAgoLabel(iso: string): string {
   return `${days}d ago`
 }
 
+// Circuit rotation. After each set we move to the next exercise that still owes
+// a set in the *current round*, filling the lowest round across all exercises
+// first (everyone does set 1 before anyone does set 2). We scan left-to-right
+// from the current exercise and wrap to the start when the rest of this round
+// is already behind us. Returns the next exercise index, or null when every set
+// of every exercise is done. Pure function of completedSets → easy to reason about.
+function nextCircuitIndex(
+  completed: Record<number, number>,
+  exercises: ActiveExercise[],
+  fromIdx: number,
+): number | null {
+  const unfinished = exercises
+    .map((ex, i) => ({ i, done: completed[i] || 0, sets: ex.sets }))
+    .filter(e => e.done < e.sets)
+  if (unfinished.length === 0) return null
+  const minRound = Math.min(...unfinished.map(e => e.done))
+  const roundPool = unfinished.filter(e => e.done === minRound).map(e => e.i)
+  const ahead = roundPool.filter(i => i > fromIdx)
+  return ahead.length ? ahead[0] : roundPool[0]
+}
+
 export default function ExerciseSessionPage() {
   const router = useRouter()
   const { data: session } = useSession()
@@ -252,19 +273,17 @@ export default function ExerciseSessionPage() {
     if (!workout) return
     const ex = workout.exercises[exIdx]
     const newCount = Math.min((completedSets[exIdx] || 0) + 1, ex.sets)
-    setCompletedSets(prev => ({ ...prev, [exIdx]: newCount }))
-    const justFinishedAllSets = newCount >= ex.sets
-    const isLastExercise = exIdx >= workout.exercises.length - 1
-    if (justFinishedAllSets) {
-      if (!isLastExercise) {
-        // Auto-advance to next exercise after rest
-        afterRestRef.current = () => setCurrentExIdx(i => i + 1)
-        setRestSeconds(restDuration)
-      }
-      // If last exercise: "Finish Workout" button will appear
-    } else {
-      setRestSeconds(restDuration)
-    }
+    const updated = { ...completedSets, [exIdx]: newCount }
+    setCompletedSets(updated)
+
+    // Circuit flow: rotate to the next exercise that still owes a set this round.
+    const next = nextCircuitIndex(updated, workout.exercises, exIdx)
+    // null → every set of every exercise is done; the "Finish Workout" CTA appears.
+    if (next === null) return
+    // Rest, then rotate. When the only work left is more sets of the *current*
+    // exercise (e.g. a single-exercise workout), stay put but still rest.
+    afterRestRef.current = next === exIdx ? null : () => setCurrentExIdx(next)
+    setRestSeconds(restDuration)
   }
 
   function saveSessionFeedback(value: SessionFeedback) {
@@ -368,7 +387,9 @@ export default function ExerciseSessionPage() {
             </>
           ) : (
             <>
-              <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(18,101,254,0.14)", color: ACCENT, display: "grid", placeItems: "center", margin: "0 auto 14px", fontSize: 22 }}>✓</div>
+              <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(18,101,254,0.14)", color: ACCENT, display: "grid", placeItems: "center", margin: "0 auto 14px" }}>
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
               <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 8 }}>
                 {lockReason === "date" ? t.todayWorkoutOnlyTitle : t.workoutAlreadyComplete}
               </div>
@@ -545,6 +566,11 @@ export default function ExerciseSessionPage() {
           const histWeight = exerciseHistory[ex.name]?.weight
           const isPRAttempt = currentWeight != null && currentWeight > 0 && (histWeight == null || currentWeight > histWeight)
           const suggested = histWeight != null ? Math.round((histWeight + 2.5) * 10) / 10 : null
+          // Circuit context for clear wording: which round we're on and what's next.
+          const maxSets = Math.max(...workout.exercises.map(e => e.sets))
+          const currentRound = Math.min(done, ex.sets - 1) // 0-based round about to be done
+          const nextIdx = nextCircuitIndex({ ...completedSets, [currentExIdx]: done + 1 }, workout.exercises, currentExIdx)
+          const nextName = nextIdx != null && nextIdx !== currentExIdx ? workout.exercises[nextIdx].name : null
 
           return (
             <AnimatePresence mode="wait">
@@ -598,10 +624,21 @@ export default function ExerciseSessionPage() {
 
                 {/* Set — one at a time */}
                 <div>
+                  {/* Round indicator — makes the circuit rotation obvious */}
+                  {maxSets > 1 && (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                      <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.12em", color: "var(--text-muted)" }}>
+                        ROUND {Math.min(currentRound + 1, maxSets)} OF {maxSets}
+                      </span>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: catStyle.color }}>
+                        Set {Math.min(done + (allSetsDoneForCurrent ? 0 : 1), ex.sets)} / {ex.sets}
+                      </span>
+                    </div>
+                  )}
                   {allSetsDoneForCurrent ? (
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "20px", background: `${catStyle.color}18`, border: `1.5px solid ${catStyle.color}55`, borderRadius: 18, color: catStyle.color, fontWeight: 900, fontSize: 15 }}>
                       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                      Complete
+                      All sets done
                     </div>
                   ) : (
                     <motion.button
@@ -611,14 +648,15 @@ export default function ExerciseSessionPage() {
                       style={{
                         width: "100%", border: `1.5px solid ${catStyle.color}`,
                         background: `${catStyle.color}14`, color: catStyle.color,
-                        borderRadius: 18, padding: "22px 16px",
+                        borderRadius: 18, padding: "20px 16px",
                         fontSize: 16, fontWeight: 900, cursor: "pointer",
                         display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
                       }}
                     >
-                      <motion.span animate={{ scale: [1, 1.12, 1] }} transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}>
+                      <motion.span style={{ display: "flex" }} animate={{ scale: [1, 1.12, 1] }} transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}>
                         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                       </motion.span>
+                      Complete set {Math.min(done + 1, ex.sets)} of {ex.sets}
                     </motion.button>
                   )}
                   {/* Set progress bar */}
@@ -627,6 +665,12 @@ export default function ExerciseSessionPage() {
                       <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i < done ? catStyle.color : i === done && !allSetsDoneForCurrent ? `${catStyle.color}55` : "var(--border)", transition: "background 0.3s" }} />
                     ))}
                   </div>
+                  {/* Up-next hint — makes the rotation to the next exercise explicit */}
+                  {!allSetsDoneForCurrent && nextName && (
+                    <div style={{ marginTop: 10, textAlign: "center", fontSize: 12, fontWeight: 700, color: "var(--text-muted)" }}>
+                      Up next · {nextName}
+                    </div>
+                  )}
                 </div>
 
                 {/* Progress dots */}
@@ -659,14 +703,9 @@ export default function ExerciseSessionPage() {
         <div style={{ height: "100%", background: ACCENT, width: `${totalSets > 0 ? (doneSets / totalSets) * 100 : 0}%`, transition: "width 0.5s ease", borderRadius: "0 2px 2px 0" }} />
       </div>
 
-      {/* Finish Workout CTA — only shown after last exercise's last set */}
+      {/* Finish Workout CTA — shown once every set of every exercise is done */}
       {(() => {
-        const ex = workout.exercises[currentExIdx]
-        if (!ex) return null
-        const done = completedSets[currentExIdx] || 0
-        const allSetsDoneForCurrent = done >= ex.sets
-        const isLastExercise = currentExIdx >= workout.exercises.length - 1
-        if (!allSetsDoneForCurrent || !isLastExercise) return null
+        if (!allDone) return null
         return (
           <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "12px 16px", paddingBottom: "max(12px, env(safe-area-inset-bottom))", background: "#fff", borderTop: "1px solid #f0f0f0" }}>
             <AnimatePresence mode="wait">
@@ -762,7 +801,9 @@ export default function ExerciseSessionPage() {
               transition={{ type: "spring", stiffness: 320, damping: 30 }}
               style={{ width: "100%", maxWidth: 480, background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 28, padding: "26px 22px 22px", boxShadow: "0 30px 80px rgba(0,0,0,0.5)" }}
             >
-              <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,80,80,0.12)", border: "1px solid rgba(255,80,80,0.28)", color: "#ff5050", fontSize: 20, display: "grid", placeItems: "center", margin: "0 auto 16px" }}>✗</div>
+              <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,80,80,0.12)", border: "1px solid rgba(255,80,80,0.28)", color: "#ff5050", display: "grid", placeItems: "center", margin: "0 auto 16px" }}>
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </div>
               <div style={{ fontSize: 20, fontWeight: 950, color: "var(--text)", textAlign: "center", marginBottom: 8 }}>Quit workout?</div>
               <div style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", lineHeight: 1.55, marginBottom: 22 }}>
                 You only get <strong style={{ color: "var(--text)" }}>one chance per day</strong>. Leaving now means no FitTokens today and no re-entry until tomorrow.

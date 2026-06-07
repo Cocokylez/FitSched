@@ -888,7 +888,7 @@ export default function SettingsPage() {
           Delete account
         </button>
         <div style={{ textAlign: "center", fontSize: 11, color: "var(--text-muted)", marginTop: 8 }}>
-          FitSched v1.0.1
+          FitSched v1.0.2
         </div>
       </div>
 

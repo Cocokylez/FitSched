@@ -1,7 +1,7 @@
 ﻿import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 
-const EFFECTIVE_DATE = "June 5, 2026"
+const EFFECTIVE_DATE = "June 7, 2026"
 const APP_NAME = "FitSched"
 const CONTACT_EMAIL = "support@fitsched.app"
 
@@ -57,6 +57,7 @@ export default function PrivacyPage() {
           <p>We use your data exclusively to operate {APP_NAME}:</p>
           <ul style={{ paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "6px", margin: 0 }}>
             <Bullet>Generate and personalise your workout schedule — using your goals, experience, account start date, and recent training history so recently worked muscles get time to recover.</Bullet>
+            <Bullet>Suggest an optimal time of day for a scheduled workout, based on the times you have usually completed past sessions. This is computed from your own workout history; you can always set a time manually instead.</Bullet>
             <Bullet>Calculate your streak, BMI, and FitToken balance.</Bullet>
             <Bullet>Display your progress and history on the Report and Settings pages.</Bullet>
             <Bullet>Send push notifications you have opted into.</Bullet>
