@@ -141,6 +141,11 @@ export default function ExercisesPage() {
   const formatLabel = (s: string) =>
     s.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())
 
+  const td = t as unknown as Record<string, string>
+  const muscleLabel = (m: string) => ({ CHEST: t.muChest, BACK: t.muBack, LEGS: t.muLegs, SHOULDERS: t.muShoulders, CORE: t.muCore, ARMS: t.muArms, FULL_BODY: t.muFullBody, CARDIO: t.muCardio } as Record<string, string>)[m] ?? formatLabel(m)
+  const equipLabel = (e: string) => ({ BODYWEIGHT: td.eqBodyweight, DUMBBELLS: td.eqDumbbells, BARBELL: td.eqBarbell, MACHINE: td.eqMachine, CABLES: td.eqCables, BANDS: td.eqBands, KETTLEBELL: td.eqKettlebell } as Record<string, string>)[e] ?? formatLabel(e)
+  const diffLabel = (d: string) => ({ BEGINNER: t.setLvlBeginner, INTERMEDIATE: t.setLvlInter, ADVANCED: t.setLvlAdv } as Record<string, string>)[d] ?? formatLabel(d)
+
   return (
     <div style={{ padding: "16px 16px 100px" }}>
 
@@ -156,7 +161,7 @@ export default function ExercisesPage() {
             {t.exercises}
           </h1>
           <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 2, marginBottom: 0 }}>
-            {exercises.length} exercises
+            {exercises.length} {t.exercisesCount}
           </p>
         </div>
         <motion.button
@@ -214,7 +219,7 @@ export default function ExercisesPage() {
         >
           <option value="">{t.all}</option>
           {MUSCLE_OPTIONS.map((m) => (
-            <option key={m} value={m}>{formatLabel(m)}</option>
+            <option key={m} value={m}>{muscleLabel(m)}</option>
           ))}
         </select>
       </motion.div>
@@ -279,19 +284,19 @@ export default function ExercisesPage() {
                             fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 999,
                             background: "rgba(18,101,254,0.1)", color: ACCENT,
                           }}>
-                            {formatLabel(ex.muscleGroup)}
+                            {muscleLabel(ex.muscleGroup)}
                           </span>
                           <span style={{
                             fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 999,
                             background: "var(--surface-2)", color: "var(--text-muted)",
                           }}>
-                            {formatLabel(ex.equipment)}
+                            {equipLabel(ex.equipment)}
                           </span>
                           <span style={{
                             fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 999,
                             background: diffStyle.bg, color: diffStyle.color,
                           }}>
-                            {formatLabel(ex.difficulty)}
+                            {diffLabel(ex.difficulty)}
                           </span>
                           {ex.isSystem && (
                             <span style={{
@@ -395,7 +400,7 @@ export default function ExercisesPage() {
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "16px 18px 12px",
               }}>
-                <div style={{ fontSize: 17, fontWeight: 900, color: "var(--text)" }}>Edit Exercise</div>
+                <div style={{ fontSize: 17, fontWeight: 900, color: "var(--text)" }}>{t.exLibEdit}</div>
                 <motion.button
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setEditingExercise(null)}
@@ -455,7 +460,7 @@ export default function ExercisesPage() {
                       style={selectStyle}
                     >
                       {MUSCLE_OPTIONS.map((m) => (
-                        <option key={m} value={m}>{formatLabel(m)}</option>
+                        <option key={m} value={m}>{muscleLabel(m)}</option>
                       ))}
                     </select>
                   </div>
@@ -469,7 +474,7 @@ export default function ExercisesPage() {
                       style={selectStyle}
                     >
                       {EQUIPMENT_OPTIONS.map((eq) => (
-                        <option key={eq} value={eq}>{formatLabel(eq)}</option>
+                        <option key={eq} value={eq}>{equipLabel(eq)}</option>
                       ))}
                     </select>
                   </div>
@@ -483,7 +488,7 @@ export default function ExercisesPage() {
                       style={selectStyle}
                     >
                       {DIFFICULTY_OPTIONS.map((d) => (
-                        <option key={d} value={d}>{formatLabel(d)}</option>
+                        <option key={d} value={d}>{diffLabel(d)}</option>
                       ))}
                     </select>
                   </div>
@@ -504,7 +509,7 @@ export default function ExercisesPage() {
                     transition: "background 0.15s, color 0.15s",
                   }}
                 >
-                  {saving ? "Saving…" : "Save Changes"}
+                  {saving ? t.saving : t.saveChanges}
                 </motion.button>
 
               </div>
@@ -609,7 +614,7 @@ export default function ExercisesPage() {
                       style={selectStyle}
                     >
                       {MUSCLE_OPTIONS.map((m) => (
-                        <option key={m} value={m}>{formatLabel(m)}</option>
+                        <option key={m} value={m}>{muscleLabel(m)}</option>
                       ))}
                     </select>
                   </div>
@@ -623,7 +628,7 @@ export default function ExercisesPage() {
                       style={selectStyle}
                     >
                       {EQUIPMENT_OPTIONS.map((eq) => (
-                        <option key={eq} value={eq}>{formatLabel(eq)}</option>
+                        <option key={eq} value={eq}>{equipLabel(eq)}</option>
                       ))}
                     </select>
                   </div>
@@ -637,7 +642,7 @@ export default function ExercisesPage() {
                       style={selectStyle}
                     >
                       {DIFFICULTY_OPTIONS.map((d) => (
-                        <option key={d} value={d}>{formatLabel(d)}</option>
+                        <option key={d} value={d}>{diffLabel(d)}</option>
                       ))}
                     </select>
                   </div>
