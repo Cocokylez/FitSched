@@ -9,6 +9,7 @@ import type { TrackerResult } from "@/components/HikeTracker"
 import { HikeRouteDetail } from "@/components/HikeRouteDetail"
 import type { HikeDetail } from "@/components/HikeRouteDetail"
 import { getPendingHikeCount, queueHike, requestSync, flushPendingHikes } from "@/lib/hikeOfflineQueue"
+import { useLanguage } from "@/context/LanguageContext"
 import { ACCENT } from "@/lib/theme"
 import { fmtDuration } from "@/lib/hikeUtils"
 
@@ -34,6 +35,7 @@ function fmtDate(s: string): string {
 
 export default function HikePage() {
   const router = useRouter()
+  const { t } = useLanguage()
   // Increment to remount/reset the tracker after saving or discarding
   const [trackerKey, setTrackerKey] = useState(0)
 
@@ -287,7 +289,7 @@ export default function HikePage() {
             }}
           >
             <History size={14} strokeWidth={2} />
-            Logs
+            {t.hkLogs}
             {/* Pending sync badge */}
             {pendingCount > 0 && (
               <span style={{
@@ -326,7 +328,7 @@ export default function HikePage() {
                 }}
               >
                 <RefreshCw size={11} strokeWidth={2.5} />
-                {pendingCount} hike{pendingCount > 1 ? "s" : ""} pending sync
+                {pendingCount} {t.hkHikes} {t.hkPendingSync}
               </motion.button>
             )}
           </AnimatePresence>
@@ -351,7 +353,7 @@ export default function HikePage() {
           >
             <CloudOff size={14} color="#facc15" strokeWidth={2.5} />
             <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>
-              Saved offline — will sync when connected
+              {t.hkSavedOffline}
             </span>
           </motion.div>
         )}
@@ -394,7 +396,7 @@ export default function HikePage() {
               </div>
               <div>
                 <span style={{ fontSize: 15, fontWeight: 900, color: ACCENT }}>
-                  +{tokenReward.amount.toFixed(2)} FT earned
+                  +{tokenReward.amount.toFixed(2)} {t.hkFtEarned}
                 </span>
                 <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginLeft: 8 }}>
                   {tokenReward.rewardKm.toFixed(2)} km × 0.5
@@ -417,7 +419,7 @@ export default function HikePage() {
                   <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>
                 </svg>
                 <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", lineHeight: 1.4 }}>
-                  {(tokenReward.totalKm - tokenReward.rewardKm).toFixed(2)} km excluded — speed too high for walking
+                  {(tokenReward.totalKm - tokenReward.rewardKm).toFixed(2)} {t.hkKmExcluded}
                 </span>
               </motion.div>
             )}
@@ -449,7 +451,7 @@ export default function HikePage() {
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
                 <div>
-                  <div style={{ fontWeight: 900, fontSize: 17, color: "var(--text)" }}>Save your hike</div>
+                  <div style={{ fontWeight: 900, fontSize: 17, color: "var(--text)" }}>{t.hkSaveTitle}</div>
                   {pendingResultRef.current && (
                     <div style={{ fontSize: 12, color: ACCENT, marginTop: 3, fontWeight: 700 }}>
                       {pendingResultRef.current.distanceKm} km · {fmtDuration(pendingResultRef.current.durationMin)}
@@ -464,16 +466,16 @@ export default function HikePage() {
 
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: "0.09em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 6 }}>Trail name</label>
-                  <input value={saveName} onChange={e => setSaveName(e.target.value)} placeholder="e.g. Bukit Timah Hill" style={inp} />
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: "0.09em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 6 }}>{t.hkTrailName}</label>
+                  <input value={saveName} onChange={e => setSaveName(e.target.value)} placeholder={t.hkTrailPlaceholder} style={inp} />
                 </div>
                 <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: "0.09em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 6 }}>Location</label>
-                  <input value={saveLoc} onChange={e => setSaveLoc(e.target.value)} placeholder="e.g. Bukit Timah Nature Reserve" style={inp} />
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: "0.09em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 6 }}>{t.hkLocation}</label>
+                  <input value={saveLoc} onChange={e => setSaveLoc(e.target.value)} placeholder={t.hkLocationPlaceholder} style={inp} />
                 </div>
                 <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: "0.09em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 6 }}>Notes</label>
-                  <textarea value={saveNotes} onChange={e => setSaveNotes(e.target.value)} placeholder="How was it?" rows={2} style={{ ...inp, resize: "none" }} />
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: "0.09em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 6 }}>{t.hkNotes}</label>
+                  <textarea value={saveNotes} onChange={e => setSaveNotes(e.target.value)} placeholder={t.hkNotesPlaceholder} rows={2} style={{ ...inp, resize: "none" }} />
                 </div>
                 {saveError && (
                   <div style={{
@@ -498,7 +500,7 @@ export default function HikePage() {
                     boxShadow: saving ? "none" : `0 0 20px rgba(18,101,254,0.3)`,
                   }}
                 >
-                  {saving ? "Saving…" : "Save hike"}
+                  {saving ? t.hkSaving : t.hkSaveHike}
                 </motion.button>
               </div>
             </motion.div>
@@ -530,7 +532,7 @@ export default function HikePage() {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-                <div style={{ fontWeight: 900, fontSize: 17, color: "var(--text)" }}>Hike logs</div>
+                <div style={{ fontWeight: 900, fontSize: 17, color: "var(--text)" }}>{t.hkHikeLogs}</div>
                 <button onClick={() => setShowLogs(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 4, display: "flex" }}>
                   <X size={20} strokeWidth={2} />
                 </button>
@@ -543,10 +545,10 @@ export default function HikePage() {
                 const totalElev = logs.reduce((s, l) => s + (l.elevationM ?? 0), 0)
                 const totalHrs  = (totalMin / 60).toFixed(1)
                 const chips = [
-                  { label: "Hikes",     value: String(logs.length) },
-                  { label: "Distance",  value: `${totalKm.toFixed(1)} km` },
-                  { label: "Elevation", value: `↑${totalElev.toLocaleString()} m` },
-                  { label: "Time",      value: `${totalHrs} h` },
+                  { label: t.hkChipHikes,     value: String(logs.length) },
+                  { label: t.hkChipDistance,  value: `${totalKm.toFixed(1)} km` },
+                  { label: t.hkChipElevation, value: `↑${totalElev.toLocaleString()} m` },
+                  { label: t.hkChipTime,      value: `${totalHrs} h` },
                 ]
                 return (
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 7, marginBottom: 16 }}>
@@ -564,9 +566,9 @@ export default function HikePage() {
               })()}
 
               {logsLoading ? (
-                <div style={{ textAlign: "center", color: "var(--text-muted)", padding: "32px 0", fontSize: 13 }}>Loading…</div>
+                <div style={{ textAlign: "center", color: "var(--text-muted)", padding: "32px 0", fontSize: 13 }}>{t.hkLoading}</div>
               ) : logs.length === 0 ? (
-                <div style={{ textAlign: "center", color: "var(--text-muted)", padding: "32px 0", fontSize: 13 }}>No hikes logged yet.</div>
+                <div style={{ textAlign: "center", color: "var(--text-muted)", padding: "32px 0", fontSize: 13 }}>{t.hkNoHikes}</div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {logs.map(log => (
