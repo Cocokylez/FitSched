@@ -10,6 +10,7 @@ import {
   ResponsiveContainer, ReferenceLine,
 } from "recharts"
 import { ACCENT } from "@/lib/theme"
+import { useLanguage } from "@/context/LanguageContext"
 import { kgToLbs, lbsToKg } from "@/lib/formatUtils"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -38,6 +39,7 @@ function fmtDateLong(iso: string) {
 export default function WeightPage() {
   const { status } = useSession()
   const router = useRouter()
+  const { t } = useLanguage()
 
   const [entries, setEntries] = useState<WeightEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -161,20 +163,20 @@ export default function WeightPage() {
           }}
         >
           <ArrowLeft size={16} strokeWidth={2.2} />
-          Profile
+          {t.profTitle}
         </button>
 
         {/* Header row */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
           <div>
             <div style={{ fontSize: 22, fontWeight: 950, color: "var(--text)", letterSpacing: "-0.3px" }}>
-              Weight Log
+              {t.profWeightLog}
             </div>
             <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-              {entries.length} {entries.length === 1 ? "entry" : "entries"}
+              {entries.length} {entries.length === 1 ? t.wtEntry : t.profEntries}
               {goalKg != null && (
                 <span style={{ marginLeft: 8, color: "#f97316", fontWeight: 700 }}>
-                  · Goal: {displayWeight(goalKg)} {unit}
+                  · {t.wtGoal} {displayWeight(goalKg)} {unit}
                 </span>
               )}
             </div>
@@ -224,7 +226,7 @@ export default function WeightPage() {
               }}
             >
               <Plus size={15} strokeWidth={2.5} />
-              Log weight
+              {t.wtLogWeight}
             </motion.button>
           </div>
         </div>
@@ -247,13 +249,13 @@ export default function WeightPage() {
                 style={{ width: "100%", maxWidth: 480, background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 24, padding: "24px 22px 28px", boxShadow: "0 20px 70px rgba(0,0,0,0.45)" }}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-                  <div style={{ fontSize: 17, fontWeight: 900, color: "var(--text)" }}>Set weight goal</div>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "var(--text)" }}>{t.wtSetGoalTitle}</div>
                   <button onClick={() => setShowGoalModal(false)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: 4 }}>
                     <X size={18} />
                   </button>
                 </div>
                 <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 14, lineHeight: 1.5 }}>
-                  Set a target weight to track your progress toward your goal.
+                  {t.wtGoalDesc}
                 </div>
                 <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                   <input
@@ -261,7 +263,7 @@ export default function WeightPage() {
                     type="number"
                     inputMode="decimal"
                     step="0.1"
-                    placeholder={unit === "lbs" ? "e.g. 154.3" : "e.g. 70.0"}
+                    placeholder={`${t.wtEg} ${unit === "lbs" ? "154.3" : "70.0"}`}
                     value={goalInput}
                     onChange={(e) => setGoalInput(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") saveGoal() }}
@@ -275,7 +277,7 @@ export default function WeightPage() {
                       onClick={() => { clearGoal(); setShowGoalModal(false) }}
                       style={{ flex: 1, padding: "12px", borderRadius: 12, border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text-muted)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
                     >
-                      Clear goal
+                      {t.wtClearGoal}
                     </button>
                   )}
                   <motion.button
@@ -283,7 +285,7 @@ export default function WeightPage() {
                     onClick={saveGoal}
                     style={{ flex: 2, padding: "13px", borderRadius: 12, border: "none", background: "#f97316", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer" }}
                   >
-                    Set goal
+                    {t.wtSetGoal}
                   </motion.button>
                 </div>
               </motion.div>
@@ -306,20 +308,20 @@ export default function WeightPage() {
               }}
             >
               <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", color: "var(--text-muted)", marginBottom: 14 }}>
-                NEW ENTRY
+                {t.wtNewEntry}
               </div>
 
               <div style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 6 }}>
-                    Weight ({unit})
+                    {t.setWeight} ({unit})
                   </div>
                   <input
                     ref={inputRef}
                     type="number"
                     inputMode="decimal"
                     step="0.1"
-                    placeholder={unit === "lbs" ? "e.g. 159.8" : "e.g. 72.5"}
+                    placeholder={`${t.wtEg} ${unit === "lbs" ? "159.8" : "72.5"}`}
                     value={inputKg}
                     onChange={(e) => setInputKg(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") handleSave() }}
@@ -344,7 +346,7 @@ export default function WeightPage() {
                       opacity: saving ? 0.7 : 1,
                     }}
                   >
-                    {saving ? "…" : "Save"}
+                    {saving ? "…" : t.wtSave}
                   </motion.button>
                   <button
                     onClick={() => { setShowForm(false); setInputKg(""); setInputNotes("") }}
@@ -354,7 +356,7 @@ export default function WeightPage() {
                       color: "var(--text-muted)", cursor: "pointer",
                     }}
                   >
-                    Cancel
+                    {t.cancel}
                   </button>
                 </div>
               </div>
@@ -362,7 +364,7 @@ export default function WeightPage() {
               {/* Optional notes */}
               <input
                 type="text"
-                placeholder="Optional note (e.g. post-run)"
+                placeholder={t.wtNotePlaceholder}
                 value={inputNotes}
                 onChange={(e) => setInputNotes(e.target.value)}
                 maxLength={200}
@@ -395,7 +397,7 @@ export default function WeightPage() {
                 <span style={{ fontSize: 18, fontWeight: 700, color: "var(--text-muted)", marginLeft: 4 }}>{unit}</span>
               </div>
               <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6, fontWeight: 700 }}>
-                Last logged · {fmtDateLong(latest.loggedAt)}
+                {t.wtLastLogged} · {fmtDateLong(latest.loggedAt)}
               </div>
             </div>
             {diff !== null && (
@@ -419,7 +421,7 @@ export default function WeightPage() {
                 }}>
                   {diff > 0 ? "+" : ""}{displayDiff(diff).toFixed(1)}
                 </div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.08em" }}>vs PREV</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.08em" }}>{t.wtVsPrev}</div>
               </div>
             )}
           </motion.div>
@@ -438,15 +440,15 @@ export default function WeightPage() {
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)" }}>
-                Weight trend
+                {t.profWeightTrend}
               </div>
               {goalKg != null && (
                 <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 800, color: "#f97316" }}>
                   <div style={{ width: 16, height: 2, background: "#f97316", borderRadius: 1 }} />
-                  Goal: {displayWeight(goalKg)} {unit}
+                  {t.wtGoal} {displayWeight(goalKg)} {unit}
                   {latest && (
                     <span style={{ color: "var(--text-muted)", fontWeight: 600 }}>
-                      ({latest.weightKg > goalKg ? `${(displayWeight(latest.weightKg) - displayWeight(goalKg)).toFixed(1)} ${unit} to go` : "reached"})
+                      ({latest.weightKg > goalKg ? `${(displayWeight(latest.weightKg) - displayWeight(goalKg)).toFixed(1)} ${unit} ${t.wtToGo}` : t.wtReached})
                     </span>
                   )}
                 </div>
@@ -476,7 +478,7 @@ export default function WeightPage() {
                     background: "var(--panel)", border: "1px solid var(--border)",
                     borderRadius: 10, fontSize: 12, fontWeight: 700,
                   }}
-                  formatter={(v: number) => [`${v} ${unit}`, "Weight"]}
+                  formatter={(v: number) => [`${v} ${unit}`, t.setWeight]}
                 />
                 {latest && (
                   <ReferenceLine
@@ -492,7 +494,7 @@ export default function WeightPage() {
                     stroke="#f97316"
                     strokeDasharray="6 3"
                     strokeWidth={1.5}
-                    label={{ value: `Goal`, position: "insideTopRight", fontSize: 9, fill: "#f97316", fontWeight: 800 }}
+                    label={{ value: t.wtGoalShort, position: "insideTopRight", fontSize: 9, fill: "#f97316", fontWeight: 800 }}
                   />
                 )}
                 <Line
@@ -524,10 +526,10 @@ export default function WeightPage() {
               </svg>
             </div>
             <div style={{ fontSize: 16, fontWeight: 800, color: "var(--text)", marginBottom: 8 }}>
-              No entries yet
+              {t.wtNoEntries}
             </div>
             <div style={{ fontSize: 13, lineHeight: 1.55 }}>
-              Tap &ldquo;Log weight&rdquo; to start tracking your progress.
+              {t.wtEmptyHint}
             </div>
           </motion.div>
         )}
@@ -544,7 +546,7 @@ export default function WeightPage() {
             }}
           >
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", padding: "14px 18px 10px" }}>
-              History
+              {t.history}
             </div>
             {[...entries].reverse().map((entry, i) => (
               <div
