@@ -33,23 +33,24 @@ function getStoredTargetMuscles(): string[] {
   }
 }
 
-function getExerciseDesc(name: string): string {
+// Returns a translation key for the exercise's short description.
+function getExerciseDescKey(name: string): string {
   const n = name.toLowerCase()
-  if (n.includes("incline push")) return "Beginner-friendly push-up using an elevated surface."
-  if (n.includes("push-up") || n.includes("pushup")) return "A bodypress that trains chest, triceps, shoulders, and core."
-  if (n.includes("shoulder tap")) return "A push-up followed by alternating shoulder taps."
-  if (n.includes("diamond")) return "Close-grip push-up targeting triceps and inner chest."
-  if (n.includes("tricep dip")) return "Dip movement for tricep isolation and shoulder stability."
-  if (n.includes("pull-up") || n.includes("pullup")) return "Vertical pull targeting lats, biceps, and upper back."
-  if (n.includes("bicep curl") || n.includes("curl")) return "Isolation movement for bicep peak and arm strength."
-  if (n.includes("squat")) return "Compound lower-body movement for quads, glutes, and hips."
-  if (n.includes("lunge")) return "Unilateral leg exercise for balance and quad development."
-  if (n.includes("plank")) return "Isometric core hold building total trunk stability."
-  if (n.includes("burpee")) return "Full-body explosive movement combining squat, push-up, and jump."
-  if (n.includes("lateral raise")) return "Isolation movement for medial deltoid width."
-  if (n.includes("russian twist")) return "Rotational core movement targeting obliques."
-  if (n.includes("mountain climb")) return "Dynamic core exercise with cardio benefit."
-  return "Compound movement for strength and endurance."
+  if (n.includes("incline push")) return "descInclinePush"
+  if (n.includes("push-up") || n.includes("pushup")) return "descPushup"
+  if (n.includes("shoulder tap")) return "descShoulderTap"
+  if (n.includes("diamond")) return "descDiamond"
+  if (n.includes("tricep dip")) return "descTricepDip"
+  if (n.includes("pull-up") || n.includes("pullup")) return "descPullup"
+  if (n.includes("bicep curl") || n.includes("curl")) return "descBicepCurl"
+  if (n.includes("squat")) return "descSquat"
+  if (n.includes("lunge")) return "descLunge"
+  if (n.includes("plank")) return "descPlank"
+  if (n.includes("burpee")) return "descBurpee"
+  if (n.includes("lateral raise")) return "descLateralRaise"
+  if (n.includes("russian twist")) return "descRussianTwist"
+  if (n.includes("mountain climb")) return "descMountainClimb"
+  return "descDefault"
 }
 
 
@@ -72,6 +73,7 @@ export default function WorkoutPage() {
   const [completedDateIds, setCompletedDateIds] = useState<Set<string>>(new Set())
   const { t, language } = useLanguage()
   const { theme, toggleTheme } = useTheme()
+  const MUSCLE_LABEL: Record<string, string> = { Chest: t.muChest, Back: t.muBack, Legs: t.muLegs, Shoulders: t.muShoulders, Arms: t.muArms, Core: t.muCore, "Full Body": t.muFullBody, Cardio: t.muCardio }
   const [smartExercises, setSmartExercises] = useState<Array<[string, string]> | null>(null)
   const [userProfile, setUserProfile] = useState<{
     fitnessGoal?: string | null
@@ -315,7 +317,7 @@ export default function WorkoutPage() {
                 onClick={startTrainAgain}
                 style={{ border: "1px solid rgba(18,101,254,0.4)", background: "rgba(18,101,254,0.12)", color: ACCENT, borderRadius: 999, padding: "10px 22px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}
               >
-                Train again · {getSplitLabel([freshTarget])}
+                {t.wTrainAgain} · {getSplitLabel([freshTarget])}
               </motion.button>
             )}
           </div>
@@ -426,7 +428,7 @@ export default function WorkoutPage() {
           style={{ marginBottom: 14 }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)" }}>Weekly goal</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)" }}>{t.wWeeklyGoal}</span>
             <span style={{ fontSize: 11, fontWeight: 800, color: weeklyGoalMet ? ACCENT : "var(--text-muted)", fontVariantNumeric: "tabular-nums", display: "flex", alignItems: "center", gap: 4 }}>
               {weeklyDone} / {workoutsPerWeek}
               {weeklyGoalMet && (
@@ -451,7 +453,7 @@ export default function WorkoutPage() {
           <div>
             <div className="display-text" style={{ fontSize: 32, fontWeight: 950, color: "var(--text)", letterSpacing: "-0.5px", marginBottom: 4 }}>{muscle}</div>
             <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-              {computing ? "Computing…" : `${todayExercises.length} exercises · ${Math.round(todayExercises.length * 4)} min · medium`}
+              {computing ? t.wComputing : `${todayExercises.length} ${t.exercisesCount} · ${Math.round(todayExercises.length * 4)} ${t.wMin} · ${t.wMedium}`}
             </div>
           </div>
           <button
@@ -468,7 +470,7 @@ export default function WorkoutPage() {
               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
               <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
             </svg>
-            Templates
+            {t.wTemplates}
           </button>
         </div>
 
@@ -491,7 +493,7 @@ export default function WorkoutPage() {
               return (
                 <div key={group} style={{ display: "flex", alignItems: "center", gap: 4, background: bg, border: `1px solid ${color}33`, borderRadius: 20, padding: "4px 9px", fontSize: 10, fontWeight: 800, color }}>
                   <span style={{ width: 5, height: 5, borderRadius: "50%", background: color, flexShrink: 0 }} />
-                  {group}
+                  {MUSCLE_LABEL[group] ?? group}
                 </div>
               )
             })}
@@ -516,13 +518,13 @@ export default function WorkoutPage() {
           }}>
             <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
-              Template active — {templateExercises.length} exercises
+              {t.wTemplateActive} {templateExercises.length} {t.exercisesCount}
             </span>
             <button
               onClick={() => setTemplateExercises(null)}
               style={{ background: "none", border: "none", cursor: "pointer", color: ACCENT, fontSize: 11, fontWeight: 800, padding: "2px 0" }}
             >
-              Reset ×
+              {t.wReset} ×
             </button>
           </div>
         )}
@@ -579,7 +581,7 @@ export default function WorkoutPage() {
                     {/* Info */}
                     <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center", gap: 5 }}>
                       <div style={{ fontSize: 17, fontWeight: 950, color: "var(--text)", letterSpacing: "-0.2px", lineHeight: 1.1 }}>{name}</div>
-                      <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.4 }}>{getExerciseDesc(name)}</div>
+                      <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.4 }}>{(t as unknown as Record<string, string>)[getExerciseDescKey(name)]}</div>
                     </div>
                   </div>
                 </motion.div>
@@ -645,7 +647,7 @@ export default function WorkoutPage() {
                   borderRadius: 16, padding: "13px 24px", fontSize: 14, fontWeight: 800, cursor: "pointer",
                 }}
               >
-                Train again · {getSplitLabel([freshTarget])}
+                {t.wTrainAgain} · {getSplitLabel([freshTarget])}
               </motion.button>
             )}
           </div>
