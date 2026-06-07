@@ -13,11 +13,11 @@ import { PasswordGate } from "@/components/PasswordGate"
 
 type WorkoutEnvironment = "home_bodyweight" | "home_dumbbells" | "gym"
 
-const ENV_OPTIONS: Array<{ id: WorkoutEnvironment; Icon: typeof Home; label: string; sub: string }> = [
-  { id: "home_bodyweight", Icon: Home, label: "Home", sub: "Bodyweight" },
-  { id: "home_dumbbells", Icon: Dumbbell, label: "+ DBs", sub: "Dumbbells" },
-  { id: "gym", Icon: Building2, label: "Gym", sub: "Full kit" },
-]
+const ENV_OPTIONS = [
+  { id: "home_bodyweight", Icon: Home, labelKey: "setEnvHome", subKey: "setEnvHomeSub" },
+  { id: "home_dumbbells", Icon: Dumbbell, labelKey: "setEnvDbs", subKey: "setEnvDbsSub" },
+  { id: "gym", Icon: Building2, labelKey: "setEnvGym", subKey: "setEnvGymSub" },
+] as const
 
 function getInitials(name?: string | null, email?: string | null) {
   const source = name?.trim() || email?.split("@")[0] || "U"
@@ -503,9 +503,9 @@ export default function SettingsPage() {
     if (!iso) return null
     const diff = Date.now() - new Date(iso).getTime()
     const mins = Math.floor(diff / 60000)
-    if (mins < 1) return "Just now"
-    if (mins < 60) return `${mins} min ago`
-    return `${Math.floor(mins / 60)}h ago`
+    if (mins < 1) return t.justNow
+    if (mins < 60) return `${mins} ${t.minsAgoSuffix}`
+    return `${Math.floor(mins / 60)} ${t.hoursAgoSuffix}`
   }
 
   const profileName = localName || session?.user?.name || t.user
@@ -566,8 +566,8 @@ export default function SettingsPage() {
       <SectionLabel>{t.earnings}</SectionLabel>
       <SectionCard>
         <Row
-          label="FitTokens balance"
-          sublabel="Earned from workouts"
+          label={t.setFtBalance}
+          sublabel={t.setEarnedFrom}
           right={
             <span style={{ fontSize: 16, fontWeight: 800, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>
               {loading ? <Skeleton width={48} height={16} radius={5} /> : formatFT(fitTokenBalance)}
@@ -576,23 +576,23 @@ export default function SettingsPage() {
         />
         <Row
           divider
-          label="Withdraw"
+          label={t.setWithdraw}
           onClick={() => router.push("/withdrawal")}
           right={<Chevron />}
         />
       </SectionCard>
 
       {/* CALENDAR */}
-      <SectionLabel>CALENDAR</SectionLabel>
+      <SectionLabel>{t.calendar}</SectionLabel>
       <SectionCard>
         <Row
-          label="Google Calendar"
-          sublabel="Read-only · sync nightly"
+          label={t.setGoogleCal}
+          sublabel={t.setCalSub}
           onClick={isCalendarConnected ? undefined : connectCalendar}
           right={
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ fontSize: 13, color: isCalendarConnected ? ACCENT : "var(--text-muted)", fontWeight: 700 }}>
-                {connecting ? "Connecting…" : isCalendarConnected ? "On" : "Off"}
+                {connecting ? t.setConnecting : isCalendarConnected ? t.setOn : t.setOff}
               </span>
               <Chevron />
             </div>
@@ -601,11 +601,11 @@ export default function SettingsPage() {
         {isCalendarConnected && (
           <Row
             divider
-            label="Sync now"
+            label={t.syncNow}
             onClick={syncing ? undefined : syncCalendar}
             right={
               <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600 }}>
-                {syncing ? "Syncing…" : lastSynced ? `Last ${formatLastSync(lastSynced)}` : "Tap to sync"}
+                {syncing ? t.syncing : lastSynced ? `${t.setLastPrefix} ${formatLastSync(lastSynced)}` : t.setTapSync}
               </span>
             }
           />
@@ -613,7 +613,7 @@ export default function SettingsPage() {
         {isCalendarConnected && (
           <Row
             divider
-            label={<span style={{ color: "#d96060" }}>Disconnect</span>}
+            label={<span style={{ color: "#d96060" }}>{t.disconnect}</span>}
             onClick={disconnectCalendar}
           />
         )}
@@ -631,10 +631,10 @@ export default function SettingsPage() {
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
               {([
-                { id: "lose_weight",       label: "Lose Weight", Icon: Flame,    color: "#f97316" },
-                { id: "build_muscle",      label: "Build Muscle", Icon: Dumbbell, color: ACCENT   },
-                { id: "stay_active",       label: "Stay Active",  Icon: Activity, color: "#60a5fa" },
-                { id: "improve_endurance", label: "Endurance",    Icon: Zap,      color: "#eab308" },
+                { id: "lose_weight",       label: t.setGoalLose,      Icon: Flame,    color: "#f97316" },
+                { id: "build_muscle",      label: t.setGoalBuild,     Icon: Dumbbell, color: ACCENT   },
+                { id: "stay_active",       label: t.setGoalActive,    Icon: Activity, color: "#60a5fa" },
+                { id: "improve_endurance", label: t.setGoalEndurance, Icon: Zap,      color: "#eab308" },
               ] as const).map((opt) => {
                 const selected = fitnessGoal === opt.id
                 return (
@@ -670,9 +670,9 @@ export default function SettingsPage() {
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 7 }}>
               {([
-                { id: "beginner",     label: "Beginner",     sub: "Just starting" },
-                { id: "intermediate", label: "Intermediate", sub: "Some experience" },
-                { id: "advanced",     label: "Advanced",     sub: "Well-trained" },
+                { id: "beginner",     label: t.setLvlBeginner, sub: t.setLvlBeginnerSub },
+                { id: "intermediate", label: t.setLvlInter,    sub: t.setLvlInterSub },
+                { id: "advanced",     label: t.setLvlAdv,      sub: t.setLvlAdvSub },
               ] as const).map((opt) => {
                 const selected = experienceLevel === opt.id
                 return (
@@ -705,8 +705,8 @@ export default function SettingsPage() {
           <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>{t.bodyStats}</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {([
-              { label: "Height", field: "heightCm" as const, value: heightInput, setter: setHeightInput, unit: "cm",       min: 100, max: 250,  placeholder: "175"  },
-              { label: "Weight", field: "weightKg" as const, value: weightInput, setter: setWeightInput, unit: weightUnit, min: weightUnit === "lbs" ? 44 : 20, max: weightUnit === "lbs" ? 1100 : 500, placeholder: weightUnit === "lbs" ? "154" : "70" },
+              { label: t.setHeight, field: "heightCm" as const, value: heightInput, setter: setHeightInput, unit: "cm",       min: 100, max: 250,  placeholder: "175"  },
+              { label: t.setWeight, field: "weightKg" as const, value: weightInput, setter: setWeightInput, unit: weightUnit, min: weightUnit === "lbs" ? 44 : 20, max: weightUnit === "lbs" ? 1100 : 500, placeholder: weightUnit === "lbs" ? "154" : "70" },
             ]).map(({ label, field, value, setter, unit, min, max, placeholder }) => (
               <div key={field}>
                 <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, marginBottom: 5 }}>{label}</div>
@@ -739,7 +739,7 @@ export default function SettingsPage() {
       </SectionCard>
 
       {/* WORKOUT SETUP */}
-      <SectionLabel>WORKOUT SETUP</SectionLabel>
+      <SectionLabel>{t.workoutSetup}</SectionLabel>
       <SectionCard>
         <div style={{ padding: "12px 14px" }}>
           {loading ? (
@@ -767,8 +767,8 @@ export default function SettingsPage() {
                     }}
                   >
                     <opt.Icon size={18} strokeWidth={1.8} />
-                    <span style={{ fontSize: 12, fontWeight: 800, lineHeight: 1.1 }}>{opt.label}</span>
-                    <span style={{ color: "var(--text-muted)", fontSize: 10 }}>{opt.sub}</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, lineHeight: 1.1 }}>{t[opt.labelKey]}</span>
+                    <span style={{ color: "var(--text-muted)", fontSize: 10 }}>{t[opt.subKey]}</span>
                   </button>
                 )
               })}
@@ -777,7 +777,7 @@ export default function SettingsPage() {
         </div>
         <Row
           divider
-          label="Workouts per week"
+          label={t.setPerWeek}
           right={loading ? <Skeleton width={90} height={22} radius={8} /> : (
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <button
@@ -789,7 +789,7 @@ export default function SettingsPage() {
                 −
               </button>
               <span style={{ fontSize: 14, fontWeight: 800, color: "var(--text)", minWidth: 52, textAlign: "center", fontVariantNumeric: "tabular-nums" }}>
-                {workoutsPerWeek}× / wk
+                {workoutsPerWeek}{t.setPerWeekUnit}
               </span>
               <button
                 type="button"
@@ -804,35 +804,35 @@ export default function SettingsPage() {
         />
         <Row
           divider
-          label="Exercise Library"
-          sublabel="Browse & manage exercises"
+          label={t.setExLibrary}
+          sublabel={t.setExLibrarySub}
           onClick={() => router.push("/exercises")}
           right={<Chevron />}
         />
       </SectionCard>
 
       {/* PREFERENCES */}
-      <SectionLabel>PREFERENCES</SectionLabel>
+      <SectionLabel>{t.preferences}</SectionLabel>
       <SectionCard>
         <Row
-          label="Notifications"
+          label={t.setNotifications}
           sublabel={
-            pushLoading ? "Updating…"
+            pushLoading ? t.setUpdating
             : pushError  ? pushError
-            : pushEnabled ? "Enabled"
+            : pushEnabled ? t.enabled
             : t.workoutReminders
           }
           right={<Toggle on={pushEnabled} onToggle={togglePush} loading={pushLoading} />}
         />
         <Row
           divider
-          label="Appearance"
-          sublabel={theme === "dark" ? "Dark mode" : "Light mode"}
+          label={t.setAppearance}
+          sublabel={theme === "dark" ? t.setDarkMode : t.setLightMode}
           right={<Toggle on={theme === "dark"} onToggle={toggleTheme} />}
         />
         <Row
           divider
-          label="Language"
+          label={t.language}
           right={
             <motion.button
               onClick={cycleLanguage}
@@ -847,8 +847,8 @@ export default function SettingsPage() {
         />
         <Row
           divider
-          label="Version"
-          right={<span style={{ fontSize: 13, color: "var(--text-muted)" }}>1.0.0</span>}
+          label={t.version}
+          right={<span style={{ fontSize: 13, color: "var(--text-muted)" }}>1.0.2</span>}
         />
       </SectionCard>
 
@@ -856,15 +856,15 @@ export default function SettingsPage() {
       {profileEmail.endsWith("@fitsched.guest") && (
         <div style={{ padding: "20px 16px 0" }}>
           <div style={{ background: "rgba(18,101,254,0.08)", border: "1px solid rgba(18,101,254,0.25)", borderRadius: 16, padding: "16px 18px" }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text)", marginBottom: 4 }}>Your progress is temporary</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text)", marginBottom: 4 }}>{t.yourProgressIsTemporary}</div>
             <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.55, marginBottom: 12 }}>
-              Guest accounts are not saved. Create a free account to keep your streak, workouts, and FitTokens.
+              {t.setGuestBody}
             </div>
             <button
               onClick={async () => { await signOut({ redirect: false }); router.push("/register") }}
               style={{ width: "100%", background: ACCENT, border: "none", borderRadius: 12, padding: "11px", fontSize: 13, fontWeight: 800, color: "#0d1f1e", cursor: "pointer" }}
             >
-              Create a free account
+              {t.setCreateFree}
             </button>
           </div>
         </div>
@@ -885,7 +885,7 @@ export default function SettingsPage() {
           onClick={() => { setShowDeleteModal(true); setDeleteConfirm("") }}
           style={{ width: "100%", marginTop: 10, background: "transparent", border: "none", color: "var(--text-muted)", fontSize: 13, cursor: "pointer", padding: "10px", textDecoration: "underline", textDecorationColor: "var(--border)" }}
         >
-          Delete account
+          {t.deleteAccount}
         </button>
         <div style={{ textAlign: "center", fontSize: 11, color: "var(--text-muted)", marginTop: 8 }}>
           FitSched v1.0.2
@@ -910,9 +910,9 @@ export default function SettingsPage() {
                   <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
                 </svg>
               </div>
-              <div className="display-text" style={{ fontSize: 19, fontWeight: 800, color: "var(--text)", marginBottom: 6 }}>Delete your account?</div>
+              <div className="display-text" style={{ fontSize: 19, fontWeight: 800, color: "var(--text)", marginBottom: 6 }}>{t.setDeleteTitle}</div>
               <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.55, marginBottom: 20 }}>
-                This permanently deletes your profile, workout history, streak, and FitTokens. There is no undo.
+                {t.setDeleteBody}
               </p>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 8 }}>
                 {t.typeDeleteToConfirm}
@@ -922,12 +922,12 @@ export default function SettingsPage() {
                 style={{ width: "100%", boxSizing: "border-box", background: "var(--surface-2)", border: `1px solid ${deleteConfirm === "DELETE" ? "rgba(220,50,50,0.6)" : "var(--border)"}`, borderRadius: 12, padding: "13px 14px", color: "var(--text)", fontSize: 14, outline: "none", marginBottom: 20, fontFamily: "monospace", transition: "border-color 0.2s" }}
               />
               <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={() => setShowDeleteModal(false)} style={{ flex: 1, padding: 13, borderRadius: 14, fontSize: 14, fontWeight: 600, background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", cursor: "pointer" }}>Cancel</button>
+                <button onClick={() => setShowDeleteModal(false)} style={{ flex: 1, padding: 13, borderRadius: 14, fontSize: 14, fontWeight: 600, background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", cursor: "pointer" }}>{t.cancel}</button>
                 <button
                   onClick={deleteAccount} disabled={deleteConfirm !== "DELETE" || deleting}
                   style={{ flex: 1, padding: 13, borderRadius: 14, fontSize: 14, fontWeight: 700, background: deleteConfirm === "DELETE" ? "rgba(220,50,50,0.88)" : "rgba(220,50,50,0.25)", border: "none", color: "#fff", cursor: deleteConfirm === "DELETE" ? "pointer" : "default", transition: "background 0.2s", opacity: deleting ? 0.6 : 1 }}
                 >
-                  {deleting ? "Deleting…" : "Delete account"}
+                  {deleting ? t.setDeleting : t.deleteAccount}
                 </button>
               </div>
             </motion.div>
