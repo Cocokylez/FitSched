@@ -27,11 +27,6 @@ const SWAP_POOL: Record<string, string[]> = {
 }
 
 const CONFETTI = Array.from({ length: 42 }, (_, i) => ({ id: i, left: 8 + ((i * 17) % 84), delay: (i % 9) * 0.08, drift: ((i % 7) - 3) * 18, rotate: ((i * 47) % 220) - 110, color: [ACCENT, "#f6d365", "#f97373", "#8ab4ff", "#ffffff"][i % 5] }))
-const FEEDBACK_OPTIONS: Array<{ value: SessionFeedback; label: string; detail: string }> = [
-  { value: "too_easy", label: "Too easy", detail: "Add challenge" },
-  { value: "just_right", label: "Just right", detail: "Keep pace" },
-  { value: "too_hard", label: "Too hard", detail: "Scale back" },
-]
 
 type ActiveExercise = { name: string; sets: number; reps: number; weight?: number }
 type ActiveWorkout = { date: string; workoutName: string; exercises: ActiveExercise[] }
@@ -65,11 +60,11 @@ function formatTime(s: number) {
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`
 }
 
-function daysAgoLabel(iso: string): string {
+function daysAgoLabel(iso: string, t: { exToday: string; exYesterday: string; exDaysAgo: string }): string {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24))
-  if (days === 0) return "today"
-  if (days === 1) return "yesterday"
-  return `${days}d ago`
+  if (days === 0) return t.exToday
+  if (days === 1) return t.exYesterday
+  return `${days}${t.exDaysAgo}`
 }
 
 // Circuit rotation. After each set we move to the next exercise that still owes
@@ -286,6 +281,15 @@ export default function ExerciseSessionPage() {
     setRestSeconds(restDuration)
   }
 
+  // Skip the rest timer — must run the pending "advance to next exercise"
+  // callback, otherwise ending rest early strands you on the finished exercise.
+  function skipRest() {
+    const fn = afterRestRef.current
+    afterRestRef.current = null
+    setRestSeconds(null)
+    if (fn) fn()
+  }
+
   function saveSessionFeedback(value: SessionFeedback) {
     if (!workout) return
     setSessionFeedback(value)
@@ -376,13 +380,13 @@ export default function ExerciseSessionPage() {
         <div style={{ maxWidth: 420, width: "100%", textAlign: "center" }}>
           {lockReason === "quit" ? (
             <>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>You already exited today&apos;s session</div>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 28, lineHeight: 1.5 }}>Come back tomorrow for a fresh workout and full FitToken reward.</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>{t.exExitedTitle}</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 28, lineHeight: 1.5 }}>{t.exExitedBody}</div>
               <button
                 disabled
                 style={{ width: "100%", border: "none", borderRadius: 16, padding: "16px", background: "var(--surface-2)", color: "var(--text-muted)", fontSize: 15, fontWeight: 900, cursor: "not-allowed", opacity: 0.5 }}
               >
-                Go Exercise
+                {t.exGoExercise}
               </button>
             </>
           ) : (
@@ -426,15 +430,15 @@ export default function ExerciseSessionPage() {
           <div style={{ padding: "20px 24px 0" }}>
             <button type="button" onClick={() => router.push("/workout")} style={{ display: "flex", alignItems: "center", gap: 6, border: "none", background: "transparent", cursor: "pointer", padding: 0, color: "#888", fontSize: 13, fontWeight: 600 }}>
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-              Back
+              {t.back}
             </button>
           </div>
           {/* Content */}
           <div style={{ flex: 1, padding: "24px 24px 32px" }}>
-            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.14em", color: "#bbb", marginBottom: 10 }}>TODAY&apos;S WORKOUT</div>
+            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.14em", color: "#bbb", marginBottom: 10 }}>{t.exTodaysWorkout}</div>
             <div style={{ fontSize: 44, fontWeight: 950, letterSpacing: "-1.5px", color: "#111", marginBottom: 6, lineHeight: 1.05 }}>{workout.workoutName}</div>
             <div style={{ fontSize: 14, color: "#999", fontWeight: 600, marginBottom: 32 }}>
-              {workout.exercises.length} exercises · {Math.round(totalSets * 0.75)} min
+              {workout.exercises.length} {t.exercisesCount} · {Math.round(totalSets * 0.75)} {t.wMin}
             </div>
             {/* Exercise list */}
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -455,7 +459,7 @@ export default function ExerciseSessionPage() {
           <div style={{ padding: "16px 24px", paddingBottom: "max(24px, env(safe-area-inset-bottom))", borderTop: "1px solid #f0f0f0", background: "#fff" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, padding: "10px 14px", background: "rgba(255,160,0,0.07)", border: "1px solid rgba(255,160,0,0.24)", borderRadius: 12 }}>
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ffa000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#ffa000", lineHeight: 1.4 }}>One shot only — exit means no FitTokens today</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#ffa000", lineHeight: 1.4 }}>{t.exOneShot}</span>
             </div>
             <motion.button
               type="button"
@@ -463,7 +467,7 @@ export default function ExerciseSessionPage() {
               onClick={() => setPhase("permission")}
               style={{ width: "100%", border: "none", borderRadius: 16, padding: "17px", background: "#111", color: "#fff", fontSize: 16, fontWeight: 950, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
             >
-              Let&apos;s Go
+              {t.exLetsGo}
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
             </motion.button>
           </div>
@@ -485,9 +489,9 @@ export default function ExerciseSessionPage() {
               <path d="M9 7l1.5 3L12 8l1.5 2L15 7"/>
             </svg>
           </div>
-          <div style={{ fontSize: 30, fontWeight: 950, letterSpacing: "-0.5px", marginBottom: 12 }}>Track your movement</div>
+          <div style={{ fontSize: 30, fontWeight: 950, letterSpacing: "-0.5px", marginBottom: 12 }}>{t.exTrackTitle}</div>
           <div style={{ fontSize: 14, color: "#888", lineHeight: 1.65, marginBottom: 40 }}>
-            FitSched uses your device&apos;s motion sensors to verify your workout and award full FitTokens. Your data never leaves your device.
+            {t.exTrackBody}
           </div>
           <motion.button
             type="button"
@@ -495,14 +499,14 @@ export default function ExerciseSessionPage() {
             onClick={() => { startVerify(); setVerifySettled(true); setPhase("countdown") }}
             style={{ width: "100%", border: "none", borderRadius: 16, padding: "17px", background: "#111", color: "#fff", fontSize: 15, fontWeight: 950, cursor: "pointer", marginBottom: 10 }}
           >
-            Enable Motion Tracking
+            {t.exEnableMotion}
           </motion.button>
           <button
             type="button"
             onClick={() => { setVerifySettled(true); setPhase("countdown") }}
             style={{ width: "100%", border: "1px solid #e8e8e8", borderRadius: 16, padding: "15px", background: "transparent", color: "#aaa", fontSize: 14, fontWeight: 800, cursor: "pointer" }}
           >
-            Skip — earn 50% FitTokens
+            {t.exSkip50}
           </button>
         </motion.div>
       </div>
@@ -538,12 +542,12 @@ export default function ExerciseSessionPage() {
       <div style={{ padding: "14px 16px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <button type="button" onClick={() => setQuitConfirm(true)} style={{ display: "flex", alignItems: "center", gap: 8, border: "none", background: "transparent", cursor: "pointer", padding: 0 }}>
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#aaa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-          <span style={{ fontSize: 12, fontWeight: 600, color: "#aaa" }}>Today&apos;s workout</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: "#aaa" }}>{t.exTodaysWorkoutLower}</span>
         </button>
         {verifySettled && (
           <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 9px", borderRadius: 999, fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", background: verifyState === "active" ? "rgba(18,101,254,0.10)" : "#f5f5f5", border: verifyState === "active" ? "1px solid rgba(18,101,254,0.25)" : "1px solid #e8e8e8", color: verifyState === "active" ? ACCENT : "#bbb" }}>
             <span style={{ width: 5, height: 5, borderRadius: "50%", background: verifyState === "active" ? ACCENT : "#ccc", flexShrink: 0 }} />
-            {verifyState === "active" ? "VERIFIED" : "UNVERIFIED"}
+            {verifyState === "active" ? t.exVerified : t.exUnverified}
           </div>
         )}
       </div>
@@ -609,7 +613,7 @@ export default function ExerciseSessionPage() {
                       <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
                       </svg>
-                      Swap
+                      {t.exSwap}
                     </button>
                   )}
                 </div>
@@ -618,7 +622,7 @@ export default function ExerciseSessionPage() {
                 {exerciseHistory[ex.name] && (
                   <div style={{ display: "inline-flex", alignSelf: "flex-start", alignItems: "center", gap: 4, borderRadius: 999, padding: "3px 10px", background: "rgba(18,101,254,0.08)", border: "1px solid rgba(18,101,254,0.2)", fontSize: 11, fontWeight: 800, color: ACCENT }}>
                     <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                    {exerciseHistory[ex.name].weight != null && `${exerciseHistory[ex.name].weight}kg · `}Last: {exerciseHistory[ex.name].sets}×{exerciseHistory[ex.name].reps} · {daysAgoLabel(exerciseHistory[ex.name].completedAt)}
+                    {exerciseHistory[ex.name].weight != null && `${exerciseHistory[ex.name].weight}kg · `}{t.exLast} {exerciseHistory[ex.name].sets}×{exerciseHistory[ex.name].reps} · {daysAgoLabel(exerciseHistory[ex.name].completedAt, t)}
                   </div>
                 )}
 
@@ -628,17 +632,17 @@ export default function ExerciseSessionPage() {
                   {maxSets > 1 && (
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                       <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.12em", color: "var(--text-muted)" }}>
-                        ROUND {Math.min(currentRound + 1, maxSets)} OF {maxSets}
+                        {t.exRound} {Math.min(currentRound + 1, maxSets)} {t.exOf} {maxSets}
                       </span>
                       <span style={{ fontSize: 11, fontWeight: 800, color: catStyle.color }}>
-                        Set {Math.min(done + (allSetsDoneForCurrent ? 0 : 1), ex.sets)} / {ex.sets}
+                        {t.exSet} {Math.min(done + (allSetsDoneForCurrent ? 0 : 1), ex.sets)} / {ex.sets}
                       </span>
                     </div>
                   )}
                   {allSetsDoneForCurrent ? (
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "20px", background: `${catStyle.color}18`, border: `1.5px solid ${catStyle.color}55`, borderRadius: 18, color: catStyle.color, fontWeight: 900, fontSize: 15 }}>
                       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                      All sets done
+                      {t.exAllSetsDone}
                     </div>
                   ) : (
                     <motion.button
@@ -656,7 +660,7 @@ export default function ExerciseSessionPage() {
                       <motion.span style={{ display: "flex" }} animate={{ scale: [1, 1.12, 1] }} transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}>
                         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                       </motion.span>
-                      Complete set {Math.min(done + 1, ex.sets)} of {ex.sets}
+                      {t.exCompleteSet} {Math.min(done + 1, ex.sets)} {t.exOfLower} {ex.sets}
                     </motion.button>
                   )}
                   {/* Set progress bar */}
@@ -668,7 +672,7 @@ export default function ExerciseSessionPage() {
                   {/* Up-next hint — makes the rotation to the next exercise explicit */}
                   {!allSetsDoneForCurrent && nextName && (
                     <div style={{ marginTop: 10, textAlign: "center", fontSize: 12, fontWeight: 700, color: "var(--text-muted)" }}>
-                      Up next · {nextName}
+                      {t.exUpNext} · {nextName}
                     </div>
                   )}
                 </div>
@@ -763,10 +767,10 @@ export default function ExerciseSessionPage() {
               >
                 <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--border)", margin: "0 auto 18px" }} />
                 <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.12em", color: "var(--text-muted)", marginBottom: 12 }}>
-                  SWAP · {ex.name.toUpperCase()}
+                  {t.exSwapHeader} · {ex.name.toUpperCase()}
                 </div>
                 {pool.length === 0 ? (
-                  <div style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", padding: "16px 0" }}>No alternatives available</div>
+                  <div style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", padding: "16px 0" }}>{t.exNoAlts}</div>
                 ) : pool.map(name => (
                   <motion.button
                     key={name}
@@ -804,9 +808,9 @@ export default function ExerciseSessionPage() {
               <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,80,80,0.12)", border: "1px solid rgba(255,80,80,0.28)", color: "#ff5050", display: "grid", placeItems: "center", margin: "0 auto 16px" }}>
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </div>
-              <div style={{ fontSize: 20, fontWeight: 950, color: "var(--text)", textAlign: "center", marginBottom: 8 }}>Quit workout?</div>
+              <div style={{ fontSize: 20, fontWeight: 950, color: "var(--text)", textAlign: "center", marginBottom: 8 }}>{t.exQuitTitle}</div>
               <div style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", lineHeight: 1.55, marginBottom: 22 }}>
-                You only get <strong style={{ color: "var(--text)" }}>one chance per day</strong>. Leaving now means no FitTokens today and no re-entry until tomorrow.
+                {t.exQuitPre} <strong style={{ color: "var(--text)" }}>{t.exQuitBold}</strong>{t.exQuitPost}
               </div>
               <div style={{ display: "flex", gap: 10 }}>
                 <button
@@ -814,14 +818,14 @@ export default function ExerciseSessionPage() {
                   onClick={() => setQuitConfirm(false)}
                   style={{ flex: 1, border: "1px solid var(--border)", background: "transparent", color: "var(--text)", borderRadius: 16, padding: "14px 0", fontSize: 14, fontWeight: 900, cursor: "pointer" }}
                 >
-                  Keep going
+                  {t.exKeepGoing}
                 </button>
                 <button
                   type="button"
                   onClick={handleQuit}
                   style={{ flex: 1, border: "none", background: "rgba(255,80,80,0.18)", color: "#ff5050", borderRadius: 16, padding: "14px 0", fontSize: 14, fontWeight: 900, cursor: "pointer" }}
                 >
-                  Quit & lose it
+                  {t.exQuitLose}
                 </button>
               </div>
             </motion.div>
@@ -835,7 +839,7 @@ export default function ExerciseSessionPage() {
           <RestTimerOverlay
             seconds={restSeconds}
             total={restDuration}
-            onSkip={() => setRestSeconds(null)}
+            onSkip={skipRest}
             onAddTime={() => setRestSeconds(s => s !== null ? s + 30 : s)}
             onChangeDuration={(d) => { setRestDuration(d); setRestSeconds(d) }}
           />
@@ -854,7 +858,7 @@ export default function ExerciseSessionPage() {
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} style={{ fontSize: 30, fontWeight: 950, letterSpacing: "-0.5px", marginBottom: 6 }}>{t.workoutCompleteTitle}</motion.div>
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} style={{ color: "rgba(255,255,255,0.64)", fontSize: 14, lineHeight: 1.45, marginBottom: 18 }}>{t.workoutCompleteBody}</motion.div>
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-                {[{ label: "Time", value: formatTime(elapsed) }, { label: "Exercises", value: String(workout?.exercises.length ?? 0) }, { label: "Sets", value: String(doneSets) }, { label: "Reps", value: String(workout?.exercises.reduce((s, e) => s + e.sets * e.reps, 0) ?? 0) }].map(item => (
+                {[{ label: t.exStatTime, value: formatTime(elapsed) }, { label: t.exStatExercises, value: String(workout?.exercises.length ?? 0) }, { label: t.exStatSets, value: String(doneSets) }, { label: t.exStatReps, value: String(workout?.exercises.reduce((s, e) => s + e.sets * e.reps, 0) ?? 0) }].map(item => (
                   <div key={item.label} style={{ borderRadius: 16, padding: "12px 10px", background: "rgba(255,255,255,0.065)", border: "1px solid rgba(255,255,255,0.10)", textAlign: "left" }}>
                     <div style={{ fontSize: 10, color: "rgba(255,255,255,0.48)", fontWeight: 850, letterSpacing: "0.12em", marginBottom: 5 }}>{item.label}</div>
                     <div style={{ fontSize: 18, fontWeight: 950, color: "#fff", fontVariantNumeric: "tabular-nums" }}>{item.value}</div>
@@ -862,7 +866,7 @@ export default function ExerciseSessionPage() {
                 ))}
               </motion.div>
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }} style={{ borderRadius: 14, padding: "10px 14px", background: "rgba(18,101,254,0.10)", border: "1px solid rgba(18,101,254,0.28)", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", fontWeight: 800, letterSpacing: "0.1em" }}>EST. CALORIES</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", fontWeight: 800, letterSpacing: "0.1em" }}>{t.exEstCalories}</div>
                 <div style={{ fontSize: 18, fontWeight: 950, color: ACCENT, fontVariantNumeric: "tabular-nums" }}>~{estimateCalories(workout?.exercises ?? [])} kcal</div>
               </motion.div>
               <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.40 }} style={{ borderRadius: 18, padding: "14px 16px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
@@ -871,7 +875,7 @@ export default function ExerciseSessionPage() {
               </motion.div>
               <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.50 }} style={{ borderRadius: 18, padding: 16, background: "linear-gradient(135deg, rgba(18,101,254,0.2), rgba(18,101,254,0.06))", border: "1px solid rgba(18,101,254,0.32)", marginBottom: 18 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.12em" }}>YOU RECEIVED</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.12em" }}>{t.exYouReceived}</div>
                 </div>
                 <motion.div
                   initial={{ scale: 0.8, opacity: 0 }}
@@ -882,10 +886,10 @@ export default function ExerciseSessionPage() {
                   +{fitTokenReward ? Number(fitTokenReward.amount ?? 0).toFixed(2) : "—"} FT
                 </motion.div>
                 {fitTokenReward && Number(fitTokenReward.amount) < 1 && Number(fitTokenReward.amount) > 0 && (
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 6 }}>Partial reward — tap Verify next time for full +1.0 FT</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 6 }}>{t.exPartialReward}</div>
                 )}
                 {fitTokenReward && Number(fitTokenReward.amount) === 0 && (
-                  <div style={{ fontSize: 11, color: "rgba(255,80,80,0.8)", marginTop: 6 }}>No tokens this session — workout was too fast to verify</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,80,80,0.8)", marginTop: 6 }}>{t.exNoTokens}</div>
                 )}
               </motion.div>
 
@@ -894,7 +898,7 @@ export default function ExerciseSessionPage() {
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.53 }} style={{ borderRadius: 20, padding: 14, background: "rgba(212,180,80,0.08)", border: "1px solid rgba(212,180,80,0.3)", marginBottom: 18 }}>
                   <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.11em", marginBottom: 10, display: "flex", alignItems: "center", gap: 5 }}>
                     <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
-                    PERSONAL RECORDS
+                    {t.exPersonalRecords}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {newPRs.map((pr) => (
@@ -908,10 +912,10 @@ export default function ExerciseSessionPage() {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 900, color: "#c8a832", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pr.exerciseName}</div>
                           {pr.prevBest != null && (
-                            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.48)", marginTop: 2 }}>was {pr.prevBest} kg</div>
+                            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.48)", marginTop: 2 }}>{t.exWas} {pr.prevBest} kg</div>
                           )}
                           {pr.prevBest == null && (
-                            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.48)", marginTop: 2 }}>First time logged!</div>
+                            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.48)", marginTop: 2 }}>{t.exFirstTime}</div>
                           )}
                         </div>
                         <div style={{ fontSize: 18, fontWeight: 950, color: "#c8a832", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{pr.weight} kg</div>
@@ -921,9 +925,13 @@ export default function ExerciseSessionPage() {
                 </motion.div>
               )}
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} style={{ borderRadius: 20, padding: 14, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", marginBottom: 18, textAlign: "left" }}>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.11em", marginBottom: 10 }}>HOW DID IT FEEL?</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.11em", marginBottom: 10 }}>{t.exHowFeel}</div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
-                  {FEEDBACK_OPTIONS.map(o => {
+                  {([
+                    { value: "too_easy" as SessionFeedback, label: t.exFbEasy, detail: t.exFbEasyD },
+                    { value: "just_right" as SessionFeedback, label: t.exFbJust, detail: t.exFbJustD },
+                    { value: "too_hard" as SessionFeedback, label: t.exFbHard, detail: t.exFbHardD },
+                  ]).map(o => {
                     const sel = sessionFeedback === o.value
                     return (
                       <button key={o.value} type="button" onClick={() => saveSessionFeedback(o.value)} style={{ minWidth: 0, border: sel ? "1px solid rgba(18,101,254,0.7)" : "1px solid rgba(255,255,255,0.1)", borderRadius: 14, padding: "10px 8px", background: sel ? "rgba(18,101,254,0.18)" : "rgba(255,255,255,0.055)", color: sel ? ACCENT : "#fff", cursor: "pointer", textAlign: "center" }}>
@@ -933,15 +941,15 @@ export default function ExerciseSessionPage() {
                     )
                   })}
                 </div>
-                {feedbackSaved && <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: 9, fontSize: 11, color: "rgba(18,101,254,0.92)", fontWeight: 800, textAlign: "center" }}>Feedback saved for future recommendations.</motion.div>}
+                {feedbackSaved && <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: 9, fontSize: 11, color: "rgba(18,101,254,0.92)", fontWeight: 800, textAlign: "center" }}>{t.exFbSaved}</motion.div>}
               </motion.div>
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.58 }} style={{ borderRadius: 20, padding: 14, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", marginBottom: 18, textAlign: "left" }}>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.11em", marginBottom: 10 }}>SESSION NOTES</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.11em", marginBottom: 10 }}>{t.exSessionNotes}</div>
                 <textarea
                   value={workoutNote}
                   onChange={(e) => { setWorkoutNote(e.target.value); setNoteSaved(false) }}
                   onBlur={() => saveNote(workoutNote)}
-                  placeholder="How did it go? PR? Something to remember…"
+                  placeholder={t.exNotePlaceholder}
                   rows={3}
                   style={{
                     width: "100%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
@@ -952,13 +960,13 @@ export default function ExerciseSessionPage() {
                 />
                 {noteSaved && (
                   <motion.div initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: 6, fontSize: 11, color: "rgba(18,101,254,0.9)", fontWeight: 800 }}>
-                    Saved
+                    {t.exSaved}
                   </motion.div>
                 )}
               </motion.div>
               {newAchievements.length > 0 && (
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }} style={{ marginBottom: 18 }}>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.11em", marginBottom: 10, display: "flex", alignItems: "center", gap: 5 }}><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>ACHIEVEMENT UNLOCKED</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", fontWeight: 850, letterSpacing: "0.11em", marginBottom: 10, display: "flex", alignItems: "center", gap: 5 }}><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>{t.exAchUnlocked}</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {newAchievements.map(type => {
                       const def = ACHIEVEMENT_MAP[type]
@@ -1033,6 +1041,7 @@ function RestTimerOverlay({
   onAddTime: () => void
   onChangeDuration: (d: number) => void
 }) {
+  const { t } = useLanguage()
   const pct        = Math.max(0, Math.min(1, seconds / total))
   const dashoffset = REST_RING_CIRC * (1 - pct)
 
@@ -1071,7 +1080,7 @@ function RestTimerOverlay({
           fontSize: 10, fontWeight: 900, letterSpacing: "0.2em",
           color: ACCENT, textTransform: "uppercase",
         }}>
-          Rest
+          {t.exRest}
         </div>
 
         {/* Progress ring + countdown */}
@@ -1108,7 +1117,7 @@ function RestTimerOverlay({
             >
               {seconds}
             </motion.div>
-            <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, marginTop: 3 }}>sec</div>
+            <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, marginTop: 3 }}>{t.exSec}</div>
           </div>
         </div>
 
@@ -1147,7 +1156,7 @@ function RestTimerOverlay({
               fontSize: 13, fontWeight: 900, cursor: "pointer",
             }}
           >
-            Skip
+            {t.exSkip}
           </button>
           <button
             type="button"
