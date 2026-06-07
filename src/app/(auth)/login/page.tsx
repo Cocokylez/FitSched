@@ -38,7 +38,7 @@ export default function LoginPage() {
     setLoading(false)
 
     if (result?.error) {
-      setError('Email or password is incorrect')
+      setError(t.authIncorrect)
       return
     }
 
@@ -61,7 +61,7 @@ export default function LoginPage() {
       await createGuestAndSignIn()
       window.location.href = '/onboarding'
     } catch {
-      setError('Could not start guest session. Please try again.')
+      setError(t.authGuestError)
       setGuestLoading(false)
     }
   }
@@ -208,7 +208,7 @@ export default function LoginPage() {
                 opacity: loading ? 0.55 : 1,
               }}
             >
-              {loading ? 'Signing in...' : t.signIn}
+              {loading ? t.authSigningIn : t.signIn}
             </button>
           </motion.div>
           </form>
