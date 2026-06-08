@@ -24,6 +24,10 @@ import { haversineKm } from "@/lib/hikeUtils"
 const MAX_ACCURACY_M       = 30
 const MIN_MOVEMENT_KM      = 0.008   // 8 meters
 const MIN_TIME_BETWEEN_MS  = 1500
+// Minimum altitude rise (m) before it counts as real climb. GPS vertical noise
+// is ±10–30 m even when stationary, so small per-fix deltas are discarded to
+// stop a flat hike from accumulating hundreds of phantom "gain" meters.
+const MIN_ELEV_GAIN_M      = 3
 
 // ── Tile pre-fetch (warms the offline cache around the starting position) ─────
 
@@ -191,11 +195,14 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent, onPhaseChange 
     const { latitude: lat, longitude: lng, altitude: alt, accuracy } = pos.coords
     setError(null)
 
-    // Reject low-quality fixes outright — these are the main source of phantom
-    // distance when stationary (shake, indoor reflection, weak signal).
-    if (typeof accuracy === "number" && accuracy > MAX_ACCURACY_M) return
+    const accurate = typeof accuracy !== "number" || accuracy <= MAX_ACCURACY_M
 
     if (!startedRef.current) {
+      // Start the session on the *first* fix of any quality so the user isn't
+      // stranded on "Acquiring GPS…" under tree cover / cold start, where early
+      // fixes are routinely worse than MAX_ACCURACY_M. Distance and route points
+      // still only accumulate from accurate fixes (the guard below), so a rough
+      // opening fix can't inflate the recorded hike.
       startedRef.current   = true
       startTimeRef.current = Date.now()
       setTrackStatus("tracking")
@@ -214,6 +221,10 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent, onPhaseChange 
 
     if (pausedRef.current) return
 
+    // Reject low-quality fixes for distance/route — the main source of phantom
+    // distance when stationary (shake, indoor reflection, weak signal).
+    if (!accurate) return
+
     const now = Date.now()
     const wp: Waypoint = { lat, lng, alt, ts: now }
     const prev = waypointsRef.current
@@ -229,7 +240,11 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent, onPhaseChange 
       const d = haversineKm(last.lat, last.lng, lat, lng)
       if (d < MIN_MOVEMENT_KM) return
       distanceRef.current += d
-      if (alt !== null && last.alt !== null && alt > last.alt) {
+      // Count a climb only when the rise clears GPS vertical jitter, and skip it
+      // entirely when this fix's altitude is too unreliable to trust.
+      const altAcc = pos.coords.altitudeAccuracy
+      const altTrustworthy = altAcc == null || altAcc <= 15
+      if (alt !== null && last.alt !== null && altTrustworthy && alt - last.alt >= MIN_ELEV_GAIN_M) {
         elevGainRef.current += alt - last.alt
       }
     }
