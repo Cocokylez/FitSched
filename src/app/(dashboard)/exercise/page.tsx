@@ -247,7 +247,9 @@ export default function ExerciseSessionPage() {
       window.removeEventListener("beforeunload", markAbandoned)
       markAbandoned() // fires on SPA unmount too
     }
-  }, [])
+    // Depend on abandonedKey so the handler always writes under the current user's
+    // key — it flips from the guest key to the real one once the session resolves.
+  }, [abandonedKey])
 
   const totalSets = useMemo(() => workout?.exercises.reduce((s, e) => s + e.sets, 0) ?? 0, [workout])
   const doneSets = useMemo(() => Object.values(completedSets).reduce((s, v) => s + v, 0), [completedSets])
@@ -423,21 +425,21 @@ export default function ExerciseSessionPage() {
   // ── Intro screen ──────────────────────────────────────────────────────────
   if (phase === "intro") {
     return (
-      <div style={{ position: "fixed", inset: 0, background: "#fff", color: "#111", display: "flex", flexDirection: "column", alignItems: "center", zIndex: 200, overflowY: "auto" }}>
+      <div style={{ position: "fixed", inset: 0, background: "var(--bg)", color: "var(--text)", display: "flex", flexDirection: "column", alignItems: "center", zIndex: 200, overflowY: "auto" }}>
         {/* Inner column — max width for desktop */}
         <div style={{ width: "100%", maxWidth: 640, display: "flex", flexDirection: "column", flex: 1, minHeight: "100%" }}>
           {/* Back */}
           <div style={{ padding: "20px 24px 0" }}>
-            <button type="button" onClick={() => router.push("/workout")} style={{ display: "flex", alignItems: "center", gap: 6, border: "none", background: "transparent", cursor: "pointer", padding: 0, color: "#888", fontSize: 13, fontWeight: 600 }}>
+            <button type="button" onClick={() => router.push("/workout")} style={{ display: "flex", alignItems: "center", gap: 6, border: "none", background: "transparent", cursor: "pointer", padding: 0, color: "var(--text-muted)", fontSize: 13, fontWeight: 600 }}>
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
               {t.back}
             </button>
           </div>
           {/* Content */}
           <div style={{ flex: 1, padding: "24px 24px 32px" }}>
-            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.14em", color: "#bbb", marginBottom: 10 }}>{t.exTodaysWorkout}</div>
-            <div style={{ fontSize: 44, fontWeight: 950, letterSpacing: "-1.5px", color: "#111", marginBottom: 6, lineHeight: 1.05 }}>{workout.workoutName}</div>
-            <div style={{ fontSize: 14, color: "#999", fontWeight: 600, marginBottom: 32 }}>
+            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.14em", color: "var(--text-muted)", marginBottom: 10 }}>{t.exTodaysWorkout}</div>
+            <div style={{ fontSize: 44, fontWeight: 950, letterSpacing: "-1.5px", color: "var(--text)", marginBottom: 6, lineHeight: 1.05 }}>{workout.workoutName}</div>
+            <div style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 600, marginBottom: 32 }}>
               {workout.exercises.length} {t.exercisesCount} · {Math.round(totalSets * 0.75)} {t.wMin}
             </div>
             {/* Exercise list */}
@@ -446,17 +448,17 @@ export default function ExerciseSessionPage() {
                 const category = getCategory(ex.name, i)
                 const catStyle = CATEGORY_COLORS[category] || CATEGORY_COLORS.CORE
                 return (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", background: "#f7f7f7", borderRadius: 14, border: "1px solid #efefef" }}>
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", background: "var(--surface-2)", borderRadius: 14, border: "1px solid var(--border)" }}>
                     <div style={{ width: 8, height: 8, borderRadius: "50%", background: catStyle.color, flexShrink: 0 }} />
-                    <div style={{ flex: 1, fontSize: 14, fontWeight: 800, color: "#111" }}>{ex.name}</div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#bbb" }}>{ex.sets}×{ex.reps}</div>
+                    <div style={{ flex: 1, fontSize: 14, fontWeight: 800, color: "var(--text)" }}>{ex.name}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)" }}>{ex.sets}×{ex.reps}</div>
                   </div>
                 )
               })}
             </div>
           </div>
           {/* Bottom CTA — part of flow, not fixed, so desktop doesn't get a full-width bar */}
-          <div style={{ padding: "16px 24px", paddingBottom: "max(24px, env(safe-area-inset-bottom))", borderTop: "1px solid #f0f0f0", background: "#fff" }}>
+          <div style={{ padding: "16px 24px", paddingBottom: "max(24px, env(safe-area-inset-bottom))", borderTop: "1px solid var(--border)", background: "var(--bg)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, padding: "10px 14px", background: "rgba(255,160,0,0.07)", border: "1px solid rgba(255,160,0,0.24)", borderRadius: 12 }}>
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ffa000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
               <span style={{ fontSize: 11, fontWeight: 700, color: "#ffa000", lineHeight: 1.4 }}>{t.exOneShot}</span>
@@ -465,7 +467,7 @@ export default function ExerciseSessionPage() {
               type="button"
               whileTap={{ scale: 0.97 }}
               onClick={() => setPhase("permission")}
-              style={{ width: "100%", border: "none", borderRadius: 16, padding: "17px", background: "#111", color: "#fff", fontSize: 16, fontWeight: 950, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+              style={{ width: "100%", border: "none", borderRadius: 16, padding: "17px", background: "var(--text)", color: "var(--bg)", fontSize: 16, fontWeight: 950, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
             >
               {t.exLetsGo}
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -479,32 +481,32 @@ export default function ExerciseSessionPage() {
   // ── Permission screen ─────────────────────────────────────────────────────
   if (phase === "permission") {
     return (
-      <div style={{ position: "fixed", inset: 0, background: "#fff", color: "#111", display: "flex", alignItems: "center", justifyContent: "center", padding: "32px 24px", zIndex: 200 }}>
+      <div style={{ position: "fixed", inset: 0, background: "var(--bg)", color: "var(--text)", display: "flex", alignItems: "center", justifyContent: "center", padding: "32px 24px", zIndex: 200 }}>
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", stiffness: 260, damping: 24 }} style={{ width: "100%", maxWidth: 420, textAlign: "center" }}>
           {/* Icon */}
-          <div style={{ width: 88, height: 88, borderRadius: "50%", background: "#f3f3f3", display: "grid", placeItems: "center", margin: "0 auto 28px" }}>
-            <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="#111" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <div style={{ width: 88, height: 88, borderRadius: "50%", background: "var(--surface-2)", display: "grid", placeItems: "center", margin: "0 auto 28px" }}>
+            <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="var(--text)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
               <path d="M12 18h.01"/>
               <path d="M9 7l1.5 3L12 8l1.5 2L15 7"/>
             </svg>
           </div>
           <div style={{ fontSize: 30, fontWeight: 950, letterSpacing: "-0.5px", marginBottom: 12 }}>{t.exTrackTitle}</div>
-          <div style={{ fontSize: 14, color: "#888", lineHeight: 1.65, marginBottom: 40 }}>
+          <div style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.65, marginBottom: 40 }}>
             {t.exTrackBody}
           </div>
           <motion.button
             type="button"
             whileTap={{ scale: 0.96 }}
             onClick={() => { startVerify(); setVerifySettled(true); setPhase("countdown") }}
-            style={{ width: "100%", border: "none", borderRadius: 16, padding: "17px", background: "#111", color: "#fff", fontSize: 15, fontWeight: 950, cursor: "pointer", marginBottom: 10 }}
+            style={{ width: "100%", border: "none", borderRadius: 16, padding: "17px", background: "var(--text)", color: "var(--bg)", fontSize: 15, fontWeight: 950, cursor: "pointer", marginBottom: 10 }}
           >
             {t.exEnableMotion}
           </motion.button>
           <button
             type="button"
             onClick={() => { setVerifySettled(true); setPhase("countdown") }}
-            style={{ width: "100%", border: "1px solid #e8e8e8", borderRadius: 16, padding: "15px", background: "transparent", color: "#aaa", fontSize: 14, fontWeight: 800, cursor: "pointer" }}
+            style={{ width: "100%", border: "1px solid var(--border)", borderRadius: 16, padding: "15px", background: "transparent", color: "var(--text-muted)", fontSize: 14, fontWeight: 800, cursor: "pointer" }}
           >
             {t.exSkip50}
           </button>
@@ -516,7 +518,7 @@ export default function ExerciseSessionPage() {
   // ── Countdown screen ──────────────────────────────────────────────────────
   if (phase === "countdown") {
     return (
-      <div style={{ position: "fixed", inset: 0, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }}>
+      <div style={{ position: "fixed", inset: 0, background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={countdownNum}
@@ -527,7 +529,7 @@ export default function ExerciseSessionPage() {
             style={{ textAlign: "center" }}
           >
             {countdownNum > 0 && (
-              <div style={{ fontSize: 160, fontWeight: 950, color: "#111", lineHeight: 1, letterSpacing: "-6px", fontVariantNumeric: "tabular-nums" }}>{countdownNum}</div>
+              <div style={{ fontSize: 160, fontWeight: 950, color: "var(--text)", lineHeight: 1, letterSpacing: "-6px", fontVariantNumeric: "tabular-nums" }}>{countdownNum}</div>
             )}
           </motion.div>
         </AnimatePresence>
@@ -536,17 +538,17 @@ export default function ExerciseSessionPage() {
   }
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "#fff", color: "#111", display: "flex", flexDirection: "column", alignItems: "center", zIndex: 50 }}>
+    <div style={{ position: "fixed", inset: 0, background: "var(--bg)", color: "var(--text)", display: "flex", flexDirection: "column", alignItems: "center", zIndex: 50 }}>
       <div style={{ width: "100%", maxWidth: 640, display: "flex", flexDirection: "column", height: "100%" }}>
       {/* Header — breadcrumb style */}
       <div style={{ padding: "14px 16px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <button type="button" onClick={() => setQuitConfirm(true)} style={{ display: "flex", alignItems: "center", gap: 8, border: "none", background: "transparent", cursor: "pointer", padding: 0 }}>
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#aaa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-          <span style={{ fontSize: 12, fontWeight: 600, color: "#aaa" }}>{t.exTodaysWorkoutLower}</span>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>{t.exTodaysWorkoutLower}</span>
         </button>
         {verifySettled && (
-          <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 9px", borderRadius: 999, fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", background: verifyState === "active" ? "rgba(18,101,254,0.10)" : "#f5f5f5", border: verifyState === "active" ? "1px solid rgba(18,101,254,0.25)" : "1px solid #e8e8e8", color: verifyState === "active" ? ACCENT : "#bbb" }}>
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: verifyState === "active" ? ACCENT : "#ccc", flexShrink: 0 }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 9px", borderRadius: 999, fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", background: verifyState === "active" ? "rgba(18,101,254,0.10)" : "var(--surface-2)", border: verifyState === "active" ? "1px solid rgba(18,101,254,0.25)" : "1px solid var(--border)", color: verifyState === "active" ? ACCENT : "var(--text-muted)" }}>
+            <span style={{ width: 5, height: 5, borderRadius: "50%", background: verifyState === "active" ? ACCENT : "var(--text-muted)", flexShrink: 0 }} />
             {verifyState === "active" ? t.exVerified : t.exUnverified}
           </div>
         )}
@@ -554,7 +556,7 @@ export default function ExerciseSessionPage() {
 
       {/* Title block */}
       <div style={{ padding: "10px 16px 14px" }}>
-        <div style={{ fontSize: 30, fontWeight: 950, letterSpacing: "-0.5px", color: "#111" }}>{workout.workoutName}</div>
+        <div style={{ fontSize: 30, fontWeight: 950, letterSpacing: "-0.5px", color: "var(--text)" }}>{workout.workoutName}</div>
       </div>
 
       {/* W1 Fullscreen single exercise display */}
@@ -711,7 +713,7 @@ export default function ExerciseSessionPage() {
       {(() => {
         if (!allDone) return null
         return (
-          <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "12px 16px", paddingBottom: "max(12px, env(safe-area-inset-bottom))", background: "#fff", borderTop: "1px solid #f0f0f0" }}>
+          <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "12px 16px", paddingBottom: "max(12px, env(safe-area-inset-bottom))", background: "var(--bg)", borderTop: "1px solid var(--border)" }}>
             <AnimatePresence mode="wait">
               <motion.button
                 key="finish"

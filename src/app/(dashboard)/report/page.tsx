@@ -626,7 +626,7 @@ export default function ReportPage() {
                             <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid var(--border)" }}>
                               {log.notes && (
                                 <div style={{ marginBottom: 10, padding: "8px 10px", background: "var(--surface-2)", borderRadius: 8, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5, fontStyle: "italic" }}>
-                                  "{log.notes}"
+                                  &ldquo;{log.notes}&rdquo;
                                 </div>
                               )}
                               {(log.exercises || []).map((ex, i) => (
