@@ -281,11 +281,12 @@ export default function HikePage() {
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             onClick={() => { setShowLogs(true); fetchLogs() }}
             style={{
-              background: "var(--panel)", border: "1px solid var(--border)",
-              borderRadius: 999, padding: "8px 14px", color: "var(--text)",
+              background: "rgba(10,20,18,0.72)", border: "1px solid rgba(255,255,255,0.14)",
+              borderRadius: 999, padding: "8px 14px", color: "#fff",
               display: "flex", alignItems: "center", gap: 6,
               fontSize: 12, fontWeight: 700, cursor: "pointer",
-              backdropFilter: "blur(12px)", position: "relative",
+              backdropFilter: "blur(14px)", position: "relative",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.28)",
             }}
           >
             <History size={14} strokeWidth={2} />

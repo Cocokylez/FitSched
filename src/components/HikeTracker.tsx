@@ -621,7 +621,14 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent, onPhaseChange 
             display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end",
             padding: "0 20px",
           }}>
+            {/* Bottom scrim — anchors the buttons so they read cleanly over the map */}
             <div style={{
+              position: "absolute", left: 0, right: 0, bottom: 0, height: 220,
+              background: "linear-gradient(to top, rgba(0,0,0,0.45), transparent)",
+              pointerEvents: "none",
+            }} />
+            <div style={{
+              position: "relative",
               display: "flex", flexDirection: "column", gap: 10, width: "100%", maxWidth: 400,
               paddingBottom: "max(28px, env(safe-area-inset-bottom))",
             }}>
