@@ -17,6 +17,9 @@ const eslintConfig = [
       "next-env.d.ts",
       "out/**",
       "reportfolio-main/**",
+      "fittoken/**",
+      ".claude/**",
+      "scripts/**",
     ],
   },
 ];
