@@ -3,6 +3,14 @@
  * Used by HikeTracker, HikeRouteDetail, and the hike log page.
  */
 
+/**
+ * Minimum distance (km) a hike must cover to be saveable. Below this it's
+ * indistinguishable from GPS jitter while standing still, so we reject it on
+ * both the client (friendly message) and the server (authoritative guard) —
+ * this is what stops "finish without moving" from saving an empty log.
+ */
+export const MIN_HIKE_KM = 0.1
+
 /** Great-circle distance in kilometres between two coordinates (Haversine). */
 export function haversineKm(
   lat1: number, lng1: number,

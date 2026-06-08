@@ -4,6 +4,7 @@ import { awardFitTokensForHikeTx } from "@/lib/fitTokens"
 import { isUserBanned, flagHikeIfSuspicious } from "@/lib/antiCheat"
 import { verifyHikeRoute } from "@/lib/hikeVerification"
 import { cleanText, rateLimitByUser, rateLimitPresets, readJsonBody, requestBodyErrorResponse, validateSameOrigin } from "@/lib/security"
+import { MIN_HIKE_KM } from "@/lib/hikeUtils"
 import { Prisma } from "@prisma/client"
 import { NextResponse } from "next/server"
 
@@ -54,6 +55,8 @@ export async function POST(req: Request) {
 
     if (!distKm || distKm <= 0 || !isFinite(distKm))
       return NextResponse.json({ error: "Distance is required" }, { status: 400 })
+    if (distKm < MIN_HIKE_KM)
+      return NextResponse.json({ error: `Hike too short to save (minimum ${MIN_HIKE_KM * 1000} m)` }, { status: 400 })
     if (!durMin || durMin <= 0 || !isFinite(durMin))
       return NextResponse.json({ error: "Duration is required" }, { status: 400 })
     if (distKm > 200)
