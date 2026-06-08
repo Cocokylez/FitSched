@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { CheckCircle, Flag, Locate, MapPin, Navigation, Pause, Play, RotateCcw, X } from "lucide-react"
 import { ACCENT, GREEN, RED, BLUE, YELLOW } from "@/lib/theme"
-import { haversineKm } from "@/lib/hikeUtils"
+import { haversineKm, MIN_HIKE_KM } from "@/lib/hikeUtils"
 
 // ── Anti-jitter thresholds ───────────────────────────────────────────────────
 //
@@ -509,6 +509,14 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent, onPhaseChange 
   }
 
   function finish() {
+    // Block essentially-empty sessions — below MIN_HIKE_KM the distance is
+    // indistinguishable from standing-still GPS jitter, so saving it just makes
+    // an empty log. Keep tracking running so the user can carry on and finish
+    // once they've actually moved.
+    if (distanceRef.current < MIN_HIKE_KM) {
+      setError(`You've only covered ${Math.round(distanceRef.current * 1000)} m — move a little more before finishing.`)
+      return
+    }
     if (watchRef.current !== null) navigator.geolocation.clearWatch(watchRef.current)
     if (timerRef.current) clearInterval(timerRef.current)
 
