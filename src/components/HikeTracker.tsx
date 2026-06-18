@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { CheckCircle, Flag, Locate, MapPin, Navigation, Pause, Play, RotateCcw, X } from "lucide-react"
 import { ACCENT, GREEN, RED, BLUE, YELLOW } from "@/lib/theme"
-import { haversineKm, MIN_HIKE_KM } from "@/lib/hikeUtils"
+import { haversineKm, MIN_HIKE_KM, formatPace } from "@/lib/hikeUtils"
 
 // ── Anti-jitter thresholds ───────────────────────────────────────────────────
 //
@@ -80,13 +80,6 @@ function formatTime(s: number): string {
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60
   if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`
   return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`
-}
-
-function formatPace(km: number, seconds: number): string {
-  if (km < 0.01) return "--:--"
-  const mPerKm = seconds / 60 / km
-  const m = Math.floor(mPerKm), s = Math.round((mPerKm - m) * 60)
-  return `${m}:${String(s).padStart(2, "0")}`
 }
 
 function fmtRouteDist(m: number): string {
@@ -730,7 +723,7 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent, onPhaseChange 
               <span style={{ width: 1, height: 16, background: "rgba(255,255,255,0.15)", flexShrink: 0 }} />
               {/* pace */}
               <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.55)", fontVariantNumeric: "tabular-nums" }}>
-                {formatPace(distKm, elapsed)}<span style={{ fontSize: 10, marginLeft: 2 }}>/km</span>
+                {formatPace(distKm, elapsed / 60)}<span style={{ fontSize: 10, marginLeft: 2 }}>/km</span>
               </span>
             </motion.div>
           )}

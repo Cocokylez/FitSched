@@ -34,3 +34,23 @@ export function fmtDuration(min: number): string {
   if (h === 0) return `${m}m`
   return m === 0 ? `${h}h` : `${h}h ${m}m`
 }
+
+/**
+ * Walking pace as "M:SS" per km — e.g. 5.5 min/km → "5:30".
+ *
+ * Single source of truth for both the live tracker pill and the saved-hike
+ * detail view (which previously each had their own copy with mismatched
+ * signatures). Pass `km` covered and `minutes` of moving time.
+ *
+ * Returns "--:--" under 10 m, where pace is numerically meaningless.
+ */
+export function formatPace(km: number, minutes: number): string {
+  if (km < 0.01 || minutes <= 0) return "--:--"
+  const minPerKm = minutes / km
+  // Round to whole seconds first, then split — so a seconds value that rounds
+  // up to 60 carries into the minute automatically (12.999 → "13:00").
+  const totalSec = Math.round(minPerKm * 60)
+  const m = Math.floor(totalSec / 60)
+  const s = totalSec % 60
+  return `${m}:${String(s).padStart(2, "0")}`
+}
