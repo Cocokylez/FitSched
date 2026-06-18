@@ -8,7 +8,7 @@ import { Clock, MapPin, TrendingUp, X, Zap } from "lucide-react"
 import type { Waypoint } from "@/components/HikeTracker"
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { ACCENT, GREEN, RED } from "@/lib/theme"
-import { haversineKm, fmtDuration } from "@/lib/hikeUtils"
+import { haversineKm, fmtDuration, formatPace } from "@/lib/hikeUtils"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -25,14 +25,6 @@ export type HikeDetail = {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function formatPace(distKm: number, durationMin: number): string {
-  if (distKm < 0.01) return "--:--"
-  const mPerKm = durationMin / distKm
-  const m = Math.floor(mPerKm)
-  const s = Math.round((mPerKm - m) * 60)
-  return `${m}:${String(s).padStart(2, "0")}`
-}
 
 function fmtDate(s: string): string {
   return new Date(s).toLocaleDateString("en-US", {
