@@ -40,6 +40,10 @@ yarn-error.log*
 # claude code
 .claude/
 
+# built apk artifacts (exported from android/app/build/outputs)
+/fitsched.apk
+*.apk
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
