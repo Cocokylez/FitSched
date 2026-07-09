@@ -1,5 +1,6 @@
 import { db } from "@/lib/db"
 import { sendPushToUser } from "@/lib/pushNotify"
+import { verifyBearerSecret } from "@/lib/security"
 import { NextResponse } from "next/server"
 
 // Called by Vercel Cron every Monday at 09:00 UTC (configurable in vercel.json).
@@ -17,9 +18,7 @@ function getWeekRange() {
 
 export async function GET(req: Request) {
   // Vercel Cron sends an Authorization header with the CRON_SECRET
-  const authHeader = req.headers.get("authorization")
-  const cronSecret = process.env.CRON_SECRET
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  if (!verifyBearerSecret(req.headers.get("authorization"), process.env.CRON_SECRET)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
