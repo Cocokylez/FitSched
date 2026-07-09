@@ -1,4 +1,5 @@
 import { db } from "@/lib/db"
+import { verifyBearerSecret } from "@/lib/security"
 import { NextResponse } from "next/server"
 
 // Manual moderation endpoint — ban or unban an account.
@@ -12,9 +13,7 @@ import { NextResponse } from "next/server"
 // Enforcement lives in: dashboard layout (redirects to /banned), and the
 // earning/claim routes (isUserBanned → 403).
 export async function POST(req: Request) {
-  const secret = process.env.ADMIN_SECRET
-  const authHeader = req.headers.get("authorization")
-  if (!secret || authHeader !== `Bearer ${secret}`) {
+  if (!verifyBearerSecret(req.headers.get("authorization"), process.env.ADMIN_SECRET)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

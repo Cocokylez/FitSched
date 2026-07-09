@@ -1,4 +1,4 @@
-import { createHmac } from "crypto"
+import { createHmac, timingSafeEqual } from "crypto"
 
 interface SessionPayload {
   userId: string
@@ -8,9 +8,11 @@ interface SessionPayload {
 
 function secret() {
   // SESSION_TOKEN_SECRET takes precedence; falls back to NEXTAUTH_SECRET so no
-  // deployment change is required. Returns "" if neither is set, which invalidates
-  // all tokens and removes the publicly-known literal fallback string.
-  return process.env.SESSION_TOKEN_SECRET || process.env.NEXTAUTH_SECRET || ""
+  // deployment change is required. An empty-key HMAC would make tokens forgeable
+  // by anyone who notices the env var is missing, so fail loud instead.
+  const value = process.env.SESSION_TOKEN_SECRET || process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET
+  if (!value) throw new Error("sessionToken: SESSION_TOKEN_SECRET / NEXTAUTH_SECRET / AUTH_SECRET not set")
+  return value
 }
 
 export function signSessionToken(payload: SessionPayload): string {
@@ -28,8 +30,9 @@ export function verifySessionToken(token: string, expectedUserId: string): Sessi
     const sig = token.slice(dot + 1)
     const data = Buffer.from(dataB64, "base64url").toString("utf8")
 
-    const expected = createHmac("sha256", secret()).update(data).digest("hex")
-    if (sig !== expected) return null  // tampered
+    const expected = createHmac("sha256", secret()).update(data).digest()
+    const provided = Buffer.from(sig, "hex")
+    if (provided.length !== expected.length || !timingSafeEqual(provided, expected)) return null  // tampered
 
     const payload = JSON.parse(data) as SessionPayload
     if (payload.userId !== expectedUserId) return null
