@@ -232,13 +232,10 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={loading || !agreed}
-                className="motion-lift"
+                className="clay-key"
                 style={{
                   width: "100%",
-                  background: "var(--text)",
-                  color: "var(--bg)",
-                  border: "none",
-                  borderRadius: "16px",
+                  borderRadius: "18px",
                   padding: "15px",
                   fontSize: "15px",
                   fontWeight: 700,

@@ -165,13 +165,12 @@ export default function ExercisesPage() {
           </p>
         </div>
         <motion.button
-          whileTap={{ scale: 0.95 }}
+          className="clay-key"
           onClick={() => setShowAdd(true)}
           style={{
             display: "flex", alignItems: "center", gap: 7,
-            background: ACCENT, color: "#0a1412",
-            border: "none", borderRadius: 12, padding: "10px 16px",
-            fontSize: 14, fontWeight: 800, cursor: "pointer",
+            borderRadius: 14, padding: "10px 16px",
+            fontSize: 14, fontWeight: 800,
           }}
         >
           <Plus size={16} strokeWidth={2.5} />

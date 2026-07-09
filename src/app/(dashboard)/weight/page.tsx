@@ -216,13 +216,12 @@ export default function WeightPage() {
               <Target size={16} strokeWidth={2} />
             </motion.button>
             <motion.button
-              whileTap={{ scale: 0.93 }}
+              className="clay-key"
               onClick={() => { setShowForm(true); setTimeout(() => inputRef.current?.focus(), 80) }}
               style={{
                 display: "flex", alignItems: "center", gap: 6,
-                background: ACCENT, border: "none", borderRadius: 14,
-                padding: "10px 16px", color: "#0a1412", fontSize: 13, fontWeight: 800,
-                cursor: "pointer",
+                borderRadius: 14,
+                padding: "10px 16px", fontSize: 13, fontWeight: 800,
               }}
             >
               <Plus size={15} strokeWidth={2.5} />
@@ -336,14 +335,12 @@ export default function WeightPage() {
 
                 <div style={{ display: "flex", gap: 8 }}>
                   <motion.button
-                    whileTap={{ scale: 0.93 }}
+                    className="clay-key"
                     onClick={handleSave}
                     disabled={saving}
                     style={{
-                      background: ACCENT, border: "none", borderRadius: 12,
+                      borderRadius: 14,
                       padding: "12px 18px", fontSize: 14, fontWeight: 800,
-                      color: "#0a1412", cursor: saving ? "not-allowed" : "pointer",
-                      opacity: saving ? 0.7 : 1,
                     }}
                   >
                     {saving ? "…" : t.wtSave}

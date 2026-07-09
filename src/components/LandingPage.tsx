@@ -267,9 +267,9 @@ function ActiveScreen() {
 
       {/* CTA + home bar */}
       <div style={{ marginTop: "auto" }}>
-        <div style={{
-          padding: "11px", borderRadius: 14, background: ACCENT,
-          textAlign: "center", fontSize: 11, fontWeight: 800, color: "#fff", letterSpacing: "-0.01em",
+        <div className="clay-key" style={{
+          padding: "11px", borderRadius: 14,
+          textAlign: "center", fontSize: 11, fontWeight: 800, letterSpacing: "-0.01em", cursor: "default",
         }}>
           {t.lpmCompleteSet} {set}
         </div>
@@ -583,11 +583,10 @@ function Navbar() {
         </div>
         <Link href="/register" style={{
           display: "flex", alignItems: "center", gap: 6,
-          background: ACCENT, color: "#fff",
           borderRadius: 999, padding: "8px 18px",
           fontSize: 13, fontWeight: 800, textDecoration: "none", letterSpacing: "-0.01em",
           whiteSpace: "nowrap",
-        }} className="lp-nav-cta">
+        }} className="lp-nav-cta clay-key">
           <span className="lp-nav-cta-full">{t.createAccount}</span>
           <span className="lp-nav-cta-short">{t.signUp}</span>
         </Link>
@@ -668,9 +667,8 @@ function Hero() {
               transition={{ duration: 0.5, delay: 0.34, ease: [0.16, 1, 0.3, 1] }}
               style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", marginBottom: 30 }}
             >
-              <Link href="/register" style={{
+              <Link href="/register" className="clay-key" style={{
                 display: "inline-flex", alignItems: "center", gap: 8,
-                background: ACCENT, color: "#fff",
                 borderRadius: 999, padding: "13px 24px",
                 fontSize: 14, fontWeight: 800, textDecoration: "none", letterSpacing: "-0.01em",
               }}>
@@ -946,9 +944,8 @@ function CtaBlock() {
           <p style={{ margin: "0 0 40px", fontSize: 15, color: "var(--text-muted)", lineHeight: 1.72, fontWeight: 500 }}>
             {t.lpCtaBody}
           </p>
-          <Link href="/register" style={{
+          <Link href="/register" className="clay-key" style={{
             display: "inline-flex", alignItems: "center", gap: 8,
-            background: ACCENT, color: "#fff",
             borderRadius: 999, padding: "14px 32px",
             fontSize: 14, fontWeight: 800, textDecoration: "none", letterSpacing: "-0.01em",
           }}>

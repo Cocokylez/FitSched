@@ -37,11 +37,9 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
       </p>
       <button
         onClick={reset}
+        className="clay-key"
         style={{
-          background: "var(--text)",
-          color: "var(--bg)",
-          border: "none",
-          borderRadius: "14px",
+          borderRadius: "16px",
           padding: "13px 28px",
           fontSize: "14px",
           fontWeight: 700,

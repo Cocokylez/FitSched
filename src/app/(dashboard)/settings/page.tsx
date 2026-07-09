@@ -862,7 +862,8 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={async () => { await signOut({ redirect: false }); router.push("/register") }}
-              style={{ width: "100%", background: ACCENT, border: "none", borderRadius: 12, padding: "11px", fontSize: 13, fontWeight: 800, color: "#0d1f1e", cursor: "pointer" }}
+              className="clay-key"
+              style={{ width: "100%", borderRadius: 14, padding: "11px", fontSize: 13, fontWeight: 800 }}
             >
               {t.setCreateFree}
             </button>

@@ -284,14 +284,12 @@ export default function OnboardingPage() {
             <button
               onClick={() => setStep(step + 1)}
               disabled={!bmi}
+              className="clay-key"
               style={{
                 width: "100%",
                 marginTop: "18px",
-                border: "none",
-                borderRadius: "14px",
+                borderRadius: "16px",
                 padding: "14px",
-                background: "var(--text)",
-                color: "var(--bg)",
                 fontSize: "14px",
                 fontWeight: 800,
                 cursor: bmi ? "pointer" : "default",
@@ -344,14 +342,12 @@ export default function OnboardingPage() {
             {selections.hasInjury && (
               <button
                 onClick={() => setStep(step + 1)}
+                className="clay-key"
                 style={{
                   width: "100%",
                   marginTop: "18px",
-                  border: "none",
-                  borderRadius: "14px",
+                  borderRadius: "16px",
                   padding: "14px",
-                  background: "var(--text)",
-                  color: "var(--bg)",
                   fontSize: "14px",
                   fontWeight: 800,
                   cursor: "pointer",
@@ -399,14 +395,12 @@ export default function OnboardingPage() {
             <button
               onClick={() => setStep(step + 1)}
               disabled={selections.targetMuscles.length === 0}
+              className="clay-key"
               style={{
                 width: "100%",
                 marginTop: "18px",
-                border: "none",
-                borderRadius: "14px",
+                borderRadius: "16px",
                 padding: "14px",
-                background: "var(--text)",
-                color: "var(--bg)",
                 fontSize: "14px",
                 fontWeight: 800,
                 cursor: selections.targetMuscles.length ? "pointer" : "default",

@@ -71,7 +71,7 @@ function ResetPasswordForm() {
                 <div style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 28 }}>Your password has been changed. Sign in with your new password.</div>
               </motion.div>
               <motion.div variants={fadeIn}>
-                <button onClick={() => router.push("/login")} style={{ width: "100%", background: "var(--text)", color: "var(--bg)", border: "none", borderRadius: "16px", padding: "15px", fontSize: "15px", fontWeight: 700, cursor: "pointer" }}>
+                <button onClick={() => router.push("/login")} className="clay-key" style={{ width: "100%", borderRadius: "18px", padding: "15px", fontSize: "15px", fontWeight: 700 }}>
                   Sign in
                 </button>
               </motion.div>
@@ -83,7 +83,7 @@ function ResetPasswordForm() {
                 <div style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 24 }}>This reset link is invalid or has expired.</div>
               </motion.div>
               <motion.div variants={fadeIn}>
-                <button onClick={() => router.push("/forgot-password")} style={{ width: "100%", background: "var(--text)", color: "var(--bg)", border: "none", borderRadius: "16px", padding: "15px", fontSize: "15px", fontWeight: 700, cursor: "pointer" }}>
+                <button onClick={() => router.push("/forgot-password")} className="clay-key" style={{ width: "100%", borderRadius: "18px", padding: "15px", fontSize: "15px", fontWeight: 700 }}>
                   Request a new link
                 </button>
               </motion.div>
@@ -121,7 +121,8 @@ function ResetPasswordForm() {
 
                 <motion.div variants={fadeIn}>
                   <button type="submit" disabled={loading || !password || !confirm}
-                    style={{ width: "100%", background: "var(--text)", color: "var(--bg)", border: "none", borderRadius: "16px", padding: "15px", fontSize: "15px", fontWeight: 700, cursor: "pointer", opacity: loading || !password || !confirm ? 0.5 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                    className="clay-key"
+                    style={{ width: "100%", borderRadius: "18px", padding: "15px", fontSize: "15px", fontWeight: 700, opacity: loading || !password || !confirm ? 0.5 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                     {loading ? (<><span style={{ width: 16, height: 16, borderRadius: "50%", border: "2px solid rgba(0,0,0,0.15)", borderTopColor: "var(--bg)", animation: "spin 0.6s linear infinite", display: "inline-block" }} />Updating…</>) : "Update password"}
                   </button>
                 </motion.div>

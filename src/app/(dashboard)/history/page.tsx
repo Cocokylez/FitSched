@@ -321,7 +321,7 @@ export default function HistoryPage() {
                                     <button
                                       onClick={() => saveNote(log.id)}
                                       disabled={savingNoteId === log.id}
-                                      style={{ flex: 2, padding: "8px 0", borderRadius: 9, border: "none", background: ACCENT, color: "#0a1412", fontSize: 12, fontWeight: 800, cursor: "pointer", opacity: savingNoteId === log.id ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}
+                                      className="clay-key" style={{ flex: 2, padding: "8px 0", borderRadius: 10, fontSize: 12, fontWeight: 800, opacity: savingNoteId === log.id ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}
                                     >
                                       <Check size={12} strokeWidth={2.5} />
                                       {savingNoteId === log.id ? t.saving : t.hSaveNote}

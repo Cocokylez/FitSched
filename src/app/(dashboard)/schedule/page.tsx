@@ -520,7 +520,8 @@ export default function SchedulePage() {
                     <motion.button
                       whileTap={{ scale: 0.94 }}
                       onClick={() => canStartExerciseToday ? startExerciseFromSchedule(bestBlock) : undefined}
-                      style={{ background: ACCENT, border: "none", borderRadius: 999, padding: "9px 18px", fontSize: 13, fontWeight: 800, color: "#0b1715", cursor: canStartExerciseToday ? "pointer" : "default", opacity: canStartExerciseToday ? 1 : 0.5, display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
+                      className="clay-key"
+                      style={{ borderRadius: 999, padding: "9px 18px", fontSize: 13, fontWeight: 800, cursor: canStartExerciseToday ? "pointer" : "default", opacity: canStartExerciseToday ? 1 : 0.5, display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
                     >
                       {t.scStart}
                       <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -686,7 +687,7 @@ export default function SchedulePage() {
                 <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 7 }}>{t.description}</div>
                 <textarea value={manualDescription} onChange={e => setManualDescription(e.target.value)} placeholder={t.optionalNotes} rows={3} style={{ width: "100%", boxSizing: "border-box", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", borderRadius: 13, padding: "13px 14px", fontSize: 14, outline: "none", resize: "vertical" }} />
               </label>
-              <button type="button" onClick={saveManualSchedule} disabled={!manualTitle.trim() || savingManual} style={{ width: "100%", border: "none", borderRadius: 14, padding: 14, background: "var(--text)", color: "var(--bg)", fontSize: 14, fontWeight: 900, cursor: manualTitle.trim() && !savingManual ? "pointer" : "default", opacity: manualTitle.trim() && !savingManual ? 1 : 0.5 }}>
+              <button type="button" onClick={saveManualSchedule} disabled={!manualTitle.trim() || savingManual} className="clay-key" style={{ width: "100%", borderRadius: 16, padding: 14, fontSize: 14, fontWeight: 900, cursor: manualTitle.trim() && !savingManual ? "pointer" : "default", opacity: manualTitle.trim() && !savingManual ? 1 : 0.5 }}>
                 {savingManual ? (editingBlockId ? t.saving : t.adding) : (editingBlockId ? t.saveChanges : t.addToSchedule)}
               </button>
             </motion.div>
@@ -704,14 +705,12 @@ export default function SchedulePage() {
             whileTap={{ scale: 0.90 }}
             transition={{ type: "spring", stiffness: 340, damping: 22 }}
             onClick={openAddSchedule}
+            className="clay-key"
             style={{
               position: "fixed", right: 20,
               bottom: "max(160px, calc(env(safe-area-inset-bottom) + 150px))",
               zIndex: 60, width: 52, height: 52, borderRadius: "50%",
-              background: ACCENT, border: "none", cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 4px 20px rgba(18,101,254,0.45), 0 2px 8px rgba(0,0,0,0.12)",
-              color: "#0d1f1e",
             }}
           >
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
