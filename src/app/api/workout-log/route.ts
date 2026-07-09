@@ -171,6 +171,18 @@ export async function DELETE(req: Request) {
         new Prisma.Decimal(0)
       )
       if (totalToDeduct.greaterThan(0)) {
+        const balance = await tx.fitTokenBalance.findUnique({ where: { userId } })
+        const earned  = new Prisma.Decimal(balance?.amount        ?? 0)
+        const claimed = new Prisma.Decimal(balance?.claimedAmount ?? 0)
+        const remainingAfterDelete = earned.minus(totalToDeduct)
+
+        // On-chain FIT can't be un-minted. If deducting this log's tokens would
+        // drop earnings below what's already been claimed, block the delete so
+        // the off-chain ledger can never contradict the chain.
+        if (remainingAfterDelete.lessThan(claimed)) {
+          throw Object.assign(new Error("tokens_claimed"), { code: "TOKENS_CLAIMED" })
+        }
+
         await tx.fitTokenBalance.updateMany({
           where: { userId },
           data: { amount: { decrement: totalToDeduct } },
@@ -182,6 +194,12 @@ export async function DELETE(req: Request) {
     if (deleted.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 })
     return NextResponse.json({ ok: true })
   } catch (error) {
+    if ((error as any)?.code === "TOKENS_CLAIMED") {
+      return NextResponse.json(
+        { error: "This workout's tokens were already claimed on-chain, so the log can't be deleted." },
+        { status: 409 },
+      )
+    }
     console.error("Workout log DELETE error:", error)
     return NextResponse.json({ error: "Failed to delete workout log" }, { status: 500 })
   }
