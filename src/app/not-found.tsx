@@ -32,10 +32,8 @@ export default function NotFound() {
       <p style={{ fontSize: "14px", color: "var(--text-muted)", marginBottom: "32px", maxWidth: "280px", lineHeight: 1.6 }}>
         This page doesn&apos;t exist. It may have been moved or deleted.
       </p>
-      <Link href="/schedule" style={{
-        background: "var(--text)",
-        color: "var(--bg)",
-        borderRadius: "14px",
+      <Link href="/schedule" className="clay-key" style={{
+        borderRadius: "16px",
         padding: "13px 28px",
         fontSize: "14px",
         fontWeight: 700,

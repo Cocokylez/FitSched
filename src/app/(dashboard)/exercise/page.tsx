@@ -411,7 +411,7 @@ export default function ExerciseSessionPage() {
               <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 18, lineHeight: 1.5 }}>
                 {lockReason === "date" ? t.todayWorkoutOnlyBody : t.workoutAlreadyCompleteBody}
               </div>
-              <button onClick={() => router.push("/workout")} style={{ border: "none", borderRadius: 14, padding: "13px 18px", background: ACCENT, color: "#fff", fontWeight: 900, cursor: "pointer" }}>{t.backToWorkout}</button>
+              <button className="clay-key" onClick={() => router.push("/workout")} style={{ borderRadius: 16, padding: "13px 18px", fontWeight: 900 }}>{t.backToWorkout}</button>
             </>
           )}
         </div>
@@ -425,7 +425,7 @@ export default function ExerciseSessionPage() {
         <div style={{ maxWidth: 520, width: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 20, padding: 24, textAlign: "center" }}>
           <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 8 }}>{t.noWorkoutLoaded}</div>
           <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 18 }}>{t.noWorkoutLoadedBody}</div>
-          <button onClick={() => router.push("/workout")} style={{ border: "none", borderRadius: 14, padding: "13px 18px", background: "var(--text)", color: "var(--bg)", fontWeight: 800, cursor: "pointer" }}>{t.backToWorkout}</button>
+          <button className="clay-key" onClick={() => router.push("/workout")} style={{ borderRadius: 16, padding: "13px 18px", fontWeight: 800 }}>{t.backToWorkout}</button>
         </div>
       </div>
     )

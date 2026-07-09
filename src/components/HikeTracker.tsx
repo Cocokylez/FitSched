@@ -649,13 +649,11 @@ export function HikeTracker({ onFinish, onClose, disableNavEvent, onPhaseChange 
               </motion.button>
               <motion.button
                 onClick={handleBeginHike}
-                whileTap={{ scale: 0.96 }}
+                className="clay-key"
                 style={{
-                  border: "none", borderRadius: 18, padding: "16px",
-                  background: ACCENT, color: "#0d1f1e",
+                  borderRadius: 18, padding: "16px",
                   fontWeight: 900, fontSize: 16, fontFamily: "inherit",
-                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  boxShadow: "0 0 32px rgba(18,101,254,0.4)",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                 }}
               >
                 <Navigation size={18} strokeWidth={2.5} />

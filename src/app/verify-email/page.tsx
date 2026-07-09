@@ -76,7 +76,7 @@ function VerifyEmailContent() {
                 <div style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 28 }}>Your email address has been confirmed. You&apos;re all set.</div>
               </motion.div>
               <motion.div variants={fadeIn}>
-                <Link href="/schedule" style={{ display: "block", width: "100%", background: "var(--text)", color: "var(--bg)", border: "none", borderRadius: "16px", padding: "15px", fontSize: "15px", fontWeight: 700, cursor: "pointer", textAlign: "center", textDecoration: "none" }}>
+                <Link href="/schedule" className="clay-key" style={{ display: "block", width: "100%", borderRadius: "18px", padding: "15px", fontSize: "15px", fontWeight: 700, textAlign: "center", textDecoration: "none" }}>
                   Go to dashboard
                 </Link>
               </motion.div>
@@ -99,7 +99,8 @@ function VerifyEmailContent() {
                   </div>
                 ) : (
                   <button onClick={handleResend} disabled={resending}
-                    style={{ width: "100%", background: "var(--text)", color: "var(--bg)", border: "none", borderRadius: "16px", padding: "15px", fontSize: "15px", fontWeight: 700, cursor: resending ? "default" : "pointer", opacity: resending ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                    className="clay-key"
+                    style={{ width: "100%", borderRadius: "18px", padding: "15px", fontSize: "15px", fontWeight: 700, opacity: resending ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                     {resending ? (<><span style={{ width: 16, height: 16, borderRadius: "50%", border: "2px solid rgba(0,0,0,0.15)", borderTopColor: "var(--bg)", animation: "spin 0.6s linear infinite", display: "inline-block" }} />Sending…</>) : "Resend verification email"}
                   </button>
                 )}
@@ -117,7 +118,7 @@ function VerifyEmailContent() {
                 <div style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 28 }}>This verification link is invalid or has already been used.</div>
               </motion.div>
               <motion.div variants={fadeIn}>
-                <Link href="/schedule" style={{ display: "block", width: "100%", background: "var(--text)", color: "var(--bg)", border: "none", borderRadius: "16px", padding: "15px", fontSize: "15px", fontWeight: 700, cursor: "pointer", textAlign: "center", textDecoration: "none" }}>
+                <Link href="/schedule" className="clay-key" style={{ display: "block", width: "100%", borderRadius: "18px", padding: "15px", fontSize: "15px", fontWeight: 700, textAlign: "center", textDecoration: "none" }}>
                   Go to dashboard
                 </Link>
               </motion.div>

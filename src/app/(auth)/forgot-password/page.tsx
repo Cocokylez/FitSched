@@ -82,7 +82,7 @@ export default function ForgotPasswordPage() {
                 </div>
               </motion.div>
               <motion.div variants={fadeIn}>
-                <button onClick={() => router.push("/login")} style={{ width: "100%", background: "var(--text)", color: "var(--bg)", border: "none", borderRadius: "16px", padding: "15px", fontSize: "15px", fontWeight: 700, cursor: "pointer" }}>
+                <button onClick={() => router.push("/login")} className="clay-key" style={{ width: "100%", borderRadius: "18px", padding: "15px", fontSize: "15px", fontWeight: 700 }}>
                   {t.signInWithGoogle}
                 </button>
               </motion.div>
@@ -107,7 +107,8 @@ export default function ForgotPasswordPage() {
               <motion.div variants={fadeIn}>
                 <button
                   onClick={() => router.push("/login")}
-                  style={{ width: "100%", background: "var(--text)", color: "var(--bg)", border: "none", borderRadius: "16px", padding: "15px", fontSize: "15px", fontWeight: 700, cursor: "pointer" }}
+                  className="clay-key"
+                  style={{ width: "100%", borderRadius: "18px", padding: "15px", fontSize: "15px", fontWeight: 700 }}
                 >
                   {t.fpBackSignin}
                 </button>
@@ -147,7 +148,8 @@ export default function ForgotPasswordPage() {
                   <button
                     type="submit"
                     disabled={loading || !email.trim()}
-                    style={{ width: "100%", background: "var(--text)", color: "var(--bg)", border: "none", borderRadius: "16px", padding: "15px", fontSize: "15px", fontWeight: 700, cursor: "pointer", marginBottom: "20px", opacity: loading || !email.trim() ? 0.5 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+                    className="clay-key"
+                    style={{ width: "100%", borderRadius: "18px", padding: "15px", fontSize: "15px", fontWeight: 700, marginBottom: "20px", opacity: loading || !email.trim() ? 0.5 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
                   >
                     {loading ? (
                       <><span style={{ width: 16, height: 16, borderRadius: "50%", border: "2px solid rgba(0,0,0,0.15)", borderTopColor: "var(--bg)", animation: "spin 0.6s linear infinite", display: "inline-block" }} />{t.fpSending}</>

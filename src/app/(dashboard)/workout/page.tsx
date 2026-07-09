@@ -689,7 +689,7 @@ export default function WorkoutPage() {
                   <div style={{ fontSize: 11, color: "var(--text-muted)", textAlign: "center", marginBottom: 16 }}>{t.smartTimeHint}</div>
                   <div style={{ display: "flex", gap: 10 }}>
                     <button type="button" onClick={() => setSchedulePickerOpen(false)} style={{ flex: 1, border: "1px solid var(--border)", background: "transparent", color: "var(--text)", borderRadius: 14, padding: "13px 0", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{t.cancel}</button>
-                    <button type="button" onClick={confirmSaveToSchedule} disabled={savingSchedule} style={{ flex: 1, border: "none", background: "var(--text)", color: "var(--bg)", borderRadius: 14, padding: "13px 0", fontSize: 14, fontWeight: 900, cursor: savingSchedule ? "default" : "pointer", opacity: savingSchedule ? 0.5 : 1 }}>{savingSchedule ? t.saving : t.addToSchedule}</button>
+                    <button type="button" onClick={confirmSaveToSchedule} disabled={savingSchedule} className="clay-key" style={{ flex: 1, borderRadius: 16, padding: "13px 0", fontSize: 14, fontWeight: 900, opacity: savingSchedule ? 0.5 : 1 }}>{savingSchedule ? t.saving : t.addToSchedule}</button>
                   </div>
                 </motion.div>
               </motion.div>
