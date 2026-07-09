@@ -446,8 +446,8 @@ export default function ExerciseSessionPage() {
           </div>
           {/* Content */}
           <div style={{ flex: 1, padding: "24px 24px 32px" }}>
-            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.14em", color: "var(--text-muted)", marginBottom: 10 }}>{t.exTodaysWorkout}</div>
-            <div style={{ fontSize: 44, fontWeight: 950, letterSpacing: "-1.5px", color: "var(--text)", marginBottom: 6, lineHeight: 1.05 }}>{workout.workoutName}</div>
+            <div className="label-text" style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 10 }}>{t.exTodaysWorkout}</div>
+            <div data-display-text="true" style={{ fontSize: 44, fontWeight: 800, color: "var(--text)", marginBottom: 6, lineHeight: 1.05 }}>{workout.workoutName}</div>
             <div style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 600, marginBottom: 32 }}>
               {workout.exercises.length} {t.exercisesCount} · {Math.round(totalSets * 0.75)} {t.wMin}
             </div>
@@ -472,15 +472,15 @@ export default function ExerciseSessionPage() {
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ffa000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
               <span style={{ fontSize: 11, fontWeight: 700, color: "#ffa000", lineHeight: 1.4 }}>{t.exOneShot}</span>
             </div>
-            <motion.button
+            <button
               type="button"
-              whileTap={{ scale: 0.97 }}
+              className="clay-key"
               onClick={() => setPhase("permission")}
-              style={{ width: "100%", border: "none", borderRadius: 16, padding: "17px", background: "var(--text)", color: "var(--bg)", fontSize: 16, fontWeight: 950, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+              style={{ width: "100%", padding: "18px", fontSize: 16, fontWeight: 950, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
             >
               {t.exLetsGo}
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-            </motion.button>
+            </button>
           </div>
         </div>
       </div>
@@ -504,14 +504,14 @@ export default function ExerciseSessionPage() {
           <div style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.65, marginBottom: 40 }}>
             {t.exTrackBody}
           </div>
-          <motion.button
+          <button
             type="button"
-            whileTap={{ scale: 0.96 }}
+            className="clay-key"
             onClick={() => { startVerify(); setVerifySettled(true); setPhase("countdown") }}
-            style={{ width: "100%", border: "none", borderRadius: 16, padding: "17px", background: "var(--text)", color: "var(--bg)", fontSize: 15, fontWeight: 950, cursor: "pointer", marginBottom: 10 }}
+            style={{ width: "100%", padding: "17px", fontSize: 15, fontWeight: 950, marginBottom: 14 }}
           >
             {t.exEnableMotion}
-          </motion.button>
+          </button>
           <button
             type="button"
             onClick={() => { setVerifySettled(true); setPhase("countdown") }}
@@ -538,7 +538,7 @@ export default function ExerciseSessionPage() {
             style={{ textAlign: "center" }}
           >
             {countdownNum > 0 && (
-              <div style={{ fontSize: 160, fontWeight: 950, color: "var(--text)", lineHeight: 1, letterSpacing: "-6px", fontVariantNumeric: "tabular-nums" }}>{countdownNum}</div>
+              <div data-display-text="true" style={{ fontSize: 160, fontWeight: 800, color: "var(--text)", lineHeight: 1, fontVariantNumeric: "tabular-nums", textShadow: `0 0 90px ${ACCENT}59` }}>{countdownNum}</div>
             )}
           </motion.div>
         </AnimatePresence>
@@ -563,9 +563,9 @@ export default function ExerciseSessionPage() {
         )}
       </div>
 
-      {/* Title block */}
-      <div style={{ padding: "10px 16px 14px" }}>
-        <div style={{ fontSize: 30, fontWeight: 950, letterSpacing: "-0.5px", color: "var(--text)" }}>{workout.workoutName}</div>
+      {/* Title block — the workout name is context; the exercise below is the hero */}
+      <div style={{ padding: "12px 16px 8px" }}>
+        <div className="label-text" style={{ fontSize: 10.5, color: "var(--text-muted)" }}>{workout.workoutName}</div>
       </div>
 
       {/* W1 Fullscreen single exercise display */}
@@ -598,21 +598,27 @@ export default function ExerciseSessionPage() {
                 transition={{ type: "spring", stiffness: 320, damping: 30 }}
                 style={{ display: "flex", flexDirection: "column", gap: 14 }}
               >
-                {/* Exercise name */}
-                <div style={{ fontSize: 28, fontWeight: 950, color: "var(--text)", letterSpacing: "-0.5px", lineHeight: 1.1 }}>{ex.name}</div>
+                {/* Ambient category wash — ties the whole screen to the current exercise */}
+                <div aria-hidden style={{ position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none", background: `radial-gradient(560px 380px at 50% -90px, ${catStyle.color}26, transparent 72%)` }} />
 
-                {/* Large demo visual — full-bleed */}
-                <div style={{ position: "relative", width: "calc(100% + 32px)", marginLeft: -16, marginRight: -16 }}>
-                  <ExerciseDemoVisual exerciseName={ex.name} height={360} objectFit="contain" />
+                {/* Exercise name */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <span style={{ alignSelf: "flex-start", fontSize: 10, fontWeight: 900, letterSpacing: "0.14em", color: catStyle.color, background: `${catStyle.color}16`, border: `1px solid ${catStyle.color}3d`, borderRadius: 8, padding: "3px 9px" }}>{category}</span>
+                  <h1 data-display-text="true" style={{ fontSize: 34, fontWeight: 800, color: "var(--text)", lineHeight: 1.04 }}>{ex.name}</h1>
+                </div>
+
+                {/* Demo visual — contained illustration plate instead of a full-bleed white flash */}
+                <div style={{ position: "relative", borderRadius: 28, overflow: "hidden", background: "#f7f5ef", boxShadow: `0 22px 44px -16px ${catStyle.color}4d, 0 2px 6px rgba(0,0,0,0.16), inset 0 0 0 1px rgba(20,24,22,0.06), inset 0 -18px 30px -22px rgba(30,34,30,0.32)` }}>
+                  <ExerciseDemoVisual exerciseName={ex.name} height={290} objectFit="contain" />
                   <AnimatePresence>
                     {allSetsDoneForCurrent && (
                       <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        style={{ position: "absolute", inset: 0, borderRadius: 20, background: "rgba(18,101,254,0.22)", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(1px)" }}
+                        style={{ position: "absolute", inset: 0, background: `${catStyle.color}30`, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(2px)" }}
                       >
-                        <svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke={ACCENT} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        <svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke={catStyle.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -677,20 +683,19 @@ export default function ExerciseSessionPage() {
                     </div>
                   )}
                   {allSetsDoneForCurrent ? (
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "20px", background: `${catStyle.color}18`, border: `1.5px solid ${catStyle.color}55`, borderRadius: 18, color: catStyle.color, fontWeight: 900, fontSize: 15 }}>
+                    <div className="clay-inset" style={{ ["--clay" as string]: catStyle.color, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "20px", color: catStyle.color, fontWeight: 900, fontSize: 15 }}>
                       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                       {t.exAllSetsDone}
                     </div>
                   ) : (
-                    <motion.button
+                    <button
                       type="button"
-                      whileTap={{ scale: 0.94 }}
+                      className="clay-key"
                       onClick={() => completeSet(currentExIdx)}
                       style={{
-                        width: "100%", border: `1.5px solid ${catStyle.color}`,
-                        background: `${catStyle.color}14`, color: catStyle.color,
-                        borderRadius: 18, padding: "20px 16px",
-                        fontSize: 16, fontWeight: 900, cursor: "pointer",
+                        ["--clay" as string]: catStyle.color,
+                        width: "100%", padding: "20px 16px",
+                        fontSize: 16, fontWeight: 900,
                         display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
                       }}
                     >
@@ -698,12 +703,12 @@ export default function ExerciseSessionPage() {
                         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                       </motion.span>
                       {t.exCompleteSet} {Math.min(done + 1, ex.sets)} {t.exOfLower} {ex.sets}
-                    </motion.button>
+                    </button>
                   )}
                   {/* Set progress bar */}
-                  <div style={{ display: "flex", gap: 5, marginTop: 10 }}>
+                  <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
                     {Array.from({ length: ex.sets }, (_, i) => (
-                      <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i < done ? catStyle.color : i === done && !allSetsDoneForCurrent ? `${catStyle.color}55` : "var(--border)", transition: "background 0.3s" }} />
+                      <div key={i} style={{ flex: 1, height: 6, borderRadius: 3, background: i < done ? catStyle.color : i === done && !allSetsDoneForCurrent ? `${catStyle.color}45` : "var(--surface-2)", boxShadow: i < done ? `0 0 10px ${catStyle.color}59, inset 0 1px 0 rgba(255,255,255,0.25)` : "inset 0 1px 2px rgba(0,0,0,0.22)", transition: "background 0.3s, box-shadow 0.3s" }} />
                     ))}
                   </div>
                   {/* Up-next hint — makes the rotation to the next exercise explicit */}
@@ -740,8 +745,8 @@ export default function ExerciseSessionPage() {
       </div>
 
       {/* Overall workout progress bar */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, height: 3, background: "var(--surface-2)", zIndex: 10 }}>
-        <div style={{ height: "100%", background: ACCENT, width: `${totalSets > 0 ? (doneSets / totalSets) * 100 : 0}%`, transition: "width 0.5s ease", borderRadius: "0 2px 2px 0" }} />
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, height: 5, background: "var(--surface-2)", zIndex: 10 }}>
+        <div style={{ height: "100%", background: `linear-gradient(90deg, ${ACCENT}, color-mix(in srgb, ${ACCENT} 70%, #7ec4ff))`, width: `${totalSets > 0 ? (doneSets / totalSets) * 100 : 0}%`, transition: "width 0.5s ease", borderRadius: "0 3px 3px 0", boxShadow: `0 0 14px ${ACCENT}66` }} />
       </div>
 
       {/* Finish Workout CTA — shown once every set of every exercise is done */}
@@ -750,21 +755,16 @@ export default function ExerciseSessionPage() {
         return (
           <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "12px 16px", paddingBottom: "max(12px, env(safe-area-inset-bottom))", background: "var(--bg)", borderTop: "1px solid var(--border)" }}>
             <AnimatePresence mode="wait">
-              <motion.button
-                key="finish"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
+              <motion.div key="finish" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
+              <button
                 type="button"
+                className="clay-key"
                 onClick={finishWorkout}
                 disabled={saving}
                 style={{
-                  width: "100%", border: "none", borderRadius: 16, padding: 15,
-                  background: ACCENT, color: "#fff", fontSize: 15, fontWeight: 950,
-                  cursor: saving ? "default" : "pointer",
+                  width: "100%", padding: 16,
+                  fontSize: 15, fontWeight: 950,
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  opacity: saving ? 0.6 : 1,
-                  boxShadow: "0 8px 24px rgba(18,101,254,0.28)",
                 }}
               >
                 {saving ? t.saving : t.finishWorkout}
@@ -773,7 +773,8 @@ export default function ExerciseSessionPage() {
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
                 )}
-              </motion.button>
+              </button>
+              </motion.div>
             </AnimatePresence>
           </div>
         )
@@ -800,7 +801,8 @@ export default function ExerciseSessionPage() {
                 exit={{ y: "100%" }}
                 transition={{ type: "spring", stiffness: 340, damping: 32 }}
                 onClick={e => e.stopPropagation()}
-                style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "var(--panel)", borderRadius: "20px 20px 0 0", padding: "20px 16px max(24px, calc(env(safe-area-inset-bottom) + 16px))", maxHeight: "60vh", overflowY: "auto" }}
+                className="glass-panel"
+                style={{ position: "absolute", bottom: 0, left: 0, right: 0, borderRadius: "24px 24px 0 0", padding: "20px 16px max(24px, calc(env(safe-area-inset-bottom) + 16px))", maxHeight: "60vh", overflowY: "auto" }}
               >
                 <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--border)", margin: "0 auto 18px" }} />
                 <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.12em", color: "var(--text-muted)", marginBottom: 12 }}>
@@ -840,7 +842,8 @@ export default function ExerciseSessionPage() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 60, opacity: 0 }}
               transition={{ type: "spring", stiffness: 320, damping: 30 }}
-              style={{ width: "100%", maxWidth: 480, background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 28, padding: "26px 22px 22px", boxShadow: "0 30px 80px rgba(0,0,0,0.5)" }}
+              className="glass-panel"
+              style={{ width: "100%", maxWidth: 480, borderRadius: 28, padding: "26px 22px 22px" }}
             >
               <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,80,80,0.12)", border: "1px solid rgba(255,80,80,0.28)", color: "#ff5050", display: "grid", placeItems: "center", margin: "0 auto 16px" }}>
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -1030,7 +1033,7 @@ export default function ExerciseSessionPage() {
                 </motion.div>
               )}
 
-              <button type="button" onClick={() => router.push("/workout")} style={{ width: "100%", border: "none", borderRadius: 16, padding: 15, background: ACCENT, color: "#fff", fontSize: 15, fontWeight: 950, cursor: "pointer", boxShadow: "0 12px 28px rgba(18,101,254,0.3)" }}>{t.continueLabel}</button>
+              <button type="button" className="clay-key" onClick={() => router.push("/workout")} style={{ width: "100%", padding: 16, fontSize: 15, fontWeight: 950 }}>{t.continueLabel}</button>
             </motion.div>
           </motion.div>
         )}
@@ -1097,19 +1100,17 @@ function RestTimerOverlay({
       }}
     >
       <motion.div
+        className="glass-panel"
         initial={{ scale: 0.88, y: 22 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.88, y: 22 }}
         transition={{ type: "spring", stiffness: 280, damping: 26 }}
         style={{
-          background: "var(--panel)",
-          border: "1px solid rgba(18,101,254,0.28)",
           borderRadius: 28,
           padding: "28px 24px 22px",
           width: "100%", maxWidth: 330,
           display: "flex", flexDirection: "column",
           alignItems: "center", gap: 20,
-          boxShadow: "0 28px 80px rgba(0,0,0,0.5)",
         }}
       >
         {/* Label */}
@@ -1197,15 +1198,9 @@ function RestTimerOverlay({
           </button>
           <button
             type="button"
+            className="clay-key"
             onClick={onAddTime}
-            style={{
-              flex: 1,
-              border: `1px solid rgba(18,101,254,0.35)`,
-              background: "rgba(18,101,254,0.1)",
-              color: ACCENT,
-              borderRadius: 14, padding: "13px 0",
-              fontSize: 13, fontWeight: 900, cursor: "pointer",
-            }}
+            style={{ flex: 1, borderRadius: 16, padding: "13px 0", fontSize: 13, fontWeight: 900 }}
           >
             +30s
           </button>
