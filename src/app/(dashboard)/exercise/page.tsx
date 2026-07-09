@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import dynamic from "next/dynamic"
 import { useSession } from "next-auth/react"
 import { AnimatePresence, motion } from "framer-motion"
 import { useLanguage } from "@/context/LanguageContext"
@@ -13,6 +14,10 @@ import { getCategory, CATEGORY_COLORS } from "@/lib/exerciseUtils"
 import { estimateCalories } from "@/lib/calorieEstimate"
 import { getMuscleGroup } from "@/lib/exerciseData"
 import { ACHIEVEMENT_MAP, TIER_COLORS } from "@/lib/achievements"
+import { getCameraExerciseType } from "@/lib/repCounter"
+
+// Camera rep counter pulls in the MediaPipe runtime — load only when opened.
+const CameraRepCounter = dynamic(() => import("@/components/CameraRepCounter"), { ssr: false })
 
 // Alternatives pool keyed by muscle group (display name)
 const SWAP_POOL: Record<string, string[]> = {
@@ -127,6 +132,10 @@ export default function ExerciseSessionPage() {
   const [phase, setPhase] = useState<ExPhase>("intro")
   const [countdownNum, setCountdownNum] = useState(3)
   const [exerciseHistory, setExerciseHistory] = useState<Record<string, { sets: number; reps: number; completedAt: string; weight?: number }>>({})
+  const [cameraOn, setCameraOn] = useState(false)
+
+  // Camera opt-in is per exercise — rotating to another exercise turns it off.
+  useEffect(() => { setCameraOn(false) }, [currentExIdx])
 
   useEffect(() => {
     let active = true
@@ -568,6 +577,7 @@ export default function ExerciseSessionPage() {
           const category = getCategory(ex.name, currentExIdx)
           const catStyle = CATEGORY_COLORS[category] || CATEGORY_COLORS.CORE
           const allSetsDoneForCurrent = done >= ex.sets
+          const camType = getCameraExerciseType(ex.name)
           const currentWeight = exerciseWeights[currentExIdx]
           const histWeight = exerciseHistory[ex.name]?.weight
           const isPRAttempt = currentWeight != null && currentWeight > 0 && (histWeight == null || currentWeight > histWeight)
@@ -626,6 +636,31 @@ export default function ExerciseSessionPage() {
                     <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                     {exerciseHistory[ex.name].weight != null && `${exerciseHistory[ex.name].weight}kg · `}{t.exLast} {exerciseHistory[ex.name].sets}×{exerciseHistory[ex.name].reps} · {daysAgoLabel(exerciseHistory[ex.name].completedAt, t)}
                   </div>
+                )}
+
+                {/* Camera rep counting (Beta) — squat & push-up variants only */}
+                {camType && !allSetsDoneForCurrent && restSeconds === null && (
+                  cameraOn ? (
+                    <CameraRepCounter
+                      key={`cam-${currentExIdx}-${done}`}
+                      exerciseType={camType}
+                      targetReps={ex.reps}
+                      accentColor={catStyle.color}
+                      labels={{ starting: t.exCamStarting, denied: t.exCamDenied, tip: t.exCamTip, stop: t.exCamStop }}
+                      onTargetReached={() => completeSet(currentExIdx)}
+                      onStop={() => setCameraOn(false)}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setCameraOn(true)}
+                      style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", border: "1.5px dashed var(--border)", background: "transparent", borderRadius: 16, padding: "12px 14px", fontSize: 13, fontWeight: 800, color: "var(--text-muted)", cursor: "pointer" }}
+                    >
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                      {t.exCamAuto}
+                      <span style={{ fontSize: 9.5, fontWeight: 900, letterSpacing: "0.08em", padding: "2px 7px", borderRadius: 999, background: `${catStyle.color}22`, color: catStyle.color }}>{t.exCamBeta.toUpperCase()}</span>
+                    </button>
+                  )
                 )}
 
                 {/* Set — one at a time */}
