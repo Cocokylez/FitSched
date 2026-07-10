@@ -97,7 +97,8 @@ contract FitTokenTest is Test {
     function test_CannotExceedRewardsPoolCap() public {
         uint256 cap = 6_000_000 * 1e18;
 
-        vm.prank(distributor);
+        // Bulk fill as owner — the distributor is daily-capped by design.
+        vm.prank(owner);
         token.mintReward(user1, cap, "bulk");
         assertEq(token.rewardsMinted(),  cap);
         assertEq(token.rewardsRemaining(), 0);
@@ -109,7 +110,7 @@ contract FitTokenTest is Test {
 
     function test_MaxTotalSupplyNeverExceededAfterFullRewardsMint() public {
         uint256 cap = 6_000_000 * 1e18;
-        vm.prank(distributor);
+        vm.prank(owner);
         token.mintReward(user1, cap, "bulk");
 
         assertEq(token.totalSupply(), token.MAX_SUPPLY());
@@ -338,7 +339,7 @@ contract FitTokenTest is Test {
 
     function test_RewardsUsedBpsAfterHalfMinted() public {
         uint256 half = 3_000_000 * 1e18; // half of 6M rewards pool
-        vm.prank(distributor);
+        vm.prank(owner);
         token.mintReward(user1, half, "bulk");
 
         assertEq(token.rewardsUsedBps(), 5000); // 50%
@@ -346,10 +347,105 @@ contract FitTokenTest is Test {
 
     function test_RewardsUsedBpsAfterFullMint() public {
         uint256 cap = 6_000_000 * 1e18;
-        vm.prank(distributor);
+        vm.prank(owner);
         token.mintReward(user1, cap, "full");
 
         assertEq(token.rewardsUsedBps(), 10_000); // 100%
+    }
+
+    // ── Daily mint cap ────────────────────────────────────────────────────────
+
+    function test_DefaultDailyMintCapIs25k() public view {
+        assertEq(token.dailyMintCap(), 25_000 * 1e18);
+    }
+
+    function test_DistributorCannotExceedDailyCapInOneTx() public {
+        vm.prank(distributor);
+        vm.expectRevert(FitToken.DailyMintCapExceeded.selector);
+        token.mintReward(user1, 25_000 * 1e18 + 1, "too_much");
+    }
+
+    function test_DistributorCannotExceedDailyCapCumulatively() public {
+        vm.prank(distributor);
+        token.mintReward(user1, 20_000 * 1e18, "batch1");
+
+        vm.prank(distributor);
+        vm.expectRevert(FitToken.DailyMintCapExceeded.selector);
+        token.mintReward(user2, 6_000 * 1e18, "batch2");
+    }
+
+    function test_DailyCapResetsNextDay() public {
+        vm.prank(distributor);
+        token.mintReward(user1, 25_000 * 1e18, "day1_full");
+
+        vm.warp(block.timestamp + 1 days);
+
+        vm.prank(distributor);
+        token.mintReward(user2, 25_000 * 1e18, "day2_full");
+        assertEq(token.balanceOf(user2), 25_000 * 1e18);
+    }
+
+    function test_OwnerBypassesDailyCap() public {
+        vm.prank(owner);
+        token.mintReward(user1, 1_000_000 * 1e18, "owner_bulk");
+        assertEq(token.balanceOf(user1), 1_000_000 * 1e18);
+    }
+
+    function test_OwnerMintDoesNotConsumeDailyAllowance() public {
+        vm.prank(owner);
+        token.mintReward(user1, 1_000_000 * 1e18, "owner_bulk");
+
+        // Distributor still has its full allowance
+        vm.prank(distributor);
+        token.mintReward(user2, 25_000 * 1e18, "full_allowance");
+        assertEq(token.balanceOf(user2), 25_000 * 1e18);
+    }
+
+    function test_OwnerCanSetDailyMintCap() public {
+        vm.prank(owner);
+        vm.expectEmit(false, false, false, true);
+        emit FitToken.DailyMintCapUpdated(25_000 * 1e18, 50_000 * 1e18);
+        token.setDailyMintCap(50_000 * 1e18);
+
+        assertEq(token.dailyMintCap(), 50_000 * 1e18);
+
+        vm.prank(distributor);
+        token.mintReward(user1, 50_000 * 1e18, "raised_cap");
+        assertEq(token.balanceOf(user1), 50_000 * 1e18);
+    }
+
+    function test_NonOwnerCannotSetDailyMintCap() public {
+        vm.prank(distributor);
+        vm.expectRevert();
+        token.setDailyMintCap(type(uint256).max);
+    }
+
+    function test_ZeroCapBlocksDistributorMinting() public {
+        vm.prank(owner);
+        token.setDailyMintCap(0);
+
+        vm.prank(distributor);
+        vm.expectRevert(FitToken.DailyMintCapExceeded.selector);
+        token.mintReward(user1, 1, "blocked");
+    }
+
+    function test_MintableTodayTracksAllowance() public {
+        assertEq(token.mintableToday(), 25_000 * 1e18);
+
+        vm.prank(distributor);
+        token.mintReward(user1, 10_000 * 1e18, "partial");
+        assertEq(token.mintableToday(), 15_000 * 1e18);
+
+        vm.warp(block.timestamp + 1 days);
+        assertEq(token.mintableToday(), 25_000 * 1e18);
+    }
+
+    function testFuzz_DistributorMintWithinDailyCapSucceeds(uint256 amount) public {
+        amount = bound(amount, 1, token.dailyMintCap());
+
+        vm.prank(distributor);
+        token.mintReward(user1, amount, "fuzz_daily");
+        assertEq(token.balanceOf(user1), amount);
     }
 
     // ── Fuzz ─────────────────────────────────────────────────────────────────
@@ -358,7 +454,8 @@ contract FitTokenTest is Test {
         uint256 cap = 6_000_000 * 1e18;
         amount = bound(amount, 1, cap);
 
-        vm.prank(distributor);
+        // Owner mint — pool-level property, independent of the daily throttle
+        vm.prank(owner);
         token.mintReward(user1, amount, "fuzz");
 
         assertEq(token.balanceOf(user1), amount);
@@ -370,7 +467,7 @@ contract FitTokenTest is Test {
         excess = bound(excess, 1, type(uint128).max);
 
         // Fill pool
-        vm.prank(distributor);
+        vm.prank(owner);
         token.mintReward(user1, cap, "fill");
 
         // Anything more should revert

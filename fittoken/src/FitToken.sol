@@ -42,13 +42,23 @@ contract FitToken is ERC20, ERC20Burnable, Ownable2Step, Pausable {
     address public rewardDistributor;
     uint256 public rewardsMinted;
 
+    /// @notice Max FIT the distributor can mint per UTC day. Limits the blast
+    ///         radius of a compromised distributor key to one day's allowance.
+    ///         The owner (multisig) is exempt and can adjust it as usage grows.
+    ///         Setting it to 0 blocks all distributor minting (emergency lever).
+    uint256 public dailyMintCap = 25_000 * 1e18;
+    uint256 public mintedToday;
+    uint256 public currentMintDay;
+
     // ── Events ────────────────────────────────────────────────────────────────
     event RewardDistributorUpdated(address indexed oldDistributor, address indexed newDistributor);
     event RewardMinted(address indexed to, uint256 amount, string reason);
+    event DailyMintCapUpdated(uint256 oldCap, uint256 newCap);
 
     // ── Errors ────────────────────────────────────────────────────────────────
     error NotAuthorized();
     error RewardsPoolExhausted();
+    error DailyMintCapExceeded();
     error ZeroAddress();
 
     // ── Constructor ───────────────────────────────────────────────────────────
@@ -84,6 +94,18 @@ contract FitToken is ERC20, ERC20Burnable, Ownable2Step, Pausable {
         if (msg.sender != rewardDistributor && msg.sender != owner()) revert NotAuthorized();
         if (rewardsMinted + amount > REWARDS_POOL_CAP) revert RewardsPoolExhausted();
 
+        // Daily throttle — applies to the hot distributor wallet only. The owner
+        // multisig bypasses it (bulk ops, migrations, incident response).
+        if (msg.sender == rewardDistributor) {
+            uint256 day = block.timestamp / 1 days;
+            if (day != currentMintDay) {
+                currentMintDay = day;
+                mintedToday = 0;
+            }
+            if (mintedToday + amount > dailyMintCap) revert DailyMintCapExceeded();
+            unchecked { mintedToday += amount; }
+        }
+
         unchecked { rewardsMinted += amount; }
         _mint(to, amount);
 
@@ -118,6 +140,15 @@ contract FitToken is ERC20, ERC20Burnable, Ownable2Step, Pausable {
         rewardDistributor = newDistributor;
     }
 
+    /**
+     * @notice Adjust the distributor's daily minting allowance.
+     *         0 blocks all distributor minting; raise it as the user base grows.
+     */
+    function setDailyMintCap(uint256 newCap) external onlyOwner {
+        emit DailyMintCapUpdated(dailyMintCap, newCap);
+        dailyMintCap = newCap;
+    }
+
     // ── View helpers ──────────────────────────────────────────────────────────
 
     /**
@@ -132,5 +163,13 @@ contract FitToken is ERC20, ERC20Burnable, Ownable2Step, Pausable {
      */
     function rewardsUsedBps() external view returns (uint256) {
         return (rewardsMinted * 10_000) / REWARDS_POOL_CAP;
+    }
+
+    /**
+     * @notice How much the distributor can still mint today (resets at 00:00 UTC).
+     */
+    function mintableToday() external view returns (uint256) {
+        if (block.timestamp / 1 days != currentMintDay) return dailyMintCap;
+        return dailyMintCap > mintedToday ? dailyMintCap - mintedToday : 0;
     }
 }

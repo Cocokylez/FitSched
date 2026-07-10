@@ -49,7 +49,7 @@ export async function GET(req: Request) {
       }),
       db.user.findUnique({
         where: { id: session.user.id },
-        select: { walletAddress: true },
+        select: { walletAddress: true, email: true, emailVerified: true },
       }).catch(() => null),
       db.claimReceipt.findMany({
         where:   { userId: session.user.id },
@@ -68,6 +68,10 @@ export async function GET(req: Request) {
       claimed:       totalClaimed,
       transactions:  transactions.map(formatTransaction),
       walletAddress: (user as any)?.walletAddress ?? null,
+      // Why a claim would be rejected — lets the UI explain before the user tries
+      claimEligibility: (user as any)?.email?.endsWith("@fitsched.guest") ? "guest_account"
+        : !(user as any)?.emailVerified ? "email_unverified"
+        : "ok",
       tokenDeployed: Boolean(process.env.FIT_TOKEN_ADDRESS),
       claimReceipts: receipts.map((r) => ({
         id:            r.id,
