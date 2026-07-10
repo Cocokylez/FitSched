@@ -39,12 +39,15 @@ type TokensData = {
   transactions:  Transaction[]
   walletAddress: string | null
   tokenDeployed: boolean
+  claimEligibility?: "ok" | "email_unverified" | "guest_account"
   claimReceipts: ClaimReceipt[]
 }
 
 type ClaimState = "idle" | "claiming" | "success" | "error"
 
 export type ButtonMode =
+  | "guest_account"
+  | "verify_email"
   | "no_wallet"
   | "no_balance"
   | "below_minimum"
@@ -281,7 +284,9 @@ export default function WithdrawalPage() {
   function getButtonMode(): ButtonMode {
     if (claimState === "claiming")               return "claiming"
     if (claimState === "success")                return "success"
+    if (data?.claimEligibility === "guest_account")   return "guest_account"
     if (!hasWallet)                              return "no_wallet"
+    if (data?.claimEligibility === "email_unverified") return "verify_email"
     if (!hasBalance)                             return "no_balance"
     if (claimable < MIN_CLAIM_FIT)               return "below_minimum"
     if (!data?.tokenDeployed)                    return "launching_soon"
@@ -766,9 +771,17 @@ function ClaimButton({
   onClaim:    () => void
 }) {
   const { t } = useLanguage()
-  const isDisabled = mode === "no_wallet" || mode === "no_balance" || mode === "below_minimum" || mode === "claiming"
+  const isDisabled = mode === "no_wallet" || mode === "no_balance" || mode === "below_minimum" || mode === "claiming" || mode === "guest_account" || mode === "verify_email"
 
   const config: Record<ButtonMode, { label: React.ReactNode; bg: string; border: string; color: string }> = {
+    guest_account: {
+      label:  t.wdGuestAccount,
+      bg:     "rgba(234,179,8,0.08)", border: "rgba(234,179,8,0.3)", color: "#eab308",
+    },
+    verify_email: {
+      label:  t.wdVerifyEmail,
+      bg:     "rgba(234,179,8,0.08)", border: "rgba(234,179,8,0.3)", color: "#eab308",
+    },
     no_wallet: {
       label:  t.wdSetWalletFirst,
       bg:     "var(--surface-2)", border: "var(--border)", color: "var(--text-muted)",
@@ -839,6 +852,23 @@ function ClaimButton({
       </motion.button>
 
       <AnimatePresence>
+        {mode === "verify_email" && (
+          <motion.a
+            key="verify-link"
+            href="/verify-email"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ display: "block", marginTop: 10, fontSize: 12, color: "#eab308", fontWeight: 800, textAlign: "center", textDecoration: "none" }}
+          >
+            {t.wdVerifyEmailLink}
+          </motion.a>
+        )}
+        {mode === "guest_account" && (
+          <motion.div key="guest-note" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ marginTop: 10, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.5, textAlign: "center" }}>
+            {t.wdGuestNote}
+          </motion.div>
+        )}
         {mode === "launching_soon" && claimError === "launching_soon" && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} style={{ overflow: "hidden" }}>
             <div style={{ marginTop: 10, fontSize: 12, color: "#eab308", fontWeight: 600, lineHeight: 1.5 }}>

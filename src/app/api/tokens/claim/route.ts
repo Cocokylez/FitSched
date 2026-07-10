@@ -37,13 +37,30 @@ export async function POST(req: Request) {
   try {
     // ── Step 1: Read current state ─────────────────────────────────────────────
     const [user, balance] = await Promise.all([
-      db.user.findUnique({ where: { id: userId }, select: { walletAddress: true, banned: true } }),
+      db.user.findUnique({ where: { id: userId }, select: { walletAddress: true, banned: true, email: true, emailVerified: true } }),
       db.fitTokenBalance.findUnique({ where: { userId } }),
     ])
 
     // Banned accounts cannot cash out earned tokens.
     if (user?.banned) {
       return NextResponse.json({ error: "Account suspended" }, { status: 403 })
+    }
+
+    // ── Sybil resistance: cashing out requires a real, verified account ────────
+    // Earning stays open to everyone; only the on-chain claim is gated. Guest
+    // accounts are throwaway by design, and unverified emails make scripted
+    // multi-account farming nearly free — both are blocked here.
+    if (user?.email?.endsWith("@fitsched.guest")) {
+      return NextResponse.json(
+        { error: "Guest accounts cannot claim FIT. Create a full account to keep your balance.", code: "GUEST_ACCOUNT" },
+        { status: 403 },
+      )
+    }
+    if (!user?.emailVerified) {
+      return NextResponse.json(
+        { error: "Verify your email address to claim FIT.", code: "EMAIL_UNVERIFIED" },
+        { status: 403 },
+      )
     }
 
     const walletAddress = user?.walletAddress
