@@ -292,15 +292,18 @@ textarea::placeholder {
   contain-intrinsic-size: 132px;
 }
 
+/* Landing-page decorative flame. Tier-blind by design (it shows a fixed "7"),
+   but its colors track the Kindling tier in lib/streakTiers.ts so the marketing
+   flame and the real one don't drift apart. */
 .streak-flame {
   position: relative;
   width: 14px;
   height: 18px;
   display: inline-block;
   border-radius: 10px 10px 10px 2px;
-  background: linear-gradient(145deg, #ffb64d 0%, #ff744d 52%, #e54f3f 100%);
+  background: linear-gradient(145deg, #ffe6a3 0%, #ff8a1e 52%, #d63808 100%);
   transform: rotate(-12deg);
-  box-shadow: 0 0 18px rgba(255, 116, 77, 0.24);
+  box-shadow: 0 0 18px rgba(255, 106, 18, 0.28);
   animation: appBreath 1.8s ease-in-out infinite;
 }
 
@@ -312,7 +315,76 @@ textarea::placeholder {
   width: 6px;
   height: 9px;
   border-radius: 8px 8px 8px 2px;
-  background: #ffe1a8;
+  background: #ffe6a3;
+}
+
+/* ── Streak fire: shared keyframes ──────────────────────────────────────────
+   Used by FlameIcon and StreakWelcomeCard's FireBurst. Defined once here so
+   both flame surfaces animate identically. Colors come from lib/streakTiers.ts
+   via the --c1/--c2/--c3/--glow custom properties set by the component.
+
+   Technique note: this replaced an SVG `d:` path animation, which only Chromium
+   and Safari support — Firefox rendered the old flame completely static. These
+   are transform/opacity keyframes on clip-path'd boxes, so they run everywhere
+   and stay on the compositor. */
+.sf-flame {
+  transform-origin: 50% 100%;
+  animation: sf-sway 3.2s ease-in-out infinite;
+}
+
+.sf-in {
+  transform-origin: 50% 100%;
+  animation: sf-inner 1.5s ease-in-out infinite;
+}
+
+@keyframes sf-sway {
+  0%, 100% { transform: skewX(0deg) scaleY(1) scaleX(1); }
+  28%      { transform: skewX(-3deg) scaleY(1.04) scaleX(0.97); }
+  62%      { transform: skewX(2deg) scaleY(0.98) scaleX(1.02); }
+}
+
+@keyframes sf-inner {
+  0%, 100% { transform: scaleY(1) scaleX(1); opacity: 0.98; }
+  42%      { transform: scaleY(1.1) scaleX(0.9); opacity: 1; }
+  72%      { transform: scaleY(0.94) scaleX(1.06); opacity: 0.94; }
+}
+
+@keyframes sf-glow {
+  0%, 100% { opacity: 0.42; }
+  50%      { opacity: 0.66; }
+}
+
+@keyframes sf-rise {
+  0%   { opacity: 0; transform: translateY(4px) scale(0.4); }
+  14%  { opacity: 1; }
+  72%  { opacity: 0.5; }
+  100% { opacity: 0; transform: translateY(-46px) translateX(var(--dx, 0px)) scale(0.2); }
+}
+
+@keyframes sf-burst {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
+  18%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--bx)), calc(-50% + var(--by))) scale(0.3); }
+}
+
+@keyframes sf-ringpop {
+  0%   { opacity: 0.9; transform: translate(-50%, -50%) scale(0.3); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(2.2); }
+}
+
+/* The global reduced-motion rule below already neutralizes these, but the
+   ambient glow and embers are opacity-only loops — state that rule zeroes the
+   duration on but which readers keep asking about. Made explicit, and the
+   embers are hidden outright rather than frozen mid-fade at partial opacity. */
+@media (prefers-reduced-motion: reduce) {
+  .sf-flame,
+  .sf-in,
+  .sf-glow-pulse {
+    animation: none !important;
+  }
+  .sf-ember {
+    display: none !important;
+  }
 }
 
 ::-webkit-scrollbar { display: none; }
