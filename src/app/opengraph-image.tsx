@@ -4,7 +4,7 @@ import { join } from "path"
 
 // Branded 1200×630 social-share card. Replaces the old 512×512 square logo so
 // links rendered on iMessage / X / Discord / Slack show a proper banner.
-export const alt = "FitSched — AI workout scheduler"
+export const alt = "FitSched — Workout Planner & Fitness Tracker"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 
@@ -16,7 +16,7 @@ export default async function OpengraphImage() {
     logo = `data:image/png;base64,${buf.toString("base64")}`
   } catch {}
 
-  const chips = ["Smart scheduling", "Streaks", "FitTokens", "GPS hikes"]
+  const chips = ["Workout scheduling", "Streaks", "FitTokens", "GPS hikes"]
 
   return new ImageResponse(
     (
@@ -48,7 +48,7 @@ export default async function OpengraphImage() {
 
         {/* tagline */}
         <div style={{ display: "flex", marginTop: 30, fontSize: 40, color: "#9aa3a1", letterSpacing: "-1px", maxWidth: 940, lineHeight: 1.3 }}>
-          AI workout scheduler that fits training into your day — track streaks, earn FitTokens.
+          Plan workouts, track progress, log hikes, and earn FitTokens.
         </div>
 
         {/* feature chips */}

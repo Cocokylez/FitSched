@@ -2,7 +2,7 @@
   "id": "/",
   "name": "FitSched",
   "short_name": "FitSched",
-  "description": "AI-powered workout scheduler that fits your workout into your day automatically",
+  "description": "A personalized workout planner for scheduling training, tracking progress, logging hikes, and earning FitTokens",
   "lang": "en",
   "categories": ["health", "fitness", "lifestyle"],
   "start_url": "/schedule",
