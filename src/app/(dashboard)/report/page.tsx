@@ -138,15 +138,6 @@ export default function ReportPage() {
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
   }, [streak])
 
-  // Ember particles for streak hero
-  const embers = useMemo(() =>
-    Array.from({ length: 5 }, (_, i) => ({
-      id: i, x: (i * 10) - 20, targetY: -(36 + i * 12),
-      size: 2.2 + (i % 3) * 0.8, delay: i * 0.26,
-      duration: 1.35 + (i % 3) * 0.3,
-      color: ["#fff4b0", "#e8842a", "#ffffff", "#ffb64d", "#c9a84c"][i],
-    })), [])
-
   // Today + week days for streak strip
   const [today, setToday] = useState<Date | null>(null)
   useEffect(() => {
@@ -331,21 +322,14 @@ export default function ReportPage() {
                   transition={{ duration: 3.4, repeat: Infinity, repeatDelay: 5.5, ease: "easeInOut" }}
                 />
 
-                {/* Floating flame + embers */}
+                {/* Floating flame. FlameIcon carries its own glow + embers now, so
+                    the page no longer stacks a second particle system on top of it —
+                    the old one animated opacity, which framer-motion's MotionConfig
+                    does not suppress, so it kept flickering under reduced motion. */}
                 <div style={{ position: "absolute", right: 14, top: 12, pointerEvents: "none" }}>
                   <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }} style={{ opacity: 0.9, transformOrigin: "50% 80%", position: "relative" }}>
                     <FlameIcon size={56} streak={streak} />
                   </motion.div>
-                  <div style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)" }}>
-                    {embers.map(ember => (
-                      <motion.div
-                        key={ember.id}
-                        style={{ position: "absolute", width: ember.size, height: ember.size, borderRadius: "50%", background: ember.color, boxShadow: `0 0 5px ${ember.color}` }}
-                        animate={{ x: [0, ember.x], y: [0, ember.targetY], opacity: [0, 0.85, 0], scale: [0.4, 1, 0.3] }}
-                        transition={{ duration: ember.duration, delay: ember.delay, repeat: Infinity, repeatDelay: 0.3, ease: "easeOut" }}
-                      />
-                    ))}
-                  </div>
                 </div>
 
                 {/* Numbers */}
@@ -383,13 +367,22 @@ export default function ReportPage() {
                             transition={isToday ? { duration: 2.2, repeat: Infinity, ease: "easeInOut" } : {}}
                             style={{ width: "100%", height: 34, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 9, background: isToday ? ACCENT : done ? "rgba(18,101,254,0.22)" : isDark ? "rgba(255,255,255,0.05)" : "rgba(13,41,38,0.06)", border: isToday ? "none" : done ? "1px solid rgba(18,101,254,0.4)" : `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(13,41,38,0.1)"}` }}
                           >
-                            {(isToday || done) ? (
-                              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3 + i * 0.06, type: "spring", stiffness: 350, damping: 18 }}>
-                                <Check size={11} strokeWidth={3} style={{ color: isToday ? "#fff" : ACCENT, display: "block" }} />
-                              </motion.div>
-                            ) : (
-                              <span style={{ fontSize: 10, fontWeight: 700, color: isDark ? "rgba(255,255,255,0.22)" : "rgba(13,41,38,0.35)" }}>{day.getDate()}</span>
-                            )}
+                            {/* No check glyph — the cell fill and text weight carry the
+                                done state, and keeping the date visible on every cell
+                                means the strip still reads as a week at a glance. */}
+                            <span
+                              style={{
+                                fontSize: 10,
+                                fontWeight: (isToday || done) ? 900 : 700,
+                                color: isToday
+                                  ? "#fff"
+                                  : done
+                                    ? ACCENT
+                                    : isDark ? "rgba(255,255,255,0.22)" : "rgba(13,41,38,0.35)",
+                              }}
+                            >
+                              {day.getDate()}
+                            </span>
                           </motion.div>
                         </motion.div>
                       )
