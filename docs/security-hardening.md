@@ -1,6 +1,6 @@
 # FitSched Security Hardening Notes
 
-This app now has baseline API hardening for the current feature set: rate limits, same-origin mutation checks, safer input validation, security headers, server-side ownership checks, and safer AI plan handling.
+This app now has baseline API hardening for the current feature set: rate limits, same-origin mutation checks, safer input validation, security headers, server-side ownership checks, and safer workout plan handling.
 
 ## Manual Production Configuration
 
@@ -21,7 +21,7 @@ This app now has baseline API hardening for the current feature set: rate limits
 - API JSON bodies have size limits and return safe errors for malformed JSON.
 - Workout completion and token earning remain server-authoritative and tied to the authenticated user.
 - User-owned resources are queried with `userId` checks before reads, updates, and deletes.
-- AI workout plans use only server-fetched exercises and treat model output as untrusted data before writing to the database.
+- Workout plans use only server-fetched exercises and validate generated plan data before writing to the database.
 - Browser security headers are configured in `next.config.ts`, including CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, and production HSTS.
 - Passwords are hashed with bcrypt before storage.
 
@@ -39,6 +39,6 @@ The default presets live in `src/lib/security.ts`:
 - `read`: normal authenticated reads.
 - `write`: normal authenticated writes.
 - `strictWrite`: sensitive writes like workout completion, token earning, calendar sync, push send.
-- `expensive`: AI/LLM plan generation.
+- `expensive`: workout plan generation and other high-cost endpoints.
 
 Tune these values after seeing real traffic, and move them to a shared store before depending on them for production-scale protection.

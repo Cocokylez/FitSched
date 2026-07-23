@@ -4,8 +4,8 @@
 
 ### Your schedule. Your pace.
 
-*An AI-powered workout scheduler that automatically fits
-workouts into your free time using Google Calendar.*
+*A personalized workout planner for scheduling training,
+tracking progress, logging hikes, and earning FitTokens.*
 
 ![Version](https://img.shields.io/badge/version-1.0.1-white?style=flat-square&labelColor=1a1a1a)
 ![Next.js](https://img.shields.io/badge/Next.js-15-white?style=flat-square&labelColor=1a1a1a)
@@ -19,7 +19,7 @@ workouts into your free time using Google Calendar.*
 ## ✨ Features
 
 - 📅 **Google Calendar Sync** — reads your schedule and finds free slots automatically
-- 🤖 **AI Workout Planner** — powered by DeepSeek AI, recommends workouts based on your availability
+- **Personalized Workout Plans** — recommends exercises based on your goals, experience, equipment, injuries, and recent workouts
 - 🔄 **Non-repetitive Workouts** — tracks previous weeks to keep routines fresh
 - 🌐 **Multi-language** — supports English, Chinese, Japanese, and Vietnamese
 - 🌙 **Dark / Light Mode** — theme preference saved across sessions
@@ -37,7 +37,7 @@ workouts into your free time using Google Calendar.*
 | Animation | Framer Motion |
 | Auth | NextAuth.js |
 | Database | PostgreSQL + Prisma |
-| AI | DeepSeek API |
+| Workout planning | Built-in exercise library + rules-based recommendations |
 | Calendar | Google Calendar API |
 | Deployment | Vercel |
 
@@ -49,7 +49,7 @@ workouts into your free time using Google Calendar.*
 - Node.js 18+
 - PostgreSQL database
 - Google Cloud project with Calendar API enabled
-- DeepSeek API key
+- Google Maps Static API key (optional, for hike map previews)
 
 ### Installation
 
@@ -81,7 +81,7 @@ GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 GOOGLE_CALENDAR_CLIENT_ID=your_calendar_client_id
 GOOGLE_CALENDAR_CLIENT_SECRET=your_calendar_client_secret
-GOOGLE_API_KEY=your_deepseek_api_key
+GOOGLE_API_KEY=your_google_maps_api_key
 AUTH_TRUST_HOST=true
 ```
 
@@ -96,7 +96,7 @@ AUTH_TRUST_HOST=true
 ## 🗺️ Roadmap
 
 - [x] Google Calendar integration
-- [x] AI workout recommendations
+- [x] Personalized workout recommendations
 - [x] Non-repetitive weekly plans
 - [x] Multi-language support
 - [x] Dark / light mode

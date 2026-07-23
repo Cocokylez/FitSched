@@ -342,7 +342,7 @@ export default function SchedulePage() {
     if (!selectedDate || !canStartExerciseToday) return
 
     // Fallback path: when the block has no exercises and the suggested cache
-    // is empty (profile still loading, AI fetch failed, etc.) compute a fresh
+    // is empty (profile still loading, schedule fetch failed, etc.) compute a fresh
     // smart plan from whatever profile we have. If profile is also unloaded
     // we default to home_bodyweight — the safest plan for any user since it
     // requires no equipment.
