@@ -1,14 +1,17 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { rateLimitByUser, rateLimitPresets, validateSameOrigin } from "@/lib/security"
 import { Prisma } from "@prisma/client"
 import { NextResponse } from "next/server"
 
 export async function GET(
-  _: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const limited = await rateLimitByUser(req, session.user.id, rateLimitPresets.read, "hike:get")
+  if (limited) return limited
 
   const { id } = await params
 
@@ -22,14 +25,23 @@ export async function GET(
 }
 
 export async function DELETE(
-  _: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Reject cross-site requests: this DELETE deletes a hike and decrements the
+  // user's FitToken balance, so a forged request is real data loss. Mirrors the
+  // guards on weight/[id] and templates/[id].
+  const originError = validateSameOrigin(req)
+  if (originError) return originError
+
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { id } = await params
   const userId = session.user.id
+  const limited = await rateLimitByUser(req, userId, rateLimitPresets.write, "hike:delete")
+  if (limited) return limited
+
+  const { id } = await params
 
   // Decrement FitTokenBalance by the sum of tokens awarded for this hike
   // before cascading the delete, so balance stays consistent.
