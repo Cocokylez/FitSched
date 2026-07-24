@@ -14,6 +14,7 @@ import { getFeedbackAdjustedExperienceLevel } from "@/lib/workoutFeedback"
 import { computeMuscleReadiness, pickFreshestTarget, type MuscleReadiness } from "@/lib/muscleReadiness"
 import { getMuscleGroup } from "@/lib/exerciseData"
 import { formatLocalDate } from "@/lib/dateUtils"
+import { getAnchorDayOfWeek } from "@/lib/streak"
 import { pickBestWorkoutTime } from "@/lib/bestWorkoutTime"
 import { ACCENT, ACCENT_DIM, ACCENT_BD } from "@/lib/theme"
 import { getCategory, CATEGORY_COLORS } from "@/lib/exerciseUtils"
@@ -171,7 +172,7 @@ export default function WorkoutPage() {
         const experienceLevel = getFeedbackAdjustedExperienceLevel(profileData.experienceLevel || "intermediate")
         const wpw = profileData.workoutsPerWeek || 3
         setWorkoutsPerWeek(wpw)
-        const anchor = profileData.createdAt ? new Date(profileData.createdAt).getDay() : 0
+        const anchor = getAnchorDayOfWeek(profileData.createdAt)
         setAnchorDayOfWeek(anchor)
         const workoutEnvironment = (profileData.workoutEnvironment || "gym") as WorkoutEnvironment
         const hasInjury = Boolean(profileData.hasInjury)

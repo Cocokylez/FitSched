@@ -14,6 +14,7 @@ import { getSmartExercisePlan, toWorkoutExercises, resolveDaySplit, getSplitLabe
 import type { MuscleGroup } from "@/lib/workoutRecommendations"
 import { computeMuscleReadiness, pickFreshestTarget, type MuscleReadiness } from "@/lib/muscleReadiness"
 import { formatLocalDate } from "@/lib/dateUtils"
+import { getAnchorDayOfWeek } from "@/lib/streak"
 import { ACCENT } from "@/lib/theme"
 
 interface UserProfile {
@@ -215,7 +216,7 @@ export default function SchedulePage() {
         if (profileRes.ok) {
           const p = await profileRes.json()
           if (p.workoutsPerWeek) setWorkoutsPerWeek(Number(p.workoutsPerWeek))
-          if (p.createdAt) setAnchorDayOfWeek(new Date(p.createdAt).getDay())
+          if (p.createdAt) setAnchorDayOfWeek(getAnchorDayOfWeek(p.createdAt))
         }
       } catch {}
       let workoutEvents: any[] = []
@@ -227,7 +228,7 @@ export default function SchedulePage() {
             const profileRes = await fetch("/api/onboarding")
             const profileData: UserProfile = profileRes.ok ? await profileRes.json() : {}
             setProfile(profileData)
-            const anchor = profileData.createdAt ? new Date(profileData.createdAt).getDay() : 0
+            const anchor = getAnchorDayOfWeek(profileData.createdAt)
             setAnchorDayOfWeek(anchor)
             const wpw = Number(profileData.workoutsPerWeek) || 3
             const daySplit = resolveDaySplit(selectedDay, anchor, wpw)

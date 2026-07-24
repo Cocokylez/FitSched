@@ -1,5 +1,7 @@
 import { Prisma } from "@prisma/client"
 
+import { computeStreak } from "@/lib/streak"
+
 const BASE_WORKOUT_REWARD = new Prisma.Decimal(1)
 
 type TokenTransaction = {
@@ -26,38 +28,10 @@ function calculateStreakBonus(streak: number) {
   return new Prisma.Decimal(0.02)
 }
 
-async function calculateCurrentStreak(tx: Prisma.TransactionClient, userId: string) {
-  const logs = await tx.workoutSessionLog.findMany({
-    where: { userId },
-    // Use the client-submitted `date` field (local YYYY-MM-DD) instead of
-    // `completedAt` (UTC timestamp). toDateId(completedAt) produces a UTC date
-    // that disagrees with the streak API for UTC+N users between midnight and
-    // UTC-offset local time (e.g. 00:00-08:00 SGT = prior UTC day).
-    select: { date: true },
-    orderBy: { completedAt: "desc" },
-    take: 370,
-  })
-
-  const uniqueDates = new Set(logs.map((log) => log.date))
-
-  // Build a UTC reference axis for "today" and walk backwards.
-  // The date strings in uniqueDates are local YYYY-MM-DD; because the client
-  // always submits the correct local date, comparing against UTC-based day keys
-  // is fine as long as we treat both as opaque YYYY-MM-DD strings.
-  const todayUTC = new Date()
-  todayUTC.setUTCHours(0, 0, 0, 0)
-
-  let streak = 0
-  for (let i = 0; i < 365; i++) {
-    const expected = new Date(todayUTC)
-    expected.setUTCDate(todayUTC.getUTCDate() - i)
-    const key = expected.toISOString().split("T")[0]
-    if (!uniqueDates.has(key)) break
-    streak++
-  }
-
-  return streak
-}
+// Streak counting lives in lib/streak.ts and nowhere else. This file used to carry
+// its own walk, which ignored rest days and freezes and used raw UTC midnight — so
+// it disagreed with the streak users actually saw and, because the bonus curve
+// *decays*, it paid them as if they were permanently on day 1-3 of a streak.
 
 // ── Hike reward: 0.5 FT per km, capped at 50 km per hike ─────────────────────
 export async function awardFitTokensForHikeTx(
@@ -132,7 +106,9 @@ export async function awardFitTokensForWorkoutLogTx(
     }
   }
 
-  const streak = await calculateCurrentStreak(tx, userId)
+  // Same streak the user sees on /report and /schedule. Runs inside this transaction,
+  // so it already accounts for the workout log written moments ago.
+  const { streak } = await computeStreak(tx, userId)
   const streakBonus = calculateStreakBonus(streak)
 
   // Verification multiplier: ≥0.55 → full, 0.25–0.55 → half, <0.25 → no tokens
